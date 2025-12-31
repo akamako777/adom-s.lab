@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI便利ツールポータル</title>
+    <style>
+        body { font-family: "Helvetica Neue", Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; color: #333; }
+        h1 { text-align: center; color: #444; margin-bottom: 30px; }
+        .menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            text-decoration: none; 
+            color: #333; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            border: 2px solid transparent; 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
+            border-color: #007bff; 
+        }
+        .title { font-size: 1.2rem; font-weight: bold; color: #2c3e50; }
+        .card:hover .title { color: #007bff; }
+        .desc { font-size: 0.9rem; color: #666; line-height: 1.5; }
+        
+        /* ラベル（AIあり/なし）のデザイン */
+        .badge { 
+            display: inline-block; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 0.7rem; 
+            font-weight: bold; 
+            margin-bottom: 5px;
+            align-self: flex-start;
+        }
+        .badge-ai { background-color: #e3f2fd; color: #1976d2; }
+        .badge-tool { background-color: #f5f5f5; color: #616161; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ AI便利ツール置き場</h1>
+    
+    <div class="menu">
+        <a href="magic.html" class="card">
+            <span class="badge badge-tool">ツール</span>
+            <span class="title">🔮 魔法陣生成エディタ</span>
+            <span class="desc">自分だけの魔法陣を作って詠唱しよう。動画保存も可能。</span>
+        </a>
+
+        <a href="mission.html" class="card">
+            <span class="badge badge-ai">AI搭載</span>
+            <span class="title">🚀 ミッション・コンシェルジュ</span>
+            <span class="desc">最適な巡回ルートを一瞬で作成。旅のしおりにも。</span>
+        </a>
+
+        <a href="english.html" class="card">
+            <span class="badge badge-ai">AI搭載</span>
+            <span class="title">🗣️ AI英会話バディ</span>
+            <span class="desc">AI講師と楽しく英会話レッスン。レベル調整可能。</span>
+        </a>
+
+        <a href="kanji.html" class="card">
+            <span class="badge badge-ai">AI搭載</span>
+            <span class="title">✍️ 無限漢字ドリル生成</span>
+            <span class="desc">AIが例文と問題を自動生成。印刷してすぐに使える。</span>
+        </a>
+
+        <a href="pdf.html" class="card">
+            <span class="badge badge-tool">ツール</span>
+            <span class="title">📄 PDF変換ツール</span>
+            <span class="desc">AI不使用。シンプルで安全なPDF変換・結合ツール。</span>
+        </a>
+    </div>
+</body>
+</html>
