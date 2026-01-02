@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>星輪のギメルス - Canvas Grimoire Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Three.js Postprocessing -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <!-- Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+Mono:wght@400&family=Noto+Sans+Runic&family=Noto+Sans+Hebrew:wght@400;700&family=Zen+Old+Mincho:wght@400;700;900&family=Ma+Shan+Zheng&family=Yuji+Syuku&display=swap');
+
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --primary-glow: #3b82f6;
+        }
+
+        body {
+            font-family: 'Zen Old Mincho', 'Noto Serif JP', serif;
+            background-color: #050505;
+            color: #e2e8f0;
+            overflow: hidden;
+            margin: 0;
+            touch-action: none;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+            color: #1e293b;
+        }
+
+        .control-group { 
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            background-color: rgba(248, 250, 252, 0.8);
+            border: 1px solid #cbd5e1;
+        }
+        
+        .label-text { 
+            font-size: 0.7rem; font-weight: 700; color: #475569;
+            margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem; letter-spacing: 0.05em;
+        }
+
+        select, input[type="text"], input[type="number"], input[type="password"] {
+            width: 100%; background-color: #fff; border: 1px solid #cbd5e1; color: #334155;
+            font-size: 0.75rem; border-radius: 0.375rem; padding: 0.4rem;
+            font-family: 'Cinzel', 'Zen Old Mincho', serif; font-weight: 600;
+        }
+        select:focus, input:focus { border-color: #3b82f6; outline: 2px solid rgba(59, 130, 246, 0.2); }
+
+        .magic-btn { 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; border-width: 1px;
+        }
+        .magic-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+        .magic-btn.active { 
+            transform: scale(1.02); border-color: currentColor; box-shadow: 0 0 12px currentColor; font-weight: 800; z-index: 10;
+        }
+
+        input[type=range] { 
+            height: 4px; background-color: #cbd5e1; border-radius: 2px; appearance: none; cursor: pointer; width: 100%;
+        }
+        input[type=range]::-webkit-slider-thumb { 
+            width: 14px; height: 14px; background-color: #3b82f6; border-radius: 50%; appearance: none; 
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.1s;
+        }
+
+        .toggle-checkbox { display: none; }
+        .toggle-label {
+            width: 32px; height: 18px; position: relative; display: inline-block; background-color: #cbd5e1; border-radius: 9999px; transition: 0.3s; cursor: pointer;
+        }
+        .toggle-circle {
+            position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background-color: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label .toggle-circle { transform: translateX(14px); }
+
+        .ai-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .ai-btn:hover { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+        .ai-loading svg { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast {
+            background: rgba(30, 41, 59, 0.95); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-left: 4px solid #3b82f6;
+            transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); pointer-events: auto;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .toast.show { transform: translateX(0); }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: #fff; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.95); transition: transform 0.3s; color: #334155;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+
+        #rec-indicator {
+            position: absolute; top: 20px; right: 20px; padding: 6px 16px;
+            background: rgba(220, 38, 38, 0.9); color: white; border-radius: 20px;
+            font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 8px;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 50;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+        }
+        #rec-indicator.active { opacity: 1; }
+        .rec-dot { width: 8px; height: 8px; background: white; border-radius: 50%; animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        #loader {
+            position: fixed; inset: 0; background: #0f172a; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s;
+        }
+        .loader-ring {
+            width: 50px; height: 50px; border: 2px solid transparent; border-top-color: #3b82f6; border-radius: 50%;
+            animation: spin 1s linear infinite; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+        .loader-text { margin-top: 1rem; font-family: 'Cinzel'; color: #94a3b8; letter-spacing: 0.2em; font-size: 0.8rem; }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+
+    <!-- Loading Screen -->
+    <div id="loader">
+        <div class="loader-ring"></div>
+        <div class="loader-text">INITIALIZING ETHER</div>
+    </div>
+
+    <!-- API Key Rescue Modal -->
+    <div id="apiKeyModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-lg font-bold mb-2 font-[Cinzel]">API Authentication Required</h3>
+            <p class="text-xs text-gray-500 mb-4">
+                Canvas自動認証に失敗したか、制限を超えました。<br>
+                Google AI StudioのAPIキーを入力して接続を確立してください。
+            </p>
+            <input type="password" id="rescueApiKeyInput" placeholder="Enter Gemini API Key..." 
+                   class="w-full border p-2 rounded mb-4 text-sm font-mono bg-gray-50">
+            <div class="flex justify-end gap-2">
+                <button id="cancelApiKeyBtn" class="text-xs px-3 py-2 text-gray-500 hover:text-gray-700">キャンセル</button>
+                <button id="saveApiKeyBtn" class="text-xs px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">接続</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Panel -->
+    <aside class="w-full md:w-80 h-[45%] md:h-full glass-panel flex flex-col z-20 shrink-0 order-1 md:order-none border-r border-white/20 relative">
+        <div class="p-4 border-b border-gray-200/50 flex justify-between items-center bg-white/50 backdrop-blur-md">
+            <h1 class="text-lg font-bold font-[Cinzel] text-slate-800 tracking-wide flex items-center gap-2">
+                <span class="text-blue-600 text-xl">✡</span> GIMEL STUDIO
+            </h1>
+            <span class="text-[0.6rem] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-bold">CANVAS ED.</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            
+            <!-- API Key Settings -->
+            <div class="control-group border-indigo-200 bg-indigo-50/50">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="label-text text-indigo-700">API接続設定 (Gemini API)</label>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[0.6rem] text-blue-500 underline hover:text-blue-700">Google AI Studio ↗</a>
+                </div>
+                <div class="relative flex items-center">
+                    <input type="password" id="userApiKey" placeholder="Enter your API Key..." class="pr-8 border-indigo-200 focus:border-indigo-500 text-[0.65rem] font-mono">
+                    <button id="toggleApiKeyVis" class="absolute right-2 text-indigo-400 hover:text-indigo-600 focus:outline-none" title="表示/非表示">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Generator -->
+            <div class="control-group border-purple-200 bg-purple-50/50">
+                <label class="label-text text-purple-700">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    アカシック・ジェネレーター (AI生成)
+                </label>
+                <div class="relative">
+                    <input type="text" id="aiPrompt" placeholder="概念、キーワード (例: 桜, 時の歯車)..." class="pr-8 border-purple-200 focus:border-purple-500">
+                    <div class="absolute right-2 top-2 text-purple-300">✦</div>
+                </div>
+                <button id="aiGenBtn" class="ai-btn w-full mt-2 py-2 rounded-md text-xs font-bold flex justify-center items-center gap-2 transition-all">
+                    <span>魔術創造</span>
+                </button>
+                <div id="aiResponseText" class="text-[0.65rem] text-slate-500 mt-2 p-2 bg-white/60 rounded border border-purple-100 min-h-[2.5em]">
+                    AIが深淵より新たな魔術概念を記述します...
+                </div>
+            </div>
+
+            <!-- Main Controls -->
+            <div class="space-y-3">
+                <!-- System -->
+                <div class="control-group">
+                    <label class="label-text">魔法術式体系 (System)</label>
+                    <select id="magicType">
+                        <!-- AI Slot -->
+                        <option value="ai_custom" id="aiCustomOption" disabled style="color: #6366f1; font-weight: bold;">【★】アカシック・レコード (AI Generated)</option>
+                        
+                        <optgroup label="光の魔法陣 (Light Circles)">
+                            <option value="alchemy">錬金術式 (Alchemy)</option>
+                            <option value="enochian">エノク式 (Enochian)</option>
+                            <option value="runic">ルーン式 (Runic)</option>
+                            <option value="solomonic">ソロモン式 (Solomonic)</option>
+                            <option value="seimei">安倍晴明式 (Onmyodo)</option>
+                        </optgroup>
+                        <optgroup label="護符・媒体 (Talismans)">
+                            <option value="ofuda_jp">【壱】倭の護符 (Ofuda JP)</option>
+                            <option value="parchment">【弐】羊皮紙 (Parchment)</option>
+                            <option value="ofuda_tao">【参】道教の霊符 (Taoist)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Attributes -->
+                <div class="control-group">
+                    <label class="label-text">基本属性 (Attribute)</label>
+                    <div class="grid grid-cols-4 gap-1.5 mb-2" id="presetAttrGrid">
+                        <!-- JSで生成 -->
+                    </div>
+                    <div id="customAttrBadge" class="hidden p-2 bg-gradient-to-r from-slate-800 to-slate-700 text-white text-center rounded text-xs">
+                        <div class="font-[Cinzel] font-bold text-yellow-400" id="customAttrTitle">VOID</div>
+                        <div class="text-[0.6rem] text-slate-300 truncate" id="customAttrDesc">Unknown</div>
+                        <button id="resetAttrBtn" class="mt-1 text-[0.6rem] underline text-slate-400 hover:text-white">リセット</button>
+                    </div>
+                </div>
+
+                <!-- Parameters (Updated with Mandala) -->
+                <div class="flex gap-2">
+                    <div class="control-group flex-1">
+                        <div class="flex justify-between mb-1">
+                            <label class="label-text">術式複雑度 (Level)</label>
+                            <span id="levelVal" class="text-[0.65rem] font-mono bg-slate-200 px-1.5 rounded">Lv.1</span>
+                        </div>
+                        <input type="range" id="levelRange" min="1" max="5" value="1" step="1">
+                    </div>
+                    
+                    <div class="control-group w-32 flex flex-col justify-between border-orange-200 bg-orange-50/50">
+                        <label class="label-text text-orange-700">曼荼羅 (Mandala)</label>
+                        <select id="mandalaType" class="text-[0.65rem] py-1 border-orange-200 mb-1">
+                            <option value="none">なし (None)</option>
+                            <option value="circle">円 (Circle)</option>
+                            <option value="flower">華 (Lotus)</option>
+                            <option value="text">文字 (Text)</option>
+                            <option value="sun">太陽 (Sun)</option>
+                            <option value="moon">月 (Moon)</option>
+                            <option value="snow">六花 (Snow)</option>
+                        </select>
+                        
+                        <div class="flex items-center gap-1">
+                             <label class="text-[0.6rem] text-orange-600 font-bold whitespace-nowrap">Size</label>
+                             <input type="range" id="mandalaSizeRange" min="0.5" max="1.3" step="0.05" value="1.0" class="h-1 bg-orange-200">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="flex justify-between mb-1">
+                        <label class="label-text">回転速度 (Rotation)</label>
+                        <span id="speedVal" class="text-[0.65rem] font-mono bg-slate-200 px-1.5 rounded">0</span>
+                    </div>
+                    <input type="range" id="speedRange" min="0" max="100" value="0">
+                </div>
+
+                <!-- Toggles -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="control-group flex justify-between items-center py-2 m-0">
+                        <label class="label-text m-0">惑星表示 (Planets)</label>
+                        <div>
+                            <input type="checkbox" id="planetToggle" class="toggle-checkbox" checked>
+                            <label for="planetToggle" class="toggle-label"><div class="toggle-circle"></div></label>
+                        </div>
+                    </div>
+                    <div class="control-group flex justify-between items-center py-2 m-0 border-blue-200 bg-blue-50/50">
+                        <label class="label-text m-0 text-blue-700">魔力粒子 (Particles)</label>
+                        <div>
+                            <input type="checkbox" id="particleToggle" class="toggle-checkbox" checked>
+                            <label for="particleToggle" class="toggle-label"><div class="toggle-circle"></div></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Color Mode -->
+                <div class="bg-slate-200 p-1 rounded-md flex text-[0.7rem] font-bold text-slate-500">
+                    <button class="flex-1 py-1 rounded text-center transition-all bg-white shadow-sm text-slate-800" id="bgBlackBtn">ダークモード</button>
+                    <button class="flex-1 py-1 rounded text-center transition-all hover:bg-white/50" id="bgWhiteBtn">ライトモード</button>
+                </div>
+            </div>
+
+            <!-- Export / Actions -->
+            <div class="mt-6 border-t border-slate-200 pt-4 space-y-2">
+                <label class="label-text">出力・保存 (Grimoire Actions)</label>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="saveImgBtn" class="bg-slate-800 text-white py-2 rounded text-xs font-bold hover:bg-slate-700 transition flex items-center justify-center gap-1">
+                        <span>📷</span> 画像保存 (3x)
+                    </button>
+                    <button id="printBtn" class="bg-slate-100 text-slate-700 border border-slate-300 py-2 rounded text-xs font-bold hover:bg-white transition flex items-center justify-center gap-1">
+                        <span>📜</span> 魔導書印刷
+                    </button>
+                </div>
+
+                <!-- Transparent Toggle (Resurrected) -->
+                <div class="control-group flex justify-between items-center py-2 m-0">
+                    <label class="label-text m-0 flex items-center gap-1">
+                        <span>🔳 背景透過で保存 (Transparent)</span>
+                    </label>
+                    <div>
+                        <input type="checkbox" id="transparentToggle" class="toggle-checkbox">
+                        <label for="transparentToggle" class="toggle-label"><div class="toggle-circle"></div></label>
+                    </div>
+                </div>
+
+                <div class="control-group m-0">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="label-text m-0 flex items-center gap-1">
+                            <span>🎥 動画記録 (WebM)</span>
+                        </label>
+                        <div class="text-[0.6rem] text-red-500 font-bold hidden" id="recStatusText">記録中...</div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1">
+                        <button class="rec-btn border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-1.5 rounded text-[0.65rem] font-bold transition" data-sec="5">5秒</button>
+                        <button class="rec-btn border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-1.5 rounded text-[0.65rem] font-bold transition" data-sec="10">10秒</button>
+                        <button class="rec-btn border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-1.5 rounded text-[0.65rem] font-bold transition" data-sec="30">30秒</button>
+                        <button class="rec-btn border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-1.5 rounded text-[0.65rem] font-bold transition" data-sec="60">60秒</button>
+                    </div>
+                </div>
+
+                <!-- Updated JSON Buttons -->
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="exportJsonBtn" class="bg-indigo-50 border border-indigo-200 text-indigo-700 py-2 rounded text-xs font-bold hover:bg-indigo-100 transition flex items-center justify-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        データ保存
+                    </button>
+                    <label class="bg-indigo-50 border border-indigo-200 text-indigo-700 py-2 rounded text-xs font-bold hover:bg-indigo-100 transition flex items-center justify-center gap-1 cursor-pointer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        読み込み <input type="file" id="importJsonInput" class="hidden" accept=".json">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Canvas Area -->
+    <main class="w-full flex-1 md:h-full relative bg-black transition-colors duration-500 order-2 md:order-none overflow-hidden" id="canvas-wrapper">
+        <div id="rec-indicator">
+            <div class="rec-dot"></div>
+            <span>REC</span>
+        </div>
+        
+        <div class="absolute top-6 left-6 pointer-events-none z-10 select-none mix-blend-difference text-white">
+            <div id="magicNameDisplay" class="text-2xl md:text-3xl font-[Cinzel] font-bold opacity-90 tracking-widest drop-shadow-md">
+                FIRE CIRCLE
+            </div>
+            <div id="magicSubDisplay" class="text-xs font-serif opacity-70 mt-1 tracking-wider border-l-2 border-white/50 pl-3">
+                Alchemy System / Lv.1
+            </div>
+        </div>
+
+        <button id="resetCamBtn" class="absolute bottom-6 right-6 z-20 bg-white/10 backdrop-blur hover:bg-white/20 text-white text-xs px-3 py-2 rounded-full border border-white/20 transition flex items-center gap-1 shadow-lg">
+            <span>⟲</span> 視点リセット
+        </button>
+        
+        <div id="canvas-container" class="w-full h-full cursor-move"></div>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script>
+        /** * Canvas Application Configuration */
+        const AppConfig = {
+            apiKey: "",
+            model: "gemini-2.5-flash-preview-09-2025",
+            pixelRatioLimit: 3, 
+            apiBase: "https://generativelanguage.googleapis.com/v1beta/models/"
+        };
+
+        // State
+        const State = {
+            system: 'alchemy',
+            attribute: 'fire',
+            level: 1,
+            speed: 0.0,
+            bgMode: 'black', 
+            showPlanets: true,
+            showParticles: true,
+            transparentBg: false,
+            mandala: 'none', 
+            mandalaSize: 1.0, 
+            customAttr: null,
+            lastAiAttr: null, // Keep track of AI data for restore
+            isRecording: false
+        };
+
+        // Data Definitions (Expanded with Mandala & Text & Talisman Kanji)
+        const AttributePresets = {
+            fire: { hex: 0xff4500, glow: 0xff6a00, name: "Fire", icon:"🔥", sides: 3, mandala: "sharp", spell: "IGNIS SANCTUS SALAMANDER FLAMMA AETERNA", desc: "永遠の炎を司る精霊サラマンダーの契約陣。不浄を焼き払い、新たなる創造のエネルギーをもたらす。", kanji: "火天招来" },
+            water: { hex: 0x00bfff, glow: 0x00ffff, name: "Water", icon:"💧", sides: 6, mandala: "petal", spell: "AQUA VITAE UNDINE MARE TRANQUILLITATIS", desc: "清らかな水の精霊ウンディーネの加護。深海の静寂と生命の源泉を呼び覚まし、癒しを与える。", kanji: "水神守護" },
+            earth: { hex: 0x8b4513, glow: 0xff8c00, name: "Earth", icon:"🪨", sides: 4, mandala: "square", spell: "TERRA MATER GNOME RADIX STABILITAS", desc: "大地の精霊ノームによる守護。揺るぎない基盤と物質的な豊かさを象徴する堅牢な魔術基盤。", kanji: "地鎮安穏" },
+            wind: { hex: 0x32cd32, glow: 0x98fb98, name: "Wind", icon:"🍃", sides: 5, mandala: "curve", spell: "VENTUS LIBER SYLPHID AURA CAELESTIS", desc: "風の精霊シルフィードの導き。自由と変革をもたらし、停滞した運命を切り開く鋭い一陣の風。", kanji: "風神疾走" },
+            wood: { hex: 0x228b22, glow: 0x7cfc00, name: "Wood", icon:"🌳", sides: 6, mandala: "leaf", spell: "ARBOR VITAE YGGDRASIL RADIX ET RAMUS", desc: "世界樹ユグドラシルの枝葉。成長と繁栄、そして生命の循環を司る、穏やかだが力強い生命の力。", kanji: "樹海繁栄" },
+            lightning: { hex: 0xffd700, glow: 0xffea00, name: "Thunder", icon:"⚡", sides: 7, mandala: "zigzag", spell: "FULGUR DIVINUM TONITRUS JUPITER REX", desc: "天空の支配者ユピテルの雷霆。神速の審判を下し、邪悪を打ち砕く絶対的な破壊と閃きの力。", kanji: "雷帝招来" },
+            light: { hex: 0xffffff, glow: 0xffffe0, name: "Light", icon:"✨", sides: 12, mandala: "ray", spell: "LUX AETERNA VERITAS SOL INVICTUS", desc: "不敗の太陽、永遠の真理。全ての闇を照らし出し、隠された真実を暴く至高の輝き。", kanji: "光明遍照" },
+            dark: { hex: 0x4b0082, glow: 0x9400d3, name: "Darkness", icon:"🌑", sides: 5, mandala: "web", spell: "TENEBRAE AETERNAE NOX ABYSSUS UMBRA", desc: "原初の混沌、深淵の静寂。万物を包み込み、安息と忘却を与える、深遠なる闇の神秘。", kanji: "暗黒回帰" }
+        };
+
+        // --- THREE.js Global Variables ---
+        let scene, camera, renderer, composer, bloomPass;
+        let magicGroup, particleSystem;
+        let clock = new THREE.Clock();
+        let animationFrameId;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let activeShaderUniforms = [];
+
+        // --- Shaders ---
+        const vShader = `
+            varying vec3 vPos;
+            varying vec2 vUv;
+            void main() {
+                vPos = position;
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+        
+        const fShader = `
+            uniform float uTime;
+            uniform vec3 uColor;
+            uniform float uOpacity;
+            varying vec3 vPos;
+            
+            // Simplex Noise (simplified)
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v - i + dot(i, C.xx);
+                vec2 i1;
+                i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+
+            void main() {
+                // Subtle noise for energy flow effect
+                float noise = snoise(vPos.xy * 2.0 + uTime * 0.5);
+                float alpha = uOpacity * (0.85 + 0.15 * noise); 
+                // Solid core
+                gl_FragColor = vec4(uColor, alpha);
+            }
+        `;
+
+        // --- Core Application Logic ---
+
+        function initApp() {
+            initThree();
+            setupUI();
+            setupEventListeners();
+            loadLocalStorage();
+            updateMagic(); 
+            
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').remove(), 500);
+            }, 1000);
+        }
+
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050505, 0.02);
+
+            camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+            // Adjusted camera distance for larger spread
+            camera.position.set(0, 0, 24);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.autoClear = false;
+            container.appendChild(renderer.domElement);
+
+            const renderPass = new THREE.RenderPass(scene, camera);
+            bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.15; 
+            bloomPass.strength = 1.6; // Slightly reduced strength for cleaner lines
+            bloomPass.radius = 0.5;
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderPass);
+            composer.addPass(bloomPass);
+
+            scene.add(new THREE.AmbientLight(0x404040));
+            setupCameraControls(container);
+
+            window.addEventListener('resize', () => {
+                const cw = container.clientWidth;
+                const ch = container.clientHeight;
+                camera.aspect = cw / ch;
+                camera.updateProjectionMatrix();
+                renderer.setSize(cw, ch);
+                composer.setSize(cw, ch);
+            });
+
+            animate();
+        }
+
+        function setupCameraControls(element) {
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            element.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+            document.addEventListener('mouseup', () => { isDragging = false; });
+            
+            element.addEventListener('mousemove', (e) => {
+                if (!isDragging || !magicGroup) return;
+                const deltaMove = { x: e.clientX - previousMousePosition.x, y: e.clientY - previousMousePosition.y };
+                magicGroup.rotation.y += deltaMove.x * 0.005;
+                magicGroup.rotation.x += deltaMove.y * 0.005;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            element.addEventListener('wheel', (e) => {
+                camera.position.z += e.deltaY * 0.01;
+                camera.position.z = Math.max(5, Math.min(camera.position.z, 60));
+            }, { passive: true });
+
+            element.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: false });
+            
+            element.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1 && magicGroup) {
+                    e.preventDefault();
+                    const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x, y: e.touches[0].clientY - previousMousePosition.y };
+                    magicGroup.rotation.y += deltaMove.x * 0.005;
+                    magicGroup.rotation.x += deltaMove.y * 0.005;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchend', () => { isDragging = false; });
+        }
+
+        function createMagicMaterial(colorHex, opacity = 1.0) {
+            const mat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0.0 },
+                    uColor: { value: new THREE.Color(colorHex) },
+                    uOpacity: { value: opacity }
+                },
+                vertexShader: vShader,
+                fragmentShader: fShader,
+                transparent: true,
+                side: THREE.DoubleSide,
+                blending: State.bgMode === 'white' ? THREE.NormalBlending : THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            activeShaderUniforms.push(mat.uniforms);
+            return mat;
+        }
+
+        // --- Talisman Logic (Dynamic Texture Generation) ---
+
+        function createTalisman(type, level, attrData) {
+            const group = new THREE.Group();
+            
+            let texture, w, h;
+            
+            if (type === 'ofuda_jp') {
+                w = 3.0; h = 8.0; 
+                texture = createOfudaTexture(level, attrData);
+            } else if (type === 'parchment') {
+                w = 7.0; h = 7.0;
+                texture = createParchmentTexture(level, attrData);
+            } else if (type === 'ofuda_tao') {
+                w = 3.6; h = 9.0;
+                texture = createTaoistTexture(level, attrData);
+            }
+
+            const mat = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true, 
+                side: THREE.DoubleSide,
+                blending: THREE.NormalBlending
+            });
+
+            // Lv1: Static Center (Z=0 relative to group)
+            const mainMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+            group.add(mainMesh);
+
+            // Lv2+: Orbital Layers
+            if (level >= 2) {
+                let innerCount = 0;
+                let outerCount = 0;
+
+                if (level === 2) { innerCount = 3; }
+                else if (level === 3) { innerCount = 6; }
+                else if (level === 4) { innerCount = 6; outerCount = 3; }
+                else if (level >= 5) { innerCount = 6; outerCount = 6; }
+
+                // Adjusted Radii to prevent overlap
+                const radius1 = 9.0; // Significant jump from center
+                const radius2 = 14.0; // Significant jump from ring 1
+
+                if (innerCount > 0) {
+                    const orbitGroup1 = new THREE.Group();
+                    orbitGroup1.userData = { isOrbit: true, rotSpeed: 0.05 }; 
+                    orbitGroup1.position.z = 1.5; // Move closer to camera than center (Lv1)
+                    
+                    for(let i=0; i<innerCount; i++) {
+                        const angle = (i / innerCount) * Math.PI * 2;
+                        const mesh = mainMesh.clone();
+                        mesh.position.set(Math.cos(angle) * radius1, Math.sin(angle) * radius1, 0);
+                        mesh.rotation.z = angle - Math.PI / 2;
+                        if (type === 'ofuda_tao') mesh.rotation.z += Math.PI;
+                        orbitGroup1.add(mesh);
+                    }
+                    group.add(orbitGroup1);
+                }
+
+                if (outerCount > 0) {
+                    const orbitGroup2 = new THREE.Group();
+                    orbitGroup2.userData = { isOrbit: true, rotSpeed: -0.03 }; 
+                    orbitGroup2.position.z = 3.0; // Move even closer to camera (Lv3)
+                    
+                    for(let i=0; i<outerCount; i++) {
+                        const angle = (i / outerCount) * Math.PI * 2;
+                        const mesh = mainMesh.clone();
+                        mesh.position.set(Math.cos(angle) * radius2, Math.sin(angle) * radius2, 0);
+                        mesh.rotation.z = angle - Math.PI / 2;
+                        if (type === 'ofuda_tao') mesh.rotation.z += Math.PI;
+                        orbitGroup2.add(mesh);
+                    }
+                    group.add(orbitGroup2);
+                }
+            }
+
+            return group;
+        }
+
+        function createOfudaTexture(level, attrData) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Background (White Washi)
+            ctx.fillStyle = "#fdfbf7";
+            ctx.fillRect(0, 0, 512, 1024);
+            addNoise(ctx, 512, 1024, 0.05);
+
+            // 2. Border
+            ctx.strokeStyle = "#000";
+            ctx.lineWidth = 5;
+            ctx.strokeRect(20, 20, 472, 984);
+
+            // 3. Bagua / Yin-Yang (Top Background)
+            ctx.save();
+            ctx.translate(256, 200);
+            ctx.globalAlpha = 0.15; // Subtle background
+            // Yin Yang
+            ctx.fillStyle = "#000";
+            ctx.beginPath(); ctx.arc(0,0,100,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#fff";
+            ctx.beginPath(); ctx.arc(0,0,100,Math.PI*0.5,Math.PI*1.5); ctx.fill();
+            ctx.beginPath(); ctx.arc(0,-50,50,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#000";
+            ctx.beginPath(); ctx.arc(0,50,50,0,Math.PI*2); ctx.fill();
+            // Trigrams (Bagua Lines)
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
+            for(let i=0; i<8; i++) {
+                const a = (i/8)*Math.PI*2;
+                ctx.rotate(Math.PI/4);
+                ctx.beginPath();
+                ctx.moveTo(110, -20); ctx.lineTo(170, -20); // Top line
+                ctx.moveTo(110, 0);   ctx.lineTo(170, 0);   // Mid line
+                ctx.moveTo(110, 20);  ctx.lineTo(170, 20);  // Bot line
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 4. Kuji (Nine Cuts) - Grid Layout
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = "black";
+            // Updated Font: Yuji Syuku
+            ctx.font = "bold 60px 'Yuji Syuku', 'Zen Old Mincho', serif";
+            const kuji = ["臨","兵","闘","者","皆","陣","列","在","前"];
+            let gridY = 320;
+            // Draw 3x3 grid faint lines
+            ctx.strokeStyle = "#aa0000"; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
+            ctx.strokeRect(106, gridY, 300, 300);
+            ctx.beginPath();
+            ctx.moveTo(206, gridY); ctx.lineTo(206, gridY+300);
+            ctx.moveTo(306, gridY); ctx.lineTo(306, gridY+300);
+            ctx.moveTo(106, gridY+100); ctx.lineTo(406, gridY+100);
+            ctx.moveTo(106, gridY+200); ctx.lineTo(406, gridY+200);
+            ctx.stroke();
+            
+            ctx.globalAlpha = 1.0;
+            for(let i=0; i<9; i++) {
+                const row = Math.floor(i/3);
+                const col = i%3;
+                ctx.fillText(kuji[i], 130 + col*100, gridY + 80 + row*100);
+            }
+
+            // 5. Main Text (Attribute) & Somin Shorai
+            ctx.font = "bold 100px 'Yuji Syuku', 'Zen Old Mincho', serif";
+            ctx.textAlign = "center";
+            
+            // USE AI GENERATED TEXT IF AVAILABLE
+            let mainText = "急急如律令"; // Default
+            if (State.customAttr && State.customAttr.kanji_idiom) {
+                mainText = State.customAttr.kanji_idiom;
+            } else if (State.customAttr && State.customAttr.kanji_char) {
+                // If only one char, add fillers or duplicate
+                mainText = State.customAttr.kanji_char + "神招来";
+            } else if (attrData.kanji) {
+                mainText = attrData.kanji;
+            }
+
+            let txtY = 750;
+            ctx.fillText(mainText, 256, txtY);
+            
+            ctx.font = "bold 50px 'Yuji Syuku', 'Zen Old Mincho', serif";
+            ctx.fillText("蘇民将来子孫也", 256, txtY + 120);
+
+            // 6. Vermilion Stamps & Pentagram
+            // Set Color based on Attribute Glow (default red #cc0000 if not AI)
+            let stampColor = "#cc0000";
+            if (State.customAttr && State.customAttr.glow) {
+                stampColor = '#' + new THREE.Color(State.customAttr.glow).getHexString();
+            }
+
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = stampColor;
+            ctx.beginPath(); ctx.arc(256, 120, 50, 0, Math.PI*2); ctx.fill(); // Top
+            ctx.beginPath(); ctx.arc(256, 900, 60, 0, Math.PI*2); ctx.fill(); // Bottom
+
+            // Seiman (Pentagram) over Bottom Stamp
+            ctx.strokeStyle = stampColor;
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            const r = 50;
+            const cx = 256;
+            const cy = 900;
+            // Draw Pentagram (One stroke style)
+            for(let i=0; i<=5; i++) {
+                const idx = (i * 2) % 5; 
+                const a = (idx / 5) * Math.PI * 2 - Math.PI / 2; // Start from top
+                const x = cx + Math.cos(a) * r;
+                const y = cy + Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createParchmentTexture(level, attrData) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Background (Aged Parchment)
+            const grd = ctx.createRadialGradient(512, 512, 100, 512, 512, 800);
+            grd.addColorStop(0, "#e8dcc5");
+            grd.addColorStop(1, "#b5a26a"); // Darker edges
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, 1024, 1024);
+            addNoise(ctx, 1024, 1024, 0.15); // More texture
+
+            // 2. Ornate Border
+            ctx.strokeStyle = "#4a3b2a";
+            ctx.lineWidth = 15;
+            ctx.strokeRect(50, 50, 924, 924);
+            ctx.lineWidth = 4;
+            ctx.strokeRect(70, 70, 884, 884);
+            // Corner flourishes
+            ctx.beginPath();
+            ctx.arc(50, 50, 80, 0, Math.PI/2); ctx.stroke();
+            ctx.arc(974, 50, 80, Math.PI/2, Math.PI); ctx.stroke();
+            ctx.arc(50, 974, 80, 0, -Math.PI/2, true); ctx.stroke();
+            ctx.arc(974, 974, 80, Math.PI, Math.PI*1.5); ctx.stroke();
+
+            // 3. Complex Magic Geometry
+            ctx.strokeStyle = "#2c1810"; // Dark Brown Ink
+            ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.arc(512, 512, 380, 0, Math.PI*2); ctx.stroke();
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(512, 512, 360, 0, Math.PI*2); ctx.stroke(); // Double ring
+
+            // Star / Polygon / Geometric pattern instead of icon
+            const sides = attrData.sides || 6;
+            
+            // Layer 1: Base Polygon
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            for(let i=0; i<=sides; i++) {
+                const a = (i/sides) * Math.PI * 2 - Math.PI/2;
+                const r = 250;
+                const x = 512 + Math.cos(a) * r;
+                const y = 512 + Math.sin(a) * r;
+                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            }
+            ctx.closePath(); ctx.stroke();
+            
+            // Layer 2: Interconnected Star (if sides > 4) or rotated polygon
+            if (sides > 4) {
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                for(let i=0; i<=sides; i++) {
+                    const a = (i/sides) * Math.PI * 2 - Math.PI/2;
+                    const r = 250;
+                    const x = 512 + Math.cos(a) * r;
+                    const y = 512 + Math.sin(a) * r;
+                    // Connect to vertex + 2
+                    const a2 = ((i+2)%sides) / sides * Math.PI * 2 - Math.PI/2;
+                    const x2 = 512 + Math.cos(a2) * r;
+                    const y2 = 512 + Math.sin(a2) * r;
+                    ctx.moveTo(x, y); ctx.lineTo(x2, y2);
+                }
+                ctx.stroke();
+            } else {
+                // Rotated square for 3 or 4 sides
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                for(let i=0; i<=sides; i++) {
+                    const a = ((i+0.5)/sides) * Math.PI * 2 - Math.PI/2;
+                    const r = 250;
+                    const x = 512 + Math.cos(a) * r;
+                    const y = 512 + Math.sin(a) * r;
+                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                }
+                ctx.closePath(); ctx.stroke();
+            }
+
+            // Layer 3: Central circle motif
+            ctx.beginPath(); ctx.arc(512, 512, 100, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(512, 512, 20, 0, Math.PI*2); ctx.fill();
+
+            // 4. Text (Runic / Latin)
+            ctx.fillStyle = "#3e2723";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 60px 'Cinzel'";
+            
+            // Circle Text
+            const spell = (attrData.spell + " " + attrData.spell).substring(0, 45);
+            const rText = 410;
+            const angleStep = (Math.PI*2) / spell.length;
+            for(let i=0; i<spell.length; i++) {
+                const char = spell[i];
+                ctx.save();
+                const a = i * angleStep - Math.PI/2;
+                ctx.translate(512 + Math.cos(a)*rText, 512 + Math.sin(a)*rText);
+                ctx.rotate(a + Math.PI/2);
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+            }
+
+            // 5. Wax Seal
+            ctx.fillStyle = "#8b0000";
+            ctx.beginPath(); ctx.arc(880, 880, 70, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "#500000"; ctx.lineWidth = 5; ctx.stroke();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createTaoistTexture(level, attrData) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Background (Imperial Yellow)
+            ctx.fillStyle = "#ffeb3b";
+            ctx.fillRect(0, 0, 512, 1024);
+            addNoise(ctx, 512, 1024, 0.04);
+
+            // 2. Cinnabar Ink (Red) - Taoist style
+            ctx.fillStyle = "#d32f2f";
+            ctx.strokeStyle = "#d32f2f";
+            
+            // Decorative Thunder Pattern Border (Rai-mon)
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, 492, 1004);
+            // Simple spiral pattern at corners
+            const spiral = (cx, cy) => {
+                ctx.beginPath();
+                ctx.moveTo(cx-20, cy-20); ctx.lineTo(cx+20, cy-20); ctx.lineTo(cx+20, cy+20);
+                ctx.lineTo(cx-20, cy+20); ctx.lineTo(cx-20, cy-10); ctx.lineTo(cx+10, cy-10);
+                ctx.stroke();
+            };
+            spiral(40, 40); spiral(472, 40); spiral(40, 984); spiral(472, 984);
+
+            // 3. Header: Bagua & Triple Check
+            ctx.lineWidth = 6;
+            // Bagua Outline
+            ctx.beginPath(); 
+            for(let i=0; i<=8; i++) {
+                const a = (i/8)*Math.PI*2 - Math.PI/8;
+                const r = 70;
+                const x = 256 + Math.cos(a)*r;
+                const y = 90 + Math.sin(a)*r;
+                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            }
+            ctx.stroke();
+            // 3 Checks (San-Sei)
+            // Use Yuji Syuku or Ma Shan Zheng for consistency
+            ctx.font = "80px 'Ma Shan Zheng', 'Yuji Syuku', serif";
+            ctx.textAlign = "center";
+            ctx.fillText("VVV", 256, 200); 
+
+            // 4. "敕令" (Imperial Order)
+            ctx.font = "bold 140px 'Ma Shan Zheng', 'Yuji Syuku', serif";
+            ctx.fillText("敕令", 256, 320);
+
+            // 5. Fu-Lu (The squiggly mystical lines) - Enhanced
+            ctx.beginPath();
+            ctx.moveTo(256, 350);
+            
+            // Complex vertical structure mimicking authentic Fu script
+            // Top knot
+            ctx.bezierCurveTo(230, 360, 230, 380, 256, 390);
+            ctx.bezierCurveTo(280, 380, 280, 360, 256, 350);
+            
+            // Vertical flow
+            ctx.moveTo(256, 390);
+            ctx.lineTo(256, 950);
+
+            // Left loops
+            for(let i=0; i<4; i++) {
+                const y = 420 + i * 120;
+                ctx.moveTo(256, y);
+                ctx.bezierCurveTo(100, y+20, 100, y+100, 256, y+80);
+            }
+            // Right loops
+            for(let i=0; i<4; i++) {
+                const y = 450 + i * 120;
+                ctx.moveTo(256, y);
+                ctx.bezierCurveTo(410, y+20, 410, y+100, 256, y+80);
+            }
+
+            ctx.lineWidth = 10;
+            ctx.lineCap = "round";
+            ctx.stroke();
+            
+            // Stars/Dots (Seishuku)
+            ctx.fillStyle = "#d32f2f";
+            for(let k=0; k<7; k++) { // Big Dipper shape approx
+                ctx.beginPath(); ctx.arc(100 + k*20, 600 + Math.sin(k)*50, 10, 0, Math.PI*2); ctx.fill();
+            }
+
+            // 6. Main Text Overlay (e.g. "Kyonshi Suppress")
+            ctx.fillStyle = "#d32f2f";
+            // Use Yuji Syuku as base, Ma Shan Zheng as fallback
+            ctx.font = "bold 80px 'Yuji Syuku', 'Ma Shan Zheng', serif";
+            ctx.fillText("随身保命", 256, 550);
+            
+            // USE AI GENERATED TEXT IF AVAILABLE
+            let mainText = "急急如律令"; // Default
+            if (State.customAttr && State.customAttr.kanji_idiom) {
+                mainText = State.customAttr.kanji_idiom;
+            } else if (State.customAttr && State.customAttr.kanji_char) {
+                mainText = State.customAttr.kanji_char + "神招来";
+            } else if (attrData.kanji) {
+                mainText = attrData.kanji;
+            }
+            ctx.fillText(mainText, 256, 650);
+
+            // 7. Side Vertical Text
+            ctx.font = "40px 'Yuji Syuku', 'Ma Shan Zheng', serif";
+            ctx.fillText("天師", 80, 400);
+            ctx.fillText("降魔", 80, 450);
+            ctx.fillText("太上", 432, 400);
+            ctx.fillText("老君", 432, 450);
+
+            // 8. Bagua Octagon Mark at Bottom (New)
+            if (State.customAttr && State.customAttr.glow) {
+                ctx.fillStyle = '#' + new THREE.Color(State.customAttr.glow).getHexString();
+                const octX = 256;
+                const octY = 900;
+                const octR = 60;
+                ctx.beginPath();
+                for (let i = 0; i < 8; i++) {
+                    const a = (i / 8) * Math.PI * 2 - Math.PI / 8; // Rotate to align flat top
+                    const x = octX + Math.cos(a) * octR;
+                    const y = octY + Math.sin(a) * octR;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Add border to pop
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function addNoise(ctx, w, h, opacity) {
+            const imgData = ctx.getImageData(0,0,w,h);
+            const data = imgData.data;
+            for(let i=0; i<data.length; i+=4) {
+                const grain = (Math.random() - 0.5) * 255 * opacity;
+                data[i] += grain;
+                data[i+1] += grain;
+                data[i+2] += grain;
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        // --- Helper: Taijitu Texture ---
+        function createTaijituTexture(colorHex) {
+            const size = 512;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const cx = size/2; const cy = size/2; const r = size/2 * 0.95;
+
+            const col = new THREE.Color(colorHex);
+            const styleColor = `rgb(${col.r*255},${col.g*255},${col.b*255})`;
+
+            ctx.fillStyle = styleColor;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, Math.PI * 0.5, Math.PI * 1.5);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy - r/2, r/2, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(cx, cy + r/2, r/2, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy - r/2, r/6, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = styleColor;
+            ctx.beginPath();
+            ctx.arc(cx, cy + r/2, r/6, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.strokeStyle = styleColor;
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.stroke();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- Magic Generation Logic ---
+
+        function updateMagic() {
+            if (!magicGroup) {
+                magicGroup = new THREE.Group();
+                scene.add(magicGroup);
+            } else {
+                while(magicGroup.children.length > 0){ 
+                    const obj = magicGroup.children[0];
+                    magicGroup.remove(obj);
+                    if(obj.geometry) obj.geometry.dispose();
+                    if(obj.material) {
+                        if (obj.material.map) obj.material.map.dispose();
+                        obj.material.dispose();
+                    }
+                }
+                activeShaderUniforms = [];
+            }
+
+            const attrData = State.customAttr || AttributePresets[State.attribute];
+            if (!attrData) return;
+
+            const nameEl = document.getElementById('magicNameDisplay');
+            const subEl = document.getElementById('magicSubDisplay');
+            nameEl.innerText = `${attrData.name.toUpperCase()} CIRCLE`;
+            nameEl.style.color = State.bgMode === 'white' ? '#333' : '#' + new THREE.Color(attrData.glow).getHexString();
+            subEl.innerText = `${State.system.toUpperCase()} System / Lv.${State.level}`;
+            document.getElementById('levelVal').innerText = `Lv.${State.level}`;
+            document.getElementById('speedVal').innerText = State.speed;
+
+            if (State.bgMode === 'white') {
+                scene.background = new THREE.Color(0xf8fafc);
+                scene.fog = null;
+                bloomPass.strength = 0.3; 
+                document.getElementById('canvas-wrapper').style.backgroundColor = '#f8fafc';
+            } else {
+                scene.background = new THREE.Color(0x050505);
+                scene.fog = new THREE.FogExp2(0x050505, 0.02);
+                bloomPass.strength = 1.8; 
+                document.getElementById('canvas-wrapper').style.backgroundColor = '#050505';
+            }
+
+            // --- System Selection (AI Mixed Layers or Single) ---
+            let activeSystem = State.system;
+            let aiLayers = null;
+            let textSystem = activeSystem; // Default text system
+
+            if (activeSystem === 'ai_custom' && State.customAttr) {
+                // If AI suggested explicit layers
+                if (State.customAttr.layer_systems && Array.isArray(State.customAttr.layer_systems)) {
+                    aiLayers = State.customAttr.layer_systems;
+                    
+                    // Determine dominant system for text (Majority Vote)
+                    const counts = {};
+                    aiLayers.forEach(sys => { counts[sys] = (counts[sys] || 0) + 1; });
+                    let maxCount = 0;
+                    let winner = 'solomonic'; // Fallback for tie/chaos
+                    let tie = false;
+
+                    for (const sys in counts) {
+                        if (counts[sys] > maxCount) {
+                            maxCount = counts[sys];
+                            winner = sys;
+                            tie = false;
+                        } else if (counts[sys] === maxCount) {
+                            tie = true;
+                        }
+                    }
+                    // If chaos (all 1s) or strong tie, use solomonic (Hebrew) for mystical feel
+                    textSystem = (maxCount > 1 && !tie) ? winner : 'solomonic';
+                } else if (State.customAttr.system) {
+                    activeSystem = State.customAttr.system; // Fallback to single AI system
+                    textSystem = activeSystem;
+                } else {
+                    activeSystem = 'alchemy';
+                    textSystem = 'alchemy';
+                }
+            }
+
+            // CHECK: Is this a Talisman system? (AI mix does not apply to Talismans)
+            if (['ofuda_jp', 'parchment', 'ofuda_tao'].includes(activeSystem)) {
+                bloomPass.strength = 0.6; // Reduce bloom for paper readability
+                const talismanGroup = createTalisman(activeSystem, State.level, attrData);
+                talismanGroup.position.z = 1; // Move Talisman forward
+                magicGroup.add(talismanGroup);
+                
+                // Add Mandala behind talisman if enabled
+                if (State.mandala !== 'none') {
+                    // Use slightly larger base radius for visibility behind talisman
+                    const glowColor = State.bgMode === 'white' ? 0x000000 : attrData.glow;
+                    const lineMat = createMagicMaterial(glowColor, State.bgMode === 'white' ? 0.7 : 0.8);
+                    const mandalaRadius = (State.level * 2.5) * 1.5 * State.mandalaSize; 
+                    const mandalaLayer = createMandalaLayer(State.mandala, mandalaRadius, glowColor, lineMat, activeSystem);
+                    if (mandalaLayer) {
+                         mandalaLayer.position.z = -1; // Move Mandala backward
+                         magicGroup.add(mandalaLayer);
+                    }
+                }
+
+                if (State.showParticles) {
+                    create3DParticles(attrData.glow, State.level, State.attribute);
+                }
+                return; 
+            }
+
+            // NORMAL MAGIC CIRCLE MODE
+            const glowColor = State.bgMode === 'white' ? 0x000000 : attrData.glow;
+            const lineMat = createMagicMaterial(glowColor, State.bgMode === 'white' ? 0.7 : 0.8);
+            
+            const getRadius = (lvl) => lvl * 2.5; 
+            const baseThickness = 0.05; 
+
+            // Base Magic Circle Layers
+            for (let i = 1; i <= State.level; i++) {
+                const radius = getRadius(i);
+                
+                // Determine system for THIS layer
+                let currentSys = activeSystem;
+                if (aiLayers) {
+                    // Use layer system if available (index 0 for Lv1, etc.)
+                    // Fallback to alchemy if array is short
+                    currentSys = aiLayers[Math.min(i-1, aiLayers.length-1)] || 'alchemy';
+                }
+
+                const layerGroup = new THREE.Group();
+                layerGroup.userData = { 
+                    rotSpeed: (i % 2 === 0 ? 1 : -1) * (0.05 + Math.random() * 0.08)
+                };
+
+                let ring;
+                if (currentSys === 'seimei') {
+                    ring = createDashedRing(radius, lineMat);
+                } else {
+                    const rGeo = new THREE.RingGeometry(radius - 0.04, radius + 0.04, 128);
+                    ring = new THREE.Mesh(rGeo, lineMat);
+                }
+                layerGroup.add(ring);
+
+                if (i === 2 || i === 4) {
+                    const mandala = createGeometricMandala(radius, glowColor, attrData.mandala, i, lineMat, currentSys, State.attribute);
+                    layerGroup.add(mandala);
+                }
+
+                if (i % 2 !== 0) {
+                    // Odd Layers: Text
+                    // Use dominant textSystem for consistency
+                    let textToUse = attrData.spell;
+                    // FIX: If system is Seimei (Onmyodo), prioritize Kanji Idiom from AI
+                    if (textSystem === 'seimei' && attrData.kanji_idiom) {
+                        textToUse = attrData.kanji_idiom + " " + attrData.kanji_idiom + " " + attrData.kanji_idiom;
+                    } else if (textSystem === 'seimei' && attrData.kanji_char) {
+                        textToUse = attrData.kanji_char + " " + attrData.kanji_char + " " + attrData.kanji_char + " " + attrData.kanji_char;
+                    }
+
+                    const textRing = createTextRing(radius * 0.92, textToUse, glowColor, textSystem);
+                    layerGroup.add(textRing);
+                    
+                    // Outer decoration for max level
+                    if (i === 5 && State.level === 5 && currentSys !== 'seimei') {
+                        const deco = createOuterDecoration(radius * 0.9, glowColor, currentSys, State.attribute, lineMat);
+                        layerGroup.add(deco);
+                    }
+                } else {
+                    // Even Layers: Shapes
+                    if (currentSys === 'alchemy') {
+                        const symbols = createPlanetarySymbols(radius, glowColor);
+                        layerGroup.add(symbols);
+                        const shape = createBoldPoly(radius, i+2, baseThickness, lineMat);
+                        layerGroup.add(shape);
+
+                    } else if (currentSys === 'enochian') {
+                        const grid = createEnochianGrid(radius, lineMat);
+                        layerGroup.add(grid);
+
+                    } else if (currentSys === 'solomonic') {
+                        const star = createBoldStar(radius, 3, baseThickness, lineMat);
+                        const star2 = star.clone();
+                        star2.rotation.z = Math.PI;
+                        layerGroup.add(star);
+                        layerGroup.add(star2);
+
+                    } else if (currentSys === 'seimei') {
+                        const pentagram = createBoldStar(radius, 5, baseThickness, lineMat);
+                        layerGroup.add(pentagram);
+
+                    } else if (currentSys === 'runic') {
+                        const shape = createBoldPoly(radius, attrData.sides || 4, baseThickness, lineMat);
+                        // Add Runic specific runes if feasible, otherwise poly is fine
+                        layerGroup.add(shape);
+                    } else { 
+                        // Fallback generic
+                        const shape = createBoldPoly(radius, attrData.sides || 6, baseThickness, lineMat);
+                        layerGroup.add(shape);
+                    }
+
+                    if (i === 4 && State.level === 5 && currentSys === 'seimei') {
+                        const rLv5 = getRadius(5); 
+                        const deco = createOuterDecoration(rLv5 * 0.9, glowColor, currentSys, State.attribute, lineMat);
+                        deco.userData = {}; 
+                        layerGroup.add(deco);
+                    }
+                }
+
+                if (State.showPlanets && currentSys !== 'seimei') { 
+                    addPlanets(layerGroup, radius, glowColor);
+                }
+
+                magicGroup.add(layerGroup);
+            }
+
+            // Core Logic (Based on Lv1 System or Dominant Text System)
+            const coreGroup = new THREE.Group();
+            const coreSys = aiLayers ? aiLayers[0] : activeSystem;
+
+            if (coreSys === 'seimei') {
+                const corePenta = createBoldStar(1.0, 5, 0.06, lineMat);
+                coreGroup.add(corePenta);
+                
+                // Use AI Kanji char if available
+                const kanji = (State.customAttr && State.customAttr.kanji_char) 
+                    ? State.customAttr.kanji_char 
+                    : getAttributeKanji(attrData.name);
+                    
+                const kTex = createKanjiTexture(kanji, glowColor);
+                const kMat = new THREE.MeshBasicMaterial({ map:kTex, transparent:true, side:THREE.DoubleSide, depthWrite:false, color: glowColor });
+                if(State.bgMode !== 'white') kMat.blending = THREE.AdditiveBlending;
+                const kMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2,1.2), kMat);
+                coreGroup.add(kMesh);
+
+                if (State.level >= 3) {
+                    const taijituTex = createTaijituTexture(glowColor);
+                    const tMat = new THREE.MeshBasicMaterial({ 
+                        map: taijituTex, transparent: true, opacity: 0.15, 
+                        side: THREE.DoubleSide, blending: State.bgMode === 'white' ? THREE.NormalBlending : THREE.AdditiveBlending 
+                    });
+                    const tRadius = getRadius(3);
+                    const tMesh = new THREE.Mesh(new THREE.PlaneGeometry(tRadius * 1.5, tRadius * 1.5), tMat);
+                    coreGroup.add(tMesh);
+                }
+                
+                if (State.level >= 4) {
+                    const bigKMat = kMat.clone();
+                    bigKMat.opacity = 0.15; 
+                    const bigRadius = getRadius(4);
+                    const bigKMesh = new THREE.Mesh(new THREE.PlaneGeometry(bigRadius * 1.0, bigRadius * 1.0), bigKMat);
+                    coreGroup.add(bigKMesh);
+                }
+
+            } else if (coreSys === 'solomonic') {
+                const hex1 = createBoldStar(0.8, 3, 0.06, lineMat);
+                const hex2 = hex1.clone(); hex2.rotation.z = Math.PI;
+                coreGroup.add(hex1); coreGroup.add(hex2);
+
+            } else if (coreSys === 'alchemy') {
+                const tri = createBoldPoly(0.8, 3, 0.06, lineMat);
+                const sq = createBoldPoly(0.6, 4, 0.06, lineMat);
+                coreGroup.add(tri); coreGroup.add(sq);
+
+            } else {
+                const coreMesh = createBoldPoly(0.8, attrData.sides, 0.06, lineMat);
+                coreGroup.add(coreMesh);
+                const innerShape = createBoldPoly(0.4, attrData.sides, 0.05, lineMat);
+                innerShape.rotation.z = Math.PI;
+                coreGroup.add(innerShape);
+            }
+
+            const centerRing = new THREE.Mesh(new THREE.RingGeometry(0.1, 0.15, 32), lineMat);
+            coreGroup.add(centerRing);
+
+            coreGroup.userData = { isCore: true };
+            magicGroup.add(coreGroup);
+
+            // --- New: Mandala Decoration Layer ---
+            if (State.mandala !== 'none') {
+                const mandalaRadius = getRadius(State.level) * 1.2 * State.mandalaSize; 
+                const mandalaLayer = createMandalaLayer(State.mandala, mandalaRadius, glowColor, lineMat, textSystem);
+                if (mandalaLayer) {
+                     magicGroup.add(mandalaLayer);
+                }
+            }
+
+            if (State.showParticles) {
+                create3DParticles(glowColor, State.level, State.attribute);
+            }
+        }
+
+        // --- New: Mandala Creation Logic ---
+        function createMandalaLayer(type, radius, color, baseMaterial, systemName) {
+            const group = new THREE.Group();
+            group.userData = { rotSpeed: 0.05, isMandala: true }; // Independent rotation, slower
+
+            // Create a specific material for mandala
+            const mandalaMat = baseMaterial.clone();
+            mandalaMat.uniforms.uOpacity.value = 0.6; // Slightly subtle
+            activeShaderUniforms.push(mandalaMat.uniforms);
+
+            if (type === 'circle') {
+                // "Kamon" style: Ten Stars (Juyou)
+                // Central circle area
+                const count = 10; // Updated from 9 to 10
+                for(let i=0; i<count; i++) {
+                    const a = (i/count) * Math.PI * 2;
+                    // Smaller circles to not obscure
+                    const orb = new THREE.Mesh(new THREE.RingGeometry(radius * 0.08, radius * 0.1, 32), mandalaMat);
+                    orb.position.set(Math.cos(a) * radius * 0.5, Math.sin(a) * radius * 0.5, 0);
+                    group.add(orb);
+                    
+                    // Connection lines - thinner
+                    const line = createThickLine(
+                        new THREE.Vector3(0,0,0), 
+                        new THREE.Vector3(Math.cos(a)*radius*0.4, Math.sin(a)*radius*0.4, 0), 
+                        0.015, mandalaMat
+                    );
+                    group.add(line);
+                }
+                // Outer rings
+                group.add(new THREE.Mesh(new THREE.RingGeometry(radius * 0.7, radius * 0.71, 64), mandalaMat));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(radius * 0.9, radius * 0.91, 64), mandalaMat));
+
+            } else if (type === 'flower') {
+                // Lotus Pattern: 8 Petals, more detailed
+                const petals = 8;
+                const rOut = radius * 0.7;
+                const rMid = radius * 0.45;
+                const rIn = radius * 0.15;
+                
+                // Outer Petals (Lotus shape)
+                for(let i=0; i<petals; i++) {
+                    const a = (i/petals) * Math.PI * 2;
+                    const petalGroup = new THREE.Group();
+                    petalGroup.rotation.z = a - Math.PI/2;
+                    petalGroup.position.set(Math.cos(a)*rIn, Math.sin(a)*rIn, 0);
+
+                    // Create pointed lotus petal shape outline using thicker lines
+                    const pts = [];
+                    pts.push(new THREE.Vector3(0, 0, 0));
+                    pts.push(new THREE.Vector3(rOut * 0.3, rOut * 0.5, 0));
+                    pts.push(new THREE.Vector3(0, rOut, 0)); // Tip
+                    pts.push(new THREE.Vector3(-rOut * 0.3, rOut * 0.5, 0));
+                    
+                    // Replaced thin THREE.Line with thicker Mesh segments
+                    const thickness = 0.04;
+                    petalGroup.add(createThickLine(pts[0], pts[1], thickness, mandalaMat));
+                    petalGroup.add(createThickLine(pts[1], pts[2], thickness, mandalaMat));
+                    petalGroup.add(createThickLine(pts[2], pts[3], thickness, mandalaMat));
+                    petalGroup.add(createThickLine(pts[3], pts[0], thickness, mandalaMat));
+                    
+                    // Add inner detail line to petal
+                    const midLine = createThickLine(new THREE.Vector3(0,0,0), new THREE.Vector3(0, rOut*0.8, 0), 0.06, mandalaMat);
+                    petalGroup.add(midLine);
+
+                    group.add(petalGroup);
+                }
+
+                // Inner small petals (Stamen)
+                for(let i=0; i<petals; i++) {
+                    const a = ((i+0.5)/petals) * Math.PI * 2;
+                    const petalGroup = new THREE.Group();
+                    petalGroup.rotation.z = a - Math.PI/2;
+                    
+                    const shape = new THREE.EllipseCurve(0, rMid*0.6, rMid*0.15, rMid*0.3, 0, Math.PI*2);
+                    const geometry = new THREE.BufferGeometry().setFromPoints(shape.getPoints(20));
+                    const line = new THREE.Line(geometry, mandalaMat);
+                    petalGroup.add(line);
+                    group.add(petalGroup);
+                }
+
+                // Center Seed Pod
+                const seedPod = new THREE.Mesh(new THREE.RingGeometry(radius * 0.1, radius * 0.12, 32), mandalaMat);
+                group.add(seedPod);
+                
+                // Outer Radiance
+                const outerCurve = createDashedRing(radius * 0.9, mandalaMat);
+                group.add(outerCurve);
+
+            } else if (type === 'text') {
+                // Text Rings
+                let t1Text = "VERITAS VOS LIBERABIT";
+                let t2Text = "AS ABOVE SO BELOW";
+                
+                if (systemName === 'seimei') {
+                     t1Text = "臨兵闘者皆陣列在前"; // 九字
+                     t2Text = "急急如律令"; // 一般的な呪文
+                     
+                     if (State.customAttr && State.customAttr.kanji_idiom) {
+                         t2Text = State.customAttr.kanji_idiom;
+                     } else {
+                         const attr = AttributePresets[State.attribute];
+                         if(attr && attr.kanji) t2Text = attr.kanji + "招来";
+                     }
+                }
+
+                const t1 = createTextRing(radius * 0.4, t1Text, color, systemName);
+                group.add(t1);
+                
+                const t2 = createTextRing(radius * 0.7, t2Text, color, systemName);
+                t2.rotation.z = Math.PI / 4; 
+                group.add(t2);
+
+            } else if (type === 'sun') {
+                // Sun Pattern: Rays and Triangles
+                const rays = 12;
+                for(let i=0; i<rays; i++) {
+                    const a = (i/rays) * Math.PI * 2;
+                    const p1 = new THREE.Vector3(Math.cos(a)*radius*0.4, Math.sin(a)*radius*0.4, 0);
+                    const p2 = new THREE.Vector3(Math.cos(a)*radius*0.9, Math.sin(a)*radius*0.9, 0);
+                    // Main Ray - Thicker
+                    group.add(createThickLine(p1, p2, 0.08, mandalaMat));
+                    
+                    // Triangle tip - Thicker
+                    const tri = createBoldPoly(radius * 0.1, 3, 0.06, mandalaMat);
+                    tri.position.copy(p2);
+                    tri.rotation.z = a - Math.PI/2; // Point outward
+                    group.add(tri);
+                }
+                group.add(new THREE.Mesh(new THREE.RingGeometry(radius * 0.4, radius * 0.42, 64), mandalaMat));
+
+            } else if (type === 'moon') {
+                // Moon Pattern: Twin Moons on an Orbit
+                // 1. Orbit Line
+                const rOrbit = radius * 0.7;
+                const orbitCurve = new THREE.EllipseCurve(0, 0, rOrbit, rOrbit, 0, 2 * Math.PI, false, 0);
+                const orbitPts = orbitCurve.getPoints(128);
+                const orbitLineGeo = new THREE.BufferGeometry().setFromPoints(orbitPts);
+                const orbitLine = new THREE.Line(orbitLineGeo, mandalaMat);
+                group.add(orbitLine);
+
+                // 2. Twin Moons
+                const moonRadius = radius * 0.25; 
+                
+                // Moon 1 (Top)
+                const moon1 = new THREE.Mesh(new THREE.RingGeometry(moonRadius * 0.95, moonRadius, 64), mandalaMat);
+                moon1.position.set(0, rOrbit, 0);
+                group.add(moon1);
+
+                // Moon 2 (Bottom - Diagonal)
+                const moon2 = new THREE.Mesh(new THREE.RingGeometry(moonRadius * 0.95, moonRadius, 64), mandalaMat);
+                moon2.position.set(0, -rOrbit, 0);
+                group.add(moon2);
+
+                // 3. Outer Rune Ring (Kept for atmosphere)
+                const runeText = "LUNA MYSTERIUM NOCTIS AETERNAE";
+                const runeRing = createTextRing(radius * 1.05, runeText, color, 'runic');
+                group.add(runeRing);
+            } else if (type === 'snow') {
+                // Snow Pattern: Snowflake / Crystallization
+                // Updated line thickness as per user request (approx 6x thicker)
+                const branches = 6;
+                for (let i = 0; i < branches; i++) {
+                    const a = (i / branches) * Math.PI * 2;
+                    const groupBranch = new THREE.Group();
+                    groupBranch.rotation.z = a - Math.PI/2;
+                    
+                    // Main stem
+                    const pStart = new THREE.Vector3(0, 0, 0);
+                    const pEnd = new THREE.Vector3(0, radius, 0);
+                    // Thickness 0.02 -> 0.12
+                    groupBranch.add(createThickLine(pStart, pEnd, 0.12, mandalaMat));
+                    
+                    // Branching V shapes
+                    for(let j=1; j<=3; j++) {
+                        const dist = radius * (j * 0.25);
+                        const branchSize = radius * (0.15 + (0.05 * j));
+                        
+                        // Left branch
+                        const vL = new THREE.Vector3(-branchSize * 0.5, dist + branchSize * 0.5, 0);
+                        // Thickness 0.015 -> 0.09
+                        groupBranch.add(createThickLine(new THREE.Vector3(0, dist, 0), vL, 0.09, mandalaMat));
+                        
+                        // Right branch
+                        const vR = new THREE.Vector3(branchSize * 0.5, dist + branchSize * 0.5, 0);
+                        // Thickness 0.015 -> 0.09
+                        groupBranch.add(createThickLine(new THREE.Vector3(0, dist, 0), vR, 0.09, mandalaMat));
+                    }
+                    
+                    // Terminal Diamond
+                    const tipSize = radius * 0.1;
+                    // Thickness 0.02 -> 0.12
+                    const tip = createBoldPoly(tipSize, 4, 0.12, mandalaMat);
+                    tip.position.set(0, radius, 0);
+                    groupBranch.add(tip);
+
+                    group.add(groupBranch);
+                }
+                
+                // Connecting hexagons
+                // Thickness 0.02 -> 0.12
+                const hex1 = createBoldPoly(radius * 0.5, 6, 0.12, mandalaMat);
+                group.add(hex1);
+                
+                // Thickness 0.01 -> 0.06
+                const hex2 = createBoldPoly(radius * 0.75, 6, 0.06, mandalaMat);
+                group.add(hex2);
+            }
+
+            return group;
+        }
+
+        function createThickLine(p1, p2, thickness, material) {
+            const vec = new THREE.Vector3().subVectors(p2, p1);
+            const len = vec.length();
+            const angle = Math.atan2(vec.y, vec.x);
+            const geo = new THREE.PlaneGeometry(len, thickness);
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.position.copy(p1).add(p2).multiplyScalar(0.5);
+            mesh.rotation.z = angle;
+            return mesh;
+        }
+
+        function createBoldPoly(radius, sides, thickness, material) {
+            const group = new THREE.Group();
+            const pts = [];
+            for(let i=0; i<=sides; i++) {
+                const a = (i/sides) * Math.PI * 2 - Math.PI/2;
+                pts.push(new THREE.Vector3(Math.cos(a)*radius, Math.sin(a)*radius, 0));
+            }
+            
+            for(let i=0; i<sides; i++) {
+                const segment = createThickLine(pts[i], pts[i+1], thickness, material);
+                group.add(segment);
+            }
+            return group;
+        }
+
+        function createBoldStar(radius, points, thickness, material) {
+            const group = new THREE.Group();
+            const pts = [];
+            if (points === 3) {
+                for(let i=0; i<=3; i++) {
+                    const a = (i/3)*Math.PI*2 - Math.PI/2;
+                    pts.push(new THREE.Vector3(Math.cos(a)*radius, Math.sin(a)*radius, 0));
+                }
+                for(let i=0; i<3; i++) {
+                    group.add(createThickLine(pts[i], pts[i+1], thickness, material));
+                }
+            } else if (points === 5) {
+                const step = 2; 
+                for(let i=0; i<6; i++) {
+                    const a = ((i * step) % 5) / 5 * Math.PI * 2 - Math.PI/2;
+                    pts.push(new THREE.Vector3(Math.cos(a)*radius, Math.sin(a)*radius, 0));
+                }
+                for(let i=0; i<5; i++) {
+                    group.add(createThickLine(pts[i], pts[i+1], thickness, material));
+                }
+            }
+            return group;
+        }
+
+        function createSparkleShape(radius, thickness, material) {
+            const group = new THREE.Group();
+            const r = radius;
+            const pts = [];
+            const segs = 20;
+            const corners = [{x:0, y:r}, {x:r, y:0}, {x:0, y:-r}, {x:-r, y:0}];
+            
+            for(let c=0; c<4; c++) {
+                const pStart = corners[c];
+                const pEnd = corners[(c+1)%4];
+                const pCtrl = {x:0, y:0}; 
+                for(let i=0; i<=segs; i++) {
+                    const t = i/segs;
+                    const tx = (1-t)*(1-t)*pStart.x + 2*(1-t)*t*pCtrl.x + t*t*pEnd.x;
+                    const ty = (1-t)*(1-t)*pStart.y + 2*(1-t)*t*pCtrl.y + t*t*pEnd.y;
+                    pts.push(new THREE.Vector3(tx, ty, 0));
+                }
+            }
+            const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), material);
+            group.add(line);
+            return group;
+        }
+
+        function createDashedRing(radius, material) {
+            const group = new THREE.Group();
+            const segAngle = (Math.PI*2) / 8; 
+            for(let i=0; i<8; i++) {
+                const a = i * segAngle;
+                const w = 0.4;
+                const h = 0.08; 
+                for(let k=0; k<3; k++) {
+                    const geo = new THREE.PlaneGeometry(w, h);
+                    const mesh = new THREE.Mesh(geo, material);
+                    const rOff = (k-1)*0.15;
+                    mesh.position.set(Math.cos(a)*(radius+rOff), Math.sin(a)*(radius+rOff), 0);
+                    mesh.rotation.z = a + Math.PI/2;
+                    group.add(mesh);
+                }
+            }
+            return group;
+        }
+
+        function createPlanetarySymbols(radius, color) {
+            const group = new THREE.Group();
+            const symbols = ["☉", "☽", "☿", "♀", "♂", "♃", "♄"];
+            const count = symbols.length;
+            for(let i=0; i<count; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.font = "bold 40px 'Cinzel'";
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(symbols[i], 32, 32);
+                
+                const tex = new THREE.CanvasTexture(canvas);
+                const mat = new THREE.MeshBasicMaterial({ map: tex, color: color, transparent: true, side: THREE.DoubleSide });
+                if(State.bgMode !== 'white') mat.blending = THREE.AdditiveBlending;
+                
+                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), mat);
+                const angle = (i/count) * Math.PI * 2;
+                mesh.position.set(Math.cos(angle)*radius, Math.sin(angle)*radius, 0);
+                group.add(mesh);
+            }
+            return group;
+        }
+
+        function createEnochianGrid(radius, material) {
+            const group = new THREE.Group();
+            const size = radius * 1.4;
+            const steps = 4;
+            const stepSize = size / steps;
+            const thickness = 0.05;
+            for(let i=1; i<steps; i++) {
+                const x = -size/2 + i*stepSize;
+                group.add(createThickLine(new THREE.Vector3(x, -size/2, 0), new THREE.Vector3(x, size/2, 0), thickness, material));
+            }
+            for(let i=1; i<steps; i++) {
+                const y = -size/2 + i*stepSize;
+                group.add(createThickLine(new THREE.Vector3(-size/2, y, 0), new THREE.Vector3(size/2, y, 0), thickness, material));
+            }
+            const tl = new THREE.Vector3(-size/2, size/2, 0);
+            const tr = new THREE.Vector3(size/2, size/2, 0);
+            const br = new THREE.Vector3(size/2, -size/2, 0);
+            const bl = new THREE.Vector3(-size/2, -size/2, 0);
+            group.add(createThickLine(tl, tr, thickness, material));
+            group.add(createThickLine(tr, br, thickness, material));
+            group.add(createThickLine(br, bl, thickness, material));
+            group.add(createThickLine(bl, tl, thickness, material));
+            return group;
+        }
+
+        function createOuterDecoration(radius, color, sys, attrName, material) {
+            const group = new THREE.Group();
+            group.userData = { isMandala: true, rotSpeed: 0.2 }; 
+            const rInner = radius * 0.92;
+            const rOuter = radius * 1.0; 
+            
+            if (attrName === 'fire') {
+                const count = 16;
+                for(let i=0; i<count; i++) {
+                    const a = (i/count)*Math.PI*2;
+                    const p1 = new THREE.Vector3(Math.cos(a)*rInner, Math.sin(a)*rInner, 0);
+                    const p2 = new THREE.Vector3(Math.cos(a)*rOuter*1.1, Math.sin(a)*rOuter*1.1, 0);
+                    const da = (Math.PI*2)/count * 0.3;
+                    const p3 = new THREE.Vector3(Math.cos(a+da)*rInner*1.05, Math.sin(a+da)*rInner*1.05, 0);
+                    const p4 = new THREE.Vector3(Math.cos(a-da)*rInner*1.05, Math.sin(a-da)*rInner*1.05, 0);
+                    const geo = new THREE.BufferGeometry().setFromPoints([p1, p2, p3, p2, p4, p2]);
+                    group.add(new THREE.Line(geo, material));
+                }
+            } else if (attrName === 'water') {
+                const count = 24;
+                const pts = [];
+                for(let i=0; i<=count*4; i++) {
+                    const a = (i/(count*4))*Math.PI*2;
+                    const wave = Math.sin(a * count) * 0.05 * radius;
+                    pts.push(new THREE.Vector3(Math.cos(a)*(rInner + wave), Math.sin(a)*(rInner + wave), 0));
+                }
+                group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), material));
+            } else if (attrName === 'earth') {
+                const count = 12;
+                const pts = [];
+                for(let i=0; i<count; i++) {
+                    const a1 = (i/count)*Math.PI*2;
+                    const a2 = ((i+0.5)/count)*Math.PI*2;
+                    const a3 = ((i+1)/count)*Math.PI*2;
+                    pts.push(new THREE.Vector3(Math.cos(a1)*rInner, Math.sin(a1)*rInner, 0));
+                    pts.push(new THREE.Vector3(Math.cos(a1)*rOuter, Math.sin(a1)*rOuter, 0));
+                    pts.push(new THREE.Vector3(Math.cos(a2)*rOuter, Math.sin(a2)*rOuter, 0));
+                    pts.push(new THREE.Vector3(Math.cos(a2)*rInner, Math.sin(a2)*rInner, 0));
+                    pts.push(new THREE.Vector3(Math.cos(a3)*rInner, Math.sin(a3)*rInner, 0));
+                }
+                group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), material));
+            } else if (attrName === 'wind') {
+                const count = 8;
+                for(let i=0; i<count; i++) {
+                    const a = (i/count)*Math.PI*2;
+                    const sGroup = new THREE.Group();
+                    sGroup.position.set(Math.cos(a)*rInner, Math.sin(a)*rInner, 0);
+                    sGroup.rotation.z = a;
+                    const spPts = [];
+                    for(let k=0; k<20; k++) {
+                        const ang = k * 0.5;
+                        const rad = k * 0.02;
+                        spPts.push(new THREE.Vector3(Math.cos(ang)*rad, Math.sin(ang)*rad, 0));
+                    }
+                    sGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(spPts), material));
+                    group.add(sGroup);
+                }
+            } else if (attrName === 'lightning') {
+                const count = 40;
+                const pts = [];
+                for(let i=0; i<=count; i++) {
+                    const a = (i/count)*Math.PI*2;
+                    const rad = (i%2===0) ? rInner : rOuter;
+                    pts.push(new THREE.Vector3(Math.cos(a)*rad, Math.sin(a)*rad, 0));
+                }
+                group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), material));
+            } else if (attrName === 'wood') {
+                const count = 12;
+                for(let i=0; i<count; i++) {
+                    const a = (i/count)*Math.PI*2;
+                    const leaf = createBoldPoly(0.3, 3, 0.03, material);
+                    leaf.position.set(Math.cos(a)*rInner*1.05, Math.sin(a)*rInner*1.05, 0);
+                    leaf.rotation.z = a + Math.PI/2;
+                    group.add(leaf);
+                }
+            } else {
+                const count = 16;
+                for(let i=0; i<count; i++) {
+                    const a = (i/count) * Math.PI * 2;
+                    const p1 = new THREE.Vector3(Math.cos(a)*rInner, Math.sin(a)*rInner, 0);
+                    const p2 = new THREE.Vector3(Math.cos(a)*rOuter, Math.sin(a)*rOuter, 0);
+                    group.add(createThickLine(p1, p2, 0.02, material));
+                }
+            }
+            return group;
+        }
+
+        function createGeometricMandala(outerRadius, color, type, layerIdx, material, sys, attrName) {
+            const group = new THREE.Group();
+            const rBase = outerRadius * 0.85; 
+            
+            let count = (layerIdx === 2) ? 8 : 12; 
+            if (sys === 'enochian') count *= 2; 
+            if (sys === 'solomonic') count = 6;
+            if (sys === 'runic') count = 12; 
+
+            const rotSpeed = (Math.random() - 0.5) * 0.5;
+            group.userData = { isMandala: true, rotSpeed: rotSpeed };
+
+            const createCircleRing = (cnt, rad, size) => {
+                const g = new THREE.Group();
+                for(let i=0; i<cnt; i++) {
+                    const a = (i/cnt)*Math.PI*2;
+                    const mesh = new THREE.Mesh(new THREE.RingGeometry(size*0.8, size, 32), material);
+                    mesh.position.set(Math.cos(a)*rad, Math.sin(a)*rad, 0);
+                    g.add(mesh);
+                }
+                return g;
+            };
+
+            const createShapeRing = (cnt, rad, size, sides) => {
+                const g = new THREE.Group();
+                for(let i=0; i<cnt; i++) {
+                    const a = (i/cnt)*Math.PI*2;
+                    const shape = createBoldPoly(size, sides, 0.04, material);
+                    shape.position.set(Math.cos(a)*rad, Math.sin(a)*rad, 0);
+                    shape.rotation.z = a + Math.PI/2;
+                    g.add(shape);
+                }
+                return g;
+            };
+
+            if (sys === 'alchemy' && layerIdx === 4) {
+                group.add(createBoldPoly(rBase, 6, 0.04, material));
+                for(let k=0; k<3; k++) {
+                    const a = (k/3) * Math.PI * 2 - Math.PI/6;
+                    const rhomb = createBoldPoly(rBase * 0.5, 4, 0.04, material);
+                    rhomb.position.set(Math.cos(a)*rBase*0.5, Math.sin(a)*rBase*0.5, 0);
+                    rhomb.rotation.z = a;
+                    group.add(rhomb);
+                }
+                group.add(createBoldPoly(rBase * 0.8, 3, 0.03, material));
+                const tri2 = createBoldPoly(rBase * 0.8, 3, 0.03, material);
+                tri2.rotation.z = Math.PI;
+                group.add(tri2);
+
+            } else if (sys === 'solomonic' && layerIdx === 4) {
+                // Change Sparkle to Hexagram (Six-pointed star)
+                // Size depends on attribute
+                let scale = 1.0;
+                if (attrName === 'fire') scale = 1.0;
+                else if (attrName === 'water') scale = 0.85;
+                else if (attrName === 'earth') scale = 0.7; // Compact
+                else if (attrName === 'wind') scale = 1.1;
+                else if (attrName === 'wood') scale = 0.9;
+                else if (attrName === 'lightning') scale = 1.2; // Spiky/Big
+                else if (attrName === 'light') scale = 1.0;
+                else if (attrName === 'dark') scale = 0.5; // Small/Concentrated
+
+                const rHex = rBase * 0.6 * scale; 
+
+                // Create Hexagram (Two Triangles)
+                const t1 = createBoldStar(rHex, 3, 0.04, material);
+                const t2 = createBoldStar(rHex, 3, 0.04, material);
+                t2.rotation.z = Math.PI;
+                
+                group.add(t1);
+                group.add(t2);
+
+                // Add Ring frame
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rBase, rBase*1.02, 64), material));
+
+            } else if (sys === 'seimei') {
+                if (attrName === 'fire') {
+                    group.add(createShapeRing(5, rBase, 0.3, 5));
+                } else if (attrName === 'water') {
+                    group.add(createCircleRing(8, rBase, 0.25));
+                } else if (attrName === 'wood') {
+                    group.add(createShapeRing(6, rBase, 0.3, 6));
+                } else if (attrName === 'earth') {
+                    group.add(createShapeRing(4, rBase, 0.3, 4));
+                } else if (attrName === 'wind' || attrName === 'lightning') {
+                    group.add(createShapeRing(8, rBase, 0.25, 3));
+                } else {
+                    group.add(createShapeRing(8, rBase, 0.25, 8));
+                }
+                group.add(createDashedRing(rBase * 0.7, material));
+
+            } else if (sys === 'runic') {
+                group.add(createShapeRing(count, rBase, 0.25, 4));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rBase * 0.9, rBase * 0.93, 64), material));
+            } else {
+                if (type === 'sharp') { 
+                    group.add(createShapeRing(count * 2, rBase, 0.3, 3));
+                    group.add(new THREE.Mesh(new THREE.RingGeometry(rBase * 0.9, rBase * 0.92, 64), material));
+                } else if (type === 'petal') {
+                    group.add(createCircleRing(count, rBase, 0.4));
+                    group.add(createCircleRing(count, rBase * 0.8, 0.2));
+                } else if (type === 'square') {
+                    group.add(createShapeRing(count, rBase, 0.3, 4));
+                    group.add(createShapeRing(count, rBase * 0.7, 0.2, 4));
+                } else if (type === 'curve') {
+                    group.add(new THREE.Mesh(new THREE.RingGeometry(rBase, rBase + 0.03, 64), material));
+                    group.add(createCircleRing(count, rBase * 0.95, 0.1));
+                } else if (type === 'leaf') {
+                    group.add(createShapeRing(count, rBase, 0.3, 6));
+                } else if (type === 'zigzag') {
+                    const g1 = createShapeRing(count, rBase, 0.25, 3);
+                    const g2 = createShapeRing(count, rBase * 0.8, 0.25, 3);
+                    g2.rotation.z = Math.PI / count;
+                    group.add(g1); group.add(g2);
+                } else if (type === 'ray') {
+                    const lines = new THREE.Group();
+                    for(let i=0; i<count*2; i++) {
+                        const a = (i/(count*2)) * Math.PI * 2;
+                        const p1 = new THREE.Vector3(Math.cos(a)*rBase*0.8, Math.sin(a)*rBase*0.8, 0);
+                        const p2 = new THREE.Vector3(Math.cos(a)*rBase*1.1, Math.sin(a)*rBase*1.1, 0);
+                        lines.add(createThickLine(p1, p2, 0.04, material));
+                    }
+                    group.add(lines);
+                } else if (type === 'web') {
+                    group.add(createBoldPoly(rBase, 5, 0.04, material));
+                    group.add(createBoldPoly(rBase * 0.8, 5, 0.04, material));
+                } else {
+                    group.add(createCircleRing(count, rBase, 0.2));
+                }
+            }
+            return group;
+        }
+
+        function createTextRing(radius, text, color, sys) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            const fontSize = 60;
+            let displayText = text;
+            let needsRotation = false;
+
+            if (sys === 'runic') {
+                ctx.font = `bold ${fontSize}px "Noto Sans Runic", sans-serif`;
+                displayText = convertToRunic(text); 
+                needsRotation = true;
+            } else if (sys === 'solomonic') {
+                ctx.font = `bold ${fontSize}px "Noto Sans Hebrew", sans-serif`;
+                displayText = convertToHebrew(text);
+                needsRotation = true;
+            } else if (sys === 'seimei') {
+                ctx.font = `bold ${fontSize}px "Zen Old Mincho", serif`;
+                // If it's pure Seimei system, use dummy text, otherwise use Spell
+                if(text === AttributePresets[State.attribute].spell) {
+                     displayText = "臨兵闘者皆陣列在前 乾坤震巽坎離艮兌 木火土金水 ";
+                } else {
+                     displayText = text; // Use custom spell
+                }
+            } else if (sys === 'alchemy') {
+                ctx.font = `${fontSize}px "Cinzel", serif`;
+                const symbols = ["☉", "☽", "☿", "♀", "♂", "♃", "♄"];
+                displayText = text.split('').map((char, i) => char + " " + symbols[i % symbols.length] + " ").join('');
+            } else {
+                ctx.font = `${fontSize}px "Cinzel", serif`;
+                displayText = text.split('').join(' . ');
+            }
+
+            ctx.fillStyle = '#' + new THREE.Color(color).getHexString();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.translate(512, 512);
+
+            let fullText = (displayText + "   ");
+            while (ctx.measureText(fullText).width < (radius * 2 * Math.PI * 2.8)) { 
+                 fullText += (displayText + "   ");
+                 if(fullText.length > 200) break;
+            }
+            
+            const angleStep = (Math.PI * 2) / fullText.length;
+            for (let i = 0; i < fullText.length; i++) {
+                ctx.save();
+                ctx.rotate(i * angleStep);
+                ctx.translate(0, -400); 
+                if (needsRotation) ctx.rotate(Math.PI); 
+                if(sys === 'seimei') ctx.rotate(0);
+                ctx.fillText(fullText[i], 0, 0);
+                ctx.restore();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({ 
+                map: tex, transparent: true, side: THREE.DoubleSide, 
+                color: color, blending: State.bgMode === 'white' ? THREE.NormalBlending : THREE.AdditiveBlending, depthWrite: false
+            });
+            return new THREE.Mesh(new THREE.PlaneGeometry(radius*2.2, radius*2.2), mat);
+        }
+
+        function addPlanets(group, radius, color) {
+            const count = 3;
+            const size = 0.15;
+            for(let i=0; i<count; i++) {
+                const angle = (i/count) * Math.PI * 2;
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(size, 8, 8), new THREE.MeshBasicMaterial({ color: color }));
+                mesh.position.set(Math.cos(angle)*radius, Math.sin(angle)*radius, 0);
+                group.add(mesh);
+            }
+        }
+
+        function create3DParticles(color, level, attrType) {
+            const count = 200 * level; 
+            const geo = new THREE.BufferGeometry();
+            const pos = [];
+            const speeds = [];
+            const spreadXY = 3.0 + level * 2.0;
+            const spreadZ = 2.0 + level * 3.0; 
+
+            for(let i=0; i<count; i++) {
+                const r = Math.random() * spreadXY;
+                const theta = Math.random() * Math.PI * 2;
+                const x = r * Math.cos(theta);
+                const y = r * Math.sin(theta);
+                const z = (Math.random() - 0.5) * spreadZ;
+                pos.push(x, y, z);
+                speeds.push(Math.random() * 0.05 * level);
+            }
+            
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            geo.setAttribute('speed', new THREE.Float32BufferAttribute(speeds, 1));
+
+            const mat = new THREE.PointsMaterial({
+                color: color, size: 0.15, transparent: true, opacity: 0.8,
+                blending: THREE.AdditiveBlending, sizeAttenuation: true
+            });
+            if(State.bgMode === 'white') {
+                mat.blending = THREE.NormalBlending;
+                mat.color.setHex(0xaaaaaa);
+            }
+
+            particleSystem = new THREE.Points(geo, mat);
+            particleSystem.userData = { isParticle: true, attrType: attrType, level: level };
+            magicGroup.add(particleSystem);
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            activeShaderUniforms.forEach(u => {
+                u.uTime.value += delta;
+            });
+
+            // Adjust speed multiplier for Talismans
+            let speedMultiplier = 1.0;
+            if (['ofuda_jp', 'parchment', 'ofuda_tao'].includes(State.system)) {
+                speedMultiplier = 3.0;
+            }
+
+            const speed = (State.speed * 0.1 * speedMultiplier) * delta;
+            
+            if (magicGroup) {
+                magicGroup.children.forEach(child => {
+                    if (child.userData.rotSpeed) {
+                        child.rotation.z += child.userData.rotSpeed * speed;
+                    }
+                    if (child.userData.isCore) {
+                        child.rotation.z += speed * 0.5; 
+                    }
+                    if (child.children) {
+                        child.children.forEach(sub => {
+                            if (sub.userData && sub.userData.isMandala) {
+                                sub.rotation.z += speed * sub.userData.rotSpeed * 3.0; 
+                            }
+                            if (sub.userData && sub.userData.isOrbit) {
+                                sub.rotation.z += speed * sub.userData.rotSpeed; 
+                            }
+                        });
+                    }
+                    // Handle Mandala Layer rotation explicitly
+                    if (child.userData.isMandala) {
+                        child.rotation.z += speed * child.userData.rotSpeed * 2.0;
+                    }
+
+                    if (child.userData.isParticle) {
+                        child.rotation.y += speed * 0.2; 
+                        const positions = child.geometry.attributes.position.array;
+                        const speeds = child.geometry.attributes.speed.array;
+                        const type = child.userData.attrType;
+                        for(let i=0; i<speeds.length; i++) {
+                            const idx = i * 3;
+                            positions[idx+1] += Math.sin(positions[idx] + clock.elapsedTime) * 0.01;
+                            if (type === 'fire') {
+                                positions[idx+2] += 0.02 * (1+State.level*0.2); 
+                                if(positions[idx+2] > 10) positions[idx+2] = -5;
+                            } else if (type === 'lightning') {
+                                if(Math.random() > 0.9) {
+                                    positions[idx] += (Math.random()-0.5)*0.2;
+                                    positions[idx+1] += (Math.random()-0.5)*0.2;
+                                }
+                            }
+                        }
+                        child.geometry.attributes.position.needsUpdate = true;
+                    }
+                });
+            }
+            renderScene();
+        }
+
+        function renderScene() {
+            if (State.bgMode === 'white') {
+                renderer.render(scene, camera);
+            } else {
+                composer.render();
+            }
+        }
+
+        function convertToRunic(str) {
+            const map = {A:'ᚨ', B:'ᛒ', C:'ᚲ', D:'ᛞ', E:'ᛖ', F:'ᚠ', G:'ᚷ', H:'ᚺ', I:'ᛁ', J:'ᛃ', K:'ᚲ', L:'ᛚ', M:'ᛗ', N:'ᚾ', O:'ᛟ', P:'ᛈ', Q:'ᚲ', R:'ᚱ', S:'ᛊ', T:'ᛏ', U:'ᚢ', V:'ᚹ', W:'ᚹ', X:'ᛉ', Y:'ᛃ', Z:'ᛉ'};
+            return str.toUpperCase().split('').map(c => map[c] || c).join('');
+        }
+        function convertToHebrew(str) {
+            const map = {A:'א', B:'ב', C:'כ', D:'ד', E:'ה', F:'פ', G:'ג', H:'ח', I:'י', J:'י', K:'כ', L:'ל', M:'מ', N:'נ', O:'ע', P:'פ', Q:'ק', R:'ר', S:'ס', T:'ת', U:'ו', V:'ו', W:'ו', X:'צ', Y:'י', Z:'ז'};
+            return str.toUpperCase().split('').map(c => map[c] || c).join('');
+        }
+        function getAttributeKanji(name) {
+            const map = {"Fire":"火", "Water":"水", "Earth":"土", "Wind":"風", "Wood":"木", "Thunder":"雷", "Lightning":"雷", "Light":"光", "Darkness":"闇", "Dark":"闇"};
+            return map[name] || "氣";
+        }
+        function createKanjiTexture(kanji, color) {
+            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d'); ctx.font = "bold 180px 'Zen Old Mincho'";
+            ctx.fillStyle = '#' + new THREE.Color(color).getHexString(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(kanji, 128, 128); return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- Restored UI Functions ---
+        function setupUI() {
+            const grid = document.getElementById('presetAttrGrid');
+            Object.keys(AttributePresets).forEach(key => {
+                const attr = AttributePresets[key];
+                const btn = document.createElement('button');
+                btn.className = `magic-btn bg-white py-2 rounded shadow-sm text-center border-b-2 border-slate-200`;
+                btn.innerHTML = `<div class=\"text-lg\">${attr.icon}</div><div class=\"text-[0.6rem] font-bold text-slate-600\">${attr.name}</div>`;
+                btn.onclick = () => setAttribute(key);
+                if(key === 'fire') btn.classList.add('active', 'border-blue-400');
+                btn.id = `btn-${key}`;
+                grid.appendChild(btn);
+            });
+        }
+
+        function setAttribute(key) {
+            State.attribute = key;
+            State.customAttr = null; // Clear active AI data
+            // Note: State.lastAiAttr remains intact!
+            
+            document.getElementById('customAttrBadge').classList.add('hidden');
+            document.getElementById('presetAttrGrid').classList.remove('hidden');
+            document.querySelectorAll('#presetAttrGrid .magic-btn').forEach(b => b.classList.remove('active', 'border-blue-400'));
+            const btn = document.getElementById(`btn-${key}`);
+            if(btn) btn.classList.add('active', 'border-blue-400');
+            updateMagic();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('levelRange').addEventListener('input', (e) => {
+                State.level = parseInt(e.target.value);
+                updateMagic();
+            });
+            document.getElementById('speedRange').addEventListener('input', (e) => {
+                State.speed = parseInt(e.target.value);
+                updateMagic(); 
+            });
+            document.getElementById('magicType').addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'ai_custom') {
+                    // Restore AI Data
+                    if (State.lastAiAttr) {
+                        State.customAttr = State.lastAiAttr;
+                        State.system = 'ai_custom';
+                        
+                        // UI Restore
+                        document.getElementById('customAttrTitle').innerText = State.customAttr.name;
+                        document.getElementById('customAttrDesc').innerText = State.customAttr.desc;
+                        document.getElementById('presetAttrGrid').classList.add('hidden');
+                        document.getElementById('customAttrBadge').classList.remove('hidden');
+                        document.getElementById('aiResponseText').innerText = State.customAttr.desc;
+                        
+                        updateMagic();
+                        showToast("アカシック・レコードを復元しました。", "info");
+                    } else {
+                        showToast("復元する記録が存在しません。", "error");
+                        // Revert selection if needed, or prompt to generate
+                    }
+                } else {
+                    State.system = val;
+                    updateMagic();
+                }
+            });
+            // Mandala Listeners
+            document.getElementById('mandalaType').addEventListener('change', (e) => {
+                State.mandala = e.target.value;
+                updateMagic();
+            });
+            document.getElementById('mandalaSizeRange').addEventListener('input', (e) => {
+                State.mandalaSize = parseFloat(e.target.value);
+                updateMagic();
+            });
+
+            document.getElementById('planetToggle').addEventListener('change', (e) => {
+                State.showPlanets = e.target.checked;
+                updateMagic();
+            });
+            document.getElementById('particleToggle').addEventListener('change', (e) => {
+                State.showParticles = e.target.checked;
+                updateMagic();
+            });
+            document.getElementById('transparentToggle').addEventListener('change', (e) => {
+                State.transparentBg = e.target.checked;
+            });
+
+            // BG Mode UI Fix
+            const bgBlackBtn = document.getElementById('bgBlackBtn');
+            const bgWhiteBtn = document.getElementById('bgWhiteBtn');
+            const activeClass = ['bg-white', 'shadow-sm', 'text-slate-800'];
+            const inactiveClass = ['hover:bg-white/50'];
+
+            bgBlackBtn.addEventListener('click', () => {
+                State.bgMode = 'black';
+                bgBlackBtn.classList.add(...activeClass);
+                bgBlackBtn.classList.remove(...inactiveClass);
+                bgWhiteBtn.classList.remove(...activeClass);
+                bgWhiteBtn.classList.add(...inactiveClass);
+                updateMagic();
+            });
+
+            bgWhiteBtn.addEventListener('click', () => {
+                State.bgMode = 'white';
+                bgWhiteBtn.classList.add(...activeClass);
+                bgWhiteBtn.classList.remove(...inactiveClass);
+                bgBlackBtn.classList.remove(...activeClass);
+                bgBlackBtn.classList.add(...inactiveClass);
+                updateMagic();
+            });
+
+            document.getElementById('saveImgBtn').addEventListener('click', captureImage);
+            document.getElementById('printBtn').addEventListener('click', printGrimoire);
+            document.getElementById('resetCamBtn').addEventListener('click', () => {
+                camera.position.set(0,0,16);
+                camera.rotation.set(0,0,0);
+                if(magicGroup) magicGroup.rotation.set(0,0,0);
+            });
+
+            document.getElementById('aiGenBtn').addEventListener('click', generateAI);
+            document.getElementById('resetAttrBtn').addEventListener('click', () => setAttribute('fire'));
+
+            document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+            document.getElementById('importJsonInput').addEventListener('change', importJSON);
+
+            document.getElementById('saveApiKeyBtn').addEventListener('click', () => {
+                const key = document.getElementById('rescueApiKeyInput').value;
+                if(key) {
+                    AppConfig.apiKey = key;
+                    // Also update the main UI input
+                    document.getElementById('userApiKey').value = key;
+                    localStorage.setItem('gimel_api_key', key); // Sync
+                    document.getElementById('apiKeyModal').classList.remove('show');
+                    showToast("APIキーが更新されました。再試行します...", "info");
+                    generateAI(); 
+                }
+            });
+            document.getElementById('cancelApiKeyBtn').addEventListener('click', () => {
+                document.getElementById('apiKeyModal').classList.remove('show');
+            });
+
+            document.querySelectorAll('.rec-btn').forEach(btn => {
+                btn.addEventListener('click', () => startRecording(parseInt(btn.dataset.sec)));
+            });
+
+            // New: API Key UI Logic
+            const keyInput = document.getElementById('userApiKey');
+            const visBtn = document.getElementById('toggleApiKeyVis');
+            
+            keyInput.addEventListener('change', (e) => {
+                const val = e.target.value.trim();
+                AppConfig.apiKey = val;
+                localStorage.setItem('gimel_api_key', val);
+                if(val) showToast("APIキーを設定しました。", "success");
+            });
+
+            visBtn.addEventListener('click', () => {
+                const type = keyInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                keyInput.setAttribute('type', type);
+                visBtn.style.color = type === 'text' ? '#4f46e5' : '#818cf8'; 
+            });
+        }
+
+        async function generateAI() {
+            const promptInput = document.getElementById('aiPrompt').value.trim();
+            const btn = document.getElementById('aiGenBtn');
+            const respBox = document.getElementById('aiResponseText');
+            
+            btn.classList.add('ai-loading');
+            btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> 通信中...`;
+
+            // Updated System Prompt with Layer Systems
+            const systemPrompt = `
+                You are a high-level grimoire architect.
+                Generate a unique "Magic Circle Concept" based on user input.
+                Output MUST be a JSON object inside <<<JSON ... JSON>>>.
+                
+                JSON Keys:
+                - name: (String) English Name (e.g., "Chronos Gear")
+                - name_jp: (String) Japanese Name (e.g., "時空歯車")
+                - hex: (String) Color Hex (e.g., "#FFD700")
+                - glow: (String) Glow Color Hex
+                - layer_systems: (Array of Strings) An array of 5 strings. Each string represents the magic style for layers 1 to 5.
+                  Choose randomly from ["alchemy", "enochian", "runic", "solomonic", "seimei"] for each layer. (Do NOT use talisman styles like ofuda).
+                  Example: ["alchemy", "runic", "alchemy", "seimei", "solomonic"]
+                - sides: (Number) 3-12
+                - mandala: (String) One of ["sharp", "petal", "square", "curve", "leaf", "zigzag", "ray", "web", "sun", "moon", "snow", "circle", "text"]
+                - spell: (String) A mystical incantation. NO Hiragana/Katakana. Choose from Latin, Runic, Hebrew, Kanji-only (Hanzi), or Alchemical symbols.
+                - desc: (String) Lore description in Japanese (approx 100 chars).
+                - kanji_char: (String) A single Kanji character representing the core concept (e.g., "時", "龍"). Important for Seimei style.
+                - kanji_idiom: (String) Four-character Kanji idiom (e.g., "跳梁跋扈").
+            `;
+            const userQuery = promptInput || "Create a unique, cool magic concept.";
+
+            try {
+                const url = `${AppConfig.apiBase}${AppConfig.model}:generateContent?key=${AppConfig.apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                if (response.status === 400 || response.status === 403) throw new Error("AUTH_ERROR");
+
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                
+                const jsonMatch = text.match(/<<<JSON([\s\S]*?)JSON>>>/);
+                if (jsonMatch && jsonMatch[1]) {
+                    const attrData = JSON.parse(jsonMatch[1]);
+                    
+                    // Parse colors
+                    attrData.hex = parseInt(attrData.hex.replace('#', '0x'), 16);
+                    attrData.glow = parseInt(attrData.glow.replace('#', '0x'), 16);
+                    
+                    // Save to both Active and Last AI Storage
+                    State.customAttr = attrData;
+                    State.lastAiAttr = attrData; // Persist for recovery
+                    
+                    // Enable and Select AI Slot
+                    const aiOption = document.getElementById('aiCustomOption');
+                    aiOption.disabled = false;
+                    aiOption.innerText = `【★】${attrData.name_jp || attrData.name} (AI Generated)`;
+                    document.getElementById('magicType').value = "ai_custom";
+                    State.system = "ai_custom";
+
+                    // Update UI Display
+                    document.getElementById('customAttrTitle').innerText = attrData.name;
+                    document.getElementById('customAttrDesc').innerText = attrData.desc;
+                    document.getElementById('presetAttrGrid').classList.add('hidden');
+                    document.getElementById('customAttrBadge').classList.remove('hidden');
+                    respBox.innerText = attrData.desc;
+                    
+                    // Force Mandala Update if AI suggested one
+                    if(attrData.mandala) {
+                        State.mandala = attrData.mandala;
+                        document.getElementById('mandalaType').value = attrData.mandala;
+                    }
+
+                    updateMagic();
+                    showToast(`顕現しました: ${attrData.name}`, "success");
+                } else {
+                    respBox.innerText = "アカシックレコードからの応答が不明瞭です。";
+                }
+            } catch (err) {
+                console.error(err);
+                if (err.message === "AUTH_ERROR") {
+                    document.getElementById('apiKeyModal').classList.add('show');
+                } else {
+                    showToast("エーテル接続に失敗しました。", "error");
+                    respBox.innerText = "Error: " + err.message;
+                }
+            } finally {
+                btn.classList.remove('ai-loading');
+                btn.innerHTML = "魔術創造";
+            }
+        }
+
+        function captureImage() {
+            const oldSize = { w: renderer.domElement.width, h: renderer.domElement.height };
+            const oldPixelRatio = renderer.getPixelRatio();
+            const targetRatio = Math.min(window.devicePixelRatio, 1) * AppConfig.pixelRatioLimit;
+
+            renderer.setPixelRatio(targetRatio);
+            composer.setSize(oldSize.w, oldSize.h); 
+            
+            if (State.transparentBg) {
+                scene.background = null; 
+                renderer.setClearColor(0x000000, 0); 
+                renderer.clear();
+                renderer.render(scene, camera);
+            } else {
+                renderScene(); 
+            }
+            
+            const dataUrl = renderer.domElement.toDataURL('image/png');
+            
+            const link = document.createElement('a');
+            const attrName = State.customAttr ? State.customAttr.name : AttributePresets[State.attribute].name;
+            link.download = `Grimoire_${attrName}_${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+
+            if (State.transparentBg) {
+                 if (State.bgMode === 'white') scene.background = new THREE.Color(0xf8fafc);
+                 else scene.background = new THREE.Color(0x050505);
+            }
+            renderer.setPixelRatio(oldPixelRatio);
+            renderScene();
+            showToast("魔導書に画像を保存しました。", "success");
+        }
+
+        function printGrimoire() {
+            renderScene();
+            const dataImg = renderer.domElement.toDataURL('image/png');
+            const attr = State.customAttr || AttributePresets[State.attribute];
+            const dateStr = new Date().toLocaleDateString();
+            
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Grimoire Page: ${attr.name}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Zen+Old+Mincho:wght@700&display=swap');
+                        body { 
+                            background: #fdfbf7; color: #2c1810; 
+                            font-family: 'Zen Old Mincho', serif; 
+                            padding: 40px; text-align: center; 
+                            border: 20px double #2c1810; 
+                            min-height: 90vh; 
+                            display: flex; flex-direction: column; align-items: center; justify-content: center;
+                        }
+                        h1 { 
+                            font-family: 'Cinzel', serif; font-size: 3em; 
+                            margin-bottom: 0.2em; border-bottom: 2px solid #2c1810; 
+                            display: inline-block; padding-bottom: 10px; letter-spacing: 0.1em;
+                        }
+                        .magic-circle { 
+                            width: 70%; max-width: 500px; margin: 20px auto; 
+                            border: 4px solid #2c1810; padding: 20px; border-radius: 50%; 
+                            box-shadow: 0 0 0 10px #fdfbf7, 0 0 0 12px #2c1810; 
+                            background: #000;
+                        }
+                        .spell { 
+                            font-family: 'Cinzel'; font-size: 1.2em; font-style: italic; 
+                            margin: 20px 0; color: #5a3a2a; 
+                        }
+                        .desc {
+                            max-width: 600px; margin: 20px auto; line-height: 1.8; font-size: 1rem;
+                            padding: 20px; background: rgba(255,255,255,0.5); border-radius: 8px;
+                        }
+                        .meta { 
+                            font-size: 0.8em; border-top: 1px solid #ccc; 
+                            padding-top: 20px; margin-top: 40px; width: 80%;
+                            display: flex; justify-content: space-around; 
+                            font-family: 'Cinzel';
+                        }
+                        @media print { body { border: none; } .magic-circle { box-shadow: none; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>${attr.name.toUpperCase()}</h1>
+                    <div class="spell">"${attr.spell}"</div>
+                    <img src="${dataImg}" class="magic-circle" />
+                    <p class="desc">${attr.desc || "A powerful magic circle manifested from the void."}</p>
+                    <div class="meta">
+                        <span>System: ${State.system.toUpperCase()}</span>
+                        <span>Level: ${State.level}</span>
+                        <span>Mandala: ${State.mandala.toUpperCase()}</span>
+                        <span>Date: ${dateStr}</span>
+                    </div>
+                    <script>setTimeout(() => window.print(), 500);<\/script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+
+        function startRecording(durationSec) {
+            if (State.isRecording) return;
+            State.isRecording = true;
+            
+            const stream = document.querySelector('canvas').captureStream(60); 
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            recordedChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `magic_motion_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+                State.isRecording = false;
+                document.getElementById('recStatusText').classList.add('hidden');
+                document.getElementById('rec-indicator').classList.remove('active');
+                showToast("動画記録を保存しました。", "success");
+            };
+
+            mediaRecorder.start();
+            document.getElementById('recStatusText').classList.remove('hidden');
+            document.getElementById('rec-indicator').classList.add('active');
+            showToast(`記録開始 (${durationSec}秒)...`, "info");
+
+            setTimeout(() => { if(mediaRecorder.state === 'recording') mediaRecorder.stop(); }, durationSec * 1000);
+        }
+
+        function showToast(msg, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#3b82f6');
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function exportJSON() {
+            const data = { version: "Gimel_Canvas_v1", state: State, timestamp: Date.now() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'magic_data.json';
+            a.click();
+            showToast("設定データを書き出しました。", "success");
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if(data.version && data.state) {
+                        Object.assign(State, data.state);
+                        document.getElementById('levelRange').value = State.level;
+                        document.getElementById('speedRange').value = State.speed;
+                        document.getElementById('magicType').value = State.system;
+                        // Restore Mandala State
+                        if(data.state.mandala) {
+                            State.mandala = data.state.mandala;
+                            document.getElementById('mandalaType').value = State.mandala;
+                        }
+                        
+                        if(State.customAttr) {
+                            document.getElementById('presetAttrGrid').classList.add('hidden');
+                            document.getElementById('customAttrBadge').classList.remove('hidden');
+                            document.getElementById('customAttrTitle').innerText = State.customAttr.name;
+                        } else {
+                            setAttribute(State.attribute);
+                        }
+                        updateMagic();
+                        showToast("設定データを読み込みました。", "success");
+                    }
+                } catch(err) { showToast("無効な魔導書ファイルです。", "error"); }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadLocalStorage() {
+            const saved = localStorage.getItem('gimel_canvas_state');
+            if(saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(State, parsed);
+                    document.getElementById('levelRange').value = State.level;
+                    // Restore Mandala State on reload
+                    if(State.mandala) document.getElementById('mandalaType').value = State.mandala;
+                } catch(e) {}
+            }
+            
+            // Restore API Key
+            const savedKey = localStorage.getItem('gimel_api_key');
+            if(savedKey) {
+                AppConfig.apiKey = savedKey;
+                const keyInput = document.getElementById('userApiKey');
+                if(keyInput) keyInput.value = savedKey;
+            }
+
+            setInterval(() => { localStorage.setItem('gimel_canvas_state', JSON.stringify(State)); }, 5000);
+        }
+
+        window.addEventListener('load', initApp);
+
+    </script>
+</body>
+</html>
