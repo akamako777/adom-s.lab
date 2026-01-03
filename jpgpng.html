@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni Image Tools - 画像一括縮小 & 本格編集</title>
+    
+    <!-- デザイン用CSS (Tailwind CSS v3.4.1) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- アイコン用 (Lucide Icons) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+
+    <!-- 機能用ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+                        serif: ['"Noto Serif JP"', 'serif'],
+                        maru: ['"Zen Maru Gothic"', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-dark': '#0f172a',    /* slate-900 */
+                        'brand-primary': '#6366f1', /* indigo-500 */
+                        'brand-accent': '#8b5cf6',  /* violet-500 */
+                        'surface-light': '#f8fafc', /* slate-50 */
+                        'surface-white': '#ffffff',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #f1f5f9; color: #334155; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* タブのアクティブスタイル */
+        .main-tab-active {
+            background-color: #0f172a;
+            color: white;
+            border-bottom-width: 0;
+            position: relative;
+        }
+        .main-tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+        }
+        .main-tab-inactive {
+            background-color: #ffffff;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .main-tab-inactive:hover {
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        /* --- ツール1(Resizer)用スタイル --- */
+        .drag-active { 
+            border-color: #8b5cf6 !important; 
+            background-color: #f5f3ff !important; 
+            transform: scale(1.005);
+        }
+        .photo-card {
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        .photo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .photo-card-actions {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .photo-card:hover .photo-card-actions {
+            opacity: 1;
+        }
+        @media (hover: none) {
+            .photo-card-actions { opacity: 1; } /* タッチデバイスでは常に表示 */
+        }
+        
+        /* --- ツール2(Editor)用スタイル --- */
+        .editor-canvas-bg { 
+            touch-action: none; 
+            background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .e-tab-active { border-bottom: 2px solid #6366f1; color: #4f46e5; background-color: #eef2ff; }
+        .e-tab-inactive { color: #64748b; }
+        .e-tab-inactive:hover { color: #334155; background-color: #f8fafc; }
+        
+        /* 共通スライダー */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        /* Resizer用アクセント */
+        #r_widthOptions input[type=range]::-webkit-slider-thumb, #r_qualityRange::-webkit-slider-thumb, #r_wmSizeRange::-webkit-slider-thumb, #r_wmOpacityRange::-webkit-slider-thumb { border-color: #8b5cf6; }
+        /* Editor用アクセント */
+        #app-editor input[type=range]::-webkit-slider-thumb { border-color: #6366f1; }
+
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        /* Editor: 調整用スライダー */
+        .range-warm::-webkit-slider-runnable-track { background: linear-gradient(to right, #3b82f6, #e5e7eb 50%, #f97316); }
+        .range-hue::-webkit-slider-runnable-track { background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red); }
+        
+        #e_duotoneBalanceRange::-webkit-slider-runnable-track {
+            height: 12px;
+            border-radius: 6px;
+            background: transparent; 
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        #e_duotoneBalanceRange::-webkit-slider-thumb {
+            margin-top: -4px;
+            height: 20px;
+            width: 20px;
+            border-color: white;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border: 2px solid #fff; border-radius: 50%; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="min-h-screen p-2 md:p-6 font-sans text-slate-700 bg-slate-100">
+
+<div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- 統合ヘッダー & タブナビゲーション -->
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-2">
+        <h1 class="text-2xl md:text-3xl font-bold text-brand-dark flex items-center gap-3 tracking-tight">
+            <div class="p-2 bg-gradient-to-br from-brand-primary to-brand-accent rounded-lg text-white shadow-lg shadow-indigo-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+            </div>
+            Omni Image Tools
+        </h1>
+        
+        <div class="flex items-center gap-2">
+            <!-- 言語切り替え -->
+            <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2 mr-2">
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="zh">🇹🇼 繁體中文</option>
+            </select>
+
+            <div class="flex w-full md:w-auto bg-white rounded-t-lg overflow-hidden border-b border-gray-200 shadow-sm">
+                <button onclick="switchMainTab('resize')" id="tab-btn-resize" class="flex-1 md:flex-none px-6 py-3 font-bold text-sm md:text-base flex items-center justify-center gap-2 transition-all main-tab-active rounded-tl-lg">
+                    <!-- Icon: folder-up or files -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+                    <span data-i18n="tab_resize">一括リサイズ</span>
+                </button>
+                <button onclick="switchMainTab('editor')" id="tab-btn-editor" class="flex-1 md:flex-none px-6 py-3 font-bold text-sm md:text-base flex items-center justify-center gap-2 transition-all main-tab-inactive rounded-tr-lg">
+                    <!-- Icon: wand-2 -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wand-2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+                    <span data-i18n="tab_editor">画像編集</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- APP 1: 画像縮小ツール (Resizer) -->
+    <!-- ========================================== -->
+    <div id="app-resizer" class="animate-fade-in">
+        
+        <!-- 説明ヘッダー -->
+        <div class="mb-4 flex items-center justify-between px-1">
+            <p class="text-slate-500 font-medium text-sm md:text-base" data-i18n="resizer_desc">
+                SNS、ブログ、資料作成に。複数画像をWeb最適なサイズへ一括変換・ZIP保存。
+            </p>
+            <div class="hidden sm:flex text-xs text-slate-400 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100 items-center gap-1">
+                <i data-lucide="shield-check" class="w-3 h-3 text-emerald-500"></i> <span data-i18n="local_process">Secure Local Processing</span>
+            </div>
+        </div>
+
+        <!-- 設定パネル -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-brand-dark text-white px-6 py-3 flex items-center gap-2">
+                <i data-lucide="settings-2" class="w-5 h-5"></i>
+                <h2 class="font-bold" data-i18n="settings_title">出力設定</h2>
+            </div>
+            
+            <div class="p-6 lg:p-8 grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8 items-start">
+                <!-- 1列目: サイズ & 画質 -->
+                <div class="space-y-6">
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2 font-bold text-slate-800 text-lg border-b border-slate-100 pb-2">
+                            <i data-lucide="scaling" class="w-5 h-5 text-brand-primary"></i> <span data-i18n="resize_setting">リサイズ設定</span>
+                        </label>
+                        <div class="flex rounded-lg bg-slate-100 p-1 mb-2">
+                            <button onclick="r_setResizeMode('width')" id="r_btn-mode-width" class="flex-1 py-2 text-sm rounded-md bg-white shadow-sm text-brand-dark font-bold transition-all" data-i18n="width_px">横幅指定 (px)</button>
+                            <button onclick="r_setResizeMode('percent')" id="r_btn-mode-percent" class="flex-1 py-2 text-sm rounded-md text-slate-500 hover:text-brand-dark transition-all" data-i18n="ratio_pct">比率指定 (%)</button>
+                        </div>
+                        <div id="r_widthOptions">
+                            <select id="r_targetWidth" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-shadow">
+                                <option value="1920">1920 px (FHD)</option>
+                                <option value="1280" selected>1280 px (Web Standard)</option>
+                                <option value="1080">1080 px (SNS)</option>
+                                <option value="800">800 px (Blog)</option>
+                                <option value="640">640 px (Email)</option>
+                            </select>
+                        </div>
+                        <div id="r_percentOptions" class="hidden pt-2">
+                             <div class="flex items-center gap-4">
+                                <input type="range" id="r_targetPercent" min="10" max="100" value="50" onchange="r_saveSettings()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                <span class="font-bold text-brand-primary w-16 text-right text-lg"><span id="r_percentValue">50</span>%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
+                         <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                            <span data-i18n="quality_jpeg">画質 (JPEGのみ)</span>
+                            <span class="text-brand-accent font-bold text-base" id="r_qualityValue">0.8</span>
+                        </div>
+                        <input type="range" id="r_qualityRange" min="0.1" max="1.0" step="0.1" value="0.8" onchange="r_saveSettings()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 font-medium">
+                            <span data-i18n="quality_low">軽量</span>
+                            <span data-i18n="quality_high">高画質</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2列目: 透かし -->
+                <div class="space-y-4">
+                    <label class="flex items-center justify-between font-bold text-slate-800 text-lg border-b border-slate-100 pb-2">
+                        <span class="flex items-center gap-2"><i data-lucide="stamp" class="w-5 h-5 text-brand-primary"></i> <span data-i18n="watermark">透かし文字</span></span>
+                    </label>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] text-brand-accent bg-indigo-50 px-2 py-0.5 rounded ml-auto" data-i18n="ai_protection">AI対策 / 盗用防止</span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="r_watermarkText" placeholder="© MyName (Do Not Use)" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-shadow disabled:bg-slate-100 disabled:text-slate-400">
+                        </div>
+                        <p id="r_wmNote" class="hidden text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 font-medium" data-i18n="noise_note">
+                            ※文字入力は不要です。「サイズ/強度」でノイズの強さを調整します。
+                        </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 block mb-1" data-i18n="wm_pos">位置 / 種類</label>
+                                <select id="r_wmPosition" onchange="r_handleWmChange()" class="w-full bg-white border border-slate-200 rounded-md p-1.5 text-xs text-slate-700">
+                                    <option value="bottom-right" data-i18n="pos_br">右下</option>
+                                    <option value="bottom-left" data-i18n="pos_bl">左下</option>
+                                    <option value="center" data-i18n="pos_c">中央</option>
+                                    <option value="tile" data-i18n="pos_tile">全面タイル (AI対策)</option>
+                                    <option value="noise" data-i18n="pos_noise" class="text-indigo-600 font-bold">ステルスノイズ (美観重視)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 block mb-1" data-i18n="wm_font">フォント</label>
+                                <select id="r_wmFont" onchange="r_saveSettings()" class="w-full bg-white border border-slate-200 rounded-md p-1.5 text-xs text-slate-700 disabled:bg-slate-100 disabled:text-slate-400">
+                                    <option value="sans-serif" data-i18n="font_gothic">ゴシック (標準)</option>
+                                    <option value="serif" data-i18n="font_mincho">明朝体</option>
+                                    <option value="'Zen Maru Gothic', sans-serif" data-i18n="font_maru">丸ゴシック</option>
+                                    <option value="cursive" data-i18n="font_hand">手書き風</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold">
+                                <span data-i18n="wm_size" id="r_wmSizeLabel">サイズ/強度</span>
+                                <span id="r_wmSizeVal">3</span>
+                            </div>
+                            <input type="range" id="r_wmSizeRange" min="1" max="10" value="3" oninput="r_updateWmDisplay()" onchange="r_saveSettings()" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold mt-1">
+                                <span data-i18n="wm_opacity">濃さ/透明度</span>
+                                <span id="r_wmOpacityVal">50%</span>
+                            </div>
+                            <input type="range" id="r_wmOpacityRange" min="1" max="100" value="50" oninput="r_updateWmDisplay()" onchange="r_saveSettings()" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3列目: 仕上げ -->
+                <div class="space-y-4">
+                    <label class="flex items-center gap-2 font-bold text-slate-800 text-lg border-b border-slate-100 pb-2">
+                        <i data-lucide="file-signature" class="w-5 h-5 text-brand-primary"></i> <span data-i18n="finish_opt">仕上げ (Option)</span>
+                    </label>
+                    <div class="space-y-2">
+                        <p class="text-xs font-bold text-slate-500" data-i18n="file_prefix">ファイル名接頭辞</p>
+                        <input type="text" id="r_filenamePrefix" placeholder="例: Photo_2024" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-shadow">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="r_insertDate('YYYYMMDD')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1">
+                                <i data-lucide="calendar-plus" class="w-3 h-3"></i> YYYYMMDD
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
+                         <label class="text-xs font-bold text-slate-500 block mb-1.5" data-i18n="out_format">出力形式</label>
+                        <select id="r_outputFormat" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700">
+                            <option value="image/jpeg">JPEG (Photo)</option>
+                            <option value="image/png">PNG (Illustration)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アクションボタンエリア -->
+            <div class="bg-slate-50 px-6 py-6 border-t border-slate-100 flex flex-col items-center">
+                <div class="relative w-full max-w-md">
+                    <button onclick="r_processAndDownload()" id="r_downloadBtn" class="w-full bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:via-indigo-700 hover:to-violet-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transform transition-all active:scale-95 flex justify-center items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="download-cloud" class="w-6 h-6"></i>
+                        <span class="text-lg tracking-wide" data-i18n="btn_process">変換して保存 (ZIP)</span>
+                    </button>
+                    <div id="r_statusMsg" class="absolute -bottom-8 left-0 right-0 text-sm text-center font-bold text-indigo-500 h-6"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 統合ドロップ & プレビューエリア -->
+        <section class="mb-12">
+            <div class="flex justify-between items-end mb-4 px-2 border-b border-slate-200 pb-2">
+                <h3 class="text-xl font-bold text-slate-700 flex items-center gap-2">
+                    <i data-lucide="image" class="w-5 h-5 text-slate-400"></i> <span data-i18n="preview_list">Preview List</span>
+                    <span id="r_countBadge" class="bg-indigo-100 text-indigo-600 text-sm px-3 py-0.5 rounded-full hidden">0</span>
+                </h3>
+                
+                <button onclick="r_openClearModal()" id="r_btnClearAll" class="hidden text-sm text-slate-500 hover:text-red-500 flex items-center gap-1 transition-colors px-3 py-1 hover:bg-slate-100 rounded-lg">
+                    <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i> <span data-i18n="clear_all">Clear All</span>
+                </button>
+            </div>
+            
+            <!-- 統合ドロップエリア -->
+            <div id="r_dropZone" class="border-4 border-dashed border-slate-300 rounded-2xl bg-slate-50/50 min-h-[300px] p-6 transition-all hover:border-indigo-400 relative group cursor-pointer" onclick="r_handleDropZoneClick(event)">
+                <input type="file" id="r_fileInput" multiple accept="image/*,.heic" class="hidden">
+                
+                <!-- Empty State (画像がない時) -->
+                <div id="r_emptyState" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-opacity">
+                    <div class="bg-white p-6 rounded-full shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                        <!-- Icon: folder-open -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-brand-dark" data-i18n="drag_drop_title">ここに画像をドロップ</h3>
+                    <p class="text-slate-500 mt-2 text-sm" data-i18n="drag_drop_desc">またはクリックして選択 (JPEG, PNG, HEIC対応)</p>
+                </div>
+
+                <!-- Preview Grid (画像がある時) -->
+                <div id="r_previewArea" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 relative z-10 hidden">
+                    <!-- Cards will be injected here -->
+                    
+                    <!-- 追加ボタン (リストの末尾に表示) -->
+                    <div id="r_addCardBtn" class="border-2 border-dashed border-slate-300 rounded-xl bg-white/50 hover:bg-white hover:border-indigo-400 flex flex-col items-center justify-center min-h-[200px] cursor-pointer transition-all">
+                        <div class="bg-indigo-50 p-3 rounded-full mb-2">
+                            <i data-lucide="plus" class="w-6 h-6 text-indigo-500"></i>
+                        </div>
+                        <span class="text-sm font-bold text-slate-500">Add More</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- カスタム確認モーダル -->
+        <div id="r_confirmModal" class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 hidden backdrop-blur-sm transition-all duration-300 opacity-0" aria-hidden="true">
+            <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl transform scale-95 transition-all duration-300" id="r_confirmModalContent">
+                <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-500"></i>
+                    Confirm
+                </h3>
+                <p class="text-slate-600 mb-6 mt-3" data-i18n="confirm_clear">リストをクリアしますか？<br><span class="text-xs text-slate-400">読み込んだ画像は全て削除されます</span></p>
+                <div class="flex gap-3">
+                    <button onclick="r_closeClearModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors" data-i18n="btn_cancel">
+                        Cancel
+                    </button>
+                    <button onclick="r_executeClear()" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition-colors" data-i18n="btn_clear">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- APP 2: 画像加工ツール (Editor) -->
+    <!-- ========================================== -->
+    <div id="app-editor" class="hidden">
+        <!-- Editor UI -->
+        <div class="w-full bg-white rounded-xl shadow-sm border border-slate-200 relative lg:overflow-hidden flex flex-col h-auto lg:h-[85vh] min-h-[600px]">
+            
+            <header class="bg-slate-900 text-white p-3 flex flex-col sm:flex-row justify-between items-center shrink-0 gap-3 sm:gap-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold bg-indigo-600 px-2 py-1 rounded text-white tracking-wider">EDITOR</span>
+                    <h2 class="text-base font-bold text-slate-200" data-i18n="editor_title">画像編集</h2>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="e_undo()" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-xs font-medium" id="e_btnUndo" disabled>
+                        <i data-lucide="undo-2" class="w-4 h-4"></i> <span data-i18n="btn_undo">元に戻す</span>
+                    </button>
+                    <button onclick="e_showResetModal()" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-700 hover:bg-red-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> <span data-i18n="btn_reset">初期化</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 flex flex-col lg:flex-row lg:overflow-hidden relative">
+                
+                <div id="e_uploadArea" class="absolute inset-0 z-20 bg-slate-50 flex flex-col items-center justify-center p-10 text-center transition cursor-pointer">
+                    <div class="border-3 border-dashed border-slate-300 rounded-2xl p-12 hover:border-indigo-500 hover:bg-indigo-50/50 transition-all w-full max-w-lg flex flex-col items-center gap-4">
+                        <input type="file" id="e_fileInput" accept="image/*" class="hidden">
+                        <div class="bg-white p-4 rounded-full shadow-sm">
+                            <!-- Icon: folder-open -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-lg font-bold text-slate-700" data-i18n="editor_drop">画像を編集</p>
+                            <p class="text-sm text-slate-400 mt-1" data-i18n="editor_drop_sub">ドラッグ&ドロップ またはクリック</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-slate-200 p-10 flex items-start justify-center relative overflow-auto shadow-inner min-h-[300px] lg:min-h-0">
+                    <div class="relative shadow-2xl">
+                        <canvas id="e_canvas" class="max-w-full h-auto block editor-canvas-bg cursor-crosshair"></canvas>
+                        <div id="e_loadingIndicator" class="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center hidden z-20">
+                            <div class="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                                <i data-lucide="loader-2" class="animate-spin text-indigo-600 w-5 h-5"></i>
+                                <span class="text-sm font-bold text-gray-700">Processing...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col z-10 shadow-xl shrink-0 h-auto lg:h-full">
+                    
+                    <div class="flex border-b border-gray-200 shrink-0 overflow-x-auto bg-white z-10">
+                        <button id="e_tabMosaic" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-active whitespace-nowrap" onclick="e_switchTab('mosaic')">
+                            <i data-lucide="eraser" class="w-4 h-4"></i> <span data-i18n="tab_mosaic">モザイク</span>
+                        </button>
+                        <button id="e_tabDuotone" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap" onclick="e_switchTab('duotone')">
+                            <i data-lucide="palette" class="w-4 h-4"></i> <span data-i18n="tab_duotone">2色化</span>
+                        </button>
+                        <button id="e_tabAdjust" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap" onclick="e_switchTab('adjust')">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> <span data-i18n="tab_adjust">調整</span>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 p-6 lg:overflow-y-auto">
+                        <div id="e_panelMosaic" class="flex flex-col gap-6">
+                             <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
+                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="mosaic_info">画像をドラッグして適用</span>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="effect_type">エフェクト</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="e_setMosaicMode('pixelate')" id="e_modePixelate" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition font-medium" data-i18n="mode_mosaic">モザイク</button>
+                                    <button onclick="e_setMosaicMode('blur')" id="e_modeBlur" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium" data-i18n="mode_blur">ぼかし</button>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="shape">形状</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="e_setShapeMode('rectangle')" id="e_shapeRect" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium">
+                                        <div class="w-3 h-3 border-2 border-current"></div> <span data-i18n="shape_rect">四角</span>
+                                    </button>
+                                    <button onclick="e_setShapeMode('ellipse')" id="e_shapeEllipse" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
+                                        <div class="w-3 h-3 border-2 border-current rounded-full"></div> <span data-i18n="shape_circle">円</span>
+                                    </button>
+                                </div>
+                            </div>
+                             <div>
+                                <div class="flex justify-between mb-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide" data-i18n="intensity">強度</label>
+                                    <span id="e_intensityVal" class="text-xs font-mono bg-slate-100 px-1 rounded">10</span>
+                                </div>
+                                <input type="range" id="e_intensityRange" min="2" max="50" value="10" oninput="e_updateIntensityDisplay()">
+                            </div>
+                        </div>
+
+                        <div id="e_panelDuotone" class="hidden flex flex-col gap-6">
+                             <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
+                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="duotone_info">2色を選んで適用</span>
+                            </div>
+                            <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex flex-col items-center">
+                                        <input type="color" id="e_colorShadow" value="#1e1b4b" oninput="e_updateDuotonePreview()">
+                                        <span class="text-[10px] text-gray-500 mt-1" data-i18n="shadow">影</span>
+                                    </div>
+                                    <div class="flex-1 flex flex-col gap-1 px-2">
+                                        <input type="range" id="e_duotoneBalanceRange" min="1" max="99" value="50" class="w-full" oninput="e_updateDuotonePreview()">
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <input type="color" id="e_colorHighlight" value="#f472b6" oninput="e_updateDuotonePreview()">
+                                        <span class="text-[10px] text-gray-500 mt-1" data-i18n="highlight">光</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="preset">プリセット</label>
+                                <div class="grid grid-cols-4 gap-2">
+                                    <button onclick="e_setDuotonePreset('#40e0d0', '#ff0080')" class="h-8 rounded-md bg-gradient-to-r from-[#ff0080] to-[#40e0d0] ring-1 ring-gray-200 hover:scale-105 transition" title="Cyberpunk"></button>
+                                    <button onclick="e_setDuotonePreset('#f8b500', '#fceabb')" class="h-8 rounded-md bg-gradient-to-r from-[#f8b500] to-[#fceabb] ring-1 ring-gray-200 hover:scale-105 transition" title="Sunset"></button>
+                                    <button onclick="e_setDuotonePreset('#2c3e50', '#bdc3c7')" class="h-8 rounded-md bg-gradient-to-r from-[#2c3e50] to-[#bdc3c7] ring-1 ring-gray-200 hover:scale-105 transition" title="Silver"></button>
+                                    <button onclick="e_setDuotonePreset('#000000', '#ffffff')" class="h-8 rounded-md bg-gradient-to-r from-black to-white ring-1 ring-gray-200 hover:scale-105 transition" title="Mono"></button>
+                                </div>
+                            </div>
+                            <button onclick="e_applyDuotone()" class="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2">
+                                <i data-lucide="check-circle-2"></i> <span data-i18n="apply_effect">適用する</span>
+                            </button>
+                        </div>
+
+                        <div id="e_panelAdjust" class="hidden flex flex-col gap-5">
+                             <div class="text-xs text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex gap-2 items-center">
+                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="adjust_info">調整後に適用して確定</span>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="group">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-medium text-gray-600"><i data-lucide="sun" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_bright">明るさ</span></span>
+                                        <span id="e_valBrightness" class="font-mono text-gray-400">100%</span>
+                                    </div>
+                                    <input type="range" id="e_adjBrightness" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                                </div>
+                                 <div class="group">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-medium text-gray-600"><i data-lucide="contrast" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_contrast">コントラスト</span></span>
+                                        <span id="e_valContrast" class="font-mono text-gray-400">100%</span>
+                                    </div>
+                                    <input type="range" id="e_adjContrast" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                                </div>
+                                <div class="group">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-medium text-gray-600"><i data-lucide="droplet" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_sat">彩度</span></span>
+                                        <span id="e_valSaturate" class="font-mono text-gray-400">100%</span>
+                                    </div>
+                                    <input type="range" id="e_adjSaturate" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                                </div>
+                                 <div class="group">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-medium text-gray-600"><i data-lucide="rainbow" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_hue">色相</span></span>
+                                        <span id="e_valHue" class="font-mono text-gray-400">0°</span>
+                                    </div>
+                                    <input type="range" id="e_adjHue" min="-180" max="180" value="0" class="range-hue" oninput="e_updateAdjustmentPreview()">
+                                </div>
+                                 <div class="group">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="font-medium text-gray-600"><i data-lucide="thermometer" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_temp">色温度</span></span>
+                                        <span id="e_valTemp" class="font-mono text-gray-400">0</span>
+                                    </div>
+                                    <input type="range" id="e_adjTemp" min="-50" max="50" value="0" class="range-warm" oninput="e_updateAdjustmentPreview()">
+                                </div>
+                            </div>
+                            <button onclick="e_applyAdjustment()" class="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2 mt-2">
+                                <i data-lucide="check-circle-2"></i> <span data-i18n="apply_adj">調整を適用</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-gray-200 bg-slate-50 shrink-0">
+                        <button onclick="e_downloadImage()" class="w-full py-3 bg-slate-900 text-white rounded-lg hover:bg-black font-bold shadow-lg transition transform active:scale-[0.98] flex justify-center items-center gap-2">
+                            <i data-lucide="download"></i> <span data-i18n="download_img">画像を保存</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="e_resetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all scale-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="text-red-500"></i> Reset
+                    </h3>
+                    <p class="text-gray-600 mb-6 text-sm" data-i18n="reset_msg">編集内容は全て破棄され、初期状態に戻ります。よろしいですか？</p>
+                    <div class="flex gap-3 justify-end">
+                        <button onclick="e_hideResetModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium transition" data-i18n="btn_cancel">Cancel</button>
+                        <button onclick="e_confirmReset()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition shadow-sm" data-i18n="btn_reset_confirm">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- JavaScript Logic -->
+<script>
+    const apiKey = ""; 
+
+    // --- Localization Logic (Same as before) ---
+    const translations = {
+        ja: {
+            tab_resize: "一括リサイズ", tab_editor: "画像編集", resizer_desc: "SNS、ブログ、資料作成に。複数画像をWeb最適なサイズへ一括変換・ZIP保存。",
+            local_process: "安心のローカル処理", drag_drop_title: "ここに画像をドロップ", drag_drop_desc: "またはクリックして選択 (JPEG, PNG, HEIC対応)",
+            settings_title: "出力設定", resize_setting: "リサイズ設定", width_px: "横幅指定 (px)", ratio_pct: "比率指定 (%)",
+            quality_jpeg: "画質 (JPEGのみ)", quality_low: "軽量", quality_high: "高画質", watermark: "透かし文字 (Watermark)",
+            ai_protection: "AI対策 / 盗用防止", wm_font: "フォント", wm_pos: "位置 / 種類", wm_size: "サイズ/強度", wm_opacity: "濃さ/透明度",
+            font_gothic: "ゴシック (標準)", font_mincho: "明朝体", font_maru: "丸ゴシック", font_hand: "手書き風",
+            pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "全面タイル (AI対策)", pos_noise: "ステルスノイズ (美観重視)",
+            finish_opt: "仕上げ (Option)", file_prefix: "ファイル名接頭辞", out_format: "出力形式", btn_process: "変換して保存 (ZIP)",
+            preview_list: "プレビューリスト", clear_all: "全てクリア", no_images: "画像がありません", drop_instruction: "画像をドロップして開始",
+            confirm_clear: "リストをクリアしますか？<br><span class='text-xs text-slate-400'>読み込んだ画像は全て削除されます</span>",
+            btn_cancel: "キャンセル", btn_clear: "削除", editor_title: "画像編集", btn_undo: "元に戻す", btn_reset: "初期化",
+            editor_drop: "画像を編集", editor_drop_sub: "ドラッグ&ドロップ またはクリック", tab_mosaic: "モザイク", tab_duotone: "2色化",
+            tab_adjust: "調整", mosaic_info: "画像をドラッグして適用", effect_type: "エフェクト", mode_mosaic: "モザイク", mode_blur: "ぼかし",
+            shape: "形状", shape_rect: "四角", shape_circle: "円", intensity: "強度", duotone_info: "2色を選んで適用", shadow: "影", highlight: "光",
+            preset: "プリセット", apply_effect: "適用する", adjust_info: "調整後に適用して確定", adj_bright: "明るさ", adj_contrast: "コントラスト",
+            adj_sat: "彩度", adj_hue: "色相", adj_temp: "色温度", apply_adj: "調整を適用", download_img: "画像を保存",
+            reset_msg: "編集内容は全て破棄され、初期状態に戻ります。よろしいですか？", btn_reset_confirm: "初期化",
+            noise_note: "※文字入力は不要です。「サイズ/強度」でノイズの強さを調整します。",
+            wm_text_placeholder_noise: "入力不要 (ノイズ適用中)", wm_size_noise: "ノイズ強度"
+        },
+        en: {
+            tab_resize: "Batch Resizer", tab_editor: "Single Editor", resizer_desc: "Convert & Compress multiple images for Web/SNS. Save as ZIP.",
+            local_process: "Secure Local Processing", drag_drop_title: "Drag & Drop Photos", drag_drop_desc: "Or click to browse (JPEG, PNG, HEIC)",
+            settings_title: "Output Settings", resize_setting: "Resize Settings", width_px: "Width (px)", ratio_pct: "Ratio (%)",
+            quality_jpeg: "Quality (JPEG only)", quality_low: "Low", quality_high: "High", watermark: "Watermark",
+            ai_protection: "AI Protection / Anti-Theft", wm_font: "Font", wm_pos: "Position / Type", wm_size: "Size/Intensity", wm_opacity: "Opacity",
+            font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Rounded", font_hand: "Handwritten",
+            pos_br: "Bottom Right", pos_bl: "Bottom Left", pos_c: "Center", pos_tile: "Full Tile (Anti-AI)", pos_noise: "Stealth Noise (Clean)",
+            finish_opt: "Finishing Options", file_prefix: "Filename Prefix", out_format: "Format", btn_process: "Process & Save (ZIP)",
+            preview_list: "Preview List", clear_all: "Clear All", no_images: "No Images", drop_instruction: "Drop images to start",
+            confirm_clear: "Clear the list?<br><span class='text-xs text-slate-400'>All images will be removed</span>",
+            btn_cancel: "Cancel", btn_clear: "Clear", editor_title: "Image Editor", btn_undo: "Undo", btn_reset: "Reset",
+            editor_drop: "Open Image", editor_drop_sub: "Drag & drop or click to browse", tab_mosaic: "Blur/Mosaic", tab_duotone: "Duotone",
+            tab_adjust: "Adjust", mosaic_info: "Drag on image to apply", effect_type: "Effect Type", mode_mosaic: "Mosaic", mode_blur: "Blur",
+            shape: "Shape", shape_rect: "Rect", shape_circle: "Circle", intensity: "Intensity", duotone_info: "Select colors & Apply", shadow: "Shadow", highlight: "Highlight",
+            preset: "Presets", apply_effect: "Apply Effect", adjust_info: "Adjust & Apply to fix", adj_bright: "Brightness", adj_contrast: "Contrast",
+            adj_sat: "Saturation", adj_hue: "Hue", adj_temp: "Temp", apply_adj: "Apply Adjustments", download_img: "Download Image",
+            reset_msg: "All changes will be lost. Reset to original?", btn_reset_confirm: "Reset",
+            noise_note: "* No text needed. Adjust noise strength with slider.",
+            wm_text_placeholder_noise: "No input needed (Noise Active)", wm_size_noise: "Noise Strength"
+        },
+        pt: {
+            tab_resize: "Redimensionar em Lote", tab_editor: "Editor Único", resizer_desc: "Converter e comprimir imagens para Web/SNS. Salvar como ZIP.",
+            local_process: "Processamento Local Seguro", drag_drop_title: "Arraste e Solte Fotos", drag_drop_desc: "Ou clique para selecionar (JPEG, PNG, HEIC)",
+            settings_title: "Configurações de Saída", resize_setting: "Configurações de Redimensionamento", width_px: "Largura (px)", ratio_pct: "Proporção (%)",
+            quality_jpeg: "Qualidade (apenas JPEG)", quality_low: "Baixa", quality_high: "Alta", watermark: "Marca d'água",
+            ai_protection: "Proteção IA / Antirroubo", wm_font: "Fonte", wm_pos: "Posição / Tipo", wm_size: "Tamanho/Intensidade", wm_opacity: "Opacidade",
+            font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Arredondada", font_hand: "Manuscrita",
+            pos_br: "Inferior Direito", pos_bl: "Inferior Esquerdo", pos_c: "Centro", pos_tile: "Azulejo (Anti-IA)", pos_noise: "Ruído Invisível (Limpo)",
+            finish_opt: "Opções de Acabamento", file_prefix: "Prefixo do Arquivo", out_format: "Formato", btn_process: "Processar e Salvar (ZIP)",
+            preview_list: "Lista de Pré-visualização", clear_all: "Limpar Tudo", no_images: "Sem Imagens", drop_instruction: "Solte imagens para começar",
+            confirm_clear: "Limpar a lista?<br><span class='text-xs text-slate-400'>Todas as imagens serão removidas</span>",
+            btn_cancel: "Cancelar", btn_clear: "Limpar", editor_title: "Editor de Imagem", btn_undo: "Desfazer", btn_reset: "Redefinir",
+            editor_drop: "Abrir Imagem", editor_drop_sub: "Arraste e solte ou clique para navegar", tab_mosaic: "Desfoque/Mosaico", tab_duotone: "Duotônico",
+            tab_adjust: "Ajustar", mosaic_info: "Arraste na imagem para aplicar", effect_type: "Tipo de Efeito", mode_mosaic: "Mosaico", mode_blur: "Desfoque",
+            shape: "Forma", shape_rect: "Retângulo", shape_circle: "Círculo", intensity: "Intensidade", duotone_info: "Selecione cores e aplique", shadow: "Sombra", highlight: "Destaque",
+            preset: "Predefinições", apply_effect: "Aplicar Efeito", adjust_info: "Ajustar e aplicar para corrigir", adj_bright: "Brilho", adj_contrast: "Contraste",
+            adj_sat: "Saturação", adj_hue: "Matiz", adj_temp: "Temp", apply_adj: "Aplicar Ajustes", download_img: "Baixar Imagem",
+            reset_msg: "Todas as alterações serão perdidas. Redefinir para o original?", btn_reset_confirm: "Redefinir",
+            noise_note: "* Nenhum texto necessário. Ajuste a força do ruído.",
+            wm_text_placeholder_noise: "Sem entrada (Ruído Ativo)", wm_size_noise: "Força do Ruído"
+        },
+        zh: {
+            tab_resize: "批量縮放", tab_editor: "單圖編輯", resizer_desc: "適用於社群、部落格。批量轉換圖片並存為ZIP。",
+            local_process: "安全本地處理", drag_drop_title: "拖放照片至此", drag_drop_desc: "或點擊選擇 (JPEG, PNG, HEIC)",
+            settings_title: "輸出設定", resize_setting: "縮放設定", width_px: "寬度 (px)", ratio_pct: "比例 (%)",
+            quality_jpeg: "畫質 (僅JPEG)", quality_low: "低", quality_high: "高", watermark: "浮水印",
+            ai_protection: "AI防護 / 防盜用", wm_font: "字體", wm_pos: "位置 / 類型", wm_size: "大小/強度", wm_opacity: "濃度/透明度",
+            font_gothic: "黑體 (標準)", font_mincho: "明體", font_maru: "圓體", font_hand: "手寫風",
+            pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "滿版平鋪 (防AI)", pos_noise: "隱形噪點 (美觀)",
+            finish_opt: "完成選項", file_prefix: "檔名前綴", out_format: "輸出格式", btn_process: "轉換並保存 (ZIP)",
+            preview_list: "預覽列表", clear_all: "全部清除", no_images: "無圖片", drop_instruction: "拖放圖片以開始",
+            confirm_clear: "清空列表？<br><span class='text-xs text-slate-400'>所有已讀取的圖片將被刪除</span>",
+            btn_cancel: "取消", btn_clear: "清除", editor_title: "圖片編輯", btn_undo: "復原", btn_reset: "重置",
+            editor_drop: "打開圖片", editor_drop_sub: "拖放或點擊瀏覽", tab_mosaic: "馬賽克/模糊", tab_duotone: "雙色調",
+            tab_adjust: "調整", mosaic_info: "在圖片上拖曳以應用", effect_type: "效果類型", mode_mosaic: "馬賽克", mode_blur: "模糊",
+            shape: "形狀", shape_rect: "矩形", shape_circle: "圓形", intensity: "強度", duotone_info: "選擇顏色並應用", shadow: "陰影", highlight: "高光",
+            preset: "預設", apply_effect: "應用效果", adjust_info: "調整後應用以確定", adj_bright: "亮度", adj_contrast: "對比度",
+            adj_sat: "飽和度", adj_hue: "色相", adj_temp: "色溫", apply_adj: "應用調整", download_img: "保存圖片",
+            reset_msg: "所有變更將丟失。重置為原始狀態？", btn_reset_confirm: "重置",
+            noise_note: "* 無需文字。使用滑桿調整噪點強度。",
+            wm_text_placeholder_noise: "無需輸入 (噪點啟用中)", wm_size_noise: "噪點強度"
+        }
+    };
+
+    // ... (Localization and Tab Switch functions same as previous) ...
+    function changeLanguage(lang) {
+        const elements = document.querySelectorAll('[data-i18n]');
+        elements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[lang] && translations[lang][key]) {
+                if (el.innerHTML.includes('<') && !key.includes('confirm')) {
+                     el.innerHTML = translations[lang][key];
+                } else {
+                    el.innerHTML = translations[lang][key];
+                }
+            }
+        });
+        
+        // Handle dynamic UI based on current selection
+        const pos = document.getElementById('r_wmPosition').value;
+        const textInput = document.getElementById('r_watermarkText');
+        const sizeLabel = document.getElementById('r_wmSizeLabel');
+        
+        if (pos === 'noise') {
+            textInput.placeholder = translations[lang]['wm_text_placeholder_noise'];
+            sizeLabel.innerHTML = translations[lang]['wm_size_noise'];
+        } else {
+            if (lang === 'ja') textInput.placeholder = "例: © MyName (Do Not Use)";
+            else textInput.placeholder = "© MyName (Do Not Use)";
+            sizeLabel.innerHTML = translations[lang]['wm_size'];
+        }
+
+        if (lang === 'ja') document.getElementById('r_filenamePrefix').placeholder = "例: Travel_2024";
+        if (lang === 'en') document.getElementById('r_filenamePrefix').placeholder = "Ex: Travel_2024";
+        if (lang === 'pt') document.getElementById('r_filenamePrefix').placeholder = "Ex: Viagem_2024";
+        if (lang === 'zh') document.getElementById('r_filenamePrefix').placeholder = "例: Travel_2024";
+    }
+
+    function r_handleWmChange() {
+        const pos = document.getElementById('r_wmPosition').value;
+        const textInput = document.getElementById('r_watermarkText');
+        const fontSelect = document.getElementById('r_wmFont');
+        const note = document.getElementById('r_wmNote');
+        const lang = document.getElementById('langSelect').value;
+        const sizeLabel = document.getElementById('r_wmSizeLabel');
+
+        if (pos === 'noise') {
+            textInput.disabled = true;
+            textInput.value = ""; 
+            textInput.placeholder = translations[lang]['wm_text_placeholder_noise'];
+            textInput.classList.add('bg-slate-100');
+            fontSelect.disabled = true;
+            note.classList.remove('hidden');
+            sizeLabel.innerHTML = translations[lang]['wm_size_noise'];
+        } else {
+            textInput.disabled = false;
+            textInput.classList.remove('bg-slate-100');
+            if (lang === 'ja') textInput.placeholder = "例: © MyName (Do Not Use)";
+            else textInput.placeholder = "© MyName (Do Not Use)";
+            
+            fontSelect.disabled = false;
+            note.classList.add('hidden');
+            sizeLabel.innerHTML = translations[lang]['wm_size'];
+        }
+        r_saveSettings();
+    }
+
+    function switchMainTab(tabName) {
+        const resizeApp = document.getElementById('app-resizer');
+        const editorApp = document.getElementById('app-editor');
+        const resizeBtn = document.getElementById('tab-btn-resize');
+        const editorBtn = document.getElementById('tab-btn-editor');
+
+        if (tabName === 'resize') {
+            resizeApp.classList.remove('hidden');
+            editorApp.classList.add('hidden');
+            resizeBtn.classList.add('main-tab-active');
+            resizeBtn.classList.remove('main-tab-inactive');
+            editorBtn.classList.remove('main-tab-active');
+            editorBtn.classList.add('main-tab-inactive');
+        } else {
+            resizeApp.classList.add('hidden');
+            editorApp.classList.remove('hidden');
+            resizeBtn.classList.remove('main-tab-active');
+            resizeBtn.classList.add('main-tab-inactive');
+            editorBtn.classList.add('main-tab-active');
+            editorBtn.classList.remove('main-tab-inactive');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.warn("Lucide icons not loaded. UI may lack icons.");
+        }
+        r_init(); 
+        e_init(); 
+        changeLanguage('ja');
+    });
+
+    /* ==========================================================================
+       APP 1: Resizer Logic
+       ========================================================================== */
+    let r_fileQueue = []; 
+    let r_currentResizeMode = 'width'; 
+
+    function r_init() {
+        const fileInput = document.getElementById('r_fileInput');
+        // Changed target to new consolidated drop zone
+        const dropZone = document.getElementById('r_dropZone');
+        const targetPercent = document.getElementById('r_targetPercent');
+        const qualityRange = document.getElementById('r_qualityRange');
+
+        r_loadSettings();
+
+        // New Logic: Handle click on drop zone BUT ignore clicks on cards/buttons
+        // This is handled via r_handleDropZoneClick wrapper function in HTML
+
+        dropZone.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.add('drag-active'); 
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length > 0) {
+                r_handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                r_handleFiles(e.target.files);
+            }
+        });
+
+        targetPercent.addEventListener('input', (e) => {
+            document.getElementById('r_percentValue').textContent = e.target.value;
+        });
+        qualityRange.addEventListener('input', (e) => {
+            document.getElementById('r_qualityValue').textContent = e.target.value;
+        });
+    }
+
+    // New wrapper to prevent triggering file input when clicking card buttons
+    function r_handleDropZoneClick(event) {
+        // If user clicked on a button or inside a button (icon), don't open file picker
+        if (event.target.closest('button') || event.target.closest('.photo-card-actions')) {
+            return;
+        }
+        document.getElementById('r_fileInput').click();
+    }
+
+    function r_saveSettings() {
+        const settings = {
+            width: document.getElementById('r_targetWidth').value,
+            percent: document.getElementById('r_targetPercent').value,
+            mode: r_currentResizeMode,
+            format: document.getElementById('r_outputFormat').value,
+            quality: document.getElementById('r_qualityRange').value,
+            prefix: document.getElementById('r_filenamePrefix').value,
+            watermark: document.getElementById('r_watermarkText').value,
+            wmFont: document.getElementById('r_wmFont').value,
+            wmPos: document.getElementById('r_wmPosition').value,
+            wmSize: document.getElementById('r_wmSizeRange').value,
+            wmOpacity: document.getElementById('r_wmOpacityRange').value,
+        };
+        localStorage.setItem('omni_resizer_settings', JSON.stringify(settings));
+    }
+
+    function r_loadSettings() {
+        const saved = localStorage.getItem('omni_resizer_settings');
+        if (saved) {
+            try {
+                const s = JSON.parse(saved);
+                if(s.width) document.getElementById('r_targetWidth').value = s.width;
+                if(s.percent) {
+                    document.getElementById('r_targetPercent').value = s.percent;
+                    document.getElementById('r_percentValue').textContent = s.percent;
+                }
+                if(s.mode) r_setResizeMode(s.mode);
+                if(s.format) document.getElementById('r_outputFormat').value = s.format;
+                if(s.quality) {
+                    document.getElementById('r_qualityRange').value = s.quality;
+                    document.getElementById('r_qualityValue').textContent = s.quality;
+                }
+                if(s.prefix) document.getElementById('r_filenamePrefix').value = s.prefix;
+                if(s.watermark) document.getElementById('r_watermarkText').value = s.watermark;
+                if(s.wmFont) document.getElementById('r_wmFont').value = s.wmFont;
+                if(s.wmPos) document.getElementById('r_wmPosition').value = s.wmPos;
+                if(s.wmSize) document.getElementById('r_wmSizeRange').value = s.wmSize;
+                if(s.wmOpacity) document.getElementById('r_wmOpacityRange').value = s.wmOpacity;
+                r_handleWmChange();
+                r_updateWmDisplay();
+            } catch(e) {
+                console.warn('Failed to load settings', e);
+            }
+        }
+    }
+
+    function r_updateWmDisplay() {
+        const size = parseInt(document.getElementById('r_wmSizeRange').value);
+        let sizeText = "M";
+        if (size <= 3) sizeText = "S";
+        else if (size >= 7) sizeText = "L";
+        document.getElementById('r_wmSizeVal').textContent = sizeText;
+
+        const op = document.getElementById('r_wmOpacityRange').value;
+        document.getElementById('r_wmOpacityVal').textContent = op + "%";
+    }
+
+    function r_setResizeMode(mode) {
+        r_currentResizeMode = mode;
+        const btnWidth = document.getElementById('r_btn-mode-width');
+        const btnPercent = document.getElementById('r_btn-mode-percent');
+        const areaWidth = document.getElementById('r_widthOptions');
+        const areaPercent = document.getElementById('r_percentOptions');
+
+        if (mode === 'width') {
+            btnWidth.className = "flex-1 py-2 text-sm rounded-md bg-white shadow-sm text-brand-dark font-bold transition-all";
+            btnPercent.className = "flex-1 py-2 text-sm rounded-md text-slate-500 hover:text-brand-dark transition-all";
+            areaWidth.classList.remove('hidden');
+            areaPercent.classList.add('hidden');
+        } else {
+            btnWidth.className = "flex-1 py-2 text-sm rounded-md text-slate-500 hover:text-brand-dark transition-all";
+            btnPercent.className = "flex-1 py-2 text-sm rounded-md bg-white shadow-sm text-brand-dark font-bold transition-all";
+            areaWidth.classList.add('hidden');
+            areaPercent.classList.remove('hidden');
+        }
+        r_saveSettings();
+    }
+
+    function r_insertDate(format) {
+        const input = document.getElementById('r_filenamePrefix');
+        const now = new Date();
+        let dateStr = "";
+        
+        if (format === 'YYYYMMDD') {
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            dateStr = `${y}${m}${d}`;
+        }
+        
+        if (input.value) {
+            if (!input.value.endsWith('_')) {
+                input.value = input.value + "_" + dateStr;
+            } else {
+                input.value = input.value + dateStr;
+            }
+        } else {
+            input.value = dateStr;
+        }
+        r_saveSettings();
+    }
+
+    function r_openClearModal() {
+        if(r_fileQueue.length === 0) return;
+        const modal = document.getElementById('r_confirmModal');
+        const content = document.getElementById('r_confirmModalContent');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        });
+    }
+
+    function r_closeClearModal() {
+        const modal = document.getElementById('r_confirmModal');
+        const content = document.getElementById('r_confirmModalContent');
+        modal.classList.add('opacity-0');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function r_executeClear() {
+        r_fileQueue = [];
+        const previewArea = document.getElementById('r_previewArea');
+        
+        // Remove all cards except the add button
+        const cards = previewArea.querySelectorAll('.photo-card');
+        cards.forEach(card => card.remove());
+
+        // Toggle visibility
+        document.getElementById('r_emptyState').classList.remove('hidden');
+        document.getElementById('r_previewArea').classList.add('hidden');
+        document.getElementById('r_previewArea').classList.remove('grid');
+        document.getElementById('r_btnClearAll').classList.add('hidden');
+
+        r_updateCount();
+        document.getElementById('r_fileInput').value = '';
+        r_closeClearModal();
+    }
+
+    async function r_handleFiles(files) {
+        if (!files || files.length === 0) return;
+        const statusMsg = document.getElementById('r_statusMsg');
+        statusMsg.textContent = "Loading...";
+        statusMsg.className = "absolute -bottom-8 left-0 right-0 text-sm text-center font-bold text-slate-500 h-6 animate-pulse";
+        
+        // Toggle view from empty state to grid
+        const emptyState = document.getElementById('r_emptyState');
+        const previewArea = document.getElementById('r_previewArea');
+        const btnClear = document.getElementById('r_btnClearAll');
+        
+        emptyState.classList.add('hidden');
+        previewArea.classList.remove('hidden');
+        previewArea.classList.add('grid');
+        btnClear.classList.remove('hidden');
+
+        for (let file of Array.from(files)) {
+            const id = Date.now() + Math.random().toString(36).substr(2, 9);
+            let processFile = file;
+            let isHeic = file.name.toLowerCase().endsWith('.heic');
+
+            if (isHeic) {
+                try {
+                    if (typeof heic2any !== 'undefined') {
+                        const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.5 });
+                        const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+                        processFile = new File([resultBlob], file.name.replace(/\.heic$/i, ".jpg"), { type: "image/jpeg" });
+                    } else {
+                        console.error("heic2any library not loaded");
+                        continue;
+                    }
+                } catch (e) {
+                    console.error("HEIC Error", e);
+                    continue; 
+                }
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgObj = {
+                    id: id,
+                    originalFile: processFile,
+                    originalName: file.name,
+                    src: e.target.result,
+                    rotation: 0
+                };
+                r_fileQueue.push(imgObj);
+                r_renderPreview(imgObj);
+                r_updateCount();
+            };
+            reader.readAsDataURL(processFile);
+        }
+        statusMsg.textContent = "";
+        document.getElementById('r_fileInput').value = '';
+    }
+
+    function r_renderPreview(imgObj) {
+        // Insert before the "Add Button"
+        const previewArea = document.getElementById('r_previewArea');
+        const addButton = document.getElementById('r_addCardBtn');
+
+        const div = document.createElement('div');
+        div.className = "photo-card rounded-xl overflow-hidden group relative animate-fade-in border border-slate-100 bg-white";
+        div.id = `r_card-${imgObj.id}`;
+        
+        // Inline SVGs for critical icons
+        const iconRotateLeft = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+        const iconRotateRight = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>`;
+        const iconClose = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 12"/></svg>`;
+
+        div.innerHTML = `
+            <div class="relative aspect-[4/3] bg-slate-50 overflow-hidden group">
+                <img src="${imgObj.src}" id="r_img-${imgObj.id}" class="w-full h-full object-contain transition-transform duration-300">
+                
+                <!-- オーバーレイアクション -->
+                <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent flex justify-end gap-2 photo-card-actions">
+                     <button onclick="r_rotateImage('${imgObj.id}', -90)" class="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full shadow-sm transition-transform hover:scale-110 flex items-center justify-center w-8 h-8" title="左回転">
+                        ${iconRotateLeft}
+                    </button>
+                    <button onclick="r_rotateImage('${imgObj.id}', 90)" class="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full shadow-sm transition-transform hover:scale-110 flex items-center justify-center w-8 h-8" title="右回転">
+                        ${iconRotateRight}
+                    </button>
+                    <button onclick="r_removeImage('${imgObj.id}')" class="bg-white/90 hover:bg-white text-slate-700 p-1.5 rounded-full shadow-sm transition-transform hover:scale-110 flex items-center justify-center w-8 h-8 ml-2" title="削除">
+                        ${iconClose}
+                    </button>
+                </div>
+            </div>
+            <div class="p-3 bg-white">
+                <div class="text-xs font-bold text-slate-600 truncate w-full" title="${imgObj.originalName}">
+                    ${imgObj.originalName}
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1">
+                    ${(imgObj.originalFile.size / 1024).toFixed(0)} KB
+                </div>
+            </div>
+        `;
+        
+        previewArea.insertBefore(div, addButton);
+    }
+
+    function r_rotateImage(id, deg) {
+        const target = r_fileQueue.find(f => f.id === id);
+        if (target) {
+            target.rotation = (target.rotation + deg) % 360;
+            const imgEl = document.getElementById(`r_img-${id}`);
+            if (imgEl) {
+                imgEl.style.transform = `rotate(${target.rotation}deg)`;
+            }
+        }
+    }
+
+    function r_removeImage(id) {
+        r_fileQueue = r_fileQueue.filter(f => f.id !== id);
+        const el = document.getElementById(`r_card-${id}`);
+        if(el) {
+            el.style.opacity = '0';
+            el.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                el.remove();
+                r_updateCount();
+                if (r_fileQueue.length === 0) {
+                    // Reset to empty state
+                    document.getElementById('r_emptyState').classList.remove('hidden');
+                    document.getElementById('r_previewArea').classList.add('hidden');
+                    document.getElementById('r_previewArea').classList.remove('grid');
+                    document.getElementById('r_btnClearAll').classList.add('hidden');
+                }
+            }, 200);
+        }
+    }
+
+    function r_updateCount() {
+        const count = r_fileQueue.length;
+        const badge = document.getElementById('r_countBadge');
+        if (badge) {
+            badge.textContent = `${count}`;
+            badge.classList.toggle('hidden', count === 0);
+        }
+    }
+
+    async function r_processAndDownload() {
+        // ... (Download Logic remains same as previous version) ...
+        const statusMsg = document.getElementById('r_statusMsg');
+        if (r_fileQueue.length === 0) {
+            statusMsg.textContent = "画像を追加してください";
+            statusMsg.className = "absolute -bottom-8 left-0 right-0 text-sm text-center font-bold text-red-500 h-6";
+            setTimeout(() => statusMsg.textContent = "", 3000);
+            return;
+        }
+
+        const btn = document.getElementById('r_downloadBtn');
+        const originalBtnHtml = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Processing...`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+        statusMsg.textContent = "Converting...";
+        statusMsg.className = "absolute -bottom-8 left-0 right-0 text-sm text-center font-bold text-brand-primary h-6";
+
+        try {
+            const zip = new JSZip();
+            const outputFormat = document.getElementById('r_outputFormat').value;
+            const targetWidth = parseInt(document.getElementById('r_targetWidth').value);
+            const targetPercent = parseInt(document.getElementById('r_targetPercent').value);
+            const prefix = document.getElementById('r_filenamePrefix').value.trim();
+            const quality = parseFloat(document.getElementById('r_qualityRange').value);
+            
+            const watermarkText = document.getElementById('r_watermarkText').value.trim();
+            const wmFont = document.getElementById('r_wmFont').value;
+            const wmPos = document.getElementById('r_wmPosition').value;
+            const wmSizeScale = parseInt(document.getElementById('r_wmSizeRange').value); 
+            const wmOpacity = parseInt(document.getElementById('r_wmOpacityRange').value) / 100;
+
+            const ext = outputFormat === 'image/jpeg' ? 'jpg' : 'png';
+
+            const promises = r_fileQueue.map(async (item, index) => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+
+                            let w = img.width;
+                            let h = img.height;
+                            const rotation = (item.rotation % 360 + 360) % 360;
+                            const isVertical = (rotation === 90 || rotation === 270);
+
+                            let finalW, finalH;
+                            const logicalW = isVertical ? h : w; 
+
+                            if (r_currentResizeMode === 'width') {
+                                const scale = targetWidth / logicalW;
+                                finalW = w * scale; 
+                                finalH = h * scale;
+                            } else {
+                                const scale = targetPercent / 100;
+                                finalW = w * scale;
+                                finalH = h * scale;
+                            }
+
+                            canvas.width = isVertical ? finalH : finalW;
+                            canvas.height = isVertical ? finalW : finalH;
+
+                            ctx.translate(canvas.width / 2, canvas.height / 2);
+                            ctx.rotate(rotation * Math.PI / 180);
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(img, -finalW / 2, -finalH / 2, finalW, finalH);
+                            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+
+                            // Watermark
+                            if (wmPos === 'noise') {
+                                const idata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                const data = idata.data;
+                                const noiseStrength = wmSizeScale * 2; 
+                                for (let i = 0; i < data.length; i += 4) {
+                                    const randR = (Math.random() - 0.5) * noiseStrength;
+                                    const randG = (Math.random() - 0.5) * noiseStrength;
+                                    const randB = (Math.random() - 0.5) * noiseStrength;
+                                    data[i] = Math.min(255, Math.max(0, data[i] + randR));
+                                    data[i+1] = Math.min(255, Math.max(0, data[i+1] + randG));
+                                    data[i+2] = Math.min(255, Math.max(0, data[i+2] + randB));
+                                }
+                                ctx.putImageData(idata, 0, 0);
+                            } 
+                            else if (watermarkText) {
+                                const fontSize = Math.max(12, canvas.width * (wmSizeScale * 0.015)); 
+                                ctx.font = `bold ${fontSize}px ${wmFont}`;
+                                ctx.textBaseline = 'middle';
+                                ctx.textAlign = 'center';
+                                const padding = fontSize; 
+                                ctx.globalAlpha = wmOpacity;
+
+                                if (wmPos === 'tile') {
+                                    ctx.rotate(-45 * Math.PI / 180);
+                                    const diag = Math.sqrt(canvas.width**2 + canvas.height**2);
+                                    const stepX = ctx.measureText(watermarkText).width + fontSize * 2;
+                                    const stepY = fontSize * 4;
+                                    for(let y = -diag; y < diag; y += stepY) {
+                                        for(let x = -diag; x < diag; x += stepX) {
+                                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                                            ctx.lineWidth = fontSize / 15;
+                                            ctx.strokeText(watermarkText, x, y);
+                                            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                                            ctx.fillText(watermarkText, x, y);
+                                        }
+                                    }
+                                    ctx.rotate(45 * Math.PI / 180); 
+                                } else {
+                                    let x, y;
+                                    ctx.textAlign = 'right'; 
+                                    ctx.textBaseline = 'bottom';
+                                    if (wmPos === 'bottom-right') { x = canvas.width - padding; y = canvas.height - padding; }
+                                    else if (wmPos === 'bottom-left') { x = padding; y = canvas.height - padding; ctx.textAlign = 'left'; }
+                                    else if (wmPos === 'center') { x = canvas.width / 2; y = canvas.height / 2; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; }
+
+                                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                                    ctx.lineWidth = fontSize / 10;
+                                    ctx.strokeText(watermarkText, x, y);
+                                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                                    ctx.fillText(watermarkText, x, y);
+                                }
+                                ctx.globalAlpha = 1.0; 
+                            }
+
+                            canvas.toBlob((blob) => {
+                                if (!blob) {
+                                    reject(new Error('Canvas to Blob failed'));
+                                    return;
+                                }
+                                let filename;
+                                if (prefix) {
+                                    const num = String(index + 1).padStart(2, '0');
+                                    filename = `${prefix}_${num}.${ext}`;
+                                } else {
+                                    const originalName = item.originalName.replace(/\.[^/.]+$/, "");
+                                    filename = `${originalName}.${ext}`;
+                                }
+                                
+                                zip.file(filename, blob);
+                                resolve();
+                            }, outputFormat, quality);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    };
+                    img.onerror = () => reject(new Error('Image load failed')); 
+                    img.src = item.src;
+                });
+            });
+
+            await Promise.all(promises);
+
+            const content = await zip.generateAsync({ type: "blob" });
+            const d = new Date();
+            const dateStr = d.getFullYear() +
+                          String(d.getMonth() + 1).padStart(2, '0') +
+                          String(d.getDate()).padStart(2, '0');
+                          
+            saveAs(content, `omni_photos_${dateStr}.zip`);
+            statusMsg.textContent = "Success!";
+
+        } catch (e) {
+            console.error(e);
+            statusMsg.textContent = "Error occurred.";
+            statusMsg.className = "absolute -bottom-8 left-0 right-0 text-sm text-center font-bold text-red-500 h-6";
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setTimeout(() => {
+                if (statusMsg.textContent === "Success!") statusMsg.textContent = "";
+            }, 5000);
+        }
+    }
+
+    // --- APP 2: Editor Logic (Simplified) ---
+    let e_originalImage = null;
+    let e_adjustmentBaseImage = null;
+    let e_history = [];
+    const E_MAX_HISTORY = 10;
+    let e_currentTab = 'mosaic';
+    let e_mosaicMode = 'pixelate';
+    let e_shapeMode = 'rectangle';
+    let e_isDrawing = false;
+    let e_startX, e_startY;
+    let e_snapshot = null;
+    let e_duotoneTimer = null;
+
+    function e_init() {
+        const fileInput = document.getElementById('e_fileInput');
+        const uploadArea = document.getElementById('e_uploadArea');
+        const canvas = document.getElementById('e_canvas');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.firstElementChild.classList.add('border-indigo-500', 'bg-indigo-50'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.firstElementChild.classList.remove('border-indigo-500', 'bg-indigo-50'); });
+        uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.firstElementChild.classList.remove('border-indigo-500', 'bg-indigo-50'); if(e.dataTransfer.files[0]) e_loadImage(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', (e) => { if(e.target.files[0]) e_loadImage(e.target.files[0]); });
+
+        canvas.addEventListener('mousedown', e_startDraw);
+        canvas.addEventListener('mousemove', e_drawRect);
+        canvas.addEventListener('mouseup', e_endDraw);
+        canvas.addEventListener('mouseout', () => e_isDrawing = false);
+        canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousedown', {clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousemove', {clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
+        canvas.addEventListener('touchend', () => { canvas.dispatchEvent(new MouseEvent('mouseup', {})); });
+    }
+    // ... [Other e_ functions remain unchanged from previous version] ...
+    // Note: I'm including minimal e_ functions here to keep file size manageable, 
+    // but in a real scenario all would be here. Assuming they persist.
+    // For copy-paste completeness, I will include the key logic blocks again.
+
+    function e_loadImage(file) {
+        const reader = new FileReader();
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadArea = document.getElementById('e_uploadArea');
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                e_originalImage = img;
+                e_saveHistory();
+                e_updateBaseImage();
+                uploadArea.classList.add('hidden');
+                e_switchTab('mosaic');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    function e_updateBaseImage() {
+        const canvas = document.getElementById('e_canvas');
+        e_adjustmentBaseImage = document.createElement('canvas');
+        e_adjustmentBaseImage.width = canvas.width;
+        e_adjustmentBaseImage.height = canvas.height;
+        e_adjustmentBaseImage.getContext('2d').drawImage(canvas, 0, 0);
+    }
+    async function e_switchTab(tab) {
+        if (e_currentTab === 'adjust' && tab !== 'adjust') await e_loadFromHistory();
+        else if (e_currentTab === 'duotone' && tab !== 'duotone') await e_loadFromHistory();
+        e_updateBaseImage();
+        e_currentTab = tab;
+        ['mosaic', 'duotone', 'adjust'].forEach(t => {
+            const btn = document.getElementById('e_tab' + t.charAt(0).toUpperCase() + t.slice(1));
+            const panel = document.getElementById('e_panel' + t.charAt(0).toUpperCase() + t.slice(1));
+            if (t === tab) {
+                btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-active whitespace-nowrap";
+                panel.classList.remove('hidden');
+            } else {
+                btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap";
+                panel.classList.add('hidden');
+            }
+        });
+        const canvas = document.getElementById('e_canvas');
+        canvas.style.cursor = tab === 'mosaic' ? 'crosshair' : 'default';
+        if (tab === 'adjust') e_resetAdjustmentSliders();
+        if (tab === 'duotone') e_updateDuotonePreview();
+    }
+    function e_saveHistory() {
+        const canvas = document.getElementById('e_canvas');
+        if (e_history.length >= E_MAX_HISTORY) e_history.shift();
+        e_history.push(canvas.toDataURL());
+        e_updateUndoButton();
+        e_updateBaseImage();
+    }
+    function e_loadFromHistory() {
+        return new Promise((resolve) => {
+            if (e_history.length === 0) { resolve(); return; }
+            const lastData = e_history[e_history.length - 1];
+            const canvas = document.getElementById('e_canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                ctx.filter = 'none';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                resolve();
+            };
+            img.src = lastData;
+        });
+    }
+    function e_undo() {
+        if (e_history.length <= 1) return;
+        e_history.pop();
+        const prevDataUrl = e_history[e_history.length - 1];
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+            ctx.filter = 'none';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            e_updateUndoButton();
+            e_updateBaseImage();
+            if(e_currentTab === 'adjust') e_resetAdjustmentSliders();
+        };
+        img.src = prevDataUrl;
+    }
+    function e_updateUndoButton() { document.getElementById('e_btnUndo').disabled = e_history.length <= 1; }
+    function e_setMosaicMode(mode) {
+        e_mosaicMode = mode;
+        const active = "py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition font-medium";
+        const inactive = "py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium";
+        document.getElementById('e_modePixelate').className = mode === 'pixelate' ? active : inactive;
+        document.getElementById('e_modeBlur').className = mode === 'blur' ? active : inactive;
+    }
+    function e_setShapeMode(mode) {
+        e_shapeMode = mode;
+        const active = "py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium";
+        const inactive = "py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium";
+        document.getElementById('e_shapeRect').className = mode === 'rectangle' ? active : inactive;
+        document.getElementById('e_shapeEllipse').className = mode === 'ellipse' ? active : inactive;
+    }
+    function e_updateIntensityDisplay() { document.getElementById('e_intensityVal').textContent = document.getElementById('e_intensityRange').value; }
+    function e_getMousePos(e) {
+        const canvas = document.getElementById('e_canvas');
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+    function e_startDraw(e) {
+        if (e_currentTab !== 'mosaic') return;
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        e_isDrawing = true;
+        const pos = e_getMousePos(e);
+        e_startX = pos.x; e_startY = pos.y;
+        e_snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+    function e_drawRect(e) {
+        if (!e_isDrawing || e_currentTab !== 'mosaic') return;
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        const pos = e_getMousePos(e);
+        ctx.putImageData(e_snapshot, 0, 0);
+        ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = '#6366f1'; ctx.setLineDash([5, 3]);
+        const w = pos.x - e_startX; const h = pos.y - e_startY;
+        if (e_shapeMode === 'rectangle') ctx.strokeRect(e_startX, e_startY, w, h);
+        else {
+            ctx.ellipse(e_startX + w/2, e_startY + h/2, Math.abs(w)/2, Math.abs(h)/2, 0, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+    function e_endDraw(e) {
+        if (!e_isDrawing || e_currentTab !== 'mosaic') return;
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        e_isDrawing = false;
+        const pos = e_getMousePos(e);
+        ctx.putImageData(e_snapshot, 0, 0);
+        const w = pos.x - e_startX; const h = pos.y - e_startY;
+        if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
+        e_applyMosaicEffect(w < 0 ? pos.x : e_startX, h < 0 ? pos.y : e_startY, Math.abs(w), Math.abs(h));
+        e_saveHistory();
+    }
+    function e_applyMosaicEffect(x, y, w, h) {
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        const intensity = parseInt(document.getElementById('e_intensityRange').value, 10);
+        const tempCanvas = document.createElement('canvas'); tempCanvas.width = w; tempCanvas.height = h;
+        const tCtx = tempCanvas.getContext('2d'); tCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+        if (e_mosaicMode === 'pixelate') {
+            const pw = Math.max(1, Math.floor(w / intensity)); const ph = Math.max(1, Math.floor(h / intensity));
+            const sCanvas = document.createElement('canvas'); sCanvas.width = pw; sCanvas.height = ph;
+            sCanvas.getContext('2d').drawImage(tempCanvas, 0, 0, pw, ph);
+            tCtx.imageSmoothingEnabled = false; tCtx.clearRect(0,0,w,h);
+            tCtx.drawImage(sCanvas, 0, 0, pw, ph, 0, 0, w, h);
+        } else {
+            tCtx.filter = `blur(${intensity}px)`; tCtx.drawImage(tempCanvas, 0, 0); tCtx.drawImage(tempCanvas, 0, 0); // draw twice to strengthen blur
+            tCtx.filter = 'none';
+        }
+        ctx.save(); ctx.beginPath();
+        if (e_shapeMode === 'rectangle') ctx.rect(x, y, w, h);
+        else ctx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, 2 * Math.PI);
+        ctx.clip(); ctx.drawImage(tempCanvas, x, y); ctx.restore();
+    }
+    function e_setDuotonePreset(h, s) {
+        document.getElementById('e_colorHighlight').value = h; document.getElementById('e_colorShadow').value = s;
+        document.getElementById('e_duotoneBalanceRange').value = 50; e_updateDuotonePreview();
+    }
+    function e_updateDuotonePreview() {
+        const h = document.getElementById('e_colorHighlight').value; const s = document.getElementById('e_colorShadow').value;
+        document.getElementById('e_duotoneBalanceRange').style.background = `linear-gradient(to right, ${s}, ${h})`;
+        if (e_duotoneTimer) clearTimeout(e_duotoneTimer);
+        e_duotoneTimer = setTimeout(() => e_processDuotone(false), 20);
+    }
+    function e_applyDuotone() {
+        document.getElementById('e_loadingIndicator').classList.remove('hidden');
+        setTimeout(() => { e_processDuotone(true); document.getElementById('e_loadingIndicator').classList.add('hidden'); }, 50);
+    }
+    function e_processDuotone(save) {
+        if (!e_adjustmentBaseImage) return;
+        const canvas = document.getElementById('e_canvas'); const ctx = canvas.getContext('2d');
+        const hHex = document.getElementById('e_colorHighlight').value; const sHex = document.getElementById('e_colorShadow').value;
+        const bal = parseInt(document.getElementById('e_duotoneBalanceRange').value, 10) / 100;
+        const h = e_hexToRgb(hHex); const s = e_hexToRgb(sHex);
+        const wCtx = document.createElement('canvas').getContext('2d');
+        wCtx.canvas.width = canvas.width; wCtx.canvas.height = canvas.height;
+        wCtx.drawImage(e_adjustmentBaseImage, 0, 0);
+        const idata = wCtx.getImageData(0, 0, canvas.width, canvas.height); const data = idata.data;
+        const k = Math.log(bal) / Math.log(0.5);
+        for (let i = 0; i < data.length; i += 4) {
+            if (data[i+3] === 0) continue;
+            const lum = (0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2]) / 255;
+            const adjLum = Math.pow(lum, k);
+            data[i] = s.r + (h.r - s.r) * adjLum; data[i+1] = s.g + (h.g - s.g) * adjLum; data[i+2] = s.b + (h.b - s.b) * adjLum;
+        }
+        ctx.putImageData(idata, 0, 0);
+        if (save) e_saveHistory();
+    }
+    function e_resetAdjustmentSliders() {
+        document.getElementById('e_adjBrightness').value = 100; document.getElementById('e_adjContrast').value = 100;
+        document.getElementById('e_adjSaturate').value = 100; document.getElementById('e_adjHue').value = 0;
+        document.getElementById('e_adjTemp').value = 0; e_updateAdjustmentLabels();
+    }
+    function e_updateAdjustmentLabels() {
+        document.getElementById('e_valBrightness').textContent = document.getElementById('e_adjBrightness').value + '%';
+        document.getElementById('e_valContrast').textContent = document.getElementById('e_adjContrast').value + '%';
+        document.getElementById('e_valSaturate').textContent = document.getElementById('e_adjSaturate').value + '%';
+        document.getElementById('e_valHue').textContent = document.getElementById('e_adjHue').value + '°';
+        document.getElementById('e_valTemp').textContent = document.getElementById('e_adjTemp').value;
+    }
+    function e_updateAdjustmentPreview() {
+        e_updateAdjustmentLabels(); if (!e_adjustmentBaseImage) return;
+        const canvas = document.getElementById('e_canvas'); const ctx = canvas.getContext('2d');
+        const b = document.getElementById('e_adjBrightness').value; const c = document.getElementById('e_adjContrast').value;
+        const s = document.getElementById('e_adjSaturate').value; const h = document.getElementById('e_adjHue').value;
+        const t = parseInt(document.getElementById('e_adjTemp').value, 10);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) hue-rotate(${h}deg)`;
+        ctx.drawImage(e_adjustmentBaseImage, 0, 0);
+        ctx.filter = 'none';
+        if (t !== 0) {
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = t > 0 ? `rgba(255, 160, 0, ${t/100})` : `rgba(0, 160, 255, ${Math.abs(t)/100})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    }
+    function e_applyAdjustment() {
+        e_updateAdjustmentPreview();
+        const canvas = document.getElementById('e_canvas');
+        const img = new Image(); img.onload = () => {
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            e_saveHistory(); e_resetAdjustmentSliders();
+        }; img.src = canvas.toDataURL();
+    }
+    function e_hexToRgb(hex) { return { r: parseInt(hex.substring(1, 3), 16), g: parseInt(hex.substring(3, 5), 16), b: parseInt(hex.substring(5, 7), 16) }; }
+    function e_downloadImage() {
+        const canvas = document.getElementById('e_canvas'); if (!e_originalImage) return;
+        const link = document.createElement('a'); link.download = `Omni-Edit-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png'); link.click();
+    }
+    function e_showResetModal() { if(e_originalImage) document.getElementById('e_resetModal').classList.remove('hidden'); }
+    function e_hideResetModal() { document.getElementById('e_resetModal').classList.add('hidden'); }
+    function e_confirmReset() {
+        if (!e_originalImage) return;
+        const canvas = document.getElementById('e_canvas'); const ctx = canvas.getContext('2d');
+        canvas.width = e_originalImage.width; canvas.height = e_originalImage.height;
+        ctx.filter = 'none'; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(e_originalImage, 0, 0);
+        e_history = []; e_saveHistory(); e_hideResetModal(); e_resetAdjustmentSliders();
+        document.getElementById('e_duotoneBalanceRange').value = 50; e_switchTab('mosaic');
+    }
+</script>
+
+</body>
+</html>
