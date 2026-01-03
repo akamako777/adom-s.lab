@@ -619,7 +619,17 @@ Answer in the user's selected language (${lang}).
                 }
             }, [transcript]);
 
+            // ★修正版：初回読み込み時はスクロールしない設定
+            const isMounted = useRef(false); // 初回判定用のフラグ
+
             useEffect(() => {
+                // 初回ロード時は何もしないでフラグだけ立てる
+                if (!isMounted.current) {
+                    isMounted.current = true;
+                    return; 
+                }
+                
+                // 2回目以降（メッセージが増えた時）だけスクロールする
                 if (activeTab === 'chat') {
                     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
                 }
@@ -1569,4 +1579,5 @@ Answer in the user's selected language (${lang}).
         root.render(<App />);
     </script>
 </body>
+
 </html>
