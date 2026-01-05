@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Audio Master: Ultimate Converter & Editor</title>
+    
+    <!-- React & ReactDOM (Core) -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (Runtime Compiler) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    
+    <!-- Tailwind CSS (Play CDN for Browser Runtime) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LAME.js (MP3 Encoder) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+
+    <!-- JSZip (ZIP Archiver) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"M PLUS Rounded 1c"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'aurora-1': 'aurora-1 10s infinite ease-in-out',
+                        'aurora-2': 'aurora-2 12s infinite ease-in-out',
+                        'fade-in-up': 'fade-in-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                    },
+                    keyframes: {
+                        'aurora-1': {
+                            '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+                            '50%': { transform: 'translate(20px, -20px) scale(1.1)' },
+                        },
+                        'aurora-2': {
+                            '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+                            '50%': { transform: 'translate(-20px, 10px) scale(1.2)' },
+                        },
+                        'fade-in-up': {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; overflow: hidden; transition: background-color 0.3s; font-family: 'M PLUS Rounded 1c', sans-serif; touch-action: manipulation; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 3px; }
+        
+        /* Range Input Styling */
+        input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; }
+        input[type=range]:focus { outline: none; }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; 
+            height: 16px; width: 16px;
+            border-radius: 50%; 
+            background: #10b981; 
+            margin-top: -6px;
+            box-shadow: 0 0 5px rgba(16,185,129,0.5); 
+            transition: transform 0.1s;
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer;
+            border-radius: 2px;
+            background: rgba(148, 163, 184, 0.4);
+        }
+        
+        /* EQ Slider Specifics */
+        .eq-slider-container input[type=range] {
+            width: 150px; 
+            height: 30px; 
+            transform-origin: center;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- Canvas Environment Constants ---
+        const apiKey = ""; // Canvas自動認証利用のため空文字
+        const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
+
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // --- Translations ---
+        const TRANSLATIONS = {
+            ja: {
+                langName: "日本語",
+                tabBatch: "一括変換",
+                tabEdit: "一曲編集",
+                dropMain: "ここにファイルをドロップ",
+                dropSub: "クリックして選択 / 複数選択可",
+                dropEdit: "編集するファイルをドロップ",
+                dropEditSub: "動画(MP4等)もOK・自動抽出",
+                quality: "音質設定",
+                settings: "変換オプション",
+                fade: "フェードイン・アウト (2秒)",
+                rename: "ファイル名一括変更",
+                renamePlaceholder: "例: MySong (未入力で無効)",
+                queue: "変換リスト",
+                clear: "リストをクリア",
+                sure: "削除しますか？",
+                dlZip: "一括保存 (ZIP)",
+                zipping: "圧縮中...",
+                waiting: "待機中",
+                loading: "読込中...",
+                decoding: "解析中...",
+                encoding: "変換中...",
+                converting: "処理中...",
+                done: "完了",
+                failed: "失敗",
+                decodeError: "読込エラー",
+                listEmpty: "リストは空です",
+                result: "変換後",
+                remove: "削除",
+                download: "保存",
+                play: "再生",
+                pause: "一時停止",
+                stop: "停止",
+                loop: "ループ",
+                speed: "速度",
+                volume: "音量",
+                fadeSec: "フェード",
+                eq: "イコライザ",
+                export: "MP3書出し",
+                reset: "解除",
+                noFile: "ファイル未選択",
+                sec: "秒",
+                setStart: "始点",
+                setEnd: "終点",
+                resetTrim: "解除",
+                trimRange: "切り抜き範囲",
+                saveEq: "設定保存",
+                loadEq: "設定呼出",
+                resetEq: "リセット",
+                controls: "出力設定",
+                resetParams: "リセット",
+                formatsBtn: "対応形式",
+                formatsTitle: "対応ファイル形式",
+                formatsVideo: "動画: MP4, MOV, AVI, WMV, MKV, FLV, WEBM",
+                formatsAudio: "音声: MP3, WAV, AAC, M4A, FLAC, OGG, WMA",
+                close: "閉じる",
+                tabTrim: "トリム・基本",
+                tabEq: "イコライザ",
+                tabExport: "設定・出力",
+                warnLarge: "ファイルサイズ大",
+                loadFail: "読込失敗: ファイル破損または未対応"
+            },
+            en: {
+                langName: "English",
+                tabBatch: "Batch",
+                tabEdit: "Editor",
+                dropMain: "Drop Files Here",
+                dropSub: "Click to Select",
+                dropEdit: "Drop File to Edit",
+                dropEditSub: "Video supported",
+                quality: "Quality",
+                settings: "Options",
+                fade: "Fade In/Out (2s)",
+                rename: "Rename",
+                renamePlaceholder: "e.g. MySong",
+                queue: "Queue",
+                clear: "Clear",
+                sure: "Sure?",
+                dlZip: "Download ZIP",
+                zipping: "Zipping...",
+                waiting: "Waiting",
+                loading: "Loading...",
+                decoding: "Decoding...",
+                encoding: "Encoding...",
+                converting: "Converting...",
+                done: "Done",
+                failed: "Failed",
+                decodeError: "Error",
+                listEmpty: "List is empty",
+                result: "Result",
+                remove: "Remove",
+                download: "Save",
+                play: "Play",
+                pause: "Pause",
+                stop: "Stop",
+                loop: "Loop",
+                speed: "Speed",
+                volume: "Volume",
+                fadeSec: "Fade",
+                eq: "Equalizer",
+                export: "Export MP3",
+                reset: "Close",
+                noFile: "No file",
+                sec: "s",
+                setStart: "Start",
+                setEnd: "End",
+                resetTrim: "Reset",
+                trimRange: "Trim Range",
+                saveEq: "Save",
+                loadEq: "Load",
+                resetEq: "Reset",
+                controls: "Export Settings",
+                resetParams: "Reset",
+                formatsBtn: "Formats",
+                formatsTitle: "Supported Formats",
+                formatsVideo: "Video: MP4, MOV, AVI, WMV, MKV...",
+                formatsAudio: "Audio: MP3, WAV, AAC, M4A, FLAC...",
+                close: "Close",
+                tabTrim: "Trim/Basic",
+                tabEq: "Equalizer",
+                tabExport: "Export",
+                warnLarge: "File Large",
+                loadFail: "Load Failed"
+            },
+            es: { langName: "Español", tabBatch: "Lotes", tabEdit: "Editor", dropMain: "Suelte archivos", dropEdit: "Suelte 1 archivo", dropEditSub: "Soporta Video", play: "Reproducir", pause: "Pausa", stop: "Detener", export: "Exportar", speed: "Velocidad", eq: "Ecualizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Calidad", settings: "Opciones", queue: "Cola", clear: "Borrar", dlZip: "Descargar ZIP", remove: "Quitar", download: "Guardar", reset: "Cerrar", saveEq: "Guardar", loadEq: "Cargar", resetEq: "Restablecer", controls: "Controlar", resetParams: "Restablecer", formatsBtn: "Formatos", formatsTitle: "Formatos Soportados", formatsVideo: "Video: MP4, MOV, AVI...", formatsAudio: "Audio: MP3, WAV, AAC...", close: "Cerrar", tabTrim: "Recortar", tabEq: "Ecualizador", tabExport: "Exportar", warnLarge: "Archivo Grande", loadFail: "Fallo de carga." },
+            pt: { langName: "Português", tabBatch: "Lote", tabEdit: "Editor", dropMain: "Solte arquivos", dropEdit: "Solte 1 arquivo", dropEditSub: "Suporta Vídeo", play: "Tocar", pause: "Pausa", stop: "Parar", export: "Exportar", speed: "Velocidade", eq: "Equalizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Qualidade", settings: "Opções", queue: "Fila", clear: "Limpar", dlZip: "Baixar ZIP", remove: "Remover", download: "Salvar", reset: "Fechar", saveEq: "Salvar", loadEq: "Carregar", resetEq: "Redefinir", controls: "Controle", resetParams: "Redefinir", formatsBtn: "Formatos", formatsTitle: "Formatos Suportados", formatsVideo: "Vídeo: MP4, MOV, AVI...", formatsAudio: "Áudio: MP3, WAV, AAC...", close: "Fechar", tabTrim: "Cortar", tabEq: "Equalizador", tabExport: "Exportar", warnLarge: "Arquivo Grande", loadFail: "Falha no carregamento." },
+            hi: { langName: "हिन्दी", tabBatch: "बैच", tabEdit: "संपादक", dropMain: "फ़ाइलें छोड़ें", dropEdit: "1 फ़ाइल छोड़ें", dropEditSub: "वीडियो समर्थित", play: "चलाएं", pause: "विराम", stop: "रुकें", export: "निर्यात", speed: "गति", eq: "इक्वलाइज़र", volume: "वॉल्यूम", fadeSec: "फीका", quality: "गुणवत्ता", settings: "विकल्प", queue: "कतार", clear: "साफ़ करें", dlZip: "ZIP डाउनलोड", remove: "हटाएं", download: "सहेजें", reset: "बंद करें", saveEq: "सहेजें", loadEq: "लोड करें", resetEq: "रीसेट", controls: "नियंत्रण", resetParams: "रीसेट", formatsBtn: "प्रारूप", formatsTitle: "समर्थित प्रारूप", formatsVideo: "वीडियो: MP4, MOV, AVI...", formatsAudio: "ऑडियो: MP3, WAV, AAC...", close: "बंद करें", tabTrim: "ट्रिम", tabEq: "इक्वलाइज़र", tabExport: "निर्यात", warnLarge: "बड़ी फ़ाइल", loadFail: "लोड करने में विफल।" },
+            tw: { langName: "繁體中文", tabBatch: "批量轉檔", tabEdit: "單曲編輯", dropMain: "拖放檔案", dropEdit: "拖放1個檔案", dropEditSub: "支援影片", play: "播放", pause: "暫停", stop: "停止", export: "匯出MP3", speed: "速度", eq: "等化器", volume: "音量", fadeSec: "淡入淡出", quality: "音質", settings: "選項", queue: "列表", clear: "清除", dlZip: "下載ZIP", remove: "移除", download: "保存", reset: "關閉", saveEq: "儲存設定", loadEq: "讀取設定", resetEq: "重置", controls: "控制", resetParams: "重置", formatsBtn: "支援格式", formatsTitle: "支援檔案格式", formatsVideo: "影片: MP4, MOV, AVI, WMV...", formatsAudio: "音訊: MP3, WAV, AAC, FLAC...", close: "關閉", tabTrim: "剪輯", tabEq: "等化器", tabExport: "匯出", warnLarge: "檔案過大", loadFail: "讀取失敗。" }
+        };
+
+        // --- Icons (Inline SVG for maximum reliability) ---
+        const IconBase = ({ children, className, ...props }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg> );
+        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></IconBase>;
+        const Music = (props) => <IconBase {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>;
+        const CheckCircle2 = (props) => <IconBase {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></IconBase>;
+        const Loader2 = (props) => <IconBase {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></IconBase>;
+        const Download = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></IconBase>;
+        const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></IconBase>;
+        const X = (props) => <IconBase {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+        const Trash2 = (props) => <IconBase {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconBase>;
+        const Archive = (props) => <IconBase {...props}><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/><line x1="12" x2="12" y1="8" y2="21"/></IconBase>;
+        const Sun = (props) => <IconBase {...props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></IconBase>;
+        const Moon = (props) => <IconBase {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconBase>;
+        const Globe = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></IconBase>;
+        const Mic2 = (props) => <IconBase {...props}><path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98l9.06-9.06"/><path d="M12 8a2.83 2.83 0 1 1 4 4"/><path d="M17 11 7 21"/></IconBase>;
+        const Edit3 = (props) => <IconBase {...props}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></IconBase>;
+        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Pause = (props) => <IconBase {...props}><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></IconBase>;
+        const Square = (props) => <IconBase {...props}><rect width="18" height="18" x="3" y="3" rx="2"/></IconBase>;
+        const Repeat = (props) => <IconBase {...props}><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></IconBase>;
+        const Sliders = (props) => <IconBase {...props}><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></IconBase>;
+        const AudioWave = (props) => <IconBase {...props}><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v4"/></IconBase>;
+        const RotateCcw = (props) => <IconBase {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconBase>;
+        const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+        const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></IconBase>;
+        const Plus = (props) => <IconBase {...props}><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></IconBase>;
+        const ListMusic = (props) => <IconBase {...props}><path d="M21 15V6"/><path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path d="M12 12H3"/><path d="M16 6H3"/><path d="M12 18H3"/></IconBase>;
+
+        // --- Waveform Visualizer ---
+        const Waveform = ({ audioBuffer, currentTime, theme, onSeek, trimStart, trimEnd }) => {
+            const canvasRef = useRef(null);
+            
+            // Draw logic
+            const draw = useCallback(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !audioBuffer || !canvas.parentElement) return;
+
+                const pWidth = canvas.parentElement.clientWidth;
+                const pHeight = canvas.parentElement.clientHeight;
+
+                // ★IMPORTANT FIX: Only update size if changed to prevent clearing during playback
+                if (canvas.width !== pWidth || canvas.height !== pHeight) {
+                    canvas.width = pWidth;
+                    canvas.height = pHeight;
+                }
+
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width;
+                const height = canvas.height;
+                const duration = audioBuffer.duration;
+                
+                // If dimensions are invalid
+                if (width === 0 || height === 0) return;
+
+                const data = audioBuffer.getChannelData(0);
+                const step = Math.ceil(data.length / width);
+                const amp = height / 2;
+
+                ctx.clearRect(0, 0, width, height);
+
+                const startX = (trimStart / duration) * width;
+                const endX = (trimEnd / duration) * width;
+
+                // Dimmed background
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, startX, height);
+                ctx.fillRect(endX, 0, width - endX, height);
+
+                ctx.beginPath();
+                ctx.strokeStyle = theme === 'dark' ? 'rgba(52, 211, 153, 0.8)' : 'rgba(16, 185, 129, 0.8)';
+                ctx.lineWidth = 1;
+
+                for (let i = 0; i < width; i++) {
+                    let min = 1.0; let max = -1.0;
+                    for (let j = 0; j < step; j++) {
+                        const datum = data[(i * step) + j];
+                        if (datum < min) min = datum;
+                        if (datum > max) max = datum;
+                    }
+                    ctx.moveTo(i, (1 + min) * amp);
+                    ctx.lineTo(i, (1 + max) * amp);
+                }
+                ctx.stroke();
+
+                // Trim lines
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#f59e0b';
+                ctx.beginPath(); ctx.moveTo(startX, 0); ctx.lineTo(startX, height); ctx.stroke();
+                ctx.strokeStyle = '#ef4444';
+                ctx.beginPath(); ctx.moveTo(endX, 0); ctx.lineTo(endX, height); ctx.stroke();
+
+                // Playhead
+                const progress = currentTime / duration;
+                const x = progress * width;
+                ctx.beginPath(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+                ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+            }, [audioBuffer, currentTime, theme, trimStart, trimEnd]);
+
+            // 1. Initial Setup & Resize Listener (One-time)
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !canvas.parentElement) return;
+
+                const resizeObserver = new ResizeObserver(() => {
+                    // Update size on actual resize event
+                    // The next draw loop will pick up the new size or we can force it here if paused
+                    // But draw() handles the sizing check, so we just trigger it.
+                    // Since draw dependency changes might not be reflected inside this closure if not careful,
+                    // we rely on the main loop or simple forced update.
+                    // For simplicity in this app structure:
+                    const pWidth = canvas.parentElement.clientWidth;
+                    const pHeight = canvas.parentElement.clientHeight;
+                    canvas.width = pWidth;
+                    canvas.height = pHeight;
+                    requestAnimationFrame(draw);
+                });
+                
+                resizeObserver.observe(canvas.parentElement);
+                
+                // Initial sizing and draw
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                requestAnimationFrame(draw);
+
+                return () => resizeObserver.disconnect();
+            }, []);
+
+            // 2. Render Loop (Syncs with React updates/playback)
+            useEffect(() => {
+                requestAnimationFrame(draw);
+            }, [draw]);
+
+            const handleCanvasClick = (e) => {
+                if (!audioBuffer) return;
+                const canvas = canvasRef.current;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const newTime = (x / rect.width) * audioBuffer.duration;
+                if (onSeek) onSeek(newTime);
+            };
+
+            return <canvas ref={canvasRef} className="w-full h-full cursor-pointer touch-none" onClick={handleCanvasClick} />;
+        };
+
+        const formatTime = (time) => {
+            if (!time || isNaN(time)) return "0:00";
+            const m = Math.floor(time / 60);
+            const s = Math.floor(time % 60).toString().padStart(2, '0');
+            const ms = Math.floor((time % 1) * 10);
+            return `${m}:${s}.${ms}`;
+        };
+
+        // --- App Component ---
+        function App() {
+            const [mode, setMode] = useState('batch'); 
+            const [theme, setTheme] = useState('light'); // CHANGED: Default to LIGHT
+            const [lang, setLang] = useState('ja');
+            const [showLangMenu, setShowLangMenu] = useState(false);
+            const [showFormats, setShowFormats] = useState(false);
+            const [messageToast, setMessageToast] = useState(null); 
+            const t = TRANSLATIONS[lang] || TRANSLATIONS.ja; 
+
+            // Batch State
+            const [queue, setQueue] = useState([]);
+            const [isDragging, setIsDragging] = useState(false);
+            const [bitrate, setBitrate] = useState(192);
+            const [isProcessingGlobal, setIsProcessingGlobal] = useState(false);
+            const [isZipping, setIsZipping] = useState(false);
+            const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+            const [fadeEffect, setFadeEffect] = useState(false);
+            const [renamePrefix, setRenamePrefix] = useState('');
+            const [batchTab, setBatchTab] = useState('add');
+            
+            // Editor State
+            const [editFile, setEditFile] = useState(null);
+            const [editBuffer, setEditBuffer] = useState(null);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [isLooping, setIsLooping] = useState(false);
+            const [currentTime, setCurrentTime] = useState(0); 
+            const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+            const [editorVolume, setEditorVolume] = useState(1.0);
+            const [editorFade, setEditorFade] = useState(0);
+            const [eqGains, setEqGains] = useState([0,0,0,0,0,0,0]);
+            const [editorStatus, setEditorStatus] = useState('idle');
+            const [trimStart, setTrimStart] = useState(0);
+            const [trimEnd, setTrimEnd] = useState(0);
+            const [customEq, setCustomEq] = useState(null);
+            const [editorTab, setEditorTab] = useState('eq'); 
+
+            const fileInputRef = useRef(null);
+            const editorInputRef = useRef(null);
+            const audioContextRef = useRef(null);
+            const sourceNodeRef = useRef(null);
+            const gainNodeRef = useRef(null); 
+            const fadeGainNodeRef = useRef(null);
+            const filtersRef = useRef([]); 
+            const startTimeRef = useRef(0);
+            const pausedTimeRef = useRef(0);
+            const animationFrameRef = useRef(null);
+            const processingRef = useRef(false);
+            const isPlayingRef = useRef(false);
+            const isLoopingRef = useRef(false);
+            const fadeDurationRef = useRef(0);
+            const speedRef = useRef(1.0);
+            const trimStartRef = useRef(0);
+            const trimEndRef = useRef(0);
+
+            useEffect(() => {
+                if (theme === 'dark') document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }, [theme]);
+
+            const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+            const styles = useMemo(() => {
+                const isDark = theme === 'dark';
+                return {
+                    bg: isDark ? 'bg-slate-950' : 'bg-slate-50',
+                    text: isDark ? 'text-slate-200' : 'text-slate-800',
+                    textMuted: isDark ? 'text-slate-500' : 'text-slate-500',
+                    cardBg: isDark ? 'bg-white/5 border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]' : 'bg-white/80 backdrop-blur-xl border-slate-200 shadow-[0_8px_32px_0_rgba(0,0,0,0.05)]',
+                    cardHover: isDark ? 'hover:bg-white/10 hover:border-white/20' : 'hover:bg-white/90 hover:border-slate-300',
+                    accent: isDark ? 'text-emerald-300' : 'text-emerald-600',
+                    inputBg: isDark ? 'bg-slate-900/60 border-slate-500 text-slate-300' : 'bg-white border-slate-400 text-slate-700',
+                    buttonSecondary: isDark ? 'bg-white/5 hover:bg-white/10 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600',
+                    dropZoneActive: 'border-emerald-500 bg-emerald-500/10',
+                    dropZoneIdle: isDark ? 'border-slate-700 hover:border-slate-500 hover:bg-white/5' : 'border-slate-300 hover:border-slate-400 hover:bg-white',
+                    listContainer: isDark ? 'bg-slate-900/30 border-white/5' : 'bg-white/60 border-slate-200',
+                    tabActive: 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
+                    tabInactive: isDark ? 'text-slate-400 hover:bg-white/5' : 'text-slate-500 hover:bg-slate-200',
+                    aurora: isDark
+                };
+            }, [theme]);
+
+            useEffect(() => {
+                return () => {
+                    stopPlayback();
+                    if (audioContextRef.current) audioContextRef.current.close();
+                    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+                };
+            }, []);
+
+            useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+            useEffect(() => { isLoopingRef.current = isLooping; }, [isLooping]);
+            useEffect(() => { fadeDurationRef.current = editorFade; }, [editorFade]);
+            useEffect(() => { speedRef.current = playbackSpeed; }, [playbackSpeed]);
+            useEffect(() => { trimStartRef.current = trimStart; }, [trimStart]);
+            useEffect(() => { trimEndRef.current = trimEnd; }, [trimEnd]);
+
+            const showToast = (msg) => {
+                setMessageToast(msg);
+                setTimeout(() => setMessageToast(null), 3000);
+            }
+
+            const isDownloadAllEnabled = queue.length > 0 && queue.every(i => i.status === 'complete');
+            
+            useEffect(() => {
+                const processNext = async () => {
+                    if (processingRef.current) return;
+                    const nextItemIndex = queue.findIndex(item => item.status === 'idle');
+                    if (nextItemIndex === -1) { setIsProcessingGlobal(false); return; }
+                    setIsProcessingGlobal(true); processingRef.current = true;
+                    const item = queue[nextItemIndex];
+                    await processBatchItem(item.id, item.file);
+                    processingRef.current = false;
+                };
+                processNext();
+            }, [queue]);
+
+            const processBatchItem = async (id, file) => {
+                updateItemStatus(id, 'processing', 0, t.loading);
+                try {
+                    let arrayBuffer = await file.arrayBuffer();
+                    updateItemStatus(id, 'processing', 10, t.decoding);
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    const tempCtx = new AC();
+                    const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+                    arrayBuffer = null; tempCtx.close();
+                    if (fadeEffect) applyFade(audioBuffer);
+                    updateItemStatus(id, 'processing', 30, t.encoding);
+                    await encodeToMp3(id, audioBuffer);
+                } catch (err) { updateItemStatus(id, 'error', 0, t.decodeError); }
+            };
+
+            const applyFade = (buffer, duration = 2.0) => {
+                const length = buffer.length; const sampleRate = buffer.sampleRate;
+                const fadeSamples = Math.floor(duration * sampleRate);
+                for (let c = 0; c < buffer.numberOfChannels; c++) {
+                    const data = buffer.getChannelData(c);
+                    for (let i = 0; i < fadeSamples && i < length; i++) { data[i] *= (i / fadeSamples); data[length - 1 - i] *= (i / fadeSamples); }
+                }
+            };
+
+            const encodeToMp3 = async (id, audioBuffer) => {
+                return new Promise((resolve, reject) => {
+                    if (!window.lamejs) { reject(new Error("No Lamejs")); return; }
+                    const channels = audioBuffer.numberOfChannels; const sampleRate = audioBuffer.sampleRate;
+                    const mp3encoder = new window.lamejs.Mp3Encoder(channels, sampleRate, bitrate);
+                    const left = audioBuffer.getChannelData(0); const right = channels > 1 ? audioBuffer.getChannelData(1) : left;
+                    const mp3Data = []; const blockSize = 11520; let processed = 0; const total = left.length;
+                    const processChunk = () => {
+                        const end = Math.min(processed + blockSize, total);
+                        const lChunk = new Int16Array(end - processed); const rChunk = new Int16Array(end - processed);
+                        for (let i = processed, j = 0; i < end; i++, j++) {
+                            lChunk[j] = Math.max(-1, Math.min(1, left[i])) * (left[i] < 0 ? 0x8000 : 0x7FFF);
+                            if (channels > 1) rChunk[j] = Math.max(-1, Math.min(1, right[i])) * (right[i] < 0 ? 0x8000 : 0x7FFF); else rChunk[j] = lChunk[j];
+                        }
+                        const mp3buf = channels === 1 ? mp3encoder.encodeBuffer(lChunk) : mp3encoder.encodeBuffer(lChunk, rChunk);
+                        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+                        processed = end;
+                        const pct = Math.round((processed / total) * 70); 
+                        updateItemStatus(id, 'processing', 30 + pct, t.converting);
+                        if (processed < total) setTimeout(processChunk, 0);
+                        else {
+                            const endBuf = mp3encoder.flush(); if (endBuf.length > 0) mp3Data.push(endBuf);
+                            const blob = new Blob(mp3Data, { type: 'audio/mp3' }); updateItemComplete(id, blob); resolve();
+                        }
+                    };
+                    processChunk();
+                });
+            };
+
+            const loadEditorFile = async (file) => {
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast(t.warnLarge); 
+                }
+                
+                setEditFile(file); setEditorStatus('loading'); setEditBuffer(null);
+                stopPlayback(); pausedTimeRef.current = 0; setCurrentTime(0);
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!audioContextRef.current) audioContextRef.current = new AC();
+                    const buffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                    setEditBuffer(buffer); 
+                    setTrimStart(0); setTrimEnd(buffer.duration);
+                    setEditorStatus('idle');
+                } catch (err) { 
+                    console.error("Load Error", err); 
+                    setEditorStatus('error');
+                    setTimeout(() => setEditFile(null), 3000);
+                    showToast(t.loadFail);
+                }
+            };
+
+            const togglePlayback = () => { isPlaying ? pausePlayback() : startPlayback(); };
+
+            const startPlayback = () => {
+                if (!editBuffer || !audioContextRef.current) return;
+                const ctx = audioContextRef.current;
+                if (sourceNodeRef.current) sourceNodeRef.current.disconnect();
+
+                const source = ctx.createBufferSource();
+                source.buffer = editBuffer;
+                source.playbackRate.value = playbackSpeed;
+
+                const freqs = [60, 150, 400, 1000, 2400, 6000, 15000];
+                const filters = freqs.map((f, i) => {
+                    const filter = ctx.createBiquadFilter();
+                    if (i === 0) filter.type = 'lowshelf'; else if (i === freqs.length - 1) filter.type = 'highshelf'; else filter.type = 'peaking';
+                    filter.frequency.value = f; filter.Q.value = 1.0; filter.gain.value = eqGains[i];
+                    return filter;
+                });
+
+                let node = source;
+                filters.forEach(f => { node.connect(f); node = f; });
+                const fadeGain = ctx.createGain(); node.connect(fadeGain);
+                const masterGain = ctx.createGain(); masterGain.gain.value = editorVolume; fadeGain.connect(masterGain);
+                masterGain.connect(ctx.destination);
+
+                sourceNodeRef.current = source; filtersRef.current = filters; fadeGainNodeRef.current = fadeGain; gainNodeRef.current = masterGain;
+
+                if (ctx.state === 'suspended') ctx.resume();
+
+                let offset = pausedTimeRef.current;
+                if (offset < trimStart || offset >= trimEnd) offset = trimStart;
+                
+                startTimeRef.current = ctx.currentTime - (offset / playbackSpeed);
+                source.start(0, offset);
+                setIsPlaying(true);
+
+                const updateLoop = () => {
+                    if (!isPlayingRef.current || !sourceNodeRef.current) return;
+                    const now = ctx.currentTime;
+                    const speed = speedRef.current;
+                    const playedSecs = (now - startTimeRef.current) * speed;
+                    const tStart = trimStartRef.current;
+                    const tEnd = trimEndRef.current;
+                    if (playedSecs >= tEnd) {
+                        sourceNodeRef.current.stop(); 
+                        sourceNodeRef.current.disconnect();
+                        if (isLoopingRef.current) {
+                            pausedTimeRef.current = tStart; startPlayback(); 
+                        } else {
+                            stopPlayback();
+                        }
+                        return;
+                    }
+                    setCurrentTime(playedSecs); 
+
+                    const fadeSec = fadeDurationRef.current;
+                    if (fadeSec > 0 && fadeGainNodeRef.current) {
+                        const relPos = playedSecs - tStart;
+                        let g = 1.0;
+                        if (relPos < fadeSec) g = relPos / fadeSec;
+                        else if (playedSecs > tEnd - fadeSec) g = (tEnd - playedSecs) / fadeSec;
+                        fadeGainNodeRef.current.gain.value = Math.max(0, Math.min(1, g));
+                    } else if (fadeGainNodeRef.current) {
+                        fadeGainNodeRef.current.gain.value = 1.0;
+                    }
+                    animationFrameRef.current = requestAnimationFrame(updateLoop);
+                };
+                animationFrameRef.current = requestAnimationFrame(updateLoop);
+            };
+
+            const pausePlayback = () => {
+                if (sourceNodeRef.current) {
+                    try { sourceNodeRef.current.stop(); } catch(e){}
+                    sourceNodeRef.current.disconnect(); sourceNodeRef.current = null;
+                }
+                if (audioContextRef.current && isPlaying) {
+                    const now = audioContextRef.current.currentTime;
+                    pausedTimeRef.current = (now - startTimeRef.current) * playbackSpeed;
+                }
+                setIsPlaying(false);
+                if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            };
+
+            const stopPlayback = () => {
+                if (sourceNodeRef.current) {
+                    try { sourceNodeRef.current.stop(); } catch(e){}
+                    sourceNodeRef.current.disconnect(); sourceNodeRef.current = null;
+                }
+                setIsPlaying(false);
+                pausedTimeRef.current = trimStartRef.current; setCurrentTime(trimStartRef.current);
+                if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            };
+
+            const seekTo = (time) => {
+                pausePlayback(); 
+                if (time < trimStart) time = trimStart; if (time > trimEnd) time = trimEnd;
+                pausedTimeRef.current = time; setCurrentTime(time);
+            };
+
+            useEffect(() => { if (gainNodeRef.current) gainNodeRef.current.gain.value = editorVolume; }, [editorVolume]);
+            useEffect(() => { if (sourceNodeRef.current) sourceNodeRef.current.playbackRate.value = playbackSpeed; }, [playbackSpeed]);
+            useEffect(() => { filtersRef.current.forEach((f, i) => { if(f) f.gain.value = eqGains[i]; }); }, [eqGains]);
+
+            const saveCustomEq = () => setCustomEq([...eqGains]);
+            const loadCustomEq = () => { if(customEq) setEqGains([...customEq]); };
+            const resetEq = () => setEqGains([0,0,0,0,0,0,0]);
+
+            const resetParams = () => {
+                setPlaybackSpeed(1.0);
+                setEditorVolume(1.0);
+                setEditorFade(0);
+            };
+
+            const handleEditorExport = async () => {
+                if (!editBuffer) return;
+                setEditorStatus('processing'); stopPlayback(); 
+                try {
+                    const OfflineAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                    const trimDuration = trimEnd - trimStart;
+                    const finalDuration = trimDuration / playbackSpeed;
+                    const offlineCtx = new OfflineAC(editBuffer.numberOfChannels, finalDuration * editBuffer.sampleRate, editBuffer.sampleRate);
+                    
+                    const source = offlineCtx.createBufferSource();
+                    source.buffer = editBuffer; source.playbackRate.value = playbackSpeed;
+                    
+                    const freqs = [60, 150, 400, 1000, 2400, 6000, 15000];
+                    const filters = freqs.map((f, i) => {
+                        const filter = offlineCtx.createBiquadFilter();
+                        if (i === 0) filter.type = 'lowshelf'; else if (i === freqs.length - 1) filter.type = 'highshelf'; else filter.type = 'peaking';
+                        filter.frequency.value = f; filter.Q.value = 1.0; filter.gain.value = eqGains[i];
+                        return filter;
+                    });
+                    const masterGain = offlineCtx.createGain(); masterGain.gain.value = editorVolume;
+                    
+                    let node = source; filters.forEach(f => { node.connect(f); node = f; });
+                    node.connect(masterGain); masterGain.connect(offlineCtx.destination);
+                    source.start(0, trimStart, trimDuration);
+                    
+                    const rendered = await offlineCtx.startRendering();
+                    if(editorFade > 0) applyFade(rendered, editorFade);
+                    
+                    const blob = await exportToBlob(rendered);
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a'); link.href = url; link.download = `edited_${editFile.name.replace(/\.[^/.]+$/, "")}.mp3`;
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                    setEditorStatus('idle');
+                } catch(err) { console.error(err); setEditorStatus('error'); }
+            };
+            
+            const exportToBlob = async (audioBuffer) => {
+                 return new Promise((resolve) => {
+                    const mp3encoder = new window.lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 192);
+                    const left = audioBuffer.getChannelData(0); const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : left;
+                    const mp3Data = []; const blockSize = 11520; let processed = 0;
+                    const process = () => {
+                        const end = Math.min(processed + blockSize, left.length);
+                        const l = new Int16Array(end - processed); const r = new Int16Array(end - processed);
+                        for(let i=processed, j=0; i<end; i++, j++){
+                            l[j] = Math.max(-1, Math.min(1, left[i])) * (left[i]<0 ? 0x8000 : 0x7FFF); r[j] = Math.max(-1, Math.min(1, right[i])) * (right[i]<0 ? 0x8000 : 0x7FFF);
+                        }
+                        const buf = audioBuffer.numberOfChannels===1 ? mp3encoder.encodeBuffer(l) : mp3encoder.encodeBuffer(l,r);
+                        if(buf.length>0) mp3Data.push(buf);
+                        processed = end;
+                        if(processed < left.length) setTimeout(process, 0);
+                        else { const endBuf = mp3encoder.flush(); if(endBuf.length>0) mp3Data.push(endBuf); resolve(new Blob(mp3Data, {type: 'audio/mp3'})); }
+                    }; process();
+                 });
+            };
+
+            const handleBatchDrop = (e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files) addFiles(e.dataTransfer.files); };
+            const handleEditDrop = (e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files && e.dataTransfer.files[0]) loadEditorFile(e.dataTransfer.files[0]); };
+            const addFiles = (list) => { setQueue(p => [...p, ...Array.from(list).map(f => ({ id: Math.random().toString(36).substring(7), file: f, status: 'idle', progress: 0, blob: null, message: t.waiting }))]); };
+            const removeItem = (id) => setQueue(p => p.filter(i => i.id !== id));
+            const clearAll = () => { if(isConfirmingClear) { setQueue([]); setIsConfirmingClear(false); } else { setIsConfirmingClear(true); setTimeout(()=>setIsConfirmingClear(false), 3000); } };
+            const updateItemStatus = (id, status, progress, message) => setQueue(p => p.map(i => i.id === id ? { ...i, status, progress, message } : i));
+            const updateItemComplete = (id, blob) => setQueue(p => p.map(i => i.id === id ? { ...i, status: 'complete', progress: 100, blob, message: t.done } : i));
+            const downloadItem = (item) => {
+                if(!item.blob) return; const url = URL.createObjectURL(item.blob); const link = document.createElement('a');
+                let name = item.file.name.replace(/\.[^/.]+$/, ""); if (renamePrefix) { const idx = queue.findIndex(i => i.id === item.id); name = `${renamePrefix}_${String(idx + 1).padStart(2,'0')}`; }
+                link.href = url; link.download = `${name}.mp3`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+            const downloadAllZip = async () => {
+                if(!window.JSZip) return; setIsZipping(true); const zip = new window.JSZip();
+                queue.forEach((item, i) => { if(item.status === 'complete' && item.blob) { let name = item.file.name.replace(/\.[^/.]+$/, ""); if(renamePrefix) name = `${renamePrefix}_${String(i + 1).padStart(2,'0')}`; zip.file(`${name}.mp3`, item.blob); } });
+                const content = await zip.generateAsync({type:"blob"}); const url = URL.createObjectURL(content);
+                const link = document.createElement('a'); link.href = url; link.download = "batch_converted.zip";
+                document.body.appendChild(link); link.click(); document.body.removeChild(link); setIsZipping(false);
+            };
+            const getFileSizeMB = (size) => (size / (1024 * 1024)).toFixed(1);
+
+            return (
+                <div className={`relative h-screen ${styles.bg} ${styles.text} font-sans p-2 md:p-4 flex flex-col items-center overflow-hidden transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-500`}>
+                    
+                    {styles.aurora && <div className="fixed inset-0 pointer-events-none"><div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-600/10 rounded-full blur-[100px] animate-aurora-1"></div><div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-teal-600/10 rounded-full blur-[100px] animate-aurora-2"></div><div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div></div>}
+                    {!styles.aurora && <div className="fixed inset-0 pointer-events-none bg-gradient-to-br from-slate-50 to-slate-100"></div>}
+
+                    {messageToast && (
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] px-4 py-2 rounded-full bg-black/80 text-white backdrop-blur text-sm font-bold shadow-2xl animate-fade-in-up border border-white/10 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-400" />
+                            {messageToast}
+                        </div>
+                    )}
+
+                    <div className="w-full max-w-7xl relative z-10 flex flex-col h-full">
+                        {/* Header */}
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-2 shrink-0 gap-4 pt-2 px-2">
+                            <div className="flex items-center gap-6">
+                                <h1 className="text-2xl font-extrabold tracking-tight"><span className={`text-transparent bg-clip-text bg-gradient-to-r ${theme === 'dark' ? 'from-emerald-300 via-teal-300 to-cyan-300' : 'from-emerald-600 via-teal-600 to-cyan-600'}`}>Audio Master</span></h1>
+                                <div className={`flex p-1 rounded-xl ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}>
+                                    <button onClick={() => setMode('batch')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${mode === 'batch' ? styles.tabActive : styles.tabInactive}`}>{t.tabBatch}</button>
+                                    <button onClick={() => setMode('editor')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${mode === 'editor' ? styles.tabActive : styles.tabInactive}`}>{t.tabEdit}</button>
+                                </div>
+                                <button onClick={() => setShowFormats(true)} className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${theme === 'dark' ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-300' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'}`}>
+                                    <Info className="w-3.5 h-3.5" />
+                                    {t.formatsBtn}
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <button onClick={() => setShowLangMenu(!showLangMenu)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                        <Globe className="w-4 h-4 opacity-70" />
+                                        <span className="text-sm font-bold opacity-80">{TRANSLATIONS[lang].langName}</span>
+                                    </button>
+                                    {showLangMenu && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setShowLangMenu(false)}></div>
+                                            <div className={`absolute top-full right-0 mt-2 w-32 rounded-xl shadow-xl border overflow-hidden z-50 flex flex-col py-1 ${theme === 'dark' ? 'bg-slate-800 border-white/10' : 'bg-white border-slate-200'}`}>
+                                                {Object.keys(TRANSLATIONS).map(l => (
+                                                    <button key={l} onClick={() => { setLang(l); setShowLangMenu(false); }} className={`px-4 py-2 text-left text-sm font-medium hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors ${lang === l ? 'text-emerald-500' : styles.text}`}>{TRANSLATIONS[l].langName}</button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                <button onClick={toggleTheme} className={`p-1.5 rounded-lg border transition-all ${theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10 text-yellow-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'}`}>{theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}</button>
+
+                                {/* MOVED FORMATS BUTTON HERE (VISIBLE ON MOBILE NOW) */}
+                                <button onClick={() => setShowFormats(true)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${theme === 'dark' ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-300' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'}`}>
+                                    <Info className="w-3.5 h-3.5" />
+                                    {/* Text label: Keep it short or icon only if needed. "Formats" or "形式" */}
+                                    <span className="hidden md:inline">{t.formatsBtn}</span> 
+                                    {/* Show Icon only on mobile to save space, text on desktop */}
+                                    <span className="md:hidden">Info</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Supported Formats Modal */}
+                        {showFormats && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-up" onClick={() => setShowFormats(false)}>
+                                <div className={`relative w-full max-w-md p-6 rounded-2xl border shadow-2xl ${theme === 'dark' ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => setShowFormats(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5"/></button>
+                                    <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${styles.text}`}><Info className="w-5 h-5 text-emerald-500"/> {t.formatsTitle}</h3>
+                                    <div className={`space-y-4 ${styles.textMuted} text-sm`}>
+                                        <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                                            <p className="font-mono leading-relaxed">{t.formatsVideo}</p>
+                                        </div>
+                                        <div className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                                            <p className="font-mono leading-relaxed">{t.formatsAudio}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowFormats(false)} className="w-full mt-6 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 transition-all">{t.close}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 min-h-0 relative">
+                            {mode === 'batch' && (
+                                <div className="absolute inset-0 flex flex-col md:grid md:grid-cols-12 gap-2 pb-2 px-2 animate-fade-in-up overflow-y-auto md:overflow-hidden">
+                                    {/* Batch: Left Column (Drop & Settings) - Mobile: Top Half Split View */}
+                                    <div className={`md:col-span-4 flex flex-col gap-2 shrink-0 md:h-full overflow-y-auto flex border-b md:border-b-0 pb-2 md:pb-0`}>
+                                        <div className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-3 ${isDragging ? styles.dropZoneActive : styles.dropZoneIdle} ${isDragging ? 'scale-[1.01]' : ''} shrink-0 min-h-[120px]`} onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }} onDrop={handleBatchDrop} onClick={() => fileInputRef.current?.click()}><input type="file" ref={fileInputRef} className="hidden" multiple accept="audio/*,video/*" onChange={(e) => addFiles(e.target.files)} /><div className="flex flex-col items-center gap-1 pointer-events-none text-center"><div className={`p-2 rounded-xl shadow-lg transition-colors ${theme === 'dark' ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-100 text-emerald-600'} ${isDragging ? 'animate-bounce' : ''}`}><Upload className="w-5 h-5" /></div><div><p className={`font-bold text-base ${styles.text}`}>{t.dropMain}</p><p className={`text-xs ${styles.textMuted} mt-0.5`}>{t.dropSub}</p></div></div></div>
+                                        <div className={`${styles.cardBg} backdrop-blur-md rounded-xl p-3 flex flex-col justify-center shrink-0`}><label className={`text-xs font-bold ${styles.textMuted} uppercase tracking-wider mb-1 block`}>{t.quality}</label><div className="space-y-0.5 mb-2">{[128, 192, 320].map((rate) => (<div key={rate} onClick={() => setBitrate(rate)} className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer group transition-colors select-none ${styles.cardHover}`}><div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${bitrate === rate ? 'border-emerald-500' : 'border-slate-500'}`}>{bitrate === rate && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />}</div><span className={`text-sm font-mono transition-colors ${bitrate === rate ? `${styles.accent} font-bold` : `${styles.textMuted}`}`}>{rate} kbps</span></div>))}</div><label className={`text-xs font-bold ${styles.textMuted} uppercase tracking-wider mb-1 block border-t ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'} pt-2`}>{t.settings}</label><div onClick={() => setFadeEffect(!fadeEffect)} className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer group transition-colors select-none mb-1 ${styles.cardHover}`}><div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${fadeEffect ? 'border-emerald-500 bg-emerald-500' : 'border-slate-500'}`}>{fadeEffect && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}</div><div className="flex items-center gap-1.5"><Mic2 className={`w-3.5 h-3.5 ${styles.textMuted}`} /><span className={`text-sm ${fadeEffect ? styles.text : styles.textMuted}`}>{t.fade}</span></div></div><div className="space-y-1 mt-1"><div className="flex items-center gap-2 px-1"><Edit3 className={`w-3.5 h-3.5 ${styles.textMuted}`} /><span className={`text-sm ${styles.textMuted}`}>{t.rename}</span></div><input type="text" value={renamePrefix} onChange={(e) => setRenamePrefix(e.target.value)} placeholder={t.renamePlaceholder} className={`w-full px-2 py-1.5 rounded text-sm outline-none transition-all border-2 ${styles.inputBg} focus:border-emerald-500 border-slate-500`} /></div></div>
+                                    </div>
+                                    {/* Batch: Right Column (List) - Mobile: Bottom Half Split View (55%) */}
+                                    <div className={`md:col-span-8 flex flex-col rounded-2xl border overflow-hidden ${styles.listContainer} backdrop-blur-sm shrink-0 min-h-[400px] md:h-full flex`}>
+                                        <div className={`p-4 border-b ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50/80'} flex items-center justify-between shrink-0`}>
+                                            <div className="flex items-center gap-3"><div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500 border border-slate-200'}`}><Music className="w-5 h-5" /></div><span className={`text-xs font-bold ${styles.textMuted} uppercase tracking-widest`}>{t.queue} ({queue.filter(i => i.status === 'complete').length} / {queue.length})</span></div><div className="flex gap-2">{queue.length > 0 && (<><button onClick={clearAll} className={`text-[10px] flex items-center gap-1.5 transition-all px-3 py-2 rounded-lg font-medium ${isConfirmingClear ? 'bg-red-500/20 text-red-500 border border-red-500/30' : `${styles.textMuted} hover:text-red-500 hover:bg-red-500/10 bg-transparent border border-transparent hover:border-red-500/20`}`}><Trash2 className="w-4 h-4" /> {isConfirmingClear ? t.sure : t.clear}</button><button onClick={downloadAllZip} disabled={!isDownloadAllEnabled} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-lg ${isDownloadAllEnabled ? 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-105 shadow-emerald-500/30 cursor-pointer' : `${theme === 'dark' ? 'bg-slate-800 text-slate-500 border border-white/5' : 'bg-slate-200 text-slate-400'} cursor-not-allowed opacity-70`}`}>{isZipping ? <Loader2 className="w-4 h-4 animate-spin"/> : <Archive className="w-4 h-4"/>}{isZipping ? t.zipping : t.dlZip}</button></>)}</div>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
+                                            {queue.length === 0 ? (<div className={`h-full flex flex-col items-center justify-center text-center ${theme === 'dark' ? 'opacity-80 text-slate-300' : 'opacity-40 text-slate-500'}`}><Music className="w-16 h-16 mb-4 opacity-50" /><p className="text-lg font-medium">{t.listEmpty}</p></div>) : (queue.map((item, index) => (<div key={item.id} className={`relative border rounded-xl py-3.5 px-4 flex items-center gap-4 transition-all duration-300 animate-fade-in-up ${item.status === 'processing' ? (theme === 'dark' ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-emerald-300 bg-emerald-50') : (theme === 'dark' ? 'bg-slate-800/40 border-white/5 hover:border-white/10' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm')} ${item.status === 'error' ? (theme === 'dark' ? 'border-red-500/30 bg-red-900/10' : 'border-red-300 bg-red-50') : ''}`} style={{ animationDelay: `${index * 0.05}s` }}><div className="shrink-0">{item.status === 'idle' && <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-slate-700 text-slate-500' : 'bg-slate-100 text-slate-400'}`}><Music className="w-5 h-5" /></div>}{item.status === 'processing' && <div className={`w-10 h-10 rounded-full flex items-center justify-center relative ${theme === 'dark' ? 'bg-emerald-500/10' : 'bg-white'}`}><Loader2 className="w-5 h-5 text-emerald-500 animate-spin" /><svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="none" className={theme === 'dark' ? "stroke-emerald-500/20" : "stroke-emerald-100"} strokeWidth="2"/><circle cx="18" cy="18" r="16" fill="none" className="stroke-emerald-500" strokeWidth="2" strokeDasharray={`${item.progress}, 100`} /></svg></div>}{item.status === 'complete' && <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}><CheckCircle2 className="w-5 h-5" /></div>}{item.status === 'error' && <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-500'}`}><AlertTriangle className="w-5 h-5" /></div>}</div><div className="flex-1 min-w-0"><div className="flex items-center justify-between mb-1.5"><h4 className={`text-lg font-bold truncate pr-4 ${styles.text}`} title={item.file.name}>{item.file.name}</h4><span className={`text-base font-mono shrink-0 font-bold ${item.status === 'complete' ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600') : item.status === 'error' ? 'text-red-500' : styles.textMuted}`}>{item.status === 'processing' ? `${item.progress}%` : item.message}</span></div><div className={`h-1.5 w-full rounded-full overflow-hidden mb-2 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}><div className={`h-full transition-all duration-300 ${item.status === 'error' ? 'bg-red-500' : item.status === 'complete' ? 'bg-emerald-500' : 'bg-emerald-500/80'}`} style={{ width: `${item.status === 'idle' ? 0 : item.progress}%` }} /></div><div className="flex items-center gap-3"><span className={`text-xs font-mono px-2 py-0.5 rounded ${theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{getFileSizeMB(item.file.size)} MB</span>{item.status === 'complete' && item.blob && <span className={`text-xs font-mono px-2 py-0.5 rounded border ${theme === 'dark' ? 'bg-emerald-900/20 border-emerald-500/10 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-700'}`}>{t.result}: {getFileSizeMB(item.blob.size)} MB</span>}</div></div><div className="shrink-0 pl-2 flex gap-2">{item.status === 'complete' && <button onClick={() => downloadItem(item)} className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-500 hover:scale-110 transition-all shadow-lg"><Download className="w-5 h-5" /></button>}<button onClick={() => removeItem(item.id)} disabled={item.status === 'processing'} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all border ${theme === 'dark' ? 'text-slate-500 hover:text-red-400 hover:bg-white/5 border-transparent hover:border-white/10' : 'text-slate-400 hover:text-red-500 hover:bg-red-50 border-transparent hover:border-red-100'} disabled:opacity-30 disabled:cursor-not-allowed`} title={t.remove}><X className="w-5 h-5" /></button></div></div>)))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* EDITOR MODE */}
+                            {mode === 'editor' && (
+                                <div className="absolute inset-0 flex flex-col gap-2 p-2 animate-fade-in-up overflow-y-auto">
+                                    <div className={`shrink-0 h-[20vh] min-h-[160px] rounded-2xl border p-2 flex flex-col items-center justify-center relative overflow-hidden ${styles.cardBg}`}>
+                                        {!editBuffer ? (
+                                            <div 
+                                                className={`absolute inset-4 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${isDragging ? styles.dropZoneActive : styles.dropZoneIdle}`}
+                                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                                                onDrop={handleEditDrop}
+                                                onClick={() => editorInputRef.current?.click()}
+                                            >
+                                                <input type="file" ref={editorInputRef} className="hidden" accept="video/*,audio/*" onChange={(e) => e.target.files[0] && loadEditorFile(e.target.files[0])} />
+                                                <AudioWave className={`w-12 h-12 mb-2 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
+                                                <p className={`text-lg font-bold ${styles.text}`}>{t.dropEdit}</p>
+                                                <p className={`text-xs ${styles.textMuted} mt-1`}>{t.dropEditSub}</p>
+                                                {editorStatus === 'loading' && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><Loader2 className="w-10 h-10 text-emerald-500 animate-spin" /></div>}
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col gap-1">
+                                                <div className="flex justify-between items-center px-1 shrink-0">
+                                                    <h3 className={`font-bold truncate max-w-[50%] text-sm ${styles.text}`}>{editFile.name}</h3>
+                                                    <div className="flex gap-2 items-center">
+                                                        <span className={`font-mono text-xs ${styles.textMuted}`}>{formatTime(currentTime)} / {formatTime(editBuffer.duration)}</span>
+                                                        <button onClick={() => { setEditBuffer(null); stopPlayback(); }} className="text-xs text-red-400 hover:underline">{t.reset}</button>
+                                                    </div>
+                                                </div>
+                                                {/* Waveform */}
+                                                <div className="flex-1 relative w-full bg-black/20 rounded-xl overflow-hidden border border-white/5 shadow-inner">
+                                                    <Waveform 
+                                                        audioBuffer={editBuffer} 
+                                                        currentTime={currentTime} 
+                                                        theme={theme} 
+                                                        onSeek={seekTo} 
+                                                        trimStart={trimStart}
+                                                        trimEnd={trimEnd}
+                                                    />
+                                                </div>
+                                                
+                                                {/* Play Controls (Unified & Compact) */}
+                                                <div className="flex flex-col md:flex-row md:justify-center items-center gap-2 md:gap-4 py-1 shrink-0 relative">
+                                                    {/* Row 1 on Mobile: Tools */}
+                                                    <div className="flex md:absolute md:left-0 md:bottom-1/2 md:translate-y-1/2 items-center gap-1 justify-center w-full md:w-auto">
+                                                        <button onClick={() => setTrimStart(currentTime)} className="px-2 py-1 text-[10px] bg-amber-500/20 text-amber-500 rounded border border-amber-500/50 hover:bg-amber-500/40 font-bold tracking-tight">[{t.setStart}</button>
+                                                        <button onClick={() => setTrimEnd(currentTime)} className="px-2 py-1 text-[10px] bg-red-500/20 text-red-500 rounded border border-red-500/50 hover:bg-red-500/40 font-bold tracking-tight">{t.setEnd}]</button>
+                                                        <button onClick={() => { setTrimStart(0); setTrimEnd(editBuffer.duration); }} className="px-2 py-1 text-[10px] text-slate-400 hover:text-white"><RotateCcw className="w-3 h-3"/></button>
+                                                    </div>
+
+                                                    {/* Row 2 on Mobile: Play/Stop (Centered) */}
+                                                    <div className="flex items-center gap-4 justify-center w-full md:w-auto">
+                                                         <button onClick={() => stopPlayback()} className={`p-2 rounded-full border transition-all ${styles.buttonSecondary} border-transparent hover:bg-red-500/20 hover:text-red-400`} title={t.stop}><Square className="w-4 h-4 fill-current" /></button>
+                                                         <button onClick={togglePlayback} className="p-3 rounded-full bg-emerald-500 text-white shadow-lg hover:scale-105 transition-transform"><span className="sr-only">Play/Pause</span>{isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}</button>
+                                                         <button onClick={() => setIsLooping(!isLooping)} className={`p-2 rounded-full transition-all ${isLooping ? 'bg-emerald-500 text-white shadow-lg' : `text-slate-400 hover:text-white hover:bg-white/10`}`} title={t.loop}><Repeat className="w-4 h-4" /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* CONTROLS AREA - Grid on Desktop, Tabs on Mobile */}
+                                    {editBuffer && (
+                                        <>
+                                            {/* Mobile Tab Ruler - Only 2 Tabs Now */}
+                                            <div className="flex md:hidden rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
+                                                <button onClick={()=>setEditorTab('eq')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1 ${editorTab==='eq' ? 'bg-emerald-600 text-white' : `${styles.bg} ${styles.text}`}`}><Sliders className="w-3 h-3"/> {t.tabEq}</button>
+                                                <button onClick={()=>setEditorTab('export')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1 border-l border-slate-200 dark:border-white/10 ${editorTab==='export' ? 'bg-emerald-600 text-white' : `${styles.bg} ${styles.text}`}`}><Download className="w-3 h-3"/> {t.tabExport}</button>
+                                            </div>
+
+                                            {/* Tab Content Container */}
+                                            <div className={`flex-1 min-h-[35%] md:h-60 grid grid-cols-1 md:grid-cols-12 gap-3 shrink-0`}>
+                                                
+                                                {/* EQ PANEL (Mobile Tab: 'eq', Desktop: Col 8) */}
+                                                <div className={`md:col-span-8 ${editorTab === 'eq' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-4 flex-col ${styles.cardBg} overflow-x-auto`}>
+                                                    <div className="flex justify-between items-center mb-2 shrink-0 sticky left-0">
+                                                        <div className="flex items-center gap-2"><Sliders className="w-4 h-4 text-emerald-500" /><span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.eq}</span></div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={saveCustomEq} className={`text-[10px] px-2 py-1 rounded border ${theme === 'dark' ? 'border-white/10 hover:bg-white/10' : 'border-slate-300 hover:bg-white'}`}>{t.saveEq}</button>
+                                                            <button onClick={loadCustomEq} disabled={!customEq} className={`text-[10px] px-2 py-1 rounded border ${customEq ? (theme === 'dark' ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10' : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50') : 'border-transparent opacity-50 cursor-not-allowed'}`}>{t.loadEq}</button>
+                                                            <button onClick={resetEq} className="text-[10px] px-2 py-1 text-slate-400 hover:text-white"><RotateCcw className="w-3 h-3"/></button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* EQ Visuals Container */}
+                                                    <div className="flex-1 relative px-2 min-h-[180px] flex items-end min-w-[300px]">
+                                                        {/* Grid Lines */}
+                                                        <div className="absolute inset-x-2 top-0 bottom-6 pointer-events-none">
+                                                            <div className="h-full w-full relative opacity-70">
+                                                                <div className="absolute top-1/2 w-full border-t-2 border-slate-400/80 dark:border-white/80"></div>
+                                                                <div className="absolute top-[35%] w-full border-t border-slate-400/40 dark:border-white/30"></div> 
+                                                                <div className="absolute top-[20%] w-full border-t border-slate-400/40 dark:border-white/30"></div> 
+                                                                <div className="absolute top-[5%] w-full border-t border-slate-400/40 dark:border-white/30"></div> 
+                                                                <div className="absolute top-[65%] w-full border-t border-slate-400/40 dark:border-white/30"></div>
+                                                                <div className="absolute top-[80%] w-full border-t border-slate-400/40 dark:border-white/30"></div>
+                                                                <div className="absolute top-[95%] w-full border-t border-slate-400/40 dark:border-white/30"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex justify-between items-end h-full w-full relative z-10 gap-2">
+                                                            {[60, 150, 400, 1000, 2400, 6000, 15000].map((freq, i) => (
+                                                                <div key={freq} className="flex flex-col items-center gap-1 h-full justify-end group eq-slider-container w-full min-w-[40px]">
+                                                                    <div className="relative flex-1 w-full flex items-center justify-center">
+                                                                        <input type="range" min="-15" max="15" step="1" value={eqGains[i]} onChange={(e) => { const newGains = [...eqGains]; newGains[i] = Number(e.target.value); setEqGains(newGains); }} className="absolute -rotate-90 origin-center cursor-pointer" />
+                                                                    </div>
+                                                                    <div className="text-center h-6 shrink-0 z-20">
+                                                                        <span className={`text-[10px] font-mono block leading-none ${eqGains[i] !== 0 ? 'text-emerald-400 font-bold' : 'opacity-30'}`}>{eqGains[i] > 0 ? '+' : ''}{eqGains[i]}</span>
+                                                                        <span className="text-[9px] font-mono opacity-40">{freq < 1000 ? freq : `${freq/1000}k`}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* EXPORT PANEL (Mobile Tab: 'export', Desktop: Col 4) */}
+                                                <div className={`md:col-span-4 ${editorTab === 'export' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-4 flex-col justify-between ${styles.cardBg}`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                         <span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.controls}</span>
+                                                         <button onClick={resetParams} className="text-[10px] px-2 py-1 text-slate-400 hover:text-white" title={t.resetParams}><RotateCcw className="w-3 h-3"/></button>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.speed}</span><span className="font-mono">x{playbackSpeed.toFixed(1)}</span></div><input type="range" min="0.5" max="2.0" step="0.1" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
+                                                        <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.volume}</span><span className="font-mono">{Math.round(editorVolume * 100)}%</span></div><input type="range" min="0" max="3" step="0.1" value={editorVolume} onChange={(e) => setEditorVolume(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
+                                                        <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.fadeSec}</span><span className="font-mono">{editorFade}{t.sec}</span></div><input type="range" min="0" max="10" step="0.5" value={editorFade} onChange={(e) => setEditorFade(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
+                                                    </div>
+                                                    <button onClick={handleEditorExport} disabled={!editBuffer || editorStatus === 'processing'} className={`w-full py-3 mt-4 md:mt-2 rounded-xl flex items-center justify-center gap-2 transition-all font-bold text-sm shadow-lg ${!editBuffer ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : editorStatus === 'processing' ? 'bg-emerald-800 text-emerald-200 cursor-wait' : 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-[1.02]'}`}>{editorStatus === 'processing' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}{editorStatus === 'processing' ? t.converting : t.export}</button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
