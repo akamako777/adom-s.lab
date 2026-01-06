@@ -3,93 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adom's Lab Tools Inventory</title>
+    
+    <title>Redirecting to Adom's Lab Tools...</title>
+    
+    <link rel="canonical" href="https://adom-s-lab-tools.blogspot.com/">
+    
+    <meta http-equiv="refresh" content="0;url=https://adom-s-lab-tools.blogspot.com/">
+    
+    <script>
+        window.location.replace("https://adom-s-lab-tools.blogspot.com/");
+    </script>
     <style>
-        body { font-family: "Helvetica Neue", Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f8fafc; color: #334155; }
-        h1 { text-align: center; color: #1e293b; margin-bottom: 10px; font-size: 1.8rem; }
-        p.subtitle { text-align: center; color: #64748b; margin-bottom: 40px; font-size: 0.9rem; }
-        
-        .menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        
-        .card { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
-            text-decoration: none; 
-            color: #334155; 
-            transition: all 0.2s ease; 
-            border: 1px solid #e2e8f0; 
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
-            border-color: #6366f1; 
-        }
-        .title { font-size: 1.1rem; font-weight: bold; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-        .card:hover .title { color: #4f46e5; }
-        .desc { font-size: 0.85rem; color: #64748b; line-height: 1.6; }
-        
-        /* ラベル（AIあり/なし）のデザイン */
-        .badge { 
-            display: inline-flex; 
-            padding: 2px 10px; 
-            border-radius: 9999px; 
-            font-size: 0.7rem; 
-            font-weight: bold; 
-            margin-bottom: 5px;
-            align-self: flex-start;
-            letter-spacing: 0.05em;
-        }
-        .badge-ai { background-color: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; } /* Blue */
-        .badge-tool { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; } /* Gray */
+        body { font-family: "Helvetica Neue", Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f8fafc; color: #334155; text-align: center; padding-top: 50px; }
+        .loader { margin: 20px auto; font-size: 1.2rem; color: #64748b; }
+        a { color: #2563eb; text-decoration: underline; }
     </style>
 </head>
 <body>
-    <h1>🛠️ Adom's Lab Tools</h1>
-    <p class="subtitle">GitHub Repository Inventory</p>
-    
-    <div class="menu">
-        
-        <a href="jpgpng.html" class="card">
-            <span class="badge badge-tool">ツール</span>
-            <span class="title">🖼️ Omni Image Tools</span>
-            <span class="desc">画像の一括リサイズ・圧縮・本格編集・透かし追加。ローカル処理で安全。</span>
-        </a>
+    <div class="loader">
+        <p>Adom's Lab Tools ブログへ移動しています...</p>
+        <p><small>自動で切り替わらない場合は <a href="https://adom-s-lab-tools.blogspot.com/">こちらをクリック</a> してください。</small></p>
+    </div>
 
-        <a href="pdf.html" class="card">
-            <span class="badge badge-tool">ツール</span>
-            <span class="title">📄 PDF All-in-One Pro</span>
-            <span class="desc">AI不使用。シンプルで安全なPDF結合・分割・画像変換ツール。</span>
-        </a>
-
-        <a href="kanji.html" class="card">
-            <span class="badge badge-ai">AI搭載</span>
-            <span class="title">✍️ 無限漢字ドリル生成</span>
-            <span class="desc">Gemini AIが例文と問題を自動生成。印刷してすぐに使えるドリル作成機。</span>
-        </a>
-
-        <a href="english.html" class="card">
-            <span class="badge badge-ai">AI搭載</span>
-            <span class="title">🗣️ AI英会話バディ</span>
-            <span class="desc">AI講師と楽しく英会話レッスン。レベル調整可能なスピーキング練習。</span>
-        </a>
-
-        <a href="mission.html" class="card">
-            <span class="badge badge-ai">AI搭載</span>
-            <span class="title">🚀 ミッション・コンシェルジュ</span>
-            <span class="desc">行きたい場所を入力するだけ。最適な巡回ルートを一瞬で作成。</span>
-        </a>
-
-        <a href="magictools.html" class="card">
-            <span class="badge badge-tool">ツール</span>
-            <span class="title">🔮 魔法陣生成エディタ</span>
-            <span class="desc">自分だけの魔法陣を作って詠唱しよう。アニメーション動画保存も可能。</span>
-        </a>
-
+    <div style="display:none;">
+        <h1>🛠️ Adom's Lab Tools</h1>
+        <div class="menu">
+            <a href="jpgpng.html">Omni Image Tools</a>
+            <a href="pdf.html">PDF All-in-One Pro</a>
+            <a href="kanji.html">無限漢字ドリル生成</a>
+            <a href="english.html">AI英会話バディ</a>
+            <a href="mission.html">ミッション・コンシェルジュ</a>
+            <a href="magictools.html">魔法陣生成エディタ</a>
+        </div>
     </div>
 </body>
 </html>
