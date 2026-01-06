@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omni Image Tools - 画像一括縮小 & 本格編集</title>
+    <title>Omni Image Tools - WebP対応版</title>
     
     <!-- デザイン用CSS (Tailwind CSS v3.4.1) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -272,7 +272,7 @@
 
                     <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
                          <div class="flex justify-between items-center text-xs font-bold text-slate-500">
-                            <span data-i18n="quality_jpeg">画質 (JPEGのみ)</span>
+                            <span data-i18n="quality_jpeg">画質 (JPEG / WebP)</span>
                             <span class="text-brand-accent font-bold text-base" id="r_qualityValue">0.8</span>
                         </div>
                         <input type="range" id="r_qualityRange" min="0.1" max="1.0" step="0.1" value="0.8" onchange="r_saveSettings()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -351,6 +351,8 @@
                     <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
                          <label class="text-xs font-bold text-slate-500 block mb-1.5" data-i18n="out_format">出力形式</label>
                         <select id="r_outputFormat" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700">
+                            <!-- WebP Option Added -->
+                            <option value="image/webp" selected class="font-bold text-indigo-600">WebP (推奨 / 高速表示)</option>
                             <option value="image/jpeg">JPEG (Photo)</option>
                             <option value="image/png">PNG (Illustration)</option>
                         </select>
@@ -643,7 +645,7 @@
             tab_resize: "一括リサイズ", tab_editor: "画像編集", resizer_desc: "SNS、ブログ、資料作成に。複数画像をWeb最適なサイズへ一括変換・ZIP保存。",
             local_process: "安心のローカル処理", drag_drop_title: "ここに画像をドロップ", drag_drop_desc: "またはクリックして選択 (JPEG, PNG, HEIC対応)",
             settings_title: "出力設定", resize_setting: "リサイズ設定", width_px: "横幅指定 (px)", ratio_pct: "比率指定 (%)",
-            quality_jpeg: "画質 (JPEGのみ)", quality_low: "軽量", quality_high: "高画質", watermark: "透かし文字 (Watermark)",
+            quality_jpeg: "画質 (JPEG / WebP)", quality_low: "軽量", quality_high: "高画質", watermark: "透かし文字 (Watermark)",
             ai_protection: "AI対策 / 盗用防止", wm_font: "フォント", wm_pos: "位置 / 種類", wm_size: "サイズ/強度", wm_opacity: "濃さ/透明度",
             font_gothic: "ゴシック (標準)", font_mincho: "明朝体", font_maru: "丸ゴシック", font_hand: "手書き風",
             pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "全面タイル (AI対策)", pos_noise: "ステルスノイズ (美観重視)",
@@ -664,7 +666,7 @@
             tab_resize: "Batch Resizer", tab_editor: "Single Editor", resizer_desc: "Convert & Compress multiple images for Web/SNS. Save as ZIP.",
             local_process: "Secure Local Processing", drag_drop_title: "Drag & Drop Photos", drag_drop_desc: "Or click to browse (JPEG, PNG, HEIC)",
             settings_title: "Output Settings", resize_setting: "Resize Settings", width_px: "Width (px)", ratio_pct: "Ratio (%)",
-            quality_jpeg: "Quality (JPEG only)", quality_low: "Low", quality_high: "High", watermark: "Watermark",
+            quality_jpeg: "Quality (JPEG / WebP)", quality_low: "Low", quality_high: "High", watermark: "Watermark",
             ai_protection: "AI Protection / Anti-Theft", wm_font: "Font", wm_pos: "Position / Type", wm_size: "Size/Intensity", wm_opacity: "Opacity",
             font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Rounded", font_hand: "Handwritten",
             pos_br: "Bottom Right", pos_bl: "Bottom Left", pos_c: "Center", pos_tile: "Full Tile (Anti-AI)", pos_noise: "Stealth Noise (Clean)",
@@ -685,7 +687,7 @@
             tab_resize: "Redimensionar em Lote", tab_editor: "Editor Único", resizer_desc: "Converter e comprimir imagens para Web/SNS. Salvar como ZIP.",
             local_process: "Processamento Local Seguro", drag_drop_title: "Arraste e Solte Fotos", drag_drop_desc: "Ou clique para selecionar (JPEG, PNG, HEIC)",
             settings_title: "Configurações de Saída", resize_setting: "Configurações de Redimensionamento", width_px: "Largura (px)", ratio_pct: "Proporção (%)",
-            quality_jpeg: "Qualidade (apenas JPEG)", quality_low: "Baixa", quality_high: "Alta", watermark: "Marca d'água",
+            quality_jpeg: "Qualidade (JPEG / WebP)", quality_low: "Baixa", quality_high: "Alta", watermark: "Marca d'água",
             ai_protection: "Proteção IA / Antirroubo", wm_font: "Fonte", wm_pos: "Posição / Tipo", wm_size: "Tamanho/Intensidade", wm_opacity: "Opacidade",
             font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Arredondada", font_hand: "Manuscrita",
             pos_br: "Inferior Direito", pos_bl: "Inferior Esquerdo", pos_c: "Centro", pos_tile: "Azulejo (Anti-IA)", pos_noise: "Ruído Invisível (Limpo)",
@@ -706,7 +708,7 @@
             tab_resize: "批量縮放", tab_editor: "單圖編輯", resizer_desc: "適用於社群、部落格。批量轉換圖片並存為ZIP。",
             local_process: "安全本地處理", drag_drop_title: "拖放照片至此", drag_drop_desc: "或點擊選擇 (JPEG, PNG, HEIC)",
             settings_title: "輸出設定", resize_setting: "縮放設定", width_px: "寬度 (px)", ratio_pct: "比例 (%)",
-            quality_jpeg: "畫質 (僅JPEG)", quality_low: "低", quality_high: "高", watermark: "浮水印",
+            quality_jpeg: "畫質 (JPEG / WebP)", quality_low: "低", quality_high: "高", watermark: "浮水印",
             ai_protection: "AI防護 / 防盜用", wm_font: "字體", wm_pos: "位置 / 類型", wm_size: "大小/強度", wm_opacity: "濃度/透明度",
             font_gothic: "黑體 (標準)", font_mincho: "明體", font_maru: "圓體", font_hand: "手寫風",
             pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "滿版平鋪 (防AI)", pos_noise: "隱形噪點 (美觀)",
@@ -725,7 +727,7 @@
         }
     };
 
-    // ... (Localization and Tab Switch functions same as previous) ...
+    // ... (Localization and Tab Switch functions same as before) ...
     function changeLanguage(lang) {
         const elements = document.querySelectorAll('[data-i18n]');
         elements.forEach(el => {
@@ -1195,7 +1197,10 @@
             const wmSizeScale = parseInt(document.getElementById('r_wmSizeRange').value); 
             const wmOpacity = parseInt(document.getElementById('r_wmOpacityRange').value) / 100;
 
-            const ext = outputFormat === 'image/jpeg' ? 'jpg' : 'png';
+            // Updated extension logic for WebP
+            let ext = 'jpg';
+            if (outputFormat === 'image/png') ext = 'png';
+            if (outputFormat === 'image/webp') ext = 'webp';
 
             const promises = r_fileQueue.map(async (item, index) => {
                 return new Promise((resolve, reject) => {
@@ -1288,6 +1293,7 @@
                                 ctx.globalAlpha = 1.0; 
                             }
 
+                            // Added support for WebP output format
                             canvas.toBlob((blob) => {
                                 if (!blob) {
                                     reject(new Error('Canvas to Blob failed'));
