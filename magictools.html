@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法陣AI生成 - Cimels Grimoire Edition</title>
+    <title>星輪のギメルス - Canvas Grimoire Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Three.js Core -->
@@ -2555,17 +2555,76 @@
             win.document.close();
         }
 
-        function startRecording(durationSec) {
+function startRecording(durationSec) {
             if (State.isRecording) return;
             State.isRecording = true;
+
+            // 1. 画質向上のための解像度強制変更 (一時保存)
+            const originalSize = { w: renderer.domElement.width, h: renderer.domElement.height };
+            const originalStyle = { w: renderer.domElement.style.width, h: renderer.domElement.style.height };
+            const originalAspect = camera.aspect;
+            const originalRatio = renderer.getPixelRatio(); // 元の画質設定を記憶
+
+            // 1920x1080 (FHD) に設定
+            const targetW = 1920;
+            const targetH = 1080;
             
-            const stream = document.querySelector('canvas').captureStream(60); 
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            // レンダラーとコンポーザーをリサイズ
+            renderer.setSize(targetW, targetH, false); 
+
+            // ★【修正点】ピクセル比を「1」に固定して負荷を下げる（これでカクつき解消）
+            renderer.setPixelRatio(1);
+            
+            composer.setSize(targetW, targetH);
+            
+            // カメラアスペクト比調整
+            camera.aspect = targetW / targetH;
+            camera.updateProjectionMatrix();
+            
+            // 画角が変わるので一度描画更新
+            renderScene();
+
+            // 2. ストリーム取得 & レコーダー設定
+            const stream = renderer.domElement.captureStream(60); 
+            
+            // ビットレートは高めのまま維持 (画質確保)
+            const options = {
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 5000000 // 5Mbps
+            };
+            
+            // VP9非対応時のフォールバック
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'video/webm;codecs=vp8';
+            }
+
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e) {
+                console.warn("High-quality config failed, falling back to default.");
+                mediaRecorder = new MediaRecorder(stream);
+            }
+
             recordedChunks = [];
 
-            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.ondataavailable = (e) => { 
+                if (e.data.size > 0) recordedChunks.push(e.data); 
+            };
 
             mediaRecorder.onstop = () => {
+                // 3. 録画終了後、元のサイズ・画質設定に完全復元
+                renderer.setSize(originalSize.w, originalSize.h, false);
+                renderer.setPixelRatio(originalRatio); // 元の設定に戻す
+                composer.setSize(originalSize.w, originalSize.h);
+                
+                renderer.domElement.style.width = originalStyle.w;
+                renderer.domElement.style.height = originalStyle.h;
+                
+                camera.aspect = originalAspect;
+                camera.updateProjectionMatrix();
+                renderScene();
+
+                // ファイル保存処理
                 const blob = new Blob(recordedChunks, { type: 'video/webm' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -2573,6 +2632,7 @@
                 a.download = `magic_motion_${Date.now()}.webm`;
                 a.click();
                 URL.revokeObjectURL(url);
+                
                 State.isRecording = false;
                 document.getElementById('recStatusText').classList.add('hidden');
                 document.getElementById('rec-indicator').classList.remove('active');
@@ -2584,8 +2644,11 @@
             document.getElementById('rec-indicator').classList.add('active');
             showToast(`記録開始 (${durationSec}秒)...`, "info");
 
-            setTimeout(() => { if(mediaRecorder.state === 'recording') mediaRecorder.stop(); }, durationSec * 1000);
+            setTimeout(() => { 
+                if(mediaRecorder.state === 'recording') mediaRecorder.stop(); 
+            }, durationSec * 1000);
         }
+
 
         function showToast(msg, type) {
             const container = document.getElementById('toast-container');
@@ -2670,3 +2733,4 @@
     </script>
 </body>
 </html>
+
