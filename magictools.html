@@ -2563,7 +2563,7 @@ function startRecording(durationSec) {
             const originalSize = { w: renderer.domElement.width, h: renderer.domElement.height };
             const originalStyle = { w: renderer.domElement.style.width, h: renderer.domElement.style.height };
             const originalAspect = camera.aspect;
-            const originalRatio = renderer.getPixelRatio(); // 元の画質設定を記憶
+            const originalRatio = renderer.getPixelRatio();
 
             // 1920x1080 (FHD) に設定
             const targetW = 1920;
@@ -2571,37 +2571,45 @@ function startRecording(durationSec) {
             
             // レンダラーとコンポーザーをリサイズ
             renderer.setSize(targetW, targetH, false); 
-
-            // ★【修正点】ピクセル比を「1」に固定して負荷を下げる（これでカクつき解消）
-            renderer.setPixelRatio(1);
-            
+            renderer.setPixelRatio(1); // 負荷対策：1倍固定
             composer.setSize(targetW, targetH);
             
             // カメラアスペクト比調整
             camera.aspect = targetW / targetH;
             camera.updateProjectionMatrix();
-            
-            // 画角が変わるので一度描画更新
             renderScene();
 
-            // 2. ストリーム取得 & レコーダー設定
+            // 2. ストリーム取得 & MP4対応チェック
             const stream = renderer.domElement.captureStream(60); 
             
-            // ビットレートは高めのまま維持 (画質確保)
-            const options = {
-                mimeType: 'video/webm;codecs=vp9',
-                videoBitsPerSecond: 5000000 // 5Mbps
-            };
+            // ★【ここが新機能】Twitterに最適なMP4(H.264)を探すロジック
+            const mimeCandidates = [
+                "video/mp4;codecs=avc1.4d002a", // H.264 (最も互換性が高いMP4)
+                "video/mp4",                    // 普通のMP4
+                "video/webm;codecs=vp9",        // 高画質WebM (フォールバック用)
+                "video/webm"                    // 普通のWebM
+            ];
             
-            // VP9非対応時のフォールバック
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm;codecs=vp8';
+            let selectedMime = "video/webm"; // 最悪の場合の初期値
+            for (const type of mimeCandidates) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    selectedMime = type;
+                    break;
+                }
             }
+
+            // 拡張子を決定 (.mp4 か .webm)
+            const fileExt = selectedMime.includes("mp4") ? "mp4" : "webm";
+
+            const options = {
+                mimeType: selectedMime,
+                videoBitsPerSecond: 5000000 // 5Mbps (高画質維持)
+            };
 
             try {
                 mediaRecorder = new MediaRecorder(stream, options);
             } catch (e) {
-                console.warn("High-quality config failed, falling back to default.");
+                console.warn("Config failed, fallback to default.");
                 mediaRecorder = new MediaRecorder(stream);
             }
 
@@ -2612,42 +2620,43 @@ function startRecording(durationSec) {
             };
 
             mediaRecorder.onstop = () => {
-                // 3. 録画終了後、元のサイズ・画質設定に完全復元
+                // 3. 録画終了後、復元
                 renderer.setSize(originalSize.w, originalSize.h, false);
-                renderer.setPixelRatio(originalRatio); // 元の設定に戻す
+                renderer.setPixelRatio(originalRatio);
                 composer.setSize(originalSize.w, originalSize.h);
-                
                 renderer.domElement.style.width = originalStyle.w;
                 renderer.domElement.style.height = originalStyle.h;
-                
                 camera.aspect = originalAspect;
                 camera.updateProjectionMatrix();
                 renderScene();
 
-                // ファイル保存処理
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                // ファイル保存処理 (動的な拡張子で保存)
+                const blob = new Blob(recordedChunks, { type: selectedMime });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `magic_motion_${Date.now()}.webm`;
+                a.download = `magic_motion_${Date.now()}.${fileExt}`; // ★拡張子が自動で変わる
                 a.click();
                 URL.revokeObjectURL(url);
                 
                 State.isRecording = false;
                 document.getElementById('recStatusText').classList.add('hidden');
                 document.getElementById('rec-indicator').classList.remove('active');
-                showToast("動画記録を保存しました。", "success");
+                
+                // どっちで保存されたか通知に出す
+                showToast(`${fileExt.toUpperCase()}動画を保存しました。`, "success");
             };
 
             mediaRecorder.start();
             document.getElementById('recStatusText').classList.remove('hidden');
             document.getElementById('rec-indicator').classList.add('active');
-            showToast(`記録開始 (${durationSec}秒)...`, "info");
+            showToast(`FHD記録開始 (${durationSec}秒)...`, "info");
 
             setTimeout(() => { 
                 if(mediaRecorder.state === 'recording') mediaRecorder.stop(); 
             }, durationSec * 1000);
         }
+
 
 
         function showToast(msg, type) {
