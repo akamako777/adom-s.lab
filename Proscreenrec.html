@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pro Screen Recorder - Aurora Final</title>
+    
+    <!-- PWA Manifest Simulation -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"ProRec","short_name":"ProRec","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0ea5e9","icons":[{"src":"https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/camera.svg","sizes":"192x192","type":"image/svg+xml"}]}' />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: { 850: '#1f2937', 900: '#0f172a', 950: '#020617' },
+                        brand: { 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7' },
+                        accent: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
+                        purple: { 500: '#8b5cf6', 900: '#4c1d95' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'countdown': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kaisei+Opti:wght@700&family=M+PLUS+Rounded+1c:wght@700&family=Noto+Sans+JP:wght@700&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+
+    <!-- React & Babel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    
+    <!-- Icons (Lucide) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(14, 165, 233, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(14, 165, 233, 0.6); }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .light .glass {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #0ea5e9; margin-top: -8px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(148, 163, 184, 0.3); border-radius: 2px; }
+        
+        body { transition: background-color 0.5s, color 0.3s; }
+        
+        .aurora-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.2), transparent 50%),
+                        radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.15), transparent 50%),
+                        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.2), transparent 50%),
+                        radial-gradient(circle at 0% 100%, rgba(30, 58, 138, 0.3), transparent 60%);
+            filter: blur(60px);
+        }
+        .light .aurora-bg {
+             background: radial-gradient(circle at 10% 10%, rgba(186, 230, 253, 0.8), transparent 60%),
+                        radial-gradient(circle at 90% 10%, rgba(167, 243, 208, 0.6), transparent 60%),
+                        radial-gradient(circle at 50% 80%, rgba(221, 214, 254, 0.6), transparent 60%);
+             opacity: 0.8;
+        }
+
+        .font-basic { font-family: 'Noto Sans JP', sans-serif; }
+        .font-serif { font-family: 'Noto Serif JP', serif; }
+        .font-rounded { font-family: 'M PLUS Rounded 1c', sans-serif; }
+        .font-stylish { font-family: 'Kaisei Opti', serif; }
+        .font-mono { font-family: monospace; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans antialiased selection:bg-brand-500 selection:text-white transition-colors duration-300">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // --- Inline SVG Icons ---
+        const Icons = {
+            Sun: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+            Moon: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+            Mic: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
+            MicOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.63"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
+            Video: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>,
+            VideoOff: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/><line x1="2" y1="2" x2="22" y2="22"/></svg>,
+            Type: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>,
+            Download: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Image: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
+            Info: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+            Share: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>,
+            Music: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        };
+
+        const translations = {
+            ja: {
+                title: "ProRec",
+                subtitle: "Aurora Final",
+                shortcut: "ショートカット",
+                shortcutAlert: "ブラウザのメニューから「ホーム画面に追加」または「アプリとしてインストール」を選択してください。",
+                preview: "録画画角確認 (イメージ)",
+                watermarkSettings: "透かし素材ジェネレーター",
+                wmEnabled: "透かし編集モード",
+                wmEnabledDesc: "動画には合成されません。素材として保存します",
+                textLabel: "表示テキスト",
+                placeholder: "© あなたの名前",
+                posLabel: "表示位置",
+                fontLabel: "フォント",
+                sizeLabel: "サイズ",
+                opacityLabel: "透明度",
+                positions: ['左上', '右上', '左下', '右下', '中央', '全面'],
+                fonts: ['ベーシック', '明朝体', '丸文字', 'モダン', 'テック'],
+                sizes: ['小', '中', '大', '特大'],
+                wmDownload: "透かし画像を保存 (PNG)",
+                deviceSettings: "デバイス設定",
+                mic: "マイク音声",
+                micDesc: "OFF: 無音 / ON: 録音して別保存",
+                micNote: "※マイクON時、音声ファイル(WebM)が別途保存されます（音ズレ防止）",
+                cam: "インカメラ",
+                camDesc: "OFF: なし / ON: 録画して別保存",
+                camNote: "※カメラON時、カメラ動画ファイル(MP4)が別途保存されます",
+                launch: "録画を開始する",
+                launchDesc: "ボタンを押すと画面選択が表示されます（開始まで5秒の待機時間があります）",
+                ready: "Starting Recording...",
+                rec: "REC",
+                review: "録画プレビュー",
+                discard: "破棄",
+                back: "設定に戻る",
+                save: "画面録画を保存 (MP4)",
+                saveCam: "カメラ映像を保存 (MP4)",
+                saveMic: "マイク音声を保存 (WebM)",
+                recStart: "録画を開始しました",
+                recError: "録画停止中にエラーが発生しました",
+                saved: "保存しました",
+                screenError: "画面共有がキャンセルされました",
+                deviceError: "画面録画に対応していないデバイスです",
+                permError: "カメラまたはマイクの許可が得られませんでした",
+                bgWarning: "録画中は、このウィンドウを最小化しないでください（録画が停止します）",
+                aboutComp: "重要なお知らせ",
+                aboutCompDesc: "【アンバンドル仕様】最高画質と安定性を保証するため、画面・カメラ・音声はすべて「別ファイル」として保存されます。編集ソフトで自由に組み合わせてください。"
+            },
+            en: {
+                title: "ProRec",
+                subtitle: "Aurora Final",
+                shortcut: "Shortcut",
+                shortcutAlert: "Please add to home screen.",
+                preview: "Layout Preview",
+                watermarkSettings: "Watermark Asset Generator",
+                wmEnabled: "Watermark Editor",
+                wmEnabledDesc: "Saved as separate PNG image (Not overlayed)",
+                textLabel: "Text",
+                placeholder: "© Your Name",
+                posLabel: "Position",
+                fontLabel: "Font",
+                sizeLabel: "Size",
+                opacityLabel: "Opacity",
+                positions: ['TL', 'TR', 'BL', 'BR', 'Center', 'Tile'],
+                fonts: ['Basic', 'Serif', 'Rounded', 'Stylish', 'Mono'],
+                sizes: ['S', 'M', 'L', 'XL'],
+                wmDownload: "Save Watermark (PNG)",
+                deviceSettings: "Device Settings",
+                mic: "Microphone",
+                micDesc: "OFF: Mute / ON: Separate Audio File",
+                micNote: "*When ON, audio is saved as a separate WebM file (No sync drift)",
+                cam: "Camera",
+                camDesc: "OFF: None / ON: Separate Video File",
+                camNote: "*When ON, camera is saved as a separate MP4 file",
+                launch: "Start Recording",
+                launchDesc: "Select screen after clicking (5s countdown starts after selection)",
+                ready: "Starting Recording...",
+                rec: "REC",
+                review: "Review Recording",
+                discard: "Discard",
+                back: "Back",
+                save: "Save Screen (MP4)",
+                saveCam: "Save Camera (MP4)",
+                saveMic: "Save Audio (WebM)",
+                recStart: "Recording Started",
+                recError: "Error",
+                saved: "Saved",
+                screenError: "Cancelled",
+                deviceError: "Not Supported",
+                permError: "Permission Denied",
+                bgWarning: "Do not minimize window",
+                aboutComp: "Important Notice",
+                aboutCompDesc: "[Unbundled Logic] To ensure stability and quality, screen, camera, and audio are saved as SEPARATE files. Please combine them in your editor."
+            }
+        };
+
+        class RecorderEngine {
+            constructor() {
+                this.screenRecorder = null;
+                this.camRecorder = null;
+                this.micRecorder = null;
+                
+                this.recordedScreenChunks = [];
+                this.recordedCamChunks = [];
+                this.recordedMicChunks = [];
+                
+                this.screenStream = null;
+                this.camStream = null;
+                this.micStream = null;
+                
+                this.isActive = false;
+                this.onStopCallback = null;
+            }
+
+            // Create a PNG blob from watermark settings
+            generateWatermarkPNG(config, width=1920, height=1080) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                const wm = config.watermark;
+
+                if (!wm.text) return null;
+
+                ctx.save();
+                ctx.globalAlpha = wm.opacity / 100;
+                ctx.fillStyle = "white";
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 4;
+
+                const scaleFactors = [0.015, 0.025, 0.04, 0.06];
+                const baseSize = width * (scaleFactors[wm.fontSizeIdx] || 0.015);
+                const fontSize = Math.max(12, baseSize); 
+                
+                let fontFamily = "'Noto Sans JP', sans-serif";
+                if (wm.font === 1) fontFamily = "'Noto Serif JP', serif";
+                if (wm.font === 2) fontFamily = "'M PLUS Rounded 1c', sans-serif";
+                if (wm.font === 3) fontFamily = "'Kaisei Opti', serif";
+                if (wm.font === 4) fontFamily = "monospace";
+                
+                ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                
+                const padding = width * 0.02;
+                const textMetrics = ctx.measureText(wm.text);
+                const w = textMetrics.width;
+                const h = fontSize; 
+
+                let x = padding, y = h + padding;
+
+                switch(wm.position) {
+                    case 0: x = padding; y = h + padding; break;
+                    case 1: x = width - w - padding; y = h + padding; break;
+                    case 2: x = padding; y = height - padding; break;
+                    case 3: x = width - w - padding; y = height - padding; break;
+                    case 4: x = (width - w) / 2; y = (height + h / 2) / 2; break;
+                }
+                
+                if (wm.position === 5) {
+                    ctx.save();
+                    ctx.rotate(-Math.PI / 6);
+                    for(let i=-width; i<width*2; i+=w+200) {
+                        for(let j=-height; j<height*2; j+=200) {
+                            ctx.fillText(wm.text, i, j);
+                        }
+                    }
+                    ctx.restore();
+                } else {
+                    ctx.fillText(wm.text, x, y);
+                }
+                ctx.restore();
+
+                return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            }
+
+            async setupStreams(config) {
+                // 1. Get Screen Stream (Always needed)
+                try {
+                    this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { frameRate: 60 },
+                        audio: true // System audio
+                    });
+                } catch (e) {
+                    if (e.name === 'NotAllowedError') throw new Error("CANCELLED");
+                    else if (e.name === 'NotFoundError') throw new Error("NOT_SUPPORTED");
+                    else throw new Error(e.message);
+                }
+
+                // 2. Get Mic Stream (If requested)
+                if (config.mic) {
+                    try {
+                        const userStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: { echoCancellation: true, noiseSuppression: true } 
+                        });
+                        this.micStream = userStream;
+                    } catch (e) {
+                        console.warn("Mic access failed", e);
+                    }
+                }
+                
+                // 3. Get Cam Stream (If requested)
+                if (config.cam) {
+                    try {
+                        const constraints = {
+                            video: { width: { ideal: 1280 }, aspectRatio: 1.77 }
+                        };
+                        this.camStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    } catch (e) {
+                        console.warn("Cam access failed", e);
+                    }
+                }
+
+                this.screenStream.getVideoTracks()[0].onended = () => {
+                    if (this.onStopCallback) this.onStopCallback();
+                };
+            }
+
+            startRecording(config) {
+                this.recordedScreenChunks = [];
+                this.recordedCamChunks = [];
+                this.recordedMicChunks = [];
+                this.isActive = true;
+
+                // --- 1. Screen Recording (Always) ---
+                // Try to use system audio if available, otherwise just video
+                let screenTracks = [this.screenStream.getVideoTracks()[0]];
+                if (this.screenStream.getAudioTracks().length > 0) {
+                    screenTracks.push(this.screenStream.getAudioTracks()[0]);
+                }
+                const screenStreamForRec = new MediaStream(screenTracks);
+                const screenMime = this.getMimeType('video');
+                
+                this.screenRecorder = new MediaRecorder(screenStreamForRec, {
+                    mimeType: screenMime,
+                    videoBitsPerSecond: 8000000 // High bitrate for screen
+                });
+                this.screenRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedScreenChunks.push(e.data); };
+                this.screenRecorder.start(1000);
+
+                // --- 2. Camera Recording (If enabled) ---
+                if (config.cam && this.camStream) {
+                    let camTracks = [this.camStream.getVideoTracks()[0]];
+                    // If mic is enabled, add mic audio to camera video file
+                    if (config.mic && this.micStream) {
+                        if (this.micStream.getAudioTracks().length > 0) {
+                            camTracks.push(this.micStream.getAudioTracks()[0]);
+                        }
+                    }
+                    const camStreamForRec = new MediaStream(camTracks);
+                    const camMime = this.getMimeType('video');
+                    
+                    this.camRecorder = new MediaRecorder(camStreamForRec, {
+                        mimeType: camMime, 
+                        videoBitsPerSecond: 2500000
+                    });
+                    this.camRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedCamChunks.push(e.data); };
+                    this.camRecorder.start(1000);
+                } 
+                // --- 3. Mic Recording (If enabled AND Cam is disabled) ---
+                // If cam is enabled, mic is already attached to cam video. We record audio separately only if cam is OFF.
+                else if (config.mic && this.micStream) {
+                    const audioMime = this.getMimeType('audio');
+                    this.micRecorder = new MediaRecorder(this.micStream, {
+                        mimeType: audioMime,
+                        audioBitsPerSecond: 128000
+                    });
+                    this.micRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedMicChunks.push(e.data); };
+                    this.micRecorder.start(1000);
+                }
+
+                return screenMime;
+            }
+
+            getMimeType(type) {
+                if (type === 'video') {
+                    const types = ["video/mp4;codecs=avc1.4d002a", "video/mp4", "video/webm;codecs=vp9", "video/webm"];
+                    return types.find(t => MediaRecorder.isTypeSupported(t)) || "video/webm";
+                } else {
+                    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+                    return types.find(t => MediaRecorder.isTypeSupported(t)) || "audio/webm";
+                }
+            }
+
+            async stopRecording() {
+                const stopRec = (rec) => new Promise(resolve => {
+                    if (!rec || rec.state === 'inactive') { resolve(); return; }
+                    rec.onstop = resolve;
+                    rec.stop();
+                });
+
+                await Promise.all([
+                    stopRec(this.screenRecorder),
+                    stopRec(this.camRecorder),
+                    stopRec(this.micRecorder)
+                ]);
+
+                this.isActive = false;
+                
+                // Stop all tracks
+                [this.screenStream, this.camStream, this.micStream].forEach(s => s?.getTracks().forEach(t => t.stop()));
+
+                const screenType = this.screenRecorder?.mimeType || 'video/webm';
+                const camType = this.camRecorder?.mimeType || 'video/webm';
+                const micType = this.micRecorder?.mimeType || 'audio/webm';
+
+                return {
+                    screenBlob: new Blob(this.recordedScreenChunks, { type: screenType }),
+                    camBlob: (this.camRecorder && this.recordedCamChunks.length > 0) ? new Blob(this.recordedCamChunks, { type: camType }) : null,
+                    micBlob: (this.micRecorder && this.recordedMicChunks.length > 0) ? new Blob(this.recordedMicChunks, { type: micType }) : null
+                };
+            }
+        }
+        const engine = new RecorderEngine();
+
+        // --- Components ---
+
+        const Toast = ({ msg, type, onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 5000);
+                return () => clearTimeout(timer);
+            }, []);
+            const colors = type === 'error' ? 'bg-red-500/90 text-white' : (type === 'info' ? 'bg-slate-800/90 text-white dark:bg-slate-200/90 dark:text-slate-900' : 'bg-brand-500/90 text-white');
+            return (
+                <div className={`fixed top-4 right-4 ${colors} px-4 py-3 rounded-lg shadow-lg z-50 animate-fade-in flex items-center gap-2 backdrop-blur-md max-w-sm`}>
+                    <div className="flex-shrink-0 mt-0.5">
+                    {type === 'error' ? <i data-lucide="alert-circle"></i> : (type === 'info' ? <i data-lucide="info"></i> : <i data-lucide="check-circle"></i>)}
+                    </div>
+                    <span className="text-sm">{msg}</span>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [mode, setMode] = useState('settings'); 
+            const [lang, setLang] = useState('ja');
+            const [theme, setTheme] = useState('dark');
+            const [config, setConfig] = useState({
+                watermark: { enabled: true, text: "", position: 3, opacity: 80, font: 0, fontSizeIdx: 0 }, 
+                mic: true, 
+                cam: false
+            });
+            const [count, setCount] = useState(5); 
+            const [blobs, setBlobs] = useState({ screen: null, cam: null, mic: null });
+            const [toast, setToast] = useState(null); 
+
+            const t = translations[lang] || translations['en'];
+            const showToast = (msg, type='success') => setToast({msg, type});
+
+            useEffect(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                document.documentElement.classList.toggle('light', theme === 'light');
+            }, [mode, toast, theme, lang]); 
+
+            // Countdown Logic
+            useEffect(() => {
+                if (mode === 'countdown') {
+                    if (count > 0) {
+                        const timer = setTimeout(() => setCount(count - 1), 1000);
+                        return () => clearTimeout(timer);
+                    } else {
+                        const mime = engine.startRecording(config);
+                        setMode('recording');
+                        showToast(`${t.recStart}`);
+                    }
+                }
+            }, [mode, count]);
+
+            useEffect(() => {
+                engine.onStopCallback = () => {
+                    if (mode === 'recording') handleStopRecording();
+                };
+            }, [mode]);
+
+            const handleDownloadPNG = async () => {
+                if(!config.watermark.text) {
+                    showToast("テキストを入力してください", 'error');
+                    return;
+                }
+                const isPortrait = window.innerHeight > window.innerWidth;
+                const w = isPortrait ? 1080 : 1920;
+                const h = isPortrait ? 1920 : 1080;
+                
+                const blob = await engine.generateWatermarkPNG(config, w, h);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `watermark_${Date.now()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast(`透かし画像を保存しました (${w}x${h})`);
+            };
+
+            const handleInitRecording = async () => {
+                try {
+                    await engine.setupStreams(config);
+                    setCount(5); 
+                    setMode('countdown');
+                } catch (e) {
+                    const map = { "CANCELLED": t.screenError, "NOT_SUPPORTED": t.deviceError, "PERM_DENIED": t.permError };
+                    showToast(map[e.message] || e.message, 'error');
+                }
+            };
+
+            const handleStopRecording = async () => {
+                if (!engine.isActive) return; 
+                try {
+                    const result = await engine.stopRecording();
+                    setBlobs({ screen: result.screenBlob, cam: result.camBlob, mic: result.micBlob });
+                    setMode('review');
+                } catch (e) {
+                    console.error(e);
+                    showToast(t.recError, 'error');
+                }
+            };
+
+            const handleDownload = (type) => {
+                const blob = blobs[type];
+                if(!blob) return;
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const ext = type === 'mic' ? 'webm' : 'mp4';
+                a.download = `ProRec_${type}_${Date.now()}.${ext}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showToast(`保存しました`);
+            };
+
+            const PreviewScreen = () => {
+                const [aspect, setAspect] = useState(16/9);
+                useEffect(() => {
+                    const updateAspect = () => {
+                        const ratio = window.innerWidth / window.innerHeight;
+                        if (ratio < 0.5) setAspect(0.5); else if (ratio > 2.5) setAspect(2.5); else setAspect(ratio);
+                    };
+                    window.addEventListener('resize', updateAspect);
+                    updateAspect();
+                    return () => window.removeEventListener('resize', updateAspect);
+                }, []);
+
+                const getWatermarkStyle = () => {
+                    const pos = config.watermark.position;
+                    const scales = ['0.8rem', '1.5rem', '2.5rem', '3.5rem'];
+                    const fontSize = scales[config.watermark.fontSizeIdx] || '0.8rem';
+                    const baseStyle = {
+                        opacity: config.watermark.opacity / 100,
+                        color: theme === 'light' && config.watermark.opacity < 50 ? '#000' : '#fff',
+                        position: 'absolute', fontSize: fontSize
+                    };
+                    switch (pos) {
+                        case 0: return { ...baseStyle, top: '1rem', left: '1rem' }; 
+                        case 1: return { ...baseStyle, top: '1rem', right: '1rem' }; 
+                        case 2: return { ...baseStyle, bottom: '1rem', left: '1rem' }; 
+                        case 3: return { ...baseStyle, bottom: '1rem', right: '1rem' }; 
+                        case 4: return { ...baseStyle, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }; 
+                        case 5: return { ...baseStyle, top: '-50%', left: '-50%', width: '200%', height: '200%', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', transform: 'rotate(-30deg) scale(1.5)', fontSize: config.watermark.fontSizeIdx >= 2 ? '3rem' : '1.5rem' }; 
+                        default: return baseStyle;
+                    }
+                };
+
+                return (
+                    <div 
+                        className="relative bg-slate-800 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex items-center justify-center shadow-lg group select-none transition-all duration-300 w-full max-h-[50vh] mx-auto"
+                        style={{ aspectRatio: aspect }}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-brand-500/10 to-accent-500/10 dark:from-brand-500/20 dark:to-accent-500/20"></div>
+                        <div className="text-slate-400 dark:text-slate-600 text-sm flex flex-col items-center z-0">
+                            <i data-lucide="monitor" className="w-12 h-12 mb-2 opacity-50"></i>
+                            <span>{t.preview}</span>
+                        </div>
+                        {config.watermark.enabled && (
+                            <div className={`font-bold pointer-events-none whitespace-nowrap z-10 ${['font-basic', 'font-serif', 'font-rounded', 'font-stylish', 'font-mono'][config.watermark.font]}`} style={getWatermarkStyle()}>
+                                {config.watermark.position === 5 ? Array(40).fill(config.watermark.text || t.placeholder).join("       ") : (config.watermark.text || t.placeholder)}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            if (mode === 'settings') {
+                return (
+                    <div className="min-h-screen p-4 md:p-8 flex flex-col items-center pb-20 relative overflow-y-auto">
+                        <div className="aurora-bg"></div>
+                        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+                        
+                        <div className="w-full max-w-6xl z-10">
+                            <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-gradient-to-br from-brand-500 to-accent-500 p-2.5 rounded-xl shadow-lg shadow-brand-500/20">
+                                        <i data-lucide="aperture" className="text-white w-7 h-7"></i>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-accent-600 dark:from-brand-400 dark:to-accent-400">
+                                            {t.title}
+                                        </h1>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">{t.subtitle}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button 
+                                        onClick={() => showToast(t.aboutCompDesc, 'info')}
+                                        className="p-2.5 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                                        title={t.aboutComp}
+                                    >
+                                        <Icons.Info />
+                                        <span className="hidden md:inline text-xs font-bold">{t.aboutComp}</span>
+                                    </button>
+                                    <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2.5 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-yellow-400">
+                                        {theme === 'dark' ? <Icons.Sun /> : <Icons.Moon />}
+                                    </button>
+                                    <select value={lang} onChange={(e) => setLang(e.target.value)} className="bg-transparent border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-brand-500">
+                                        <option value="ja">日本語</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                    <button onClick={() => showToast(t.shortcutAlert, 'info')} className="text-sm text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-white flex items-center gap-2 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-full transition-all hover:shadow-md glass">
+                                        <Icons.Share /> <span className="hidden sm:inline">{t.shortcut}</span>
+                                    </button>
+                                </div>
+                            </header>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="space-y-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
+                                    <div>
+                                        <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                            <i data-lucide="eye" className="w-3 h-3"></i> {t.preview}
+                                        </h2>
+                                        <PreviewScreen />
+                                    </div>
+
+                                    <div className="p-6 glass rounded-2xl">
+                                        <h3 className="font-bold mb-6 flex items-center gap-2 text-lg text-slate-800 dark:text-white">
+                                            <i data-lucide="settings" className="w-5 h-5 text-brand-500"></i> {t.deviceSettings}
+                                        </h3>
+                                        
+                                        <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2.5 rounded-full transition-colors ${config.mic ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                                        {config.mic ? <Icons.Mic /> : <Icons.MicOff />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{t.mic}</div>
+                                                        <div className="text-xs text-slate-500 dark:text-slate-400">{t.micDesc}</div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => setConfig({...config, mic: !config.mic})} className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out ${config.mic ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                                                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${config.mic ? 'translate-x-5' : ''}`}></div>
+                                                </button>
+                                            </div>
+                                            {config.mic && <div className="text-[10px] text-brand-500 mt-2 font-bold bg-brand-50/50 dark:bg-brand-900/20 p-2 rounded">{t.micNote}</div>}
+                                        </div>
+
+                                        <div className="mb-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2.5 rounded-full transition-colors ${config.cam ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                                        {config.cam ? <Icons.Video /> : <Icons.VideoOff />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{t.cam}</div>
+                                                        <div className="text-xs text-slate-500 dark:text-slate-400">{t.camDesc}</div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => setConfig({...config, cam: !config.cam})} className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out ${config.cam ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                                                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${config.cam ? 'translate-x-5' : ''}`}></div>
+                                                </button>
+                                            </div>
+                                            {config.cam && <div className="text-[10px] text-green-600 dark:text-green-400 mt-2 font-bold bg-green-50/50 dark:bg-green-900/20 p-2 rounded">{t.camNote}</div>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6 animate-slide-up" style={{animationDelay: '0.2s'}}>
+                                    <div className="p-6 glass rounded-2xl h-fit">
+                                        <h3 className="font-bold mb-6 flex items-center gap-2 text-lg text-slate-800 dark:text-white">
+                                            <i data-lucide="layers" className="w-5 h-5 text-accent-500"></i> {t.watermarkSettings}
+                                        </h3>
+                                        
+                                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2.5 rounded-full transition-colors ${config.watermark.enabled ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                                                    <Icons.Type />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-800 dark:text-slate-200">{t.wmEnabled}</div>
+                                                    <div className="text-xs text-slate-500 dark:text-slate-400">{t.wmEnabledDesc}</div>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setConfig({...config, watermark: {...config.watermark, enabled: !config.watermark.enabled}})} className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out ${config.watermark.enabled ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                                                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${config.watermark.enabled ? 'translate-x-5' : ''}`}></div>
+                                            </button>
+                                        </div>
+
+                                        {config.watermark.enabled && (
+                                            <div className="space-y-6 animate-fade-in">
+                                                <input type="text" value={config.watermark.text} onChange={e => setConfig({...config, watermark: {...config.watermark, text: e.target.value}})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none" placeholder={t.placeholder} />
+                                                
+                                                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                                    {t.fonts.map((f, i) => (
+                                                        <button key={i} onClick={() => setConfig({...config, watermark: {...config.watermark, font: i}})} className={`flex-shrink-0 px-3 py-2 rounded-lg border text-xs font-medium ${config.watermark.font === i ? 'bg-purple-500 border-purple-500 text-white' : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'} ${['font-basic', 'font-serif', 'font-rounded', 'font-stylish', 'font-mono'][i]}`}>{f}</button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    {t.sizes.map((s, i) => (
+                                                        <button key={i} onClick={() => setConfig({...config, watermark: {...config.watermark, fontSizeIdx: i}})} className={`flex-1 text-xs py-2 rounded-lg border ${config.watermark.fontSizeIdx === i ? 'bg-purple-500 border-purple-500 text-white' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>{s}</button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    {t.positions.map((label, idx) => (
+                                                        <button key={idx} onClick={() => setConfig({...config, watermark: {...config.watermark, position: idx}})} className={`text-xs py-2.5 rounded-lg border ${config.watermark.position === idx ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white' : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>{label}</button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="bg-slate-100 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-slate-800/50">
+                                                    <div className="flex justify-between mb-3">
+                                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">{t.opacityLabel}</label>
+                                                        <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-bold bg-brand-100 dark:bg-brand-900/30 px-2 py-0.5 rounded">{config.watermark.opacity}%</span>
+                                                    </div>
+                                                    <input type="range" min="10" max="100" value={config.watermark.opacity} onChange={e => setConfig({...config, watermark: {...config.watermark, opacity: parseInt(e.target.value)}})} className="w-full cursor-pointer" />
+                                                </div>
+                                                
+                                                <button onClick={handleDownloadPNG} className="w-full py-3 rounded-xl border border-purple-500 text-purple-600 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center justify-center gap-2">
+                                                    <Icons.Download /> {t.wmDownload}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button onClick={handleInitRecording} className="w-full bg-gradient-to-r from-slate-900 to-slate-800 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 font-bold py-5 rounded-2xl hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg group">
+                                            <i data-lucide="play-circle" className="w-6 h-6 text-brand-400 dark:text-brand-600 group-hover:scale-110 transition-transform"></i>
+                                            <span className="text-lg">{t.launch}</span>
+                                        </button>
+                                        <p className="text-center text-xs text-slate-500 dark:text-slate-500 mt-4 font-medium">
+                                            {t.launchDesc}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (mode === 'countdown') {
+                return (
+                    <div className="h-screen w-full flex items-center justify-center relative overflow-hidden">
+                        <div className="aurora-bg"></div>
+                        <div className="text-center z-10">
+                            <div className="text-[12rem] font-black text-white drop-shadow-2xl animate-countdown">
+                                {count}
+                            </div>
+                            <div className="text-xl text-slate-300 font-bold tracking-widest uppercase mt-4">
+                                {t.ready}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (mode === 'recording') {
+                return (
+                    <div className="h-screen w-full flex items-end justify-center pb-10 relative overflow-hidden">
+                        <div className="aurora-bg"></div>
+                        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+                        
+                        <div className="absolute top-10 left-0 w-full text-center pointer-events-none z-0">
+                            <p className="text-slate-500 dark:text-slate-400 text-sm bg-slate-100/50 dark:bg-slate-900/50 inline-block px-4 py-2 rounded-full backdrop-blur-sm">
+                                {t.bgWarning}
+                            </p>
+                        </div>
+
+                        <div className="glass px-8 py-5 rounded-full flex items-center gap-8 shadow-2xl animate-slide-up transform transition-all hover:scale-105 z-20 bg-white/80 dark:bg-black/40 backdrop-blur-xl border border-white/20">
+                            <div className="flex gap-4">
+                                <div className={`flex flex-col items-center gap-1 w-12 ${config.mic ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400 dark:text-slate-600'}`}>
+                                    {config.mic ? <Icons.Mic /> : <Icons.MicOff />}
+                                    <span className="text-[10px] font-bold tracking-wider mt-1">MIC</span>
+                                </div>
+                                <div className={`flex flex-col items-center gap-1 w-12 ${config.cam ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-600'}`}>
+                                    {config.cam ? <Icons.Video /> : <Icons.VideoOff />}
+                                    <span className="text-[10px] font-bold tracking-wider mt-1">CAM</span>
+                                </div>
+                            </div>
+                            <div className="relative group mx-4">
+                                <button onClick={handleStopRecording} className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border-4 bg-slate-900 dark:bg-slate-800 border-slate-700 hover:scale-105`}>
+                                    <div className="w-8 h-8 bg-red-500 rounded-md shadow-[0_0_20px_rgba(239,68,68,0.6)]"></div>
+                                </button>
+                                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-5 w-5 bg-red-500"></span></span>
+                            </div>
+                            <div className="w-px h-10 bg-slate-300 dark:bg-slate-700"></div>
+                            <div className="w-24 text-center">
+                                <span className="text-red-500 font-mono font-bold animate-pulse text-lg tracking-widest">{t.rec}</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (mode === 'review') {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative bg-slate-900">
+                        <div className="aurora-bg opacity-30"></div>
+                        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+                        
+                        <div className="w-full max-w-6xl bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl backdrop-blur-xl z-10">
+                            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-black/40">
+                                <h2 className="font-bold flex items-center gap-3 text-xl text-slate-800 dark:text-white">
+                                    <i data-lucide="film" className="text-brand-500"></i> {t.review}
+                                </h2>
+                                <button onClick={() => { setBlobs({screen:null, cam:null, mic:null}); setMode('settings'); }} className="text-sm text-slate-500 hover:text-red-500 transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    <i data-lucide="trash-2" className="w-4 h-4"></i> {t.discard}
+                                </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-black/50 overflow-y-auto max-h-[70vh]">
+                                <div className="space-y-2">
+                                    <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Screen Recording (Main)</div>
+                                    <div className="aspect-video bg-black flex items-center justify-center relative shadow-inner rounded-lg overflow-hidden">
+                                        {blobs.screen ? <video src={URL.createObjectURL(blobs.screen)} controls className="w-full h-full"></video> : <span className="text-slate-600">No Data</span>}
+                                    </div>
+                                    <button onClick={() => handleDownload('screen')} className={`w-full py-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold flex items-center justify-center gap-2 transition-colors`}>
+                                        <i data-lucide="download"></i> {t.save}
+                                    </button>
+                                </div>
+
+                                {blobs.cam ? (
+                                    <div className="space-y-2">
+                                        <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Camera Recording</div>
+                                        <div className="aspect-video bg-black flex items-center justify-center relative shadow-inner rounded-lg overflow-hidden">
+                                            <video src={URL.createObjectURL(blobs.cam)} controls className="w-full h-full"></video>
+                                        </div>
+                                        <button onClick={() => handleDownload('cam')} className={`w-full py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold flex items-center justify-center gap-2 transition-colors`}>
+                                            <i data-lucide="download"></i> {t.saveCam}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center flex-col gap-2 text-slate-500 text-sm border-2 border-dashed border-slate-700 rounded-lg p-10">
+                                        <div className="p-3 bg-slate-800 rounded-full"><Icons.VideoOff /></div>
+                                        <span>Camera Not Recorded</span>
+                                    </div>
+                                )}
+
+                                {blobs.mic ? (
+                                    <div className="space-y-2">
+                                        <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mic Audio Only</div>
+                                        <div className="aspect-video bg-slate-800 flex items-center justify-center relative shadow-inner rounded-lg overflow-hidden flex-col gap-2">
+                                            <Icons.Music />
+                                            <audio src={URL.createObjectURL(blobs.mic)} controls className="w-11/12"></audio>
+                                        </div>
+                                        <button onClick={() => handleDownload('mic')} className={`w-full py-3 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-bold flex items-center justify-center gap-2 transition-colors`}>
+                                            <i data-lucide="download"></i> {t.saveMic}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center flex-col gap-2 text-slate-500 text-sm border-2 border-dashed border-slate-700 rounded-lg p-10">
+                                        <div className="p-3 bg-slate-800 rounded-full"><Icons.MicOff /></div>
+                                        <span>Mic Audio Not Separated</span>
+                                        {config.cam && <span className="text-[10px] text-green-500">(Included in Cam File)</span>}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="p-6 flex justify-end gap-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                                <button onClick={() => setMode('settings')} className="px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 font-medium">
+                                    {t.back}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            return null;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
