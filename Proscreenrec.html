@@ -121,7 +121,10 @@
             Image: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
             Info: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
             Share: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>,
-            Music: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Music: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+            Laptop: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>,
+            Smartphone: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>,
+            Ban: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
         };
 
         const translations = {
@@ -152,7 +155,13 @@
                 camDesc: "OFF: なし / ON: 録画して別保存",
                 camNote: "※カメラON時、カメラ動画ファイル(MP4)が別途保存されます",
                 launch: "録画を開始する",
-                launchDesc: "ボタンを押すと画面選択が表示されます（開始まで5秒の待機時間があります）",
+                launchDesc: "ボタンを押すと準備画面が表示されます",
+                preCheckTitle: "録画の準備",
+                preCheckDesc: "次の手順で録画を開始します：",
+                preCheckStep1: "1. この後表示される画面で、許可を求めたら「許可」を押してください。",
+                preCheckStep2: "2. 共有する画面（ウィンドウまたはタブ）を選択し「共有」ボタンを押してください。",
+                preCheckStep3: "3. 「共有」を押すと5秒間のカウントダウン後に録画が始まります。",
+                preCheckBtn: "OK, 画面を選択する",
                 ready: "Starting Recording...",
                 rec: "REC",
                 review: "録画プレビュー",
@@ -169,7 +178,9 @@
                 permError: "カメラまたはマイクの許可が得られませんでした",
                 bgWarning: "録画中は、このウィンドウを最小化しないでください（録画が停止します）",
                 aboutComp: "重要なお知らせ",
-                aboutCompDesc: "【アンバンドル仕様】最高画質と安定性を保証するため、画面・カメラ・音声はすべて「別ファイル」として保存されます。編集ソフトで自由に組み合わせてください。"
+                aboutCompDesc: "【アンバンドル仕様】最高画質と安定性を保証するため、画面・カメラ・音声はすべて「別ファイル」として保存されます。編集ソフトで自由に組み合わせてください。",
+                mobileTitle: "PC専用アプリです",
+                mobileDesc: "このアプリは画面録画機能を使用するため、パソコン（Windows/Mac）のブラウザからご利用ください。スマホでは動作しません。"
             },
             en: {
                 title: "ProRec",
@@ -198,7 +209,13 @@
                 camDesc: "OFF: None / ON: Separate Video File",
                 camNote: "*When ON, camera is saved as a separate MP4 file",
                 launch: "Start Recording",
-                launchDesc: "Select screen after clicking (5s countdown starts after selection)",
+                launchDesc: "Click to start setup",
+                preCheckTitle: "Ready to Record?",
+                preCheckDesc: "Steps to start:",
+                preCheckStep1: "1. Allow camera/microphone access if prompted.",
+                preCheckStep2: "2. Select the screen/window you want to share.",
+                preCheckStep3: "3. Recording starts 5 seconds after you click 'Share'.",
+                preCheckBtn: "OK, Select Screen",
                 ready: "Starting Recording...",
                 rec: "REC",
                 review: "Review Recording",
@@ -215,7 +232,9 @@
                 permError: "Permission Denied",
                 bgWarning: "Do not minimize window",
                 aboutComp: "Important Notice",
-                aboutCompDesc: "[Unbundled Logic] To ensure stability and quality, screen, camera, and audio are saved as SEPARATE files. Please combine them in your editor."
+                aboutCompDesc: "[Unbundled Logic] To ensure stability and quality, screen, camera, and audio are saved as SEPARATE files. Please combine them in your editor.",
+                mobileTitle: "Desktop Only Application",
+                mobileDesc: "Please use a desktop browser (Chrome/Edge/Safari) to record your screen. Mobile devices are not supported."
             }
         };
 
@@ -232,6 +251,7 @@
                 this.screenStream = null;
                 this.camStream = null;
                 this.micStream = null;
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
                 this.isActive = false;
                 this.onStopCallback = null;
@@ -298,19 +318,7 @@
             }
 
             async setupStreams(config) {
-                // 1. Get Screen Stream (Always needed)
-                try {
-                    this.screenStream = await navigator.mediaDevices.getDisplayMedia({
-                        video: { frameRate: 60 },
-                        audio: true // System audio
-                    });
-                } catch (e) {
-                    if (e.name === 'NotAllowedError') throw new Error("CANCELLED");
-                    else if (e.name === 'NotFoundError') throw new Error("NOT_SUPPORTED");
-                    else throw new Error(e.message);
-                }
-
-                // 2. Get Mic Stream (If requested)
+                // 1. Request Mic (First)
                 if (config.mic) {
                     try {
                         const userStream = await navigator.mediaDevices.getUserMedia({ 
@@ -321,17 +329,30 @@
                         console.warn("Mic access failed", e);
                     }
                 }
-                
-                // 3. Get Cam Stream (If requested)
+
+                // 2. Request Cam (Second)
                 if (config.cam) {
                     try {
                         const constraints = {
-                            video: { width: { ideal: 1280 }, aspectRatio: 1.77 }
+                            video: { width: { ideal: 640 }, aspectRatio: 1.77 }
                         };
-                        this.camStream = await navigator.mediaDevices.getUserMedia(constraints);
+                        const userStream = await navigator.mediaDevices.getUserMedia(constraints);
+                        this.camStream = userStream; 
                     } catch (e) {
                         console.warn("Cam access failed", e);
                     }
+                }
+
+                // 3. Request Screen (Last - triggers context switch)
+                try {
+                    this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { frameRate: 60 },
+                        audio: true
+                    });
+                } catch (e) {
+                    if (e.name === 'NotAllowedError') throw new Error("CANCELLED");
+                    else if (e.name === 'NotFoundError') throw new Error("NOT_SUPPORTED");
+                    else throw new Error(e.message);
                 }
 
                 this.screenStream.getVideoTracks()[0].onended = () => {
@@ -346,17 +367,17 @@
                 this.isActive = true;
 
                 // --- 1. Screen Recording (Always) ---
-                // Try to use system audio if available, otherwise just video
+                // Screen: Only system audio (from screen stream). NO MIC.
                 let screenTracks = [this.screenStream.getVideoTracks()[0]];
                 if (this.screenStream.getAudioTracks().length > 0) {
                     screenTracks.push(this.screenStream.getAudioTracks()[0]);
                 }
                 const screenStreamForRec = new MediaStream(screenTracks);
+
                 const screenMime = this.getMimeType('video');
-                
                 this.screenRecorder = new MediaRecorder(screenStreamForRec, {
                     mimeType: screenMime,
-                    videoBitsPerSecond: 8000000 // High bitrate for screen
+                    videoBitsPerSecond: 8000000 
                 });
                 this.screenRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedScreenChunks.push(e.data); };
                 this.screenRecorder.start(1000);
@@ -369,7 +390,11 @@
                         if (this.micStream.getAudioTracks().length > 0) {
                             camTracks.push(this.micStream.getAudioTracks()[0]);
                         }
+                    } else if (this.camStream.getAudioTracks().length > 0) {
+                        // Fallback to cam mic if no separate mic
+                        camTracks.push(this.camStream.getAudioTracks()[0]);
                     }
+                    
                     const camStreamForRec = new MediaStream(camTracks);
                     const camMime = this.getMimeType('video');
                     
@@ -380,8 +405,9 @@
                     this.camRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedCamChunks.push(e.data); };
                     this.camRecorder.start(1000);
                 } 
+                
                 // --- 3. Mic Recording (If enabled AND Cam is disabled) ---
-                // If cam is enabled, mic is already attached to cam video. We record audio separately only if cam is OFF.
+                // NEW: Explicitly separate mic audio when cam is off to avoid mixing
                 else if (config.mic && this.micStream) {
                     const audioMime = this.getMimeType('audio');
                     this.micRecorder = new MediaRecorder(this.micStream, {
@@ -391,7 +417,7 @@
                     this.micRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedMicChunks.push(e.data); };
                     this.micRecorder.start(1000);
                 }
-
+                
                 return screenMime;
             }
 
@@ -455,17 +481,29 @@
         };
 
         const App = () => {
+            const [isMobile, setIsMobile] = useState(false);
             const [mode, setMode] = useState('settings'); 
             const [lang, setLang] = useState('ja');
             const [theme, setTheme] = useState('dark');
             const [config, setConfig] = useState({
                 watermark: { enabled: true, text: "", position: 3, opacity: 80, font: 0, fontSizeIdx: 0 }, 
-                mic: true, 
-                cam: false
+                mic: true, cam: false
             });
             const [count, setCount] = useState(5); 
             const [blobs, setBlobs] = useState({ screen: null, cam: null, mic: null });
             const [toast, setToast] = useState(null); 
+            
+            // New state for Pre-flight Check Modal
+            const [showPreCheck, setShowPreCheck] = useState(false);
+
+            // Mobile Detection Logic
+            useEffect(() => {
+                const ua = navigator.userAgent;
+                const isTouch = navigator.maxTouchPoints > 0;
+                // iPadOS (pretends to be Mac but has touch), Android, iPhone
+                const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || (navigator.platform === 'MacIntel' && isTouch);
+                setIsMobile(mobileCheck);
+            }, []);
 
             const t = translations[lang] || translations['en'];
             const showToast = (msg, type='success') => setToast({msg, type});
@@ -474,7 +512,7 @@
                 if (typeof lucide !== 'undefined') lucide.createIcons();
                 document.documentElement.classList.toggle('dark', theme === 'dark');
                 document.documentElement.classList.toggle('light', theme === 'light');
-            }, [mode, toast, theme, lang]); 
+            }, [mode, toast, theme, lang, isMobile, showPreCheck]); 
 
             // Countdown Logic
             useEffect(() => {
@@ -483,6 +521,7 @@
                         const timer = setTimeout(() => setCount(count - 1), 1000);
                         return () => clearTimeout(timer);
                     } else {
+                        // Start Actual Recording
                         const mime = engine.startRecording(config);
                         setMode('recording');
                         showToast(`${t.recStart}`);
@@ -490,6 +529,7 @@
                 }
             }, [mode, count]);
 
+            // External stop handler
             useEffect(() => {
                 engine.onStopCallback = () => {
                     if (mode === 'recording') handleStopRecording();
@@ -516,8 +556,12 @@
             };
 
             const handleInitRecording = async () => {
+                // Close PreCheck modal
+                setShowPreCheck(false);
+                
                 try {
                     await engine.setupStreams(config);
+                    // Go to countdown
                     setCount(5); 
                     setMode('countdown');
                 } catch (e) {
@@ -567,6 +611,7 @@
 
                 const getWatermarkStyle = () => {
                     const pos = config.watermark.position;
+                    // Reduced sizes for preview too
                     const scales = ['0.8rem', '1.5rem', '2.5rem', '3.5rem'];
                     const fontSize = scales[config.watermark.fontSizeIdx] || '0.8rem';
                     const baseStyle = {
@@ -604,12 +649,65 @@
                 );
             };
 
+            // BLOCK MOBILE USERS
+            if (isMobile) {
+                return (
+                    <div className="h-screen w-full flex items-center justify-center relative overflow-hidden text-slate-900 dark:text-white">
+                        <div className="aurora-bg"></div>
+                        <div className="glass p-8 rounded-2xl max-w-sm mx-4 text-center border-red-500/30 border shadow-2xl animate-fade-in relative z-10">
+                            <div className="flex justify-center items-center gap-4 mb-6">
+                                <div className="text-slate-400 opacity-50"><Icons.Laptop /></div>
+                                <div className="text-red-500 animate-pulse"><Icons.Ban /></div>
+                                <div className="text-slate-400 opacity-50"><Icons.Smartphone /></div>
+                            </div>
+                            <h2 className="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-pink-500">
+                                {t.mobileTitle}
+                            </h2>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {t.mobileDesc}
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
             if (mode === 'settings') {
                 return (
                     <div className="min-h-screen p-4 md:p-8 flex flex-col items-center pb-20 relative overflow-y-auto">
                         <div className="aurora-bg"></div>
                         {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
                         
+                        {/* PRE-CHECK MODAL */}
+                        {showPreCheck && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+                                <div className="glass p-8 rounded-2xl max-w-md w-full shadow-2xl border border-white/10 relative">
+                                    <button onClick={() => setShowPreCheck(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="bg-brand-500 p-2 rounded-lg text-white"><Icons.Video /></div>
+                                        <h3 className="text-xl font-bold text-white">{t.preCheckTitle}</h3>
+                                    </div>
+                                    <div className="space-y-4 text-sm text-slate-300 mb-8">
+                                        <p>{t.preCheckDesc}</p>
+                                        <div className="flex gap-3 items-start">
+                                            <div className="mt-1 text-brand-400"><i data-lucide="check-circle" className="w-4 h-4"></i></div>
+                                            <span>{t.preCheckStep1}</span>
+                                        </div>
+                                        <div className="flex gap-3 items-start">
+                                            <div className="mt-1 text-brand-400"><i data-lucide="check-circle" className="w-4 h-4"></i></div>
+                                            <span>{t.preCheckStep2}</span>
+                                        </div>
+                                        <div className="flex gap-3 items-start">
+                                            <div className="mt-1 text-brand-400"><i data-lucide="clock" className="w-4 h-4"></i></div>
+                                            <span>{t.preCheckStep3}</span>
+                                        </div>
+                                    </div>
+                                    <button onClick={handleInitRecording} className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all transform active:scale-95 shadow-lg">
+                                        {t.preCheckBtn} <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="w-full max-w-6xl z-10">
                             <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                                 <div className="flex items-center gap-4">
@@ -756,7 +854,7 @@
                                     </div>
 
                                     <div className="pt-2">
-                                        <button onClick={handleInitRecording} className="w-full bg-gradient-to-r from-slate-900 to-slate-800 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 font-bold py-5 rounded-2xl hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg group">
+                                        <button onClick={() => setShowPreCheck(true)} className="w-full bg-gradient-to-r from-slate-900 to-slate-800 dark:from-white dark:to-slate-200 text-white dark:text-slate-900 font-bold py-5 rounded-2xl hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg group">
                                             <i data-lucide="play-circle" className="w-6 h-6 text-brand-400 dark:text-brand-600 group-hover:scale-110 transition-transform"></i>
                                             <span className="text-lg">{t.launch}</span>
                                         </button>
@@ -873,8 +971,8 @@
                                     <div className="space-y-2">
                                         <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Mic Audio Only</div>
                                         <div className="aspect-video bg-slate-800 flex items-center justify-center relative shadow-inner rounded-lg overflow-hidden flex-col gap-2">
-                                            <Icons.Music />
-                                            <audio src={URL.createObjectURL(blobs.mic)} controls className="w-11/12"></audio>
+                                            <div className="text-brand-500 animate-pulse"><Icons.Music /></div>
+                                            <audio src={URL.createObjectURL(blobs.mic)} controls className="w-11/12 h-8"></audio>
                                         </div>
                                         <button onClick={() => handleDownload('mic')} className={`w-full py-3 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-bold flex items-center justify-center gap-2 transition-colors`}>
                                             <i data-lucide="download"></i> {t.saveMic}
