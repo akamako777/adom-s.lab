@@ -105,7 +105,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Translations (Restored Full Set) ---
+        // --- Translations (Updated with Duration Guide) ---
         const TRANSLATIONS = {
             ja: {
                 title: 'Simple Memories',
@@ -131,8 +131,12 @@
                 errNoBrowser: '録画非対応ブラウザです',
                 errNoData: '写真と音楽が必要です',
                 errNoPhoto: '写真がありません',
-                ver: 'ver 4.6 (Aurora Edition)',
-                wakeLockActive: 'スリープ防止機能: ON'
+                ver: 'ver 4.7 (Aurora Edition)',
+                wakeLockActive: 'スリープ防止機能: ON',
+                guideTitle: '録画時間の目安',
+                guideMobile: '推奨 5-10分 (限界15分)',
+                guidePC: '推奨 20-30分 (限界60分)',
+                guideTip: 'Pro Tip: 長編は5分ごとに分割して保存し、後で結合するのが安全です。'
             },
             en: {
                 title: 'Simple Memories',
@@ -158,8 +162,12 @@
                 errNoBrowser: 'Browser not supported',
                 errNoData: 'Photos and Music required',
                 errNoPhoto: 'No photos added',
-                ver: 'ver 4.6 (Aurora Edition)',
-                wakeLockActive: 'Wake Lock: ON'
+                ver: 'ver 4.7 (Aurora Edition)',
+                wakeLockActive: 'Wake Lock: ON',
+                guideTitle: 'Recording Duration',
+                guideMobile: 'Rec 5-10m (Limit 15m)',
+                guidePC: 'Rec 20-30m (Limit 60m)',
+                guideTip: 'Pro Tip: For long videos, save every 5 mins and merge later.'
             },
             es: {
                 title: 'Simple Memories',
@@ -185,8 +193,12 @@
                 errNoBrowser: 'Navegador no soportado',
                 errNoData: 'Se requieren fotos y música',
                 errNoPhoto: 'No hay fotos',
-                ver: 'ver 4.6 (Aurora Edition)',
-                wakeLockActive: 'Wake Lock: ON'
+                ver: 'ver 4.7 (Aurora Edition)',
+                wakeLockActive: 'Wake Lock: ON',
+                guideTitle: 'Guía de Duración',
+                guideMobile: 'Rec 5-10m (Límite 15m)',
+                guidePC: 'Rec 20-30m (Límite 60m)',
+                guideTip: 'Consejo: Para videos largos, guarda cada 5 min y une después.'
             },
             tw: {
                 title: 'Simple Memories',
@@ -212,8 +224,12 @@
                 errNoBrowser: '瀏覽器不支援',
                 errNoData: '需要照片和音樂',
                 errNoPhoto: '沒有照片',
-                ver: 'ver 4.6 (Aurora Edition)',
-                wakeLockActive: '喚醒鎖定: ON'
+                ver: 'ver 4.7 (Aurora Edition)',
+                wakeLockActive: '喚醒鎖定: ON',
+                guideTitle: '錄製時間指南',
+                guideMobile: '建議 5-10分 (極限15分)',
+                guidePC: '建議 20-30分 (極限60分)',
+                guideTip: '提示: 長影片請分段保存後再合併。'
             },
             hi: {
                 title: 'Simple Memories',
@@ -239,8 +255,12 @@
                 errNoBrowser: 'ब्राउज़र समर्थित नहीं है',
                 errNoData: 'तस्वीरें और संगीत आवश्यक हैं',
                 errNoPhoto: 'कोई तस्वीरें नहीं',
-                ver: 'ver 4.6 (Aurora Edition)',
-                wakeLockActive: 'Wake Lock: ON'
+                ver: 'ver 4.7 (Aurora Edition)',
+                wakeLockActive: 'Wake Lock: ON',
+                guideTitle: 'रिकॉर्डिंग समय',
+                guideMobile: '5-10 मिनट (सीमा 15 मिनट)',
+                guidePC: '20-30 मिनट (सीमा 60 मिनट)',
+                guideTip: 'सुझाव: लंबे वीडियो को भागों में सहेजें।'
             }
         };
 
@@ -387,6 +407,35 @@
             );
         };
 
+        // New Duration Guide Modal
+        const RecDurationModal = ({ isOpen, onClose, texts }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center modal-overlay p-4" onClick={onClose}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-bounce-in relative border border-indigo-100 dark:border-indigo-900" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><Icon name="x" size={20}/></button>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 font-pop flex items-center gap-2">
+                            <Icon name="clock" className="text-indigo-500"/> {texts.guideTitle}
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-300 uppercase mb-1 flex items-center gap-1"><Icon name="smartphone" size={14}/> Mobile / iPhone</h4>
+                                <p className="text-lg font-bold text-slate-800 dark:text-white">{texts.guideMobile}</p>
+                            </div>
+                            <div className="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-gray-100 dark:border-slate-700">
+                                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase mb-1 flex items-center gap-1"><Icon name="monitor" size={14}/> PC / Mac</h4>
+                                <p className="text-lg font-bold text-slate-800 dark:text-white">{texts.guidePC}</p>
+                            </div>
+                            <div className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-white dark:bg-slate-800 p-2 rounded-lg">
+                                <Icon name="lightbulb" size={16} className="text-yellow-500 shrink-0 mt-0.5" />
+                                <span>{texts.guideTip}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- Main App ---
         const App = () => {
             const [photos, setPhotos] = useState([]);
@@ -408,6 +457,7 @@
             const [lang, setLang] = useState('ja');
             const [darkMode, setDarkMode] = useState(false);
             const [showFileInfo, setShowFileInfo] = useState(false); // Restored State
+            const [showDurationGuide, setShowDurationGuide] = useState(false); // New State for Guide
 
             const canvasRef = useRef(null);
             const audioController = useRef(null);
@@ -699,6 +749,11 @@
                                 <Icon name="info" size={20} />
                             </button>
 
+                            {/* New Duration Guide Button */}
+                            <button onClick={() => setShowDurationGuide(true)} className="p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
+                                <Icon name="clock" size={20} />
+                            </button>
+
                             <button onClick={() => setDarkMode(!darkMode)} className="p-2 text-slate-500 hover:text-yellow-500 dark:text-slate-400 dark:hover:text-yellow-400 transition rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
                                 <Icon name={darkMode ? "sun" : "moon"} size={20} />
                             </button>
@@ -919,6 +974,8 @@
                     </div>
                     <ConfirmModal isOpen={showStopConfirm} title={t.recStopTitle} message={t.recStopMsg} onConfirm={executeStopRecording} onCancel={() => setShowStopConfirm(false)} texts={{stop: t.stop, cancel: t.cancel}} />
                     <FileInfoModal isOpen={showFileInfo} onClose={() => setShowFileInfo(false)} />
+                    {/* New Guide Modal */}
+                    <RecDurationModal isOpen={showDurationGuide} onClose={() => setShowDurationGuide(false)} texts={t} />
                 </div>
             );
         };
