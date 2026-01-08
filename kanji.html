@@ -19,11 +19,17 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <!-- Google Fonts -->
+    <!-- Zen Maru Gothic: 丸ゴシック -->
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Yuji Syuku: 教科書体・習字風 -->
     <link href="https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap" rel="stylesheet">
+    <!-- Noto Serif JP: 明朝体 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Kaisei Decol: 可愛らしい明朝 -->
     <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Zen Kurenaido: 手書き風 -->
     <link href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap" rel="stylesheet">
+    <!-- BIZ UDMincho & Gothic: ユニバーサルデザイン (モリサワ) -->
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDPMincho:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -107,11 +113,14 @@
         const Type = (props) => (<IconBase {...props}><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" /></IconBase>);
         const BrainCircuit = (props) => (<IconBase {...props}><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" /><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" /><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" /><path d="M17.599 6.5a3 3 0 0 0 .399-1.375" /><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" /><path d="M3.477 10.896a4 4 0 0 1 .585-.396" /><path d="M19.938 10.5a4 4 0 0 1 .585.396" /><path d="M6 18a4 4 0 0 1-1.97-3.284" /><path d="M17.97 14.716A4 4 0 0 1 18 18" /></IconBase>);
         const Key = (props) => (<IconBase {...props}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" /></IconBase>);
-        const Eye = (props) => (<IconBase {...props}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></IconBase>);
-        const EyeOff = (props) => (<IconBase {...props}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></IconBase>);
         const ChevronDown = (props) => (<IconBase {...props}><path d="m6 9 6 6 6-6"/></IconBase>);
         const ChevronUp = (props) => (<IconBase {...props}><path d="m18 15-6-6-6 6"/></IconBase>);
+        const Eye = (props) => (<IconBase {...props}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></IconBase>);
+        const EyeOff = (props) => (<IconBase {...props}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></IconBase>);
+        const ExternalLink = (props) => (<IconBase {...props}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></IconBase>);
 
+        // Gemini API設定 (Canvas環境用のデフォルト空キー)
+        const DEFAULT_API_KEY = ""; 
 
         // フォント定義
         const FONT_OPTIONS = [
@@ -125,7 +134,7 @@
         ];
 
         const STORAGE_KEY = 'kanji_drill_saves_v1';
-        const API_KEY_STORAGE = 'kanji_drill_api_key'; // APIキー保存用
+        const API_KEY_STORAGE_KEY = 'kanji_drill_api_key_v1';
         const MAX_SAVES = 50;
 
         // --- 確認用モーダルコンポーネント ---
@@ -148,12 +157,12 @@
         };
 
         const App = () => {
-            // --- State ---
-            // API Key State
-            const [apiKey, setApiKey] = useState("");
-            const [showApiKey, setShowApiKey] = useState(false);
-            const [isApiKeyOpen, setIsApiKeyOpen] = useState(true); // APIキー欄の開閉
+            // --- API Key Management State ---
+            const [userApiKey, setUserApiKey] = useState('');
+            const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
+            const [showApiKeyChar, setShowApiKeyChar] = useState(false);
 
+            // --- State ---
             const [rawText, setRawText] = useState("春(はる)春(はる)春(はる)春(はる)の(の)風(かぜ)\n美(び)美(び)美(び)美(うつく)し(し)い(い)\n走(そう)走(そう)走(そう)走(はし)る(る)\n学(がく)学(がく)学(がく)学(がっ)校(こう)");
             const [parsedLines, setParsedLines] = useState([]);
             
@@ -163,6 +172,7 @@
             const [drillTheme, setDrillTheme] = useState('');
             const [targetKanji, setTargetKanji] = useState('');
             const [drillPattern, setDrillPattern] = useState('half'); 
+            // 'all' | 'half' | 'mix' | 'idiom_focus' | 'sentence_focus' | 'teacher_input'
 
             // 用紙・レイアウト設定
             const [orientation, setOrientation] = useState('portrait');
@@ -188,32 +198,40 @@
             const [deleteTargetId, setDeleteTargetId] = useState(null);
             const [loadTargetDrill, setLoadTargetDrill] = useState(null);
 
-            // 初期ロード時
+            // 初期ロード
             useEffect(() => {
-                // 保存ドリルの読み込み
+                // ドリルデータのロード
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
-                    try { setSavedDrills(JSON.parse(saved)); } catch (e) { console.error("Save data error", e); }
+                    try {
+                        setSavedDrills(JSON.parse(saved));
+                    } catch (e) {
+                        console.error("Save data parse error", e);
+                    }
                 }
-
-                // APIキーの読み込み
-                const savedKey = localStorage.getItem(API_KEY_STORAGE);
-                if (savedKey) {
-                    setApiKey(savedKey);
-                    // キーが保存されている場合は、デフォルトで閉じる
-                    setIsApiKeyOpen(false);
+                
+                // APIキーのロード
+                const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+                if (storedKey) {
+                    setUserApiKey(storedKey);
+                    // キーがあれば閉じておく、なければ目立たせるために開くのも手だが、
+                    // 初期状態は閉じておき、ユーザーが必要なら開くUXにする
+                    setIsApiKeyOpen(false); 
+                } else {
+                    // キーがない場合、初回だけアピールとして開く
+                    setIsApiKeyOpen(true);
                 }
             }, []);
 
-            // APIキーの保存
+            // APIキー更新ハンドラ
             const handleApiKeyChange = (e) => {
-                const val = e.target.value;
-                setApiKey(val);
-                localStorage.setItem(API_KEY_STORAGE, val);
+                const newKey = e.target.value;
+                setUserApiKey(newKey);
+                localStorage.setItem(API_KEY_STORAGE_KEY, newKey);
             };
 
             // --- Constants for Layout (A4) ---
-            const PADDING = 10; // mm
+            const PADDING = 10; // mm (はみ出し防止のため10mmを維持)
             
             const paperSize = useMemo(() => {
                 if (orientation === 'portrait') {
@@ -249,14 +267,13 @@
                 };
             }, [rows, cols, paperSize]);
 
-            // --- Gemini API Logic ---
+            // --- Gemini API Logic (Hybrid Authentication) ---
             const callGemini = async (prompt) => {
-                if (!apiKey) {
-                    throw new Error("APIキーが設定されていません。左上の設定欄から入力してください。");
-                }
-
+                // ユーザー入力キーがあればそれを使用、なければCanvasデフォルト(空)を使用
+                const finalApiKey = userApiKey.trim() || DEFAULT_API_KEY;
+                
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${finalApiKey}`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -265,8 +282,19 @@
                         })
                     }
                 );
+                
                 const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
+                
+                // エラーハンドリング強化
+                if (data.error) {
+                    if (data.error.code === 400 && data.error.message.includes('API key')) {
+                        // APIキー関連のエラーの場合、ユーザーに設定を開くよう促す
+                        setIsApiKeyOpen(true);
+                        throw new Error("APIキーが無効または設定されていません。左上の設定から正しいキーを入力してください。");
+                    }
+                    throw new Error(data.error.message);
+                }
+                
                 return data.candidates[0].content.parts[0].text.trim();
             };
 
@@ -294,8 +322,7 @@
                     setRawText(result);
                 } catch (err) {
                     console.error("AI Generation Error:", err);
-                    setErrorMsg(err.message || "AI生成に失敗しました。");
-                    if (err.message.includes("APIキー")) alert(err.message);
+                    setErrorMsg(err.message || "AI生成に失敗しました。再試行してください。");
                 } finally {
                     setIsGenerating(false);
                 }
@@ -309,10 +336,10 @@
                 try {
                     const totalCols = cols; 
                     let specificInstruction = "";
-                    let patternInstruction = ""; 
+                    let patternInstruction = ""; // 構成パターン用の指示
                     let autoTitle = "";
 
-                    // 構成パターンのロジック
+                    // 構成パターンのロジック (修正: 6パターンに対応)
                     switch (drillPattern) {
                         case 'all': // 1. 単漢字のみ
                             patternInstruction = "各列の構成: 指定された漢字のみを反復して埋めてください。熟語や送り仮名は含めず、その漢字一文字だけを繰り返します。";
@@ -325,6 +352,7 @@
                                 2. 列の後半50%は、その漢字を使った「熟語」の反復にしてください。
                                 3. 重要: 同じ熟語をできるだけ2回以上繰り返してください（例: 春分 春分）。
                                 4. 文章は禁止です。
+                                5. マスが余る場合は、熟語をさらに繰り返して埋めてください。
                             `;
                             break;
 
@@ -336,6 +364,7 @@
                                 3. 重要: できるだけ多くの種類の熟語を使って、語彙を増やす練習にしてください（例: 春分、立春、新春、春風...）。
                                 4. 1つの熟語は1回ずつで構いません。とにかく種類を多く出してください。
                                 5. 全体として1列の文字数（${rows}文字）に収まるように調整してください。
+                                6. もしネタ切れでマスが余る場合は、最初に出した熟語をもう一度繰り返して埋めてください。
                             `;
                             break;
 
@@ -347,6 +376,7 @@
                                 3. 最後に、その漢字を使った「短い文（主語＋述語）」を入れます。
                                 4. 重要: 熟語と短文は混ぜずに、順番に配置してください。
                                 5. 全体として1列の文字数（${rows}文字）に収まるように調整してください。
+                                6. マスが余る場合は、単漢字に戻って繰り返してください。
                             `;
                             break;
                             
@@ -358,11 +388,22 @@
                                 3. 残りのスペースは、その漢字を使った「短い文（主語＋述語）」で埋めてください。
                                 4. 文脈の中で漢字を使う練習を重視してください。
                                 5. 全体として1列の文字数（${rows}文字）に収まるように調整してください。
+                                6. マスが余る場合は、同じ文を繰り返すか、別の文を入れて埋めてください。
+                            `;
+                            break;
+
+                        case 'teacher_input': // 6. 新規: 先生入力（入力順に配置）
+                             patternInstruction = `
+                                各列の構成ルール（厳守）:
+                                1. 入力されたテキストを、**登場順序を変えずに**そのまま配置してください。
+                                2. AIによる勝手な熟語の追加や削除は禁止です。入力された内容のみを使ってください。
+                                3. 1列の文字数（${rows}文字）に収まるように改行を入れて調整してください。
+                                4. 入力内容が短くマスが余る場合は、入力内容を最初から繰り返して埋めてください。
                             `;
                             break;
 
                         default:
-                            patternInstruction = "各列の構成: 単漢字と熟語をバランスよく入れてください。";
+                            patternInstruction = "各列の構成: 単漢字と熟語をバランスよく入れてください。マスが余ったら繰り返してください。";
                             break;
                     }
 
@@ -372,18 +413,33 @@
                     }
 
                     if (targetKanji.trim()) {
-                        specificInstruction = `
-                            ユーザー指定の「使用する漢字・熟語」: ${targetKanji}
-                            
-                            指示:
-                            1. 指定された漢字や熟語を使って、${totalCols}列分の練習データを作成してください。
-                            2. 指定された内容が${totalCols}個より少ない場合は、同じ漢字を別の列で使っても構いません。
-                            3. 可能な限り、同じ漢字でも「音読み」と「訓読み」の両方を練習できるように構成してください（例: 生(せい) 生(い)きる）。
-                            4. ${patternInstruction}
-                            5. 1列の文字数は${rows}文字程度になるように調整し、縦のマスを埋めてください。
-                            6. ${gradeSpecificPrompt}
-                        `;
-                        autoTitle = `${targetGrade}漢字練習 - ${targetKanji.slice(0, 5)}...`;
+                        // 先生入力モードの場合の特別な分岐
+                        if (drillPattern === 'teacher_input') {
+                             specificInstruction = `
+                                先生が入力したテキスト: ${targetKanji}
+                                
+                                指示:
+                                1. 上記の「先生が入力したテキスト」の内容を、一切変更せず、順番通りにマス目に配置してください。
+                                2. 単漢字、熟語、短文など、入力された形式に合わせて適切にルビを振ってください（例: 赤(あか)ちゃん(ちゃん)）。
+                                3. 1列の文字数は${rows}文字以下になるように改行コードを入れてください。
+                                4. ${gradeSpecificPrompt}
+                            `;
+                            autoTitle = `${targetGrade}漢字ドリル - 先生入力`;
+                        } else {
+                            // 通常の生成モード
+                            specificInstruction = `
+                                ユーザー指定の「使用する漢字・熟語」: ${targetKanji}
+                                
+                                指示:
+                                1. 指定された漢字や熟語を使って、${totalCols}列分の練習データを作成してください。
+                                2. 指定された内容が${totalCols}個より少ない場合は、同じ漢字を別の列で使っても構いません。
+                                3. 可能な限り、同じ漢字でも「音読み」と「訓読み」の両方を練習できるように構成してください（例: 生(せい) 生(い)きる）。
+                                4. ${patternInstruction}
+                                5. 1列の文字数は${rows}文字程度になるように調整し、縦のマスを埋めてください。
+                                6. ${gradeSpecificPrompt}
+                            `;
+                            autoTitle = `${targetGrade}漢字練習 - ${targetKanji.slice(0, 5)}...`;
+                        }
                     } else if (drillTheme.trim()) {
                         specificInstruction = `
                             テーマ: ${drillTheme}
@@ -415,6 +471,12 @@
                         1. 対象学年: ${targetGrade}
                         2. 作成する列数: ${totalCols}列
                         3. 1列あたりの文字数: 絶対に${rows}文字以下にしてください。（これを超えるとペナルティ）
+
+                        【最重要・空白埋めルール】:
+                        生成されたテキストが${rows}文字に満たない場合は、
+                        **「空白を残さず、既に作成した熟語や文章を最初から繰り返して」**、
+                        必ず最後のマスまで文字で埋め尽くしてください。
+                        空白のマスを作ることは禁止です。
                         
                         ${specificInstruction}
                         
@@ -461,8 +523,7 @@
                     
                 } catch (err) {
                     console.error("AI Auto Generation Error:", err);
-                    setErrorMsg(err.message || "ドリル生成に失敗しました。");
-                    if (err.message && err.message.includes("APIキー")) alert(err.message);
+                    setErrorMsg(err.message || "ドリル生成に失敗しました。時間を空けて試してください。");
                 } finally {
                     setIsGenerating(false);
                 }
@@ -586,11 +647,15 @@
             // --- Excel Export Logic ---
             const exportToExcel = () => {
                 const ws_data = [];
+                // 修正: Excel出力の列順序を逆転 (PDFの右→左レイアウトに合わせるため)
+                // ドリルの右端の列(データの先頭)が、Excelの右側の列に来るようにする
                 for (let r = 0; r < rows; r++) {
                     const rowData = [];
+                    // cols-1 (データの最後/左端) から 0 (データの最初/右端) へ向かってループ
                     for (let c = cols - 1; c >= 0; c--) {
                         const cell = gridData[c][r];
                         if (cell) {
+                            // 修正: 漢字を先、ルビを後に
                             rowData.push(cell.char); // 漢字
                             rowData.push(cell.ruby); // ルビ
                         } else {
@@ -648,6 +713,7 @@
                                 display: flex; justify-content: center; align-items: center;
                                 -webkit-print-color-adjust: exact; print-color-adjust: exact;
                             }
+                            /* 選択されたフォントを適用するためのクラス */
                             .dynamic-font {
                                 font-family: ${fontFamily};
                             }
@@ -698,47 +764,57 @@
                             </h1>
                         </div>
 
-                        <div className="p-4 space-y-6 flex-1">
-                            {/* API Key Input (NEW) */}
-                            <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                                <button 
-                                    onClick={() => setIsApiKeyOpen(!isApiKeyOpen)}
-                                    className="w-full flex items-center justify-between text-xs font-bold text-yellow-700 mb-2"
-                                >
-                                    <span className="flex items-center gap-1">
-                                        <Key size={14} /> Gemini APIキー
-                                    </span>
-                                    {isApiKeyOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                                
-                                {isApiKeyOpen && (
-                                    <div className="space-y-2 animate-fade-in">
-                                        <p className="text-[9px] text-red-600 font-bold leading-tight">
-                                            ※Gemini APIキーがなければ、AI入力支援は使用できません。
-                                        </p>
-                                        <div className="flex gap-2 relative">
-                                            <input 
-                                                type={showApiKey ? "text" : "password"} 
-                                                value={apiKey}
-                                                onChange={handleApiKeyChange}
-                                                placeholder="ここにキーを入力..."
-                                                className="w-full p-1.5 text-xs border border-yellow-300 rounded pr-8"
-                                            />
-                                            <button 
-                                                onClick={() => setShowApiKey(!showApiKey)}
-                                                className="absolute right-2 top-1.5 text-yellow-600 hover:text-yellow-800"
-                                            >
-                                                {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                                            </button>
-                                        </div>
-                                        <p className="text-[9px] text-yellow-600 leading-tight">
-                                            ※入力すると自動でブラウザに保存されます。<br/>
-                                            ※AI機能を使うには必須です。<a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline font-bold">キーの取得はこちら</a>
-                                        </p>
+                        {/* ==============================================
+                            New: API Key Settings (Top of Sidebar)
+                           ============================================== */}
+                        <div className="border-b border-gray-200 bg-gray-50">
+                            <button 
+                                onClick={() => setIsApiKeyOpen(!isApiKeyOpen)}
+                                className="w-full px-4 py-2 flex items-center justify-between text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Key size={14} className="text-indigo-500" />
+                                    Google AI 設定 (APIキー)
+                                </div>
+                                {isApiKeyOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                            
+                            {isApiKeyOpen && (
+                                <div className="px-4 pb-4 animate-fade-in bg-white border-b border-gray-200 shadow-inner p-4">
+                                    <p className="text-[10px] text-gray-500 mb-2 leading-tight">
+                                        AI機能を利用するにはGoogle Gemini APIキーが必要です。入力されたキーはブラウザにのみ保存されます。
+                                    </p>
+                                    
+                                    <div className="relative mb-2">
+                                        <input 
+                                            type={showApiKeyChar ? "text" : "password"}
+                                            value={userApiKey}
+                                            onChange={handleApiKeyChange}
+                                            placeholder="AIzaSy..."
+                                            className="w-full pl-2 pr-8 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 font-mono"
+                                        />
+                                        <button 
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            onClick={() => setShowApiKeyChar(!showApiKeyChar)}
+                                        >
+                                            {showApiKeyChar ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        </button>
                                     </div>
-                                )}
-                            </div>
 
+                                    <a 
+                                        href="https://aistudio.google.com/app/apikey" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline"
+                                    >
+                                        <ExternalLink size={10} />
+                                        APIキーを無料で取得 (Google AI Studio)
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 space-y-6 flex-1">
                             {/* AI Input */}
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
@@ -797,14 +873,14 @@
                                                 使用する漢字 (任意)
                                                 {targetGrade === '小1' && <span className="text-red-500 text-[9px] ml-1 font-bold">※ひらがな対応可</span>}
                                             </label>
-                                            <input 
-                                                type="text" 
+                                            <textarea 
                                                 value={targetKanji}
                                                 onChange={(e) => setTargetKanji(e.target.value)}
-                                                placeholder="例: 春、夏、春分、夏至" 
-                                                className="w-full p-1.5 text-xs border border-indigo-200 rounded"
+                                                placeholder="例: 赤、赤ちゃん、赤い玉..." 
+                                                rows={3}
+                                                className="w-full p-1.5 text-xs border border-indigo-200 rounded resize-none"
                                             />
-                                            <p className="text-[10px] text-gray-400">※スペース区切りで複数指定可</p>
+                                            <p className="text-[10px] text-gray-400">※先生入力モードではここに入力された内容がそのままドリルになります。</p>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-indigo-600">構成パターン</label>
@@ -818,6 +894,7 @@
                                                 <option value="idiom_focus">熟語重視 (単漢字1 + 多熟語)</option>
                                                 <option value="mix">応用 (単漢字 + 熟語 + 短文)</option>
                                                 <option value="sentence_focus">実践 (単漢字1 + 熟語少 + 短文)</option>
+                                                <option value="teacher_input">先生入力 (入力順に配置)</option>
                                             </select>
                                         </div>
                                         <button
@@ -851,7 +928,7 @@
                                     </div>
                                 )}
                                 
-                                {errorMsg && <p className="text-xs text-red-500 bg-red-50 p-1 rounded">{errorMsg}</p>}
+                                {errorMsg && <p className="text-xs text-red-500 bg-red-50 p-1 rounded font-bold">{errorMsg}</p>}
                             </div>
 
                             <hr className="border-gray-100" />
@@ -863,7 +940,7 @@
                                     レイアウト設定
                                 </h2>
 
-                                {/* Font Selection (New) */}
+                                {/* Font Selection */}
                                 <div>
                                     <label className="text-xs font-bold text-gray-500 mb-1 block flex items-center gap-1">
                                         <Type size={12} /> フォント
@@ -922,6 +999,7 @@
                                         <input type="checkbox" checked={showGuide} onChange={(e) => setShowGuide(e.target.checked)} className="hidden" />
                                     </label>
                                     
+                                    {/* Ruby Toggle */}
                                     <div className="flex gap-2">
                                         <label className="flex-1 flex items-center justify-between cursor-pointer p-2 hover:bg-gray-50 rounded bg-gray-50 border border-gray-100">
                                             <span className="text-xs text-gray-700 font-medium">ルビ</span>
@@ -1029,20 +1107,24 @@
                             </div>
                         </div>
 
-                        {/* Scrollable Container */}
+                        {/* Scrollable Container (Fixed Layout Logic) */}
                         <div className="flex-1 overflow-auto relative w-full h-full flex flex-col">
+                            {/* 中央寄せ & 自動余白調整ラッパー */}
                             <div className="m-auto p-8 md:p-12 pt-24 transition-transform duration-200" id="print-target-wrapper">
+                                {/* Paper Sheet - Added ID for Printing */}
                                 <div id="print-target" className="bg-white shadow-2xl print-area" style={{ 
                                     width: `${paperSize.width}mm`, 
                                     height: `${paperSize.height}mm`, 
                                     padding: `${PADDING}mm`,
                                     boxSizing: 'border-box',
-                                    transform: `scale(${zoom})`,
+                                    transform: `scale(${zoom})`, // ズーム適用
                                 }}>
-                                    {/* Header */}
+                                    {/* Header 修正: タイトルと名前欄を完全に独立させつつ、縦の余白を詰めるレイアウト */}
                                     <div className="w-full flex justify-between items-end pb-1 mb-1 border-b-2 border-gray-800" style={{ height: `${HEADER_HEIGHT}mm` }}>
+                                        {/* タイトル行: 左上詰め。絶対配置はやめてFlexboxで配置 */}
                                         <h1 className="font-bold text-gray-800 leading-none dynamic-font mb-auto" style={{ fontSize: '16pt', fontFamily: fontFamily }}>{title}</h1>
-                                        
+                                    
+                                        {/* 名前行: 右寄せ、幅広め */}
                                         <div className="flex items-end gap-6 text-base text-gray-700 leading-none dynamic-font" style={{ fontFamily: fontFamily }}>
                                             <div className="flex items-end gap-1"><div className="w-10 border-b border-gray-800"></div><span>年</span></div>
                                             <div className="flex items-end gap-1"><div className="w-10 border-b border-gray-800"></div><span>組</span></div>
@@ -1064,6 +1146,7 @@
                                                 {colData.map((cell, rowIndex) => {
                                                     const hasData = cell !== null;
                                                     
+                                                    // 表示モード制御
                                                     let charClass = "text-gray-900";
                                                     let showChar = true;
                                                     let showRuby = true;
@@ -1077,13 +1160,17 @@
                                                         else if (mode === 'empty') { showChar = false; showRuby = false; }
                                                     }
 
+                                                    // ルビの表示制御
                                                     const displayRuby = showRuby && showRubyText;
                                                     
+                                                    // 漢字の表示制御 (句読点の場合は常に表示)
                                                     const isPunctuation = hasData && ['、', '。'].includes(cell.char);
                                                     const displayKanji = (showChar && showKanjiText) || isPunctuation;
 
+                                                    // ひらがなも漢字も同じ色で表示
                                                     const rubyColorClass = charClass;
 
+                                                    // 句読点用のスタイル調整
                                                     const charStyle = { 
                                                         fontSize: layoutStyles.charFontSize, 
                                                         lineHeight: 1,
@@ -1092,36 +1179,39 @@
                                                     };
 
                                                     if (isPunctuation) {
+                                                        // 句読点を右上に配置するためのスタイル
                                                         Object.assign(charStyle, {
                                                             position: 'absolute',
                                                             top: '5%',
                                                             right: '5%',
-                                                            transform: 'translate(10%, -10%)',
+                                                            transform: 'translate(10%, -10%)', // 微調整
                                                         });
                                                     }
 
                                                     return (
                                                         <div key={rowIndex} className="flex flex-row-reverse border-b border-gray-400 last:border-b-0" 
-                                                                style={{ height: layoutStyles.cellHeight, minHeight: 0, overflow: 'hidden' }}>
+                                                            style={{ height: layoutStyles.cellHeight, minHeight: 0, overflow: 'hidden' }}>
                                                             
+                                                            {/* ルビ欄 */}
                                                             <div className="border-l border-dotted border-gray-300 flex items-center justify-center tategaki"
-                                                                    style={{ width: layoutStyles.rubyWidth }}>
-                                                                    <span className={`dynamic-font ${rubyColorClass}`} 
-                                                                        style={{ 
-                                                                            fontSize: layoutStyles.rubyFontSize, 
-                                                                            fontFamily: fontFamily,
-                                                                            lineHeight: 1,
-                                                                            whiteSpace: 'nowrap'
-                                                                        }}>
+                                                                 style={{ width: layoutStyles.rubyWidth }}>
+                                                                <span className={`dynamic-font ${rubyColorClass}`} 
+                                                                    style={{ 
+                                                                        fontSize: layoutStyles.rubyFontSize, 
+                                                                        fontFamily: fontFamily,
+                                                                        lineHeight: 1,
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}>
                                                                     {displayRuby ? cell.ruby : ''}
-                                                                    </span>
+                                                                </span>
                                                             </div>
                                                             
+                                                            {/* 漢字欄 */}
                                                             <div className={`flex items-center justify-center relative dynamic-font ${showGuide ? 'guide-lines' : ''}`}
-                                                                    style={{ width: layoutStyles.charWidth, fontFamily: fontFamily }}>
-                                                                    <span className={charClass} style={charStyle}>
-                                                                        {displayKanji ? cell.char : ''}
-                                                                    </span>
+                                                                 style={{ width: layoutStyles.charWidth, fontFamily: fontFamily }}>
+                                                                <span className={charClass} style={charStyle}>
+                                                                    {displayKanji ? cell.char : ''}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     );
@@ -1134,6 +1224,7 @@
                         </div>
                     </div>
                     
+                    {/* モーダルの配置 */}
                     <ConfirmModal 
                         isOpen={!!deleteTargetId} 
                         onClose={() => setDeleteTargetId(null)} 
