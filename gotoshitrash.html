@@ -2001,7 +2001,7 @@
         };
 
     </script>
-    <script>
+<script>
     // サービスワーカー（オフライン機能）の登録
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -2010,13 +2010,10 @@
                 .catch(err => console.log('Service Worker Failed', err));
         });
     }
-
-    // 既存のReactアプリ起動コード...
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
 
 
 
