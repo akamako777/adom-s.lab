@@ -1460,5 +1460,16 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    <script>
+    // セキュリティ強化：オフラインモード（Service Worker）の登録
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw-teachers.js') // ←ここが専用ファイル名
+                .then(reg => console.log('Teachers Security Worker Registered!', reg))
+                .catch(err => console.log('Worker Failed', err));
+        });
+    }
+</script>
 </body>
 </html>
+
