@@ -1460,16 +1460,23 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    <script>
-    // セキュリティ強化：オフラインモード（Service Worker）の登録
+<script>
+    // ▼ ここから追加 ▼
+    // オフライン対応（PWA）の設定
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw-teachers.js') // ←ここが専用ファイル名
-                .then(reg => console.log('Teachers Security Worker Registered!', reg))
-                .catch(err => console.log('Worker Failed', err));
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.log('SW Registration Failed', err));
         });
     }
+    // ▲ ここまで追加 ▲
+
+    // ... 以下、既存の React アプリのコード ...
+    const { useState, useEffect, useRef, useMemo } = React;
+    // ...
 </script>
 </body>
 </html>
+
 
