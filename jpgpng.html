@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omni Image Tools - WebP対応版</title>
+    <title>Omni Image Tools - 画像一括縮小 & 本格編集</title>
     
     <!-- デザイン用CSS (Tailwind CSS v3.4.1) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -272,7 +272,7 @@
 
                     <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
                          <div class="flex justify-between items-center text-xs font-bold text-slate-500">
-                            <span data-i18n="quality_jpeg">画質 (JPEG / WebP)</span>
+                            <span data-i18n="quality_jpeg">画質 (JPEGのみ)</span>
                             <span class="text-brand-accent font-bold text-base" id="r_qualityValue">0.8</span>
                         </div>
                         <input type="range" id="r_qualityRange" min="0.1" max="1.0" step="0.1" value="0.8" onchange="r_saveSettings()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
@@ -351,8 +351,6 @@
                     <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
                          <label class="text-xs font-bold text-slate-500 block mb-1.5" data-i18n="out_format">出力形式</label>
                         <select id="r_outputFormat" onchange="r_saveSettings()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700">
-                            <!-- WebP Option Added -->
-                            <option value="image/webp" selected class="font-bold text-indigo-600">WebP (推奨 / 高速表示)</option>
                             <option value="image/jpeg">JPEG (Photo)</option>
                             <option value="image/png">PNG (Illustration)</option>
                         </select>
@@ -446,14 +444,33 @@
                     <span class="text-xs font-bold bg-indigo-600 px-2 py-1 rounded text-white tracking-wider">EDITOR</span>
                     <h2 class="text-base font-bold text-slate-200" data-i18n="editor_title">画像編集</h2>
                 </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="e_undo()" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-xs font-medium" id="e_btnUndo" disabled>
-                        <i data-lucide="undo-2" class="w-4 h-4"></i> <span data-i18n="btn_undo">元に戻す</span>
-                    </button>
-                    <button onclick="e_showResetModal()" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-700 hover:bg-red-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> <span data-i18n="btn_reset">初期化</span>
-                    </button>
-                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+    <button onclick="e_undo()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center gap-2 text-xs font-medium" id="e_btnUndo" disabled title="元に戻す">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+    </button>
+
+    <div class="w-px bg-slate-700 mx-1"></div>
+
+    <button onclick="e_rotateCanvas(-90)" class="px-3 py-1.5 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium" title="左に回転">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+
+    <button onclick="e_rotateCanvas(90)" class="px-3 py-1.5 bg-slate-700 hover:bg-indigo-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium" title="右に回転">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+
+    <div class="w-px bg-slate-700 mx-1"></div>
+    
+    <button onclick="e_clearEditorImage()" class="px-3 py-1.5 bg-slate-700 hover:bg-red-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium" title="画像を削除して最初に戻る">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+    </button>
+
+    <button onclick="e_showResetModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-amber-600 rounded text-slate-200 transition flex items-center justify-center gap-2 text-xs font-medium" title="初期状態にリセット">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <span data-i18n="btn_reset">初期化</span>
+    </button>
+</div>
+
             </header>
 
             <div class="flex-1 flex flex-col lg:flex-row lg:overflow-hidden relative">
@@ -490,6 +507,9 @@
                         <button id="e_tabMosaic" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-active whitespace-nowrap" onclick="e_switchTab('mosaic')">
                             <i data-lucide="eraser" class="w-4 h-4"></i> <span data-i18n="tab_mosaic">モザイク</span>
                         </button>
+<button id="e_tabCrop" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap" onclick="e_switchTab('crop')">
+    <i data-lucide="scissors" class="w-4 h-4"></i> <span data-i18n="tab_crop">切り抜き</span>
+</button>
                         <button id="e_tabDuotone" class="flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap" onclick="e_switchTab('duotone')">
                             <i data-lucide="palette" class="w-4 h-4"></i> <span data-i18n="tab_duotone">2色化</span>
                         </button>
@@ -499,116 +519,160 @@
                     </div>
 
                     <div class="flex-1 p-6 lg:overflow-y-auto">
-                        <div id="e_panelMosaic" class="flex flex-col gap-6">
-                             <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
-                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="mosaic_info">画像をドラッグして適用</span>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="effect_type">エフェクト</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button onclick="e_setMosaicMode('pixelate')" id="e_modePixelate" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition font-medium" data-i18n="mode_mosaic">モザイク</button>
-                                    <button onclick="e_setMosaicMode('blur')" id="e_modeBlur" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium" data-i18n="mode_blur">ぼかし</button>
-                                </div>
-                            </div>
-                             <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="shape">形状</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button onclick="e_setShapeMode('rectangle')" id="e_shapeRect" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium">
-                                        <div class="w-3 h-3 border-2 border-current"></div> <span data-i18n="shape_rect">四角</span>
-                                    </button>
-                                    <button onclick="e_setShapeMode('ellipse')" id="e_shapeEllipse" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
-                                        <div class="w-3 h-3 border-2 border-current rounded-full"></div> <span data-i18n="shape_circle">円</span>
-                                    </button>
-                                </div>
-                            </div>
-                             <div>
-                                <div class="flex justify-between mb-2">
-                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide" data-i18n="intensity">強度</label>
-                                    <span id="e_intensityVal" class="text-xs font-mono bg-slate-100 px-1 rounded">10</span>
-                                </div>
-                                <input type="range" id="e_intensityRange" min="2" max="50" value="10" oninput="e_updateIntensityDisplay()">
+                    <div id="e_panelMosaic" class="flex flex-col gap-6">
+                         <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="mosaic_info">画像をドラッグして適用</span>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="effect_type">エフェクト</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="e_setMosaicMode('pixelate')" id="e_modePixelate" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition font-medium" data-i18n="mode_mosaic">モザイク</button>
+                                <button onclick="e_setMosaicMode('blur')" id="e_modeBlur" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium" data-i18n="mode_blur">ぼかし</button>
                             </div>
                         </div>
-
-                        <div id="e_panelDuotone" class="hidden flex flex-col gap-6">
-                             <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
-                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="duotone_info">2色を選んで適用</span>
+                         <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="shape">形状</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="e_setShapeMode('rectangle')" id="e_shapeRect" class="py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium">
+                                    <div class="w-3 h-3 border-2 border-current"></div> <span data-i18n="shape_rect">四角</span>
+                                </button>
+                                <button onclick="e_setShapeMode('ellipse')" id="e_shapeEllipse" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
+                                    <div class="w-3 h-3 border-2 border-current rounded-full"></div> <span data-i18n="shape_circle">円</span>
+                                </button>
                             </div>
-                            <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="flex flex-col items-center">
-                                        <input type="color" id="e_colorShadow" value="#1e1b4b" oninput="e_updateDuotonePreview()">
-                                        <span class="text-[10px] text-gray-500 mt-1" data-i18n="shadow">影</span>
-                                    </div>
-                                    <div class="flex-1 flex flex-col gap-1 px-2">
-                                        <input type="range" id="e_duotoneBalanceRange" min="1" max="99" value="50" class="w-full" oninput="e_updateDuotonePreview()">
-                                    </div>
-                                    <div class="flex flex-col items-center">
-                                        <input type="color" id="e_colorHighlight" value="#f472b6" oninput="e_updateDuotonePreview()">
-                                        <span class="text-[10px] text-gray-500 mt-1" data-i18n="highlight">光</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="preset">プリセット</label>
-                                <div class="grid grid-cols-4 gap-2">
-                                    <button onclick="e_setDuotonePreset('#40e0d0', '#ff0080')" class="h-8 rounded-md bg-gradient-to-r from-[#ff0080] to-[#40e0d0] ring-1 ring-gray-200 hover:scale-105 transition" title="Cyberpunk"></button>
-                                    <button onclick="e_setDuotonePreset('#f8b500', '#fceabb')" class="h-8 rounded-md bg-gradient-to-r from-[#f8b500] to-[#fceabb] ring-1 ring-gray-200 hover:scale-105 transition" title="Sunset"></button>
-                                    <button onclick="e_setDuotonePreset('#2c3e50', '#bdc3c7')" class="h-8 rounded-md bg-gradient-to-r from-[#2c3e50] to-[#bdc3c7] ring-1 ring-gray-200 hover:scale-105 transition" title="Silver"></button>
-                                    <button onclick="e_setDuotonePreset('#000000', '#ffffff')" class="h-8 rounded-md bg-gradient-to-r from-black to-white ring-1 ring-gray-200 hover:scale-105 transition" title="Mono"></button>
-                                </div>
-                            </div>
-                            <button onclick="e_applyDuotone()" class="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2">
-                                <i data-lucide="check-circle-2"></i> <span data-i18n="apply_effect">適用する</span>
-                            </button>
                         </div>
-
-                        <div id="e_panelAdjust" class="hidden flex flex-col gap-5">
-                             <div class="text-xs text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex gap-2 items-center">
-                                <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="adjust_info">調整後に適用して確定</span>
+                         <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide" data-i18n="intensity">強度</label>
+                                <span id="e_intensityVal" class="text-xs font-mono bg-slate-100 px-1 rounded">10</span>
                             </div>
-                            <div class="space-y-4">
-                                <div class="group">
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="font-medium text-gray-600"><i data-lucide="sun" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_bright">明るさ</span></span>
-                                        <span id="e_valBrightness" class="font-mono text-gray-400">100%</span>
-                                    </div>
-                                    <input type="range" id="e_adjBrightness" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
-                                </div>
-                                 <div class="group">
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="font-medium text-gray-600"><i data-lucide="contrast" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_contrast">コントラスト</span></span>
-                                        <span id="e_valContrast" class="font-mono text-gray-400">100%</span>
-                                    </div>
-                                    <input type="range" id="e_adjContrast" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
-                                </div>
-                                <div class="group">
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="font-medium text-gray-600"><i data-lucide="droplet" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_sat">彩度</span></span>
-                                        <span id="e_valSaturate" class="font-mono text-gray-400">100%</span>
-                                    </div>
-                                    <input type="range" id="e_adjSaturate" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
-                                </div>
-                                 <div class="group">
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="font-medium text-gray-600"><i data-lucide="rainbow" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_hue">色相</span></span>
-                                        <span id="e_valHue" class="font-mono text-gray-400">0°</span>
-                                    </div>
-                                    <input type="range" id="e_adjHue" min="-180" max="180" value="0" class="range-hue" oninput="e_updateAdjustmentPreview()">
-                                </div>
-                                 <div class="group">
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="font-medium text-gray-600"><i data-lucide="thermometer" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_temp">色温度</span></span>
-                                        <span id="e_valTemp" class="font-mono text-gray-400">0</span>
-                                    </div>
-                                    <input type="range" id="e_adjTemp" min="-50" max="50" value="0" class="range-warm" oninput="e_updateAdjustmentPreview()">
-                                </div>
-                            </div>
-                            <button onclick="e_applyAdjustment()" class="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2 mt-2">
-                                <i data-lucide="check-circle-2"></i> <span data-i18n="apply_adj">調整を適用</span>
-                            </button>
+                            <input type="range" id="e_intensityRange" min="2" max="50" value="10" oninput="e_updateIntensityDisplay()">
                         </div>
                     </div>
+
+                    <div id="e_panelCrop" class="hidden flex flex-col gap-6">
+                        <div class="text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-100 flex gap-2 items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                            <span>範囲を選択して「実行」で適用</span>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">切り抜きモード</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="e_setCropMode('inside')" id="e_cropInside" class="py-2 px-3 rounded border border-rose-500 bg-rose-500 text-white text-sm transition font-medium">
+                                    残す (Inside)
+                                </button>
+                                <button onclick="e_setCropMode('outside')" id="e_cropOutside" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium">
+                                    消す (Outside)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">形状</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="e_setShapeMode('rectangle')" id="e_cropShapeRect" class="py-2 px-3 rounded border border-rose-500 bg-rose-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium">
+                                    <div class="w-3 h-3 border-2 border-current"></div> 四角
+                                </button>
+                                <button onclick="e_setShapeMode('ellipse')" id="e_cropShapeEllipse" class="py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium">
+                                    <div class="w-3 h-3 border-2 border-current rounded-full"></div> 円
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">境界ぼかし (Feather)</label>
+                                <span id="e_featherVal" class="text-xs font-mono bg-slate-100 px-1 rounded">0px</span>
+                            </div>
+                            <input type="range" id="e_featherRange" min="0" max="50" value="0" step="1" oninput="document.getElementById('e_featherVal').textContent = this.value + 'px'" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <button onclick="e_applyCrop()" class="w-full py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></svg>
+                            <span>切り抜きを実行</span>
+                        </button>
+                    </div>
+
+                    <div id="e_panelDuotone" class="hidden flex flex-col gap-6">
+                         <div class="text-xs text-indigo-600 bg-indigo-50 p-2 rounded border border-indigo-100 flex gap-2 items-center">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="duotone_info">2色を選んで適用</span>
+                        </div>
+                        <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex flex-col items-center">
+                                    <input type="color" id="e_colorShadow" value="#1e1b4b" oninput="e_updateDuotonePreview()">
+                                    <span class="text-[10px] text-gray-500 mt-1" data-i18n="shadow">影</span>
+                                </div>
+                                <div class="flex-1 flex flex-col gap-1 px-2">
+                                    <input type="range" id="e_duotoneBalanceRange" min="1" max="99" value="50" class="w-full" oninput="e_updateDuotonePreview()">
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <input type="color" id="e_colorHighlight" value="#f472b6" oninput="e_updateDuotonePreview()">
+                                    <span class="text-[10px] text-gray-500 mt-1" data-i18n="highlight">光</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block" data-i18n="preset">プリセット</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button onclick="e_setDuotonePreset('#40e0d0', '#ff0080')" class="h-8 rounded-md bg-gradient-to-r from-[#ff0080] to-[#40e0d0] ring-1 ring-gray-200 hover:scale-105 transition" title="Cyberpunk"></button>
+                                <button onclick="e_setDuotonePreset('#f8b500', '#fceabb')" class="h-8 rounded-md bg-gradient-to-r from-[#f8b500] to-[#fceabb] ring-1 ring-gray-200 hover:scale-105 transition" title="Sunset"></button>
+                                <button onclick="e_setDuotonePreset('#2c3e50', '#bdc3c7')" class="h-8 rounded-md bg-gradient-to-r from-[#2c3e50] to-[#bdc3c7] ring-1 ring-gray-200 hover:scale-105 transition" title="Silver"></button>
+                                <button onclick="e_setDuotonePreset('#000000', '#ffffff')" class="h-8 rounded-md bg-gradient-to-r from-black to-white ring-1 ring-gray-200 hover:scale-105 transition" title="Mono"></button>
+                            </div>
+                        </div>
+                        <button onclick="e_applyDuotone()" class="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2">
+                            <i data-lucide="check-circle-2"></i> <span data-i18n="apply_effect">適用する</span>
+                        </button>
+                    </div>
+
+                    <div id="e_panelAdjust" class="hidden flex flex-col gap-5">
+                         <div class="text-xs text-emerald-600 bg-emerald-50 p-2 rounded border border-emerald-100 flex gap-2 items-center">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0"></i> <span data-i18n="adjust_info">調整後に適用して確定</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="group">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium text-gray-600"><i data-lucide="sun" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_bright">明るさ</span></span>
+                                    <span id="e_valBrightness" class="font-mono text-gray-400">100%</span>
+                                </div>
+                                <input type="range" id="e_adjBrightness" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                            </div>
+                             <div class="group">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium text-gray-600"><i data-lucide="contrast" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_contrast">コントラスト</span></span>
+                                    <span id="e_valContrast" class="font-mono text-gray-400">100%</span>
+                                </div>
+                                <input type="range" id="e_adjContrast" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                            </div>
+                            <div class="group">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium text-gray-600"><i data-lucide="droplet" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_sat">彩度</span></span>
+                                    <span id="e_valSaturate" class="font-mono text-gray-400">100%</span>
+                                </div>
+                                <input type="range" id="e_adjSaturate" min="0" max="200" value="100" oninput="e_updateAdjustmentPreview()">
+                            </div>
+                             <div class="group">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium text-gray-600"><i data-lucide="rainbow" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_hue">色相</span></span>
+                                    <span id="e_valHue" class="font-mono text-gray-400">0°</span>
+                                </div>
+                                <input type="range" id="e_adjHue" min="-180" max="180" value="0" class="range-hue" oninput="e_updateAdjustmentPreview()">
+                            </div>
+                             <div class="group">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="font-medium text-gray-600"><i data-lucide="thermometer" class="w-3 h-3 inline mr-1"></i><span data-i18n="adj_temp">色温度</span></span>
+                                    <span id="e_valTemp" class="font-mono text-gray-400">0</span>
+                                </div>
+                                <input type="range" id="e_adjTemp" min="-50" max="50" value="0" class="range-warm" oninput="e_updateAdjustmentPreview()">
+                            </div>
+                        </div>
+                        <button onclick="e_applyAdjustment()" class="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow-md transition active:scale-95 flex justify-center items-center gap-2 mt-2">
+                            <i data-lucide="check-circle-2"></i> <span data-i18n="apply_adj">調整を適用</span>
+                        </button>
+                    </div>
+</div>
 
                     <div class="p-4 border-t border-gray-200 bg-slate-50 shrink-0">
                         <button onclick="e_downloadImage()" class="w-full py-3 bg-slate-900 text-white rounded-lg hover:bg-black font-bold shadow-lg transition transform active:scale-[0.98] flex justify-center items-center gap-2">
@@ -616,7 +680,7 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            
             
             <div id="e_resetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
                 <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform transition-all scale-100">
@@ -645,7 +709,7 @@
             tab_resize: "一括リサイズ", tab_editor: "画像編集", resizer_desc: "SNS、ブログ、資料作成に。複数画像をWeb最適なサイズへ一括変換・ZIP保存。",
             local_process: "安心のローカル処理", drag_drop_title: "ここに画像をドロップ", drag_drop_desc: "またはクリックして選択 (JPEG, PNG, HEIC対応)",
             settings_title: "出力設定", resize_setting: "リサイズ設定", width_px: "横幅指定 (px)", ratio_pct: "比率指定 (%)",
-            quality_jpeg: "画質 (JPEG / WebP)", quality_low: "軽量", quality_high: "高画質", watermark: "透かし文字 (Watermark)",
+            quality_jpeg: "画質 (JPEGのみ)", quality_low: "軽量", quality_high: "高画質", watermark: "透かし文字 (Watermark)",
             ai_protection: "AI対策 / 盗用防止", wm_font: "フォント", wm_pos: "位置 / 種類", wm_size: "サイズ/強度", wm_opacity: "濃さ/透明度",
             font_gothic: "ゴシック (標準)", font_mincho: "明朝体", font_maru: "丸ゴシック", font_hand: "手書き風",
             pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "全面タイル (AI対策)", pos_noise: "ステルスノイズ (美観重視)",
@@ -666,7 +730,7 @@
             tab_resize: "Batch Resizer", tab_editor: "Single Editor", resizer_desc: "Convert & Compress multiple images for Web/SNS. Save as ZIP.",
             local_process: "Secure Local Processing", drag_drop_title: "Drag & Drop Photos", drag_drop_desc: "Or click to browse (JPEG, PNG, HEIC)",
             settings_title: "Output Settings", resize_setting: "Resize Settings", width_px: "Width (px)", ratio_pct: "Ratio (%)",
-            quality_jpeg: "Quality (JPEG / WebP)", quality_low: "Low", quality_high: "High", watermark: "Watermark",
+            quality_jpeg: "Quality (JPEG only)", quality_low: "Low", quality_high: "High", watermark: "Watermark",
             ai_protection: "AI Protection / Anti-Theft", wm_font: "Font", wm_pos: "Position / Type", wm_size: "Size/Intensity", wm_opacity: "Opacity",
             font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Rounded", font_hand: "Handwritten",
             pos_br: "Bottom Right", pos_bl: "Bottom Left", pos_c: "Center", pos_tile: "Full Tile (Anti-AI)", pos_noise: "Stealth Noise (Clean)",
@@ -687,7 +751,7 @@
             tab_resize: "Redimensionar em Lote", tab_editor: "Editor Único", resizer_desc: "Converter e comprimir imagens para Web/SNS. Salvar como ZIP.",
             local_process: "Processamento Local Seguro", drag_drop_title: "Arraste e Solte Fotos", drag_drop_desc: "Ou clique para selecionar (JPEG, PNG, HEIC)",
             settings_title: "Configurações de Saída", resize_setting: "Configurações de Redimensionamento", width_px: "Largura (px)", ratio_pct: "Proporção (%)",
-            quality_jpeg: "Qualidade (JPEG / WebP)", quality_low: "Baixa", quality_high: "Alta", watermark: "Marca d'água",
+            quality_jpeg: "Qualidade (apenas JPEG)", quality_low: "Baixa", quality_high: "Alta", watermark: "Marca d'água",
             ai_protection: "Proteção IA / Antirroubo", wm_font: "Fonte", wm_pos: "Posição / Tipo", wm_size: "Tamanho/Intensidade", wm_opacity: "Opacidade",
             font_gothic: "Sans-Serif", font_mincho: "Serif", font_maru: "Arredondada", font_hand: "Manuscrita",
             pos_br: "Inferior Direito", pos_bl: "Inferior Esquerdo", pos_c: "Centro", pos_tile: "Azulejo (Anti-IA)", pos_noise: "Ruído Invisível (Limpo)",
@@ -708,7 +772,7 @@
             tab_resize: "批量縮放", tab_editor: "單圖編輯", resizer_desc: "適用於社群、部落格。批量轉換圖片並存為ZIP。",
             local_process: "安全本地處理", drag_drop_title: "拖放照片至此", drag_drop_desc: "或點擊選擇 (JPEG, PNG, HEIC)",
             settings_title: "輸出設定", resize_setting: "縮放設定", width_px: "寬度 (px)", ratio_pct: "比例 (%)",
-            quality_jpeg: "畫質 (JPEG / WebP)", quality_low: "低", quality_high: "高", watermark: "浮水印",
+            quality_jpeg: "畫質 (僅JPEG)", quality_low: "低", quality_high: "高", watermark: "浮水印",
             ai_protection: "AI防護 / 防盜用", wm_font: "字體", wm_pos: "位置 / 類型", wm_size: "大小/強度", wm_opacity: "濃度/透明度",
             font_gothic: "黑體 (標準)", font_mincho: "明體", font_maru: "圓體", font_hand: "手寫風",
             pos_br: "右下", pos_bl: "左下", pos_c: "中央", pos_tile: "滿版平鋪 (防AI)", pos_noise: "隱形噪點 (美觀)",
@@ -727,7 +791,7 @@
         }
     };
 
-    // ... (Localization and Tab Switch functions same as before) ...
+    // ... (Localization and Tab Switch functions same as previous) ...
     function changeLanguage(lang) {
         const elements = document.querySelectorAll('[data-i18n]');
         elements.forEach(el => {
@@ -1197,10 +1261,7 @@
             const wmSizeScale = parseInt(document.getElementById('r_wmSizeRange').value); 
             const wmOpacity = parseInt(document.getElementById('r_wmOpacityRange').value) / 100;
 
-            // Updated extension logic for WebP
-            let ext = 'jpg';
-            if (outputFormat === 'image/png') ext = 'png';
-            if (outputFormat === 'image/webp') ext = 'webp';
+            const ext = outputFormat === 'image/jpeg' ? 'jpg' : 'png';
 
             const promises = r_fileQueue.map(async (item, index) => {
                 return new Promise((resolve, reject) => {
@@ -1293,7 +1354,6 @@
                                 ctx.globalAlpha = 1.0; 
                             }
 
-                            // Added support for WebP output format
                             canvas.toBlob((blob) => {
                                 if (!blob) {
                                     reject(new Error('Canvas to Blob failed'));
@@ -1345,16 +1405,22 @@
         }
     }
 
-    // --- APP 2: Editor Logic (Simplified) ---
+    // --- APP 2: Editor Logic (Updated with Crop) ---
     let e_originalImage = null;
     let e_adjustmentBaseImage = null;
     let e_history = [];
     const E_MAX_HISTORY = 10;
+    
+    // State
     let e_currentTab = 'mosaic';
     let e_mosaicMode = 'pixelate';
-    let e_shapeMode = 'rectangle';
+    let e_shapeMode = 'rectangle'; // Shared by Mosaic & Crop
+    let e_cropMode = 'inside';     // 'inside' or 'outside'
+    
+    // Drawing State
     let e_isDrawing = false;
     let e_startX, e_startY;
+    let e_currentX, e_currentY;    // Added for Crop preview
     let e_snapshot = null;
     let e_duotoneTimer = null;
 
@@ -1370,17 +1436,15 @@
         fileInput.addEventListener('change', (e) => { if(e.target.files[0]) e_loadImage(e.target.files[0]); });
 
         canvas.addEventListener('mousedown', e_startDraw);
-        canvas.addEventListener('mousemove', e_drawRect);
+        canvas.addEventListener('mousemove', e_drawRect); // Used for both Mosaic and Crop preview
         canvas.addEventListener('mouseup', e_endDraw);
         canvas.addEventListener('mouseout', () => e_isDrawing = false);
+        
+        // Touch support
         canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousedown', {clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
         canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousemove', {clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
         canvas.addEventListener('touchend', () => { canvas.dispatchEvent(new MouseEvent('mouseup', {})); });
     }
-    // ... [Other e_ functions remain unchanged from previous version] ...
-    // Note: I'm including minimal e_ functions here to keep file size manageable, 
-    // but in a real scenario all would be here. Assuming they persist.
-    // For copy-paste completeness, I will include the key logic blocks again.
 
     function e_loadImage(file) {
         const reader = new FileReader();
@@ -1403,6 +1467,7 @@
         };
         reader.readAsDataURL(file);
     }
+
     function e_updateBaseImage() {
         const canvas = document.getElementById('e_canvas');
         e_adjustmentBaseImage = document.createElement('canvas');
@@ -1410,27 +1475,40 @@
         e_adjustmentBaseImage.height = canvas.height;
         e_adjustmentBaseImage.getContext('2d').drawImage(canvas, 0, 0);
     }
+
     async function e_switchTab(tab) {
+        // Save current state if needed before switching
         if (e_currentTab === 'adjust' && tab !== 'adjust') await e_loadFromHistory();
         else if (e_currentTab === 'duotone' && tab !== 'duotone') await e_loadFromHistory();
+        
         e_updateBaseImage();
         e_currentTab = tab;
-        ['mosaic', 'duotone', 'adjust'].forEach(t => {
+        
+        // Toggle UI Panels
+        ['mosaic', 'duotone', 'adjust', 'crop'].forEach(t => {
             const btn = document.getElementById('e_tab' + t.charAt(0).toUpperCase() + t.slice(1));
             const panel = document.getElementById('e_panel' + t.charAt(0).toUpperCase() + t.slice(1));
-            if (t === tab) {
-                btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-active whitespace-nowrap";
-                panel.classList.remove('hidden');
-            } else {
-                btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap";
-                panel.classList.add('hidden');
+            if (btn && panel) {
+                if (t === tab) {
+                    btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-active whitespace-nowrap";
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 e-tab-inactive whitespace-nowrap";
+                    panel.classList.add('hidden');
+                }
             }
         });
+
         const canvas = document.getElementById('e_canvas');
-        canvas.style.cursor = tab === 'mosaic' ? 'crosshair' : 'default';
+        // Crop and Mosaic both need crosshair for drawing selection
+        canvas.style.cursor = (tab === 'mosaic' || tab === 'crop') ? 'crosshair' : 'default';
+        
         if (tab === 'adjust') e_resetAdjustmentSliders();
         if (tab === 'duotone') e_updateDuotonePreview();
+        // Reset crop specific UI shape mode
+        if (tab === 'crop') e_setShapeMode(e_shapeMode, true); // Update visual state for crop buttons
     }
+
     function e_saveHistory() {
         const canvas = document.getElementById('e_canvas');
         if (e_history.length >= E_MAX_HISTORY) e_history.shift();
@@ -1438,6 +1516,7 @@
         e_updateUndoButton();
         e_updateBaseImage();
     }
+
     function e_loadFromHistory() {
         return new Promise((resolve) => {
             if (e_history.length === 0) { resolve(); return; }
@@ -1446,7 +1525,6 @@
             const ctx = canvas.getContext('2d');
             const img = new Image();
             img.onload = () => {
-                ctx.filter = 'none';
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
                 resolve();
@@ -1454,6 +1532,7 @@
             img.src = lastData;
         });
     }
+
     function e_undo() {
         if (e_history.length <= 1) return;
         e_history.pop();
@@ -1462,7 +1541,6 @@
         const ctx = canvas.getContext('2d');
         const img = new Image();
         img.onload = () => {
-            ctx.filter = 'none';
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
             e_updateUndoButton();
@@ -1471,7 +1549,13 @@
         };
         img.src = prevDataUrl;
     }
-    function e_updateUndoButton() { document.getElementById('e_btnUndo').disabled = e_history.length <= 1; }
+
+    function e_updateUndoButton() { 
+        const btn = document.getElementById('e_btnUndo');
+        if(btn) btn.disabled = e_history.length <= 1; 
+    }
+
+    // --- Mode Setters ---
     function e_setMosaicMode(mode) {
         e_mosaicMode = mode;
         const active = "py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition font-medium";
@@ -1479,14 +1563,41 @@
         document.getElementById('e_modePixelate').className = mode === 'pixelate' ? active : inactive;
         document.getElementById('e_modeBlur').className = mode === 'blur' ? active : inactive;
     }
-    function e_setShapeMode(mode) {
-        e_shapeMode = mode;
-        const active = "py-2 px-3 rounded border border-indigo-500 bg-indigo-500 text-white text-sm transition flex items-center justify-center gap-2 font-medium";
-        const inactive = "py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium";
-        document.getElementById('e_shapeRect').className = mode === 'rectangle' ? active : inactive;
-        document.getElementById('e_shapeEllipse').className = mode === 'ellipse' ? active : inactive;
+
+    function e_setCropMode(mode) {
+        e_cropMode = mode;
+        const active = "py-2 px-3 rounded border border-rose-500 bg-rose-500 text-white text-sm transition font-medium";
+        const inactive = "py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition font-medium";
+        document.getElementById('e_cropInside').className = mode === 'inside' ? active : inactive;
+        document.getElementById('e_cropOutside').className = mode === 'outside' ? active : inactive;
     }
-    function e_updateIntensityDisplay() { document.getElementById('e_intensityVal').textContent = document.getElementById('e_intensityRange').value; }
+
+    function e_setShapeMode(mode, forCrop = false) {
+        e_shapeMode = mode;
+        const activeBase = "py-2 px-3 rounded border text-white text-sm transition flex items-center justify-center gap-2 font-medium ";
+        const inactiveBase = "py-2 px-3 rounded border border-gray-300 bg-white text-gray-700 text-sm hover:bg-gray-50 transition flex items-center justify-center gap-2 font-medium";
+        
+        // Colors: Indigo for Mosaic, Rose for Crop
+        const activeColor = forCrop || e_currentTab === 'crop' ? "border-rose-500 bg-rose-500" : "border-indigo-500 bg-indigo-500";
+        
+        // Update Mosaic Buttons
+        const mRect = document.getElementById('e_shapeRect');
+        const mElli = document.getElementById('e_shapeEllipse');
+        if (mRect && mElli) {
+            mRect.className = mode === 'rectangle' ? activeBase + "border-indigo-500 bg-indigo-500" : inactiveBase;
+            mElli.className = mode === 'ellipse' ? activeBase + "border-indigo-500 bg-indigo-500" : inactiveBase;
+        }
+
+        // Update Crop Buttons
+        const cRect = document.getElementById('e_cropShapeRect');
+        const cElli = document.getElementById('e_cropShapeEllipse');
+        if (cRect && cElli) {
+            cRect.className = mode === 'rectangle' ? activeBase + "border-rose-500 bg-rose-500" : inactiveBase;
+            cElli.className = mode === 'ellipse' ? activeBase + "border-rose-500 bg-rose-500" : inactiveBase;
+        }
+    }
+
+    // --- Drawing / Interaction Logic ---
     function e_getMousePos(e) {
         const canvas = document.getElementById('e_canvas');
         const rect = canvas.getBoundingClientRect();
@@ -1496,42 +1607,85 @@
         const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
         return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
+
     function e_startDraw(e) {
-        if (e_currentTab !== 'mosaic') return;
+        if (e_currentTab !== 'mosaic' && e_currentTab !== 'crop') return;
         const canvas = document.getElementById('e_canvas');
         const ctx = canvas.getContext('2d');
         e_isDrawing = true;
         const pos = e_getMousePos(e);
         e_startX = pos.x; e_startY = pos.y;
+        e_currentX = pos.x; e_currentY = pos.y;
         e_snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
     }
+
     function e_drawRect(e) {
-        if (!e_isDrawing || e_currentTab !== 'mosaic') return;
+        if (!e_isDrawing) return;
+        if (e_currentTab !== 'mosaic' && e_currentTab !== 'crop') return;
+        
         const canvas = document.getElementById('e_canvas');
         const ctx = canvas.getContext('2d');
         const pos = e_getMousePos(e);
+        e_currentX = pos.x; e_currentY = pos.y;
+
+        // Restore image to prevent trail
         ctx.putImageData(e_snapshot, 0, 0);
-        ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = '#6366f1'; ctx.setLineDash([5, 3]);
-        const w = pos.x - e_startX; const h = pos.y - e_startY;
-        if (e_shapeMode === 'rectangle') ctx.strokeRect(e_startX, e_startY, w, h);
-        else {
+        
+        ctx.beginPath(); 
+        ctx.lineWidth = 2; 
+        
+        // Color distinction
+        ctx.strokeStyle = e_currentTab === 'crop' ? '#e11d48' : '#6366f1'; // Rose for crop, Indigo for mosaic
+        ctx.setLineDash([5, 3]);
+        
+        const w = pos.x - e_startX; 
+        const h = pos.y - e_startY;
+        
+        if (e_shapeMode === 'rectangle') {
+            ctx.strokeRect(e_startX, e_startY, w, h);
+            // Optional: Draw helper overlay for crop
+            if (e_currentTab === 'crop') {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(e_startX, e_startY, w, h);
+            }
+        } else {
             ctx.ellipse(e_startX + w/2, e_startY + h/2, Math.abs(w)/2, Math.abs(h)/2, 0, 0, 2 * Math.PI);
             ctx.stroke();
+            if (e_currentTab === 'crop') {
+                 ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                 ctx.fill();
+            }
         }
         ctx.setLineDash([]);
     }
+
     function e_endDraw(e) {
-        if (!e_isDrawing || e_currentTab !== 'mosaic') return;
+        if (!e_isDrawing) return;
+        if (e_currentTab !== 'mosaic' && e_currentTab !== 'crop') return;
+        
         const canvas = document.getElementById('e_canvas');
         const ctx = canvas.getContext('2d');
         e_isDrawing = false;
-        const pos = e_getMousePos(e);
-        ctx.putImageData(e_snapshot, 0, 0);
-        const w = pos.x - e_startX; const h = pos.y - e_startY;
-        if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
-        e_applyMosaicEffect(w < 0 ? pos.x : e_startX, h < 0 ? pos.y : e_startY, Math.abs(w), Math.abs(h));
-        e_saveHistory();
+        
+        // For Mosaic: Apply immediately
+        if (e_currentTab === 'mosaic') {
+             const pos = e_getMousePos(e);
+             ctx.putImageData(e_snapshot, 0, 0); // Clear guide
+             const w = pos.x - e_startX; const h = pos.y - e_startY;
+             if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
+             e_applyMosaicEffect(w < 0 ? pos.x : e_startX, h < 0 ? pos.y : e_startY, Math.abs(w), Math.abs(h));
+             e_saveHistory();
+        } 
+        // For Crop: Keep selection visible (don't clear snapshot yet), user must click "Execute"
+        // But we DO need to ensure the final selection rectangle is drawn clean
+        else if (e_currentTab === 'crop') {
+             // Just leave the selection guide on screen. 
+             // The logic is in e_applyCrop() which uses e_startX/Y and e_currentX/Y
+        }
     }
+
+    function e_updateIntensityDisplay() { document.getElementById('e_intensityVal').textContent = document.getElementById('e_intensityRange').value; }
+
     function e_applyMosaicEffect(x, y, w, h) {
         const canvas = document.getElementById('e_canvas');
         const ctx = canvas.getContext('2d');
@@ -1545,7 +1699,7 @@
             tCtx.imageSmoothingEnabled = false; tCtx.clearRect(0,0,w,h);
             tCtx.drawImage(sCanvas, 0, 0, pw, ph, 0, 0, w, h);
         } else {
-            tCtx.filter = `blur(${intensity}px)`; tCtx.drawImage(tempCanvas, 0, 0); tCtx.drawImage(tempCanvas, 0, 0); // draw twice to strengthen blur
+            tCtx.filter = `blur(${intensity}px)`; tCtx.drawImage(tempCanvas, 0, 0); tCtx.drawImage(tempCanvas, 0, 0);
             tCtx.filter = 'none';
         }
         ctx.save(); ctx.beginPath();
@@ -1553,6 +1707,68 @@
         else ctx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, 2 * Math.PI);
         ctx.clip(); ctx.drawImage(tempCanvas, x, y); ctx.restore();
     }
+
+    // --- Crop Logic (New) ---
+    function e_applyCrop() {
+        // Use coordinates from the last draw action
+        if (Math.abs(e_startX - e_currentX) < 5 || Math.abs(e_startY - e_currentY) < 5) {
+            // No selection made or too small
+            return;
+        }
+        
+        // Restore image (remove the red selection guide)
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        if (e_snapshot) ctx.putImageData(e_snapshot, 0, 0);
+
+        const w = e_currentX - e_startX;
+        const h = e_currentY - e_startY;
+        const x = w < 0 ? e_currentX : e_startX;
+        const y = h < 0 ? e_currentY : e_startY;
+        const absW = Math.abs(w);
+        const absH = Math.abs(h);
+        const feather = parseInt(document.getElementById('e_featherRange').value, 10);
+
+        // Create a mask canvas
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = canvas.width;
+        maskCanvas.height = canvas.height;
+        const mCtx = maskCanvas.getContext('2d');
+
+        // Draw the shape on the mask
+        mCtx.fillStyle = '#000000'; // Shape color (opaque)
+        // If feathering, we need space for the blur, so we clear transparent first (default)
+        if (feather > 0) mCtx.filter = `blur(${feather}px)`;
+        
+        mCtx.beginPath();
+        if (e_shapeMode === 'rectangle') {
+            mCtx.rect(x + feather, y + feather, absW - feather*2, absH - feather*2); // Adjust for blur spread
+        } else {
+            mCtx.ellipse(x + absW/2, y + absH/2, (absW/2) - feather, (absH/2) - feather, 0, 0, 2 * Math.PI);
+        }
+        mCtx.fill();
+        mCtx.filter = 'none';
+
+        // Apply mask to original image
+        ctx.save();
+        if (e_cropMode === 'inside') {
+            // Keep Inside: Destination-In (Keep image where mask is opaque)
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.drawImage(maskCanvas, 0, 0);
+        } else {
+            // Keep Outside: Destination-Out (Remove image where mask is opaque)
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.drawImage(maskCanvas, 0, 0);
+        }
+        ctx.restore();
+
+        // Reset state
+        e_saveHistory();
+        e_startX = e_currentX; // Reset coords
+        e_startY = e_currentY;
+    }
+
+    // --- Duotone & Adjust (Existing Logic) ---
     function e_setDuotonePreset(h, s) {
         document.getElementById('e_colorHighlight').value = h; document.getElementById('e_colorShadow').value = s;
         document.getElementById('e_duotoneBalanceRange').value = 50; e_updateDuotonePreview();
@@ -1641,7 +1857,64 @@
         e_history = []; e_saveHistory(); e_hideResetModal(); e_resetAdjustmentSliders();
         document.getElementById('e_duotoneBalanceRange').value = 50; e_switchTab('mosaic');
     }
+
+// --- ↓↓↓ 新機能: 画像削除 & 回転 ↓↓↓ ---
+
+    // 画像を削除してスタート画面に戻る
+    function e_clearEditorImage() {
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+        // キャンバスをクリア
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 状態リセット
+        e_originalImage = null;
+        e_adjustmentBaseImage = null;
+        e_history = [];
+        
+        // ドロップエリア再表示
+        document.getElementById('e_uploadArea').classList.remove('hidden');
+        document.getElementById('e_fileInput').value = '';
+        
+        // UI更新
+        e_updateUndoButton();
+        e_resetAdjustmentSliders();
+        e_switchTab('mosaic'); // タブを戻す
+    }
+
+    // キャンバスを回転させる (90 or -90)
+    function e_rotateCanvas(degree) {
+        if (!e_originalImage) return; // 画像がない時は何もしない
+
+        const canvas = document.getElementById('e_canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 現在の画像を一時保存
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+        // キャンバスサイズを入れ替え（横長⇔縦長）
+        canvas.width = tempCanvas.height;
+        canvas.height = tempCanvas.width;
+
+        // 回転処理
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2); // 中心に移動
+        ctx.rotate(degree * Math.PI / 180); // 回転
+        ctx.drawImage(tempCanvas, -tempCanvas.width / 2, -tempCanvas.height / 2); // 画像を描画（中心基準）
+        ctx.restore();
+
+        // 状態保存（Undoできるようにする）
+        e_updateBaseImage(); // 色調補正のベースも更新
+        e_saveHistory();     // 履歴に追加
+    }
+    // --- ↑↑↑ 追加ここまで ↑↑↑ ---
+
+
 </script>
 
 </body>
 </html>
+
