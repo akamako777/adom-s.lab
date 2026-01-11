@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v21.2 (Stable Fix)</title>
+    <title>Five Islands Stargazer v22.0 (Milky Way Polish)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -128,8 +128,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v21.2</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Stable Release</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v22.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Milky Way Polish</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -221,7 +221,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v21.2 Stable</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v22.0 MilkyWay+</div>
                 </div>
             </div>
 
@@ -259,11 +259,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">TIME & COMPASS v21.2</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MILKY WAY POLISH v22</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">AR System & Compass Init</p>
+            <p class="text-[10px] text-slate-500 mt-4">Generating Galaxy Particles...</p>
         </div>
     </div>
 
@@ -365,10 +365,10 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v21.2 (Stable Fix)
- * Fixes:
- * - ReferenceError: STARS_DATA is not defined (Moved data to top & added safety check)
- * - Ensures all data arrays are fully defined before App core starts.
+ * 🌌 FIVE ISLANDS STARGAZER v22.0 (Milky Way Polish)
+ * Features:
+ * - Procedural Milky Way: Multi-colored, layered particles for deep nebula effect
+ * - Stabilized Compass: Low-pass filter + Independent of Manual Offset
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -769,14 +769,13 @@ const App = {
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
         isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
-        azimuth: 0, timeOffset: 0 // New: Time offset
+        azimuth: 0, timeOffset: 0, compassFiltered: 0 // New: Filtered Compass
     },
 
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
         
-        // 1. Camera Init (Non-Blocking Fix)
-        // Previous await was blocking App.loop() if camera permission was slow/denied.
+        // 1. Camera Init (Non-Blocking)
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
                 .then(stream => {
@@ -809,14 +808,50 @@ const App = {
                 ra: Math.random()*24, dec: Math.random()*180-90, mag: Math.random()*3+3.5, ci: Math.random()*1.5, isProc: true
             });
         }
-        const mwPoints = [{ra:0,dec:63},{ra:3,dec:50},{ra:6,dec:10},{ra:7.5,dec:-20},{ra:12,dec:-60},{ra:17,dec:-30},{ra:18,dec:-15},{ra:20,dec:40},{ra:23,dec:60}];
+        
+        // --- MILKY WAY GENERATOR (Procedural Nebula) ---
+        // Generates layered particles along galactic plane
+        const mwPoints = [
+            {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
+            {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
+            {ra:18,dec:-15, w:40}, {ra:20,dec:40, w:25}, {ra:23,dec:60, w:22}
+        ];
+        
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            for(let j=0; j<80; j++) {
-                const t = j/80;
+            const steps = 150; // Denser particles
+            
+            for(let j=0; j<steps; j++) {
+                const t = j/steps;
+                // Interpolate position
+                const baseRA = p1.ra + (p2.ra - p1.ra)*t;
+                const baseDec = p1.dec + (p2.dec - p1.dec)*t;
+                const baseW = p1.w + (p2.w - p1.w)*t;
+                
+                // Random scatter
+                const scatter = (Math.random() - 0.5) * baseW;
+                const finalRA = baseRA + (Math.random() - 0.5) * 2; // RA jitter
+                const finalDec = baseDec + scatter;
+                
+                // Color variation (Blue-ish to White)
+                // 0 = Blue, 1 = White, 2 = Reddish
+                const colorType = Math.random(); 
+                let r, g, b;
+                
+                if (colorType > 0.8) { // Hint of nebula red
+                    r=200; g=180; b=220; 
+                } else if (colorType > 0.4) { // Pure white core
+                    r=240; g=240; b=255;
+                } else { // Cosmic blue
+                    r=180; g=200; b=255;
+                }
+
                 App.state.milkyWay.push({
-                    ra: p1.ra+(p2.ra-p1.ra)*t+(Math.random()-0.5)*2, dec: p1.dec+(p2.dec-p1.dec)*t+(Math.random()-0.5)*15, 
-                    size: Math.random()*30+15, alpha: Math.random()*0.02
+                    ra: finalRA, 
+                    dec: finalDec, 
+                    size: Math.random()*25 + 10, // Larger, softer particles
+                    alpha: Math.random()*0.08 + 0.02, // Very faint, additive
+                    r, g, b
                 });
             }
         }
@@ -832,7 +867,6 @@ const App = {
     },
 
     handleOri: (e) => {
-        // Fix: Allow partial data or default to 0 if null (e.g., PC/Emulator quirks)
         const alpha = e.alpha || 0;
         const beta = e.beta || 0;
         const gamma = e.gamma || 0;
@@ -846,12 +880,10 @@ const App = {
 
     updateViewMatrix: () => {
         const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
-        
-        // Fix: Don't return if alpha is null/0, use fallback to allow drawing
         const safeAlpha = alpha !== null ? alpha : 0;
-
         const deg2rad = Math.PI / 180;
         let screenOrient = 0;
+        
         if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
         else if (window.orientation) screenOrient = window.orientation;
 
@@ -860,10 +892,10 @@ const App = {
         if (isIOS && webkitCompass != null) a = -webkitCompass;
         else { a = safeAlpha; if (!isIOS) a -= 270; }
         
-        // 3. Magnetic Declination Fix (Japan/Goto approx -7 deg)
+        // 3. Magnetic Declination Fix
         a -= 7; 
 
-        // Store RAW Azimuth for Independent Compass (before manual offset)
+        // Store RAW Azimuth for Independent Compass
         let rawHeading = a;
         if (App.state.reverseAlpha) rawHeading = -rawHeading;
         
@@ -877,7 +909,7 @@ const App = {
         const rGamma = gamma * deg2rad;
         const rOrient = screenOrient * deg2rad;
 
-        // YXZ Order (v18 Stable)
+        // YXZ Order
         const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     
         const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      
         const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    
@@ -906,7 +938,17 @@ const App = {
         let compassAz = Math.atan2(rawFwdX, rawFwdY) * 180/Math.PI; 
         if(compassAz<0) compassAz+=360;
         
-        // Star Azimuth for Debug
+        // Low-Pass Filter for Compass Stability
+        // Basic LERP: new = old + (target - old) * factor
+        // Handle 359->0 wrap-around
+        let diff = compassAz - App.state.compassFiltered;
+        if (diff < -180) diff += 360;
+        if (diff > 180) diff -= 360;
+        App.state.compassFiltered += diff * 0.1; // 0.1 = Smoothing factor
+        if (App.state.compassFiltered >= 360) App.state.compassFiltered -= 360;
+        if (App.state.compassFiltered < 0) App.state.compassFiltered += 360;
+
+        // Debug Display
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; 
         let starAz = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(starAz<0) starAz+=360;
@@ -914,16 +956,16 @@ const App = {
         document.getElementById('debug-az').innerText = Math.round(starAz);
         document.getElementById('debug-alt').innerText = Math.round(alt);
         
-        // Update Compass HUD with INDEPENDENT Azimuth
-        App.updateCompass(compassAz);
+        // Update Compass HUD with FILTERED, INDEPENDENT Azimuth
+        App.updateCompass(App.state.compassFiltered);
     },
     
-    // Compass Drawer (Visuals)
+    // Compass Drawer
     updateCompass: (az) => {
         const hud = document.getElementById('compass-ticks');
         hud.innerHTML = '';
         const width = hud.clientWidth;
-        const pxPerDeg = width / 120; // Show 120 deg range
+        const pxPerDeg = width / 120; 
         
         const dirs = [
             {v:0, l:'N'}, {v:45, l:'NE'}, {v:90, l:'E'}, {v:135, l:'SE'},
@@ -935,14 +977,13 @@ const App = {
             if(diff < -180) diff += 360;
             if(diff > 180) diff -= 360;
             
-            // Only draw if within visible range
             if (Math.abs(diff) < 60) {
                 const pos = (width/2) + (diff * pxPerDeg);
                 const tick = document.createElement('div');
                 tick.className = 'compass-mark';
                 tick.style.left = pos + 'px';
-                tick.style.color = (d.l.length===1) ? '#ef4444' : '#94a3b8'; // Red for cardinals
-                if(d.l === 'N') tick.style.color = '#ef4444'; // North is Red
+                tick.style.color = (d.l.length===1) ? '#ef4444' : '#94a3b8';
+                if(d.l === 'N') tick.style.color = '#ef4444';
                 tick.style.fontSize = (d.l.length===1) ? '16px' : '10px';
                 tick.innerText = d.l;
                 hud.appendChild(tick);
@@ -964,17 +1005,26 @@ const App = {
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
-        // Apply Time Offset here
         const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
+        // --- MILKY WAY RENDER (Updated) ---
         if (!isSolar && state.opacity.milky > 0) {
-            ctx.globalCompositeOperation = 'lighter';
+            // Use 'lighter' for additive mixing (glowing effect)
+            ctx.globalCompositeOperation = 'lighter'; 
             state.milkyWay.forEach(p => {
                 const vec = Astro.getStarVector(p.ra, p.dec, state.lat, lst);
                 const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if (pos) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * state.opacity.milky})`;
-                    ctx.beginPath(); ctx.arc(pos.x, pos.y, p.size * (width/1500), 0, Math.PI*2); ctx.fill();
+                    // Create radial gradient for soft particle look
+                    const size = p.size * (width/1500);
+                    const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
+                    const a = p.alpha * state.opacity.milky;
+                    
+                    grad.addColorStop(0, `rgba(${p.r},${p.g},${p.b},${a})`);
+                    grad.addColorStop(1, `rgba(${p.r},${p.g},${p.b},0)`);
+                    
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
                 }
             });
             ctx.globalCompositeOperation = 'source-over';
@@ -1033,7 +1083,6 @@ const App = {
             visibleConsts.sort((a,b) => a.dist - b.dist);
             const target = visibleConsts[0];
             if (target.dist < 150) {
-                // Update Content (i18n aware)
                 document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
                 const dict = I18N[state.lang];
                 document.getElementById('bubble-tag').innerText = (target.c.rank===1 ? dict.famous_const : dict.constellation);
