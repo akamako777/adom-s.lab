@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v19.0 (Rich AR)</title>
+    <title>Five Islands Stargazer v20.0 (Global Compass)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +33,7 @@
         #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity 0.8s; }
         #sky-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
         
-        /* Overlay for Smart Bubble (NEW) */
+        /* Overlay for Smart Bubble */
         #overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; overflow: hidden; }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
@@ -55,7 +55,7 @@
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
         
-        /* Smart Bubble (NEW) */
+        /* Smart Bubble */
         .info-bubble {
             position: absolute;
             transition: opacity 0.3s, transform 0.1s linear;
@@ -68,6 +68,19 @@
             border-top: 8px solid rgba(15, 23, 42, 0.9);
         }
         body.mode-solar .bubble-tail { border-top-color: rgba(255, 255, 255, 0.95); }
+
+        /* Compass HUD (NEW) */
+        #compass-bar {
+            position: absolute; bottom: 100px; left: 0; width: 100%; height: 30px;
+            pointer-events: none; opacity: 0.8;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.5) 80%, transparent);
+            display: flex; justify-content: center; align-items: center;
+            font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #22d3ee;
+            border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        #compass-ticks { position: relative; width: 300px; height: 100%; overflow: hidden; }
+        .compass-mark { position: absolute; top: 5px; transform: translateX(-50%); transition: left 0.1s linear; font-weight: bold; }
+        .compass-center { position: absolute; left: 50%; top: -5px; width: 2px; height: 40px; bg-red-500; z-index: 10; border-left: 2px solid #ef4444; }
 
         /* 🚪 PC Gate */
         #star-gate {
@@ -85,7 +98,6 @@
         .check-box:checked { background: #22d3ee; border-color: #22d3ee; }
         .check-box:checked::after { content: '✔'; position: absolute; top: 0px; left: 5px; color: #000; font-size: 16px; font-weight: bold; }
         
-        /* Range Slider */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
@@ -95,7 +107,6 @@
         
         #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 10px; text-shadow: 1px 1px 0 #000; }
         
-        /* Swipe Hint Animation */
         @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
         .swipe-hint { animation: swipe-anim 2s infinite; }
     </style>
@@ -106,8 +117,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v19.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Rich AR Edition</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v20.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Global Compass Edition</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -180,12 +191,20 @@
                 </div>
             </div>
 
+            <!-- Compass HUD (NEW) -->
+            <div id="compass-bar">
+                <div class="compass-center"></div>
+                <div id="compass-ticks">
+                    <!-- JS will fill this -->
+                </div>
+            </div>
+
             <!-- Debug Info (Lower Left) -->
             <div class="absolute bottom-24 left-4 pointer-events-none opacity-60">
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v19.0 (Cam+Bubble)</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v20.0 Global</div>
                 </div>
             </div>
 
@@ -205,7 +224,7 @@
     <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
         <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 class="font-bold text-white text-lg flex items-center gap-2">
-                <span class="text-2xl">📖</span> 星座図鑑 (理科と神話)
+                <span class="text-2xl">📖</span> <span data-i18n="guide_title">星座図鑑</span>
             </h2>
             <button onclick="Guide.toggle()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition text-xl">✕</button>
         </div>
@@ -217,11 +236,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RICH AR EDITION v19</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v20</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
-                星空へ出発 (START)
+                START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">ARカメラとセンサーを起動します</p>
+            <p class="text-[10px] text-slate-500 mt-4">AR System & Compass Init</p>
         </div>
     </div>
 
@@ -229,61 +248,80 @@
     <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
         <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
             <div class="flex justify-between items-center border-b border-white/10 pb-4">
-                <h2 class="font-bold text-white text-lg">設定 (Settings)</h2>
+                <h2 class="font-bold text-white text-lg" data-i18n="settings_title">設定 (Settings)</h2>
                 <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
             </div>
             
             <!-- Category Boxes -->
             <div class="space-y-3">
-                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider">表示カテゴリ (Categories)</p>
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="cat_title">表示カテゴリ</p>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
-                    <span class="text-sm font-bold">🦁 有名な星座 (Famous)</span>
+                    <span class="text-sm font-bold" data-i18n="cat_famous">🦁 有名な星座 (Famous)</span>
                     <input type="checkbox" checked onchange="App.setRank(1, this.checked)" class="check-box">
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
-                    <span class="text-sm font-bold">🐻 普通の星座 (Medium)</span>
+                    <span class="text-sm font-bold" data-i18n="cat_medium">🐻 普通の星座 (Medium)</span>
                     <input type="checkbox" checked onchange="App.setRank(2, this.checked)" class="check-box">
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
-                    <span class="text-sm font-bold">🦎 マイナー星座 (Minor)</span>
+                    <span class="text-sm font-bold" data-i18n="cat_minor">🦎 マイナー星座 (Minor)</span>
                     <input type="checkbox" onchange="App.setRank(3, this.checked)" class="check-box">
                 </label>
             </div>
 
             <!-- Visibility -->
             <div class="space-y-4 pt-4 border-t border-white/10">
-                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider">表示オプション (Visibility)</p>
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="opt_title">表示オプション</p>
                 
                 <div class="flex items-center justify-between bg-cyan-900/30 p-2 rounded-lg border border-cyan-500/20">
                     <div>
-                        <span class="text-sm font-bold text-cyan-300">🌟 星座の解説を表示</span>
-                        <div class="text-[10px] text-slate-400">吹き出しで解説を表示します</div>
+                        <span class="text-sm font-bold text-cyan-300" data-i18n="opt_info">🌟 星座の解説を表示</span>
+                        <div class="text-[10px] text-slate-400" data-i18n="opt_info_desc">吹き出しで解説を表示します</div>
                     </div>
                     <input type="checkbox" checked onchange="App.setFlag('showInfo', this.checked)" class="check-box">
                 </div>
                 
                 <div class="flex items-center justify-between">
-                    <span class="text-sm">🎥 ARカメラ</span>
+                    <span class="text-sm" data-i18n="opt_ar">🎥 ARカメラ</span>
                     <input type="checkbox" id="toggle-ar" onchange="App.toggleAR(this.checked)" class="check-box">
                 </div>
                 
                 <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_bg">背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="1" oninput="App.setOpacity('bg', this.value)">
                 </div>
 
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_milky">天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
+                    <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="App.setOpacity('milky', this.value)">
+                </div>
+
                 <div class="flex items-center justify-between pt-2">
-                    <span class="text-sm">🌠 流れ星 (Meteors)</span>
+                    <span class="text-sm" data-i18n="opt_meteor">🌠 流れ星 (Meteors)</span>
                     <input type="checkbox" checked onchange="App.setFlag('meteorEnabled', this.checked)" class="check-box">
                 </div>
+            </div>
+
+            <!-- Drift Warning -->
+            <div class="pt-4 border-t border-white/10">
+                <details class="group">
+                    <summary class="flex justify-between items-center cursor-pointer list-none text-yellow-200/80 text-xs font-bold">
+                        <span data-i18n="warn_drift">⚠️ センサーのズレについて</span>
+                        <span class="transition group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="text-[10px] text-slate-400 mt-2 leading-relaxed bg-black/20 p-2 rounded" data-i18n="warn_drift_desc">
+                        スマホの電子コンパスは、周囲の金属や磁気の影響で数度〜数十度ズレることがあります（ドリフト現象）。<br>
+                        ズレていると感じたら、画面を左右にスワイプして手動で微調整してください。
+                    </div>
+                </details>
             </div>
 
             <!-- Emergency Axis Fix -->
              <div class="pt-4 border-t border-white/10">
                  <div class="flex items-center justify-between">
                     <div>
-                        <span class="text-sm font-bold text-red-300">🔄 Axis Fix (回転補正)</span>
-                        <div class="text-[10px] text-slate-400">回転が逆になる場合のみON</div>
+                        <span class="text-sm font-bold text-red-300" data-i18n="axis_fix">🔄 Axis Fix (回転補正)</span>
+                        <div class="text-[10px] text-slate-400" data-i18n="axis_fix_desc">回転が逆になる場合のみON</div>
                     </div>
                     <input type="checkbox" onchange="App.state.reverseAlpha = this.checked" class="check-box">
                 </div>
@@ -304,99 +342,176 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v19.0 (Rich AR Edition)
+ * 🌌 FIVE ISLANDS STARGAZER v20.0 (Global Compass Edition)
  * Features:
- * - Fixed AR Camera (getUserMedia)
- * - HTML/CSS Smart Bubble for Descriptions
- * - Magnetic Declination Fix (-7 deg for Japan/Goto)
- * - v18.0 YXZ Rotation Logic (Stable)
+ * - Compass HUD (Visual Azimuth Bar)
+ * - Full i18n Support (UI + Content)
+ * - Sensor Drift Disclaimer
+ * - Smart Bubble + AR Camera + Magnetic Declination Fix
  */
 
-// --- 0. DATA & CONSTANTS ---
+// --- 0. DATA & CONSTANTS (Dictionary) ---
+const I18N = {
+    ja: {
+        guide_title: "星座図鑑 (理科と神話)",
+        settings_title: "設定 (Settings)",
+        cat_title: "表示カテゴリ (Categories)",
+        cat_famous: "🦁 有名な星座 (Famous)",
+        cat_medium: "🐻 普通の星座 (Medium)",
+        cat_minor: "🦎 マイナー星座 (Minor)",
+        opt_title: "表示オプション (Visibility)",
+        opt_info: "🌟 星座の解説を表示",
+        opt_info_desc: "吹き出しで解説を表示します",
+        opt_ar: "🎥 ARカメラ",
+        opt_bg: "背景の濃さ",
+        opt_milky: "天の川 (Milky Way)",
+        opt_meteor: "🌠 流れ星 (Meteors)",
+        warn_drift: "⚠️ センサーのズレについて",
+        warn_drift_desc: "スマホの電子コンパスは、周囲の金属や磁気の影響で数度〜数十度ズレることがあります（ドリフト現象）。<br>ズレていると感じたら、画面を左右にスワイプして手動で微調整してください。",
+        axis_fix: "🔄 Axis Fix (回転補正)",
+        axis_fix_desc: "回転が逆になる場合のみON",
+        loc_fixed: "五島列島 (Fixed)",
+        loc_gps: "現在地 (GPS)",
+        nav_start: "へのナビを開始 🚀",
+        nav_end: "ナビを終了しました",
+        constellation: "星座",
+        famous_const: "有名な星座"
+    },
+    en: {
+        guide_title: "Star Guide (Science & Myth)",
+        settings_title: "Settings",
+        cat_title: "Categories",
+        cat_famous: "🦁 Famous Stars",
+        cat_medium: "🐻 Medium Stars",
+        cat_minor: "🦎 Minor Stars",
+        opt_title: "Visibility Options",
+        opt_info: "🌟 Show Info Bubble",
+        opt_info_desc: "Show star descriptions in AR",
+        opt_ar: "🎥 AR Camera",
+        opt_bg: "Background Opacity",
+        opt_milky: "Milky Way Visibility",
+        opt_meteor: "🌠 Meteors",
+        warn_drift: "⚠️ Sensor Drift Warning",
+        warn_drift_desc: "Phone compasses can drift due to magnetic interference. <br>If stars are misaligned, SWIPE the screen left/right to calibrate manually.",
+        axis_fix: "🔄 Axis Fix (Reverse)",
+        axis_fix_desc: "Enable if rotation is reversed",
+        loc_fixed: "Goto Islands (Fixed)",
+        loc_gps: "Current loc (GPS)",
+        nav_start: "Navigating to ",
+        nav_end: "Navigation Ended",
+        constellation: "Constellation",
+        famous_const: "Famous Constellation"
+    }
+};
+
 const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3 };
 
 const CONSTELLATION_DB = [
     { 
         id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
         desc: "【冬の王者】真ん中の三つ星が特徴。左上の赤い星「ベテルギウス」は、もうすぐ爆発するかもしれない超巨大な星です。", 
+        desc_en: "[Winter King] Famous for the three belt stars. Betelgeuse (top left) is a red supergiant that might explode soon.",
         myth: "海の神ポセイドンの子で、乱暴者の狩人。サソリに刺されて死んだため、サソリ座が昇ると逃げるように沈んでいきます。",
+        myth_en: "Son of Poseidon and a mighty hunter. He was stung to death by a scorpion, so he sets as Scorpius rises.",
         centerRA: 5.6, centerDec: 0.0, 
         lines: ["Betelgeuse","Alnitak", "Alnitak","Saiph", "Rigel","Mintaka", "Mintaka","Alnilam", "Alnilam","Alnitak", "Betelgeuse","Bellatrix", "Mintaka","Bellatrix", "Alnitak","Rigel"] 
     },
     { 
         id: "sco", rank: 1, name: "さそり座", en: "Scorpius", 
         desc: "【夏のS字】南の空の大きなS字カーブ。赤い1等星「アンタレス」は「火星に対抗するもの」という意味です。", 
+        desc_en: "[Summer S-Shape] A large S-curve in the south. The red star Antares means 'Rival of Mars'.",
         myth: "オリオンを倒した手柄で星座になりました。だからオリオン座とは決して同じ空には現れません。",
+        myth_en: "Placed in the sky for defeating Orion. They are never seen in the sky at the same time.",
         centerRA: 16.5, centerDec: -26.0, 
         lines: ["Antares","Dschubba", "Dschubba","Graffias", "Antares","Wei", "Antares","Tau Sco", "Tau Sco","Epsilon Sco", "Epsilon Sco","Mu Sco", "Mu Sco","Zeta Sco", "Zeta Sco","Eta Sco", "Eta Sco","Sargas", "Sargas","Shaula"] 
     },
     { 
         id: "sum", rank: 1, name: "夏の大三角", en: "Summer Triangle", 
         desc: "【夏の目印】こと座のベガ（織姫）、わし座のアルタイル（彦星）、はくちょう座のデネブを結ぶ巨大な三角形。", 
+        desc_en: "[Summer Mark] A huge triangle connecting Vega (Lyra), Altair (Aquila), and Deneb (Cygnus).",
         myth: "ベガまでの距離は25光年ですが、デネブは1400光年も彼方にあります。デネブは超・超巨大な星だから、遠くても明るく見えるのです。",
+        myth_en: "Vega is 25 light-years away, while Deneb is 1400 light-years away. Deneb is super massive!",
         centerRA: 19.5, centerDec: 28.0, 
         lines: ["Vega","Altair", "Altair","Deneb", "Deneb","Vega"] 
     },
     { 
         id: "tau", rank: 1, name: "おうし座", en: "Taurus", 
         desc: "【冬のV字】V字型の顔と、美しい星団「プレアデス（すばる）」が特徴。", 
+        desc_en: "[Winter V] Features a V-shaped face and the beautiful Pleiades cluster (Subaru).",
         myth: "「すばる」は「統（す）べる＝集まる」という意味の古い日本語。自動車メーカー「SUBARU」のエンブレムにもなっています。",
+        myth_en: "'Subaru' is ancient Japanese for 'unite'. It is also the emblem of the car maker SUBARU.",
         centerRA: 4.5, centerDec: 16.0, 
         lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau"] 
     },
     { 
         id: "gem", rank: 1, name: "ふたご座", en: "Gemini", 
         desc: "【仲良し兄弟】カストル（兄・銀）とポルックス（弟・金）が並んで輝いています。", 
+        desc_en: "[Friendly Twins] Castor (Silver) and Pollux (Gold) shine side by side.",
         myth: "実はカストルは6つの星が重なった「6重連星」という、とんでもなく複雑な星です。望遠鏡がないと1つに見えます。",
+        myth_en: "Castor is actually a sextuple star system (6 stars!). To the naked eye, it looks like one.",
         centerRA: 7.0, centerDec: 22.0, 
         lines: ["Castor","Pollux"] 
     },
     { 
         id: "leo", rank: 1, name: "しし座", en: "Leo", 
         desc: "【春の鎌】「？」を裏返したような形（ししの大鎌）が頭。1等星レグルスは「小さな王様」という意味。", 
+        desc_en: "[Spring Sickle] The backward '?' shape is the head. Regulus means 'Little King'.",
         myth: "英雄ヘラクレスと戦った不死身のライオン。硬い皮膚を持っていましたが、ヘラクレスに首を絞められて退治されました。",
+        myth_en: "The Nemean Lion fought by Hercules. It had impenetrable skin but was strangled by the hero.",
         centerRA: 10.5, centerDec: 15.0, 
         lines: ["Regulus","Denebola", "Regulus","Algieba"] 
     },
     { 
         id: "vir", rank: 1, name: "おとめ座", en: "Virgo", 
         desc: "【春の女神】白く輝くスピカが目印。「スピカ」は「麦の穂」という意味です。", 
+        desc_en: "[Spring Maiden] Marked by the white star Spica, meaning 'Ear of Wheat'.",
         myth: "農業の女神デメテル、またはその娘ペルセポネの姿。彼女が地下の国に行くと冬になり、戻ってくると春になります。",
+        myth_en: "Represents Demeter or Persephone. When she goes to the underworld, winter comes.",
         centerRA: 13.3, centerDec: -2.0, 
         lines: ["Spica","Porrima", "Spica","Vindemiatrix"] 
     },
     { 
         id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
         desc: "【北のW】北極星を探すための目印。季節によって「W」に見えたり「M」に見えたりします。", 
+        desc_en: "[North W] A guide to find Polaris. Looks like 'W' or 'M' depending on the season.",
         myth: "「娘の方が神より美しい」と自慢したため、罰として椅子に縛られたまま空を回され続けている王妃です。",
+        myth_en: "A vain queen punished for boasting about her daughter's beauty. She rotates in her chair forever.",
         centerRA: 1.0, centerDec: 60.0, 
         lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"] 
     },
     { 
         id: "and", rank: 2, name: "アンドロメダ座", en: "Andromeda", 
         desc: "【銀河の窓】肉眼で見える最も遠い天体「アンドロメダ銀河」がある場所です。", 
+        desc_en: "[Galaxy Window] Home to the Andromeda Galaxy, the farthest object visible to the naked eye.",
         myth: "アンドロメダ銀河は、私たちの天の川銀河と約40億年後に衝突・合体すると予想されています。",
+        myth_en: "The Andromeda Galaxy is expected to collide with our Milky Way in 4 billion years.",
         centerRA: 0.7, centerDec: 38.0, 
         lines: ["Alpheratz","Mirach", "Mirach","Almach"] 
     },
     { 
         id: "peg", rank: 2, name: "ペガスス座", en: "Pegasus", 
         desc: "【秋の四辺形】大きな四角形が胴体。逆さまになって飛んでいる天馬の姿です。", 
+        desc_en: "[Autumn Square] The Great Square is the body. A flying horse, upside down.",
         myth: "メドゥーサの血から生まれた翼のある馬。英雄ベレロフォンを乗せて怪物キマイラを倒しました。",
+        myth_en: "Born from Medusa's blood. The winged horse that carried Bellerophon to defeat the Chimera.",
         centerRA: 23.0, centerDec: 20.0, 
         lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab"] 
     },
     { 
         id: "cyg", rank: 2, name: "はくちょう座", en: "Cygnus", 
         desc: "【北十字】天の川の上を飛ぶ十字架の形。くちばしの星アルビレオは、宝石のように美しい二重星です。", 
+        desc_en: "[Northern Cross] A cross flying over the Milky Way. Albireo is a beautiful double star.",
         myth: "デネブの近くには、ブラックホール候補として有名な「はくちょう座X-1」があります（目には見えません）。",
+        myth_en: "Near Deneb lies Cygnus X-1, a famous black hole candidate (invisible).",
         centerRA: 20.5, centerDec: 42.0, 
         lines: ["Deneb","Sadr", "Sadr","Albireo", "Sadr","Gienah", "Sadr","Rukh"] 
     },
     { 
         id: "umi", rank: 2, name: "こぐま座", en: "Ursa Minor", 
         desc: "【動かない星】北極星（ポラリス）がある星座。一年中、北の空に見えます。", 
+        desc_en: "[The Fixed Star] Home to Polaris. Visible in the northern sky all year round.",
         myth: "現在の北極星はポラリスですが、地球の首振り運動（歳差）により、1万2千年後には「ベガ」が北極星になります。",
+        myth_en: "Polaris is the North Star now, but in 12,000 years, Vega will take its place due to precession.",
         centerRA: 15.0, centerDec: 75.0, 
         lines: ["Polaris","Yildun", "Yildun","Epsilon UMi", "Epsilon UMi","Zeta UMi", "Zeta UMi","Kochab", "Kochab","Pherkad", "Pherkad","Zeta UMi"] 
     }
@@ -523,6 +638,19 @@ const Utils = {
         if (bv < 0.0) return {r:180, g:200, b:255}; if (bv < 0.5) return {r:230, g:240, b:255}; 
         if (bv < 1.0) return {r:255, g:255, b:240}; if (bv < 1.5) return {r:255, g:220, b:180}; 
         return {r:255, g:200, b:180}; 
+    },
+    // New: Helper to update all text elements
+    updateDOMText: () => {
+        const dict = I18N[App.state.lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) el.innerHTML = dict[key]; // Allow HTML for <br>
+        });
+        
+        // Dynamic Loc Name
+        const locKey = App.state.useGPS ? 'loc_gps' : 'loc_fixed';
+        if (App.state.useGPS) document.getElementById('loc-name').innerText = `${dict[locKey]} (${App.state.lat.toFixed(1)},${App.state.lon.toFixed(1)})`;
+        else document.getElementById('loc-name').innerText = dict[locKey];
     }
 };
 
@@ -537,22 +665,29 @@ const Guide = {
     buildList: () => {
         const list = document.getElementById('guide-list');
         list.innerHTML = '';
+        const dict = I18N[App.state.lang];
         CONSTELLATION_DB.forEach(c => {
             if (!App.state.ranks[c.rank]) return;
             const card = document.createElement('div');
             card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
-            const myth = App.state.lang==='ja' ? `<div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${c.myth}</div>` : '';
+            
+            // Get correct text based on lang
+            const name = App.state.lang === 'en' ? c.en : c.name;
+            const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
+            const myth = App.state.lang === 'en' ? c.myth_en : c.myth;
+            
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                    <div><h3 class="font-bold text-lg text-white">${App.state.lang==='en'?c.en:c.name}</h3>${App.state.lang!=='en'?`<p class="text-xs text-cyan-400 font-mono">${c.en}</p>`:''}</div>
+                    <div><h3 class="font-bold text-lg text-white">${name}</h3></div>
                     <span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span>
                 </div>
-                <p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${c.desc}</p>${myth}
+                <p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${desc}</p>
+                <div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${myth}</div>
                 <button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>
             `;
             list.appendChild(card);
         });
-        if (list.children.length === 0) list.innerHTML = '<p class="text-center text-slate-500 mt-10">設定で表示する星座をオンにしてください。</p>';
+        if (list.children.length === 0) list.innerHTML = `<p class="text-center text-slate-500 mt-10">${dict.cat_title} Check</p>`;
     },
     startNav: (id) => {
         const c = CONSTELLATION_DB.find(x => x.id === id); if (!c) return;
@@ -560,15 +695,16 @@ const Guide = {
         App.state.mode = 'guide';
         document.getElementById('guide-modal').classList.add('hidden-force');
         document.getElementById('nav-ui').classList.remove('hidden-force');
-        document.getElementById('nav-target-name').innerText = App.state.lang==='en' ? c.en : c.name;
+        const tName = App.state.lang==='en' ? c.en : c.name;
+        document.getElementById('nav-target-name').innerText = tName;
         document.getElementById('btn-cancel-nav').classList.remove('hidden-force');
-        Utils.toast(`Navigating to ${App.state.lang==='en'?c.en:c.name} 🚀`);
+        Utils.toast(`${I18N[App.state.lang].nav_start} ${tName}`);
     },
     stopNav: () => {
         Guide.target = null; App.state.mode = 'normal';
         document.getElementById('nav-ui').classList.add('hidden-force');
         document.getElementById('btn-cancel-nav').classList.add('hidden-force');
-        Utils.toast("Navigation Ended");
+        Utils.toast(I18N[App.state.lang].nav_end);
     }
 };
 
@@ -604,7 +740,8 @@ const App = {
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
-        isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 }
+        isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
+        azimuth: 0 // Current Heading for Compass
     },
 
     init: async () => {
@@ -703,8 +840,44 @@ const App = {
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; 
         let az = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(az<0) az+=360;
+        App.state.azimuth = az; // Store for Compass
+        
         document.getElementById('debug-az').innerText = Math.round(az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
+        
+        // Update Compass HUD
+        App.updateCompass(az);
+    },
+    
+    // NEW: Compass Drawer
+    updateCompass: (az) => {
+        const hud = document.getElementById('compass-ticks');
+        hud.innerHTML = '';
+        const width = hud.clientWidth;
+        const pxPerDeg = width / 120; // Show 120 deg range
+        
+        const dirs = [
+            {v:0, l:'N'}, {v:45, l:'NE'}, {v:90, l:'E'}, {v:135, l:'SE'},
+            {v:180, l:'S'}, {v:225, l:'SW'}, {v:270, l:'W'}, {v:315, l:'NW'}, {v:360, l:'N'}
+        ];
+        
+        dirs.forEach(d => {
+            let diff = d.v - az;
+            if(diff < -180) diff += 360;
+            if(diff > 180) diff -= 360;
+            
+            // Only draw if within visible range
+            if (Math.abs(diff) < 60) {
+                const pos = (width/2) + (diff * pxPerDeg);
+                const tick = document.createElement('div');
+                tick.className = 'compass-mark';
+                tick.style.left = pos + 'px';
+                tick.style.color = (d.l.length===1) ? '#22d3ee' : '#94a3b8';
+                tick.style.fontSize = (d.l.length===1) ? '16px' : '10px';
+                tick.innerText = d.l;
+                hud.appendChild(tick);
+            }
+        });
     },
 
     loop: () => {
@@ -774,28 +947,30 @@ const App = {
                     visibleConsts.push({c, x:cx, y:cy, dist:d});
                     ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "#fff");
                     ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
-                    ctx.fillText(state.lang==='en'?c.en:c.name, cx, cy);
+                    
+                    const tName = state.lang==='en' ? c.en : c.name;
+                    ctx.fillText(tName, cx, cy);
                 }
             }
             if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.4)"; ctx.lineWidth = 1; }
         });
         ctx.stroke();
 
-        // 5. Smart Bubble Logic (Replaced Canvas Text)
+        // 5. Smart Bubble Logic
         const bubble = document.getElementById('smart-bubble');
         if (state.showInfo && visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
             const target = visibleConsts[0];
             if (target.dist < 150) {
-                // Update Content
+                // Update Content (i18n aware)
                 document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
-                document.getElementById('bubble-tag').innerText = state.lang==='en' ? 'Constellation' : (target.c.rank===1 ? '有名な星座' : '星座');
-                document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.en : target.c.desc;
+                const dict = I18N[state.lang];
+                document.getElementById('bubble-tag').innerText = (target.c.rank===1 ? dict.famous_const : dict.constellation);
+                document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.desc_en : target.c.desc;
                 
-                // Position Bubble (Above Star)
-                const bx = Math.min(Math.max(target.x, 140), width-140); // Clamp X
-                const by = Math.max(target.y - 140, 20); // Clamp Y
-                bubble.style.left = (bx - 128) + 'px'; // Center 256px wide bubble
+                const bx = Math.min(Math.max(target.x, 140), width-140);
+                const by = Math.max(target.y - 140, 20);
+                bubble.style.left = (bx - 128) + 'px'; 
                 bubble.style.top = by + 'px';
                 bubble.style.opacity = 1;
             } else {
@@ -836,13 +1011,13 @@ const App = {
             navigator.geolocation.getCurrentPosition(pos => {
                 App.state.lat = pos.coords.latitude; App.state.lon = pos.coords.longitude;
                 App.state.useGPS = true;
-                document.getElementById('loc-name').innerText=`GPS (${App.state.lat.toFixed(2)},${App.state.lon.toFixed(2)})`;
-                Utils.toast("現在地を取得しました 🛰️");
-            }, () => Utils.toast("GPS取得エラー"));
+                Utils.updateDOMText(); // Update Text
+                Utils.toast(I18N[App.state.lang].loc_gps + " OK");
+            }, () => Utils.toast("GPS Error"));
         } else {
             App.state.lat = 32.698; App.state.lon = 128.839; App.state.useGPS = false;
-            document.getElementById('loc-name').innerText="五島列島 (Fixed)";
-            Utils.toast("五島列島モードに戻しました");
+            Utils.updateDOMText(); // Update Text
+            Utils.toast(I18N[App.state.lang].loc_fixed);
         }
     },
     toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
@@ -858,8 +1033,12 @@ const App = {
     setOpacity: (k,v) => { App.state.opacity[k] = parseFloat(v); if(k==='bg')document.getElementById('val-bg').innerText=Math.round(v*100)+"%"; if(k==='milky')document.getElementById('val-milky').innerText=Math.round(v*100)+"%"; },
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
-    setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v19.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    setLang: (l) => { 
+        App.state.lang = l; 
+        Guide.buildList(); 
+        Utils.updateDOMText(); 
+    },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v20.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -873,15 +1052,3 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
-```
-
-### 📦 Deployment Checklist
-GitHubにアップロードする際は、`sw.js` のバージョンを上げ、この新しいアプリをキャッシュリストに追加してください：
-
-```markdown
-// sw.js
-const CACHE_NAME = 'adom-lab-v19'; // v18 -> v19 (Update version)
-const INITIAL_ASSETS = [
-  './gotostarview.html', // ← 今回のファイル
-  // ... existing assets
-];
