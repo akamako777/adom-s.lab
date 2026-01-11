@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v20.0 (Global Compass)</title>
+    <title>Five Islands Stargazer v21.0 (Time & Compass)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,11 +69,11 @@
         }
         body.mode-solar .bubble-tail { border-top-color: rgba(255, 255, 255, 0.95); }
 
-        /* Compass HUD (NEW) */
+        /* Compass HUD (Independent) */
         #compass-bar {
-            position: absolute; bottom: 100px; left: 0; width: 100%; height: 30px;
-            pointer-events: none; opacity: 0.8;
-            background: linear-gradient(to right, transparent, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.5) 80%, transparent);
+            position: absolute; bottom: 120px; left: 0; width: 100%; height: 30px;
+            pointer-events: none; opacity: 0.9;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.6) 80%, transparent);
             display: flex; justify-content: center; align-items: center;
             font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #22d3ee;
             border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(255,255,255,0.2);
@@ -81,6 +81,17 @@
         #compass-ticks { position: relative; width: 300px; height: 100%; overflow: hidden; }
         .compass-mark { position: absolute; top: 5px; transform: translateX(-50%); transition: left 0.1s linear; font-weight: bold; }
         .compass-center { position: absolute; left: 50%; top: -5px; width: 2px; height: 40px; bg-red-500; z-index: 10; border-left: 2px solid #ef4444; }
+
+        /* Time Slider (NEW) */
+        #time-slider-container {
+            position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 400px; z-index: 30;
+            display: flex; flex-direction: column; items-center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #time-slider-container.active { opacity: 1; pointer-events: auto; }
+        
+        .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
 
         /* 🚪 PC Gate */
         #star-gate {
@@ -100,8 +111,8 @@
         
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
-            background: #22d3ee; border: 2px solid #ffffff; cursor: pointer; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%;
+            background: #22d3ee; border: 2px solid #ffffff; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
         
@@ -117,8 +128,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v20.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Global Compass Edition</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v21.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Time & Compass</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -191,7 +202,13 @@
                 </div>
             </div>
 
-            <!-- Compass HUD (NEW) -->
+            <!-- Time Slider (NEW: Centered Bottom) -->
+            <div id="time-slider-container">
+                <div id="time-display" class="time-label">TIME TRAVEL: +0h</div>
+                <input type="range" id="time-range" min="-12" max="12" step="0.5" value="0" oninput="App.setTimeOffset(this.value)" onchange="App.resetTime(this.value)">
+            </div>
+
+            <!-- Compass HUD (NEW: Independent) -->
             <div id="compass-bar">
                 <div class="compass-center"></div>
                 <div id="compass-ticks">
@@ -204,15 +221,21 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v20.0 Global</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v21.0 Time+Compass</div>
                 </div>
             </div>
 
             <!-- Bottom -->
             <div class="flex justify-center items-end pb-8 interactive gap-6">
+                <!-- Clock Button (NEW) -->
+                <button onclick="App.toggleTimeSlider()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-yellow-400 text-yellow-300 shadow-lg bg-yellow-900/30">
+                    <span class="text-xl">⏳</span>
+                </button>
+                
                 <button onclick="App.takeScreenshot()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-cyan-400 shadow-lg">
                     <span class="text-xl">📸</span>
                 </button>
+                
                 <button id="btn-cancel-nav" onclick="Guide.stopNav()" class="hidden-force glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-500/50 bg-red-900/20 active:scale-90 transition text-red-300 font-bold text-xs">
                     STOP
                 </button>
@@ -236,7 +259,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v20</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">TIME & COMPASS v21</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -342,9 +365,10 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v20.0 (Global Compass Edition)
+ * 🌌 FIVE ISLANDS STARGAZER v21.0 (Time & Compass Edition)
  * Features:
- * - Compass HUD (Visual Azimuth Bar)
+ * - Independent Compass HUD (Unaffected by Swipe)
+ * - Time Travel Slider (Visual Proof of North Star Rotation)
  * - Full i18n Support (UI + Content)
  * - Sensor Drift Disclaimer
  * - Smart Bubble + AR Camera + Magnetic Declination Fix
@@ -375,7 +399,9 @@ const I18N = {
         nav_start: "へのナビを開始 🚀",
         nav_end: "ナビを終了しました",
         constellation: "星座",
-        famous_const: "有名な星座"
+        famous_const: "有名な星座",
+        time_travel: "時間旅行",
+        time_reset: "現在時刻に戻る"
     },
     en: {
         guide_title: "Star Guide (Science & Myth)",
@@ -400,7 +426,9 @@ const I18N = {
         nav_start: "Navigating to ",
         nav_end: "Navigation Ended",
         constellation: "Constellation",
-        famous_const: "Famous Constellation"
+        famous_const: "Famous Constellation",
+        time_travel: "TIME TRAVEL",
+        time_reset: "Reset Time"
     }
 };
 
@@ -517,61 +545,6 @@ const CONSTELLATION_DB = [
     }
 ];
 
-const STARS_DATA = [
-    { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.97, ci: 0.6 },
-    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 },
-    { name: "Betelgeuse", ra: 5.91, dec: 7.40, mag: 0.45, ci: 1.5 },
-    { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.12, ci: -0.03 },
-    { name: "Vega", ra: 18.61, dec: 38.78, mag: 0.03, ci: 0.0 },
-    { name: "Altair", ra: 19.84, dec: 8.87, mag: 0.77, ci: 0.22 },
-    { name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, ci: 0.09 },
-    { name: "Antares", ra: 16.49, dec: -26.43, mag: 1.06, ci: 1.83 },
-    { name: "Arcturus", ra: 14.26, dec: 19.18, mag: -0.05, ci: 1.23 },
-    { name: "Capella", ra: 5.27, dec: 45.99, mag: 0.08, ci: 0.8 },
-    { name: "Procyon", ra: 7.65, dec: 5.22, mag: 0.34, ci: 0.4 },
-    { name: "Spica", ra: 13.42, dec: -11.16, mag: 0.98, ci: -0.2 },
-    { name: "Aldebaran", ra: 4.60, dec: 16.50, mag: 0.87, ci: 1.5 },
-    { name: "Pollux", ra: 7.75, dec: 28.02, mag: 1.15, ci: 1.0 },
-    { name: "Castor", ra: 7.58, dec: 31.88, mag: 1.58, ci: 0.0 },
-    { name: "Regulus", ra: 10.14, dec: 11.96, mag: 1.36, ci: -0.1 },
-    { name: "Alnitak", ra: 5.67, dec: -1.94, mag: 1.7, ci: -0.2 },
-    { name: "Alnilam", ra: 5.60, dec: -1.20, mag: 1.6, ci: -0.2 },
-    { name: "Mintaka", ra: 5.53, dec: -0.29, mag: 2.2, ci: -0.2 },
-    { name: "Saiph", ra: 5.79, dec: -9.66, mag: 2.0, ci: -0.1 },
-    { name: "Bellatrix", ra: 5.41, dec: 6.34, mag: 1.6, ci: -0.2 },
-    { name: "Schedar", ra: 0.67, dec: 56.53, mag: 2.2, ci: 1.1 },
-    { name: "Caph", ra: 0.15, dec: 59.14, mag: 2.2, ci: 0.3 },
-    { name: "Gamma Cas", ra: 0.94, dec: 60.71, mag: 2.1, ci: -0.1 },
-    { name: "Ruchbah", ra: 1.42, dec: 60.23, mag: 2.6, ci: 0.1 },
-    { name: "Segin", ra: 1.90, dec: 63.67, mag: 3.3, ci: 0.3 },
-    { name: "Dschubba", ra: 16.00, dec: -22.62, mag: 2.3, ci: -0.1 },
-    { name: "Graffias", ra: 16.08, dec: -19.80, mag: 2.5, ci: -0.1 },
-    { name: "Wei", ra: 16.83, dec: -38.02, mag: 2.2, ci: 1.1 },
-    { name: "Sargas", ra: 17.62, dec: -43.00, mag: 1.8, ci: 0.4 },
-    { name: "Shaula", ra: 17.56, dec: -37.10, mag: 1.6, ci: -0.2 },
-    { name: "Sadr", ra: 20.37, dec: 40.25, mag: 2.2, ci: 0.6 },
-    { name: "Albireo", ra: 19.51, dec: 27.96, mag: 3.0, ci: 1.0 },
-    { name: "Gienah", ra: 20.77, dec: 33.96, mag: 2.4, ci: 1.0 },
-    { name: "Rukh", ra: 19.76, dec: 45.13, mag: 2.8, ci: -0.1 },
-    { name: "Kochab", ra: 14.84, dec: 74.15, mag: 2.0, ci: 1.0 },
-    { name: "Pherkad", ra: 15.34, dec: 71.83, mag: 3.0, ci: 0.0 },
-    { name: "Yildun", ra: 17.53, dec: 86.58, mag: 4.3, ci: 0.0 },
-    { name: "Arneb", ra: 5.55, dec: -17.82, mag: 2.5, ci: 0.2 },
-    { name: "Nihal", ra: 5.47, dec: -20.76, mag: 2.8, ci: 0.5 },
-    { name: "Alpheratz", ra: 0.13, dec: 29.09, mag: 2.0, ci: -0.1 },
-    { name: "Mirach", ra: 1.16, dec: 35.62, mag: 2.0, ci: 1.6 },
-    { name: "Almach", ra: 2.06, dec: 42.33, mag: 2.1, ci: 1.3 },
-    { name: "Markab", ra: 23.08, dec: 15.21, mag: 2.5, ci: -0.1 },
-    { name: "Scheat", ra: 23.06, dec: 28.08, mag: 2.4, ci: 1.6 },
-    { name: "Algenib", ra: 0.22, dec: 15.18, mag: 2.8, ci: -0.1 },
-    { name: "Denebola", ra: 11.82, dec: 14.57, mag: 2.1, ci: 0.0 },
-    { name: "Algieba", ra: 10.33, dec: 19.84, mag: 2.0, ci: 1.2 },
-    { name: "Elnath", ra: 5.43, dec: 28.60, mag: 1.6, ci: -0.1 },
-    { name: "Zeta Tau", ra: 5.62, dec: 21.14, mag: 3.0, ci: -0.2 },
-    { name: "Porrima", ra: 12.69, dec: -1.45, mag: 2.7, ci: 0.3 },
-    { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
-];
-
 // --- 1. VECTOR & QUATERNION ENGINE (v18 YXZ + Gamma Fix) ---
 const Math3D = {
     qMultiply: (a, b) => {
@@ -614,8 +587,10 @@ const Math3D = {
 
 // --- 2. ASTRO PHYSICS ---
 const Astro = {
-    getLST: (lon, date = new Date()) => {
-        const d = (date.getTime()/1000 - 946727935.816) / 86400;
+    // Adjusted to accept time offset in hours
+    getLST: (lon, date = new Date(), offsetHours = 0) => {
+        const t = date.getTime() + offsetHours * 3600000;
+        const d = (t/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
     getStarVector: (ra, dec, lat, lst) => {
@@ -741,7 +716,7 @@ const App = {
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
         isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
-        azimuth: 0 // Current Heading for Compass
+        azimuth: 0, timeOffset: 0 // New: Time offset
     },
 
     init: async () => {
@@ -805,7 +780,7 @@ const App = {
         if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
         else if (window.orientation) screenOrient = window.orientation;
 
-        // 2. Normalize Alpha
+        // 2. Normalize Alpha (Base Heading)
         let a = alpha;
         if (isIOS && webkitCompass != null) a = -webkitCompass;
         else { a = alpha; if (!isIOS) a -= 270; }
@@ -813,10 +788,18 @@ const App = {
         // 3. Magnetic Declination Fix (Japan/Goto approx -7 deg)
         a -= 7; 
 
-        a += App.state.manualOffset;
-        if (App.state.reverseAlpha) a = -a;
+        // Store RAW Azimuth for Independent Compass (before manual offset)
+        // We need raw heading in 0-360 format.
+        // Simplified raw heading calculation for compass HUD:
+        let rawHeading = a;
+        if (App.state.reverseAlpha) rawHeading = -rawHeading;
+        
+        // 4. Apply Manual Offset for STAR rendering ONLY
+        let starAlpha = a + App.state.manualOffset;
+        if (App.state.reverseAlpha) starAlpha = -starAlpha;
 
-        const rAlpha = a * deg2rad;
+        // --- Calculate View Matrix for Stars ---
+        const rAlpha = starAlpha * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
         const rOrient = screenOrient * deg2rad;
@@ -837,19 +820,37 @@ const App = {
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
+        // --- Calculate Compass Azimuth (Independent of Manual Offset) ---
+        // We re-calculate a basic azimuth just for the HUD based on Raw Heading
+        // This is an approximation since tilt affects compass, but 'rawHeading' dominates.
+        // For a perfect HUD we'd need a separate matrix, but rawHeading is usually enough for the bar.
+        // Let's refine: Use the same math but WITHOUT manualOffset to get "Real North" relative to screen.
+        
+        const rRawAlpha = (App.state.reverseAlpha ? -a : a) * deg2rad;
+        const qY_raw = Math3D.qFromAxisAngle([0, 1, 0], rRawAlpha);
+        let qDev_raw = Math3D.qMultiply(qY_raw, qX);
+        qDev_raw = Math3D.qMultiply(qDev_raw, qZ);
+        let qFinal_raw = Math3D.qMultiply(qDev_raw, qCamFix);
+        qFinal_raw = Math3D.qMultiply(qFinal_raw, qScreen);
+        const mRaw = Math3D.matFromQ(qFinal_raw);
+        
+        const rawFwdX = -mRaw[8], rawFwdY = -mRaw[9];
+        let compassAz = Math.atan2(rawFwdX, rawFwdY) * 180/Math.PI; 
+        if(compassAz<0) compassAz+=360;
+        
+        // Star Azimuth for Debug
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; 
-        let az = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(az<0) az+=360;
-        App.state.azimuth = az; // Store for Compass
-        
-        document.getElementById('debug-az').innerText = Math.round(az);
+        let starAz = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(starAz<0) starAz+=360;
+
+        document.getElementById('debug-az').innerText = Math.round(starAz);
         document.getElementById('debug-alt').innerText = Math.round(alt);
         
-        // Update Compass HUD
-        App.updateCompass(az);
+        // Update Compass HUD with INDEPENDENT Azimuth
+        App.updateCompass(compassAz);
     },
     
-    // NEW: Compass Drawer
+    // Compass Drawer (Visuals)
     updateCompass: (az) => {
         const hud = document.getElementById('compass-ticks');
         hud.innerHTML = '';
@@ -872,7 +873,8 @@ const App = {
                 const tick = document.createElement('div');
                 tick.className = 'compass-mark';
                 tick.style.left = pos + 'px';
-                tick.style.color = (d.l.length===1) ? '#22d3ee' : '#94a3b8';
+                tick.style.color = (d.l.length===1) ? '#ef4444' : '#94a3b8'; // Red for cardinals
+                if(d.l === 'N') tick.style.color = '#ef4444'; // North is Red
                 tick.style.fontSize = (d.l.length===1) ? '16px' : '10px';
                 tick.innerText = d.l;
                 hud.appendChild(tick);
@@ -894,7 +896,8 @@ const App = {
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
-        const lst = Astro.getLST(state.lon);
+        // Apply Time Offset here
+        const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter';
@@ -1021,6 +1024,23 @@ const App = {
         }
     },
     toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
+    
+    // NEW: Time Slider Toggle
+    toggleTimeSlider: () => {
+        const slider = document.getElementById('time-slider-container');
+        slider.classList.toggle('active');
+        // Reset to 0 when closed? No, let them keep it.
+        Utils.toast(I18N[App.state.lang].time_travel);
+    },
+    setTimeOffset: (val) => {
+        App.state.timeOffset = parseFloat(val);
+        const sign = App.state.timeOffset >= 0 ? '+' : '';
+        document.getElementById('time-display').innerText = `TIME TRAVEL: ${sign}${App.state.timeOffset}h`;
+    },
+    resetTime: (val) => {
+        if(val == 0) Utils.toast(I18N[App.state.lang].time_reset);
+    },
+
     toggleAR: (v) => { App.state.isAR = v; document.getElementById('camera-feed').style.opacity = v?1:0; App.setOpacity('bg', v?0.0:1); document.querySelector('input[oninput*="bg"]').value = v?0.0:1; },
     toggleViewMode: () => {
         App.state.viewMode = (App.state.viewMode + 1) % 3;
@@ -1038,7 +1058,7 @@ const App = {
         Guide.buildList(); 
         Utils.updateDOMText(); 
     },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v20.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v21.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
