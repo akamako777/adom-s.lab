@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v12</title>
+    <title>Five Islands Stargazer v13.1</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,8 +93,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v12</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Omni-Orientation</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v13</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Revolution</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -192,7 +192,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">OMNI-ORIENTATION v12</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v13</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -229,7 +229,6 @@
             <div class="space-y-4 pt-4 border-t border-white/10">
                 <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider">表示オプション (Visibility)</p>
                 
-                <!-- NEW FEATURE: Info Overlay -->
                 <div class="flex items-center justify-between bg-cyan-900/30 p-2 rounded-lg border border-cyan-500/20">
                     <div>
                         <span class="text-sm font-bold text-cyan-300">🌟 星座の解説を表示</span>
@@ -274,9 +273,9 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v12 (Omni-Orientation)
+ * 🌌 FIVE ISLANDS STARGAZER v13 (Matrix Revolution)
  * Architect: Gemini Canvas | Date: 2027 Protocol
- * Fix: Correct AR orientation for Landscape/Tablet devices
+ * Core Upgrade: 3D Matrix Math for True AR & Landscape Support
  */
 
 // --- 0. DATA STRUCTURE ---
@@ -287,8 +286,8 @@ const CONSTELLATION_DB = [
         id: "ori", rank: RANK.FAMOUS,
         name: "オリオン座", en: "Orion",
         desc: "冬の夜空の王者。真ん中の三つ星と、赤いベテルギウス、青いリゲルが目印。",
-        myth: "【神話】海の神ポセイドンの子で、優れた狩人でした。しかし、「俺に倒せない獲物はいない」と豪語したため、神々の怒りを買い、大サソリに刺されて命を落としました。だから今でもサソリ座が昇るとオリオンは沈んで逃げていくのです。",
-        desc_en: "The hunter. Look for the three stars in the belt, red Betelgeuse, and blue Rigel.",
+        myth: "【神話】海の神ポセイドンの子で、優れた狩人でした。しかし、「俺に倒せない獲物はいない」と豪語したため、神々の怒りを買い、大サソリに刺されて命を落としました。",
+        desc_en: "The hunter. Look for the three stars in the belt.",
         centerRA: 5.6, centerDec: 0.0,
         lines: ["Betelgeuse","Alnitak", "Alnitak","Saiph", "Rigel","Mintaka", "Mintaka","Alnilam", "Alnilam","Alnitak", "Betelgeuse","Bellatrix", "Mintaka","Bellatrix", "Alnitak","Rigel"]
     },
@@ -296,8 +295,8 @@ const CONSTELLATION_DB = [
         id: "sco", rank: RANK.FAMOUS,
         name: "さそり座", en: "Scorpius",
         desc: "南の空に浮かぶS字カーブ。心臓で赤く輝くアンタレスが美しい。",
-        myth: "【神話】傲慢な狩人オリオンをこらしめるために、女神ヘラ（一説にはガイア）が放った巨大な毒サソリです。その功績で空に上げられました。心臓の星アンタレスは「火星に対抗するもの」という意味です。",
-        desc_en: "A large S-shape in the south. Antares shines red at its heart.",
+        myth: "【神話】傲慢な狩人オリオンをこらしめるために、女神ヘラが放った巨大な毒サソリです。その功績で空に上げられました。",
+        desc_en: "A large S-shape in the south.",
         centerRA: 16.5, centerDec: -26.0,
         lines: ["Antares","Dschubba", "Dschubba","Graffias", "Antares","Wei", "Antares","Tau Sco", "Tau Sco","Epsilon Sco", "Epsilon Sco","Mu Sco", "Mu Sco","Zeta Sco", "Zeta Sco","Eta Sco", "Eta Sco","Sargas", "Sargas","Shaula"]
     },
@@ -305,7 +304,7 @@ const CONSTELLATION_DB = [
         id: "sum", rank: RANK.FAMOUS,
         name: "夏の大三角", en: "Summer Triangle",
         desc: "こと座のベガ、わし座のアルタイル、はくちょう座のデネブを結ぶ巨大な三角形。",
-        myth: "【神話】日本では「七夕伝説」で有名です。ベガが織姫、アルタイルが彦星。天の川によって引き裂かれた二人は、年に一度、7月7日の夜だけ会うことが許されています。",
+        myth: "【神話】日本では「七夕伝説」で有名です。ベガが織姫、アルタイルが彦星です。",
         desc_en: "A giant triangle formed by Vega, Altair, and Deneb.",
         centerRA: 19.5, centerDec: 28.0,
         lines: ["Vega","Altair", "Altair","Deneb", "Deneb","Vega"]
@@ -315,42 +314,42 @@ const CONSTELLATION_DB = [
         name: "おうし座", en: "Taurus",
         desc: "オリオン座の右上にあるV字型と、プレアデス星団（すばる）が特徴。",
         myth: "【神話】大神ゼウスが、美しい王女エウロペに恋をし、彼女に近づくために変身した「白い牡牛」の姿だと言われています。",
-        desc_en: "The Bull. Known for the Hyades V-shape and the Pleiades cluster.",
+        desc_en: "The Bull. Known for the Hyades V-shape.",
         centerRA: 4.5, centerDec: 16.0,
-        lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau"] // Simplified
+        lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau"]
     },
     {
         id: "gem", rank: RANK.FAMOUS,
         name: "ふたご座", en: "Gemini",
         desc: "仲良く並んだ二つの明るい星、カストルとポルックスが目印。",
-        myth: "【神話】スパルタの王妃レダの双子の息子、カストルとポルックス。兄カストルが戦死した時、不死身の弟ポルックスは「兄と一緒でなければ不死などいらない」とゼウスに願い、二人で星座になりました。",
-        desc_en: "The Twins. Marked by the two bright stars Castor and Pollux.",
+        myth: "【神話】スパルタの王妃レダの双子の息子。兄カストルが戦死した時、不死身の弟ポルックスは兄と共に星座になることを願いました。",
+        desc_en: "The Twins. Marked by Castor and Pollux.",
         centerRA: 7.0, centerDec: 22.0,
-        lines: ["Castor","Pollux"] // Simplified
+        lines: ["Castor","Pollux"]
     },
     {
         id: "leo", rank: RANK.FAMOUS,
         name: "しし座", en: "Leo",
         desc: "春の夜空に見える、「？」を裏返したような形（ししの大鎌）が特徴。",
-        myth: "【神話】英雄ヘルクレスの12の冒険の最初に登場する、ネメアの森の人食いライオン。決して刃物を通さない強靭な皮膚を持っていましたが、ヘルクレスに絞め殺されました。",
-        desc_en: "The Lion. Look for the backward question mark pattern.",
+        myth: "【神話】英雄ヘルクレスに倒された、ネメアの森の人食いライオンです。",
+        desc_en: "The Lion. Look for the backward question mark.",
         centerRA: 10.5, centerDec: 15.0,
-        lines: ["Regulus","Denebola", "Regulus","Algieba"] // Simplified
+        lines: ["Regulus","Denebola", "Regulus","Algieba"]
     },
     {
         id: "vir", rank: RANK.FAMOUS,
         name: "おとめ座", en: "Virgo",
         desc: "春の夜空に白く輝く1等星スピカを持つ、大きな星座。",
-        myth: "【神話】農業の女神デメテル、またはその娘ペルセポネの姿と言われています。彼女が地下の冥界に行っている間（冬）、地上は草木が枯れ、帰ってくると春が来るとされています。",
-        desc_en: "The Maiden. Holds the bright white star Spica.",
+        myth: "【神話】農業の女神デメテル、またはその娘ペルセポネの姿と言われています。",
+        desc_en: "The Maiden. Holds the bright star Spica.",
         centerRA: 13.3, centerDec: -2.0,
-        lines: ["Spica","Porrima", "Spica","Vindemiatrix"] // Simplified
+        lines: ["Spica","Porrima", "Spica","Vindemiatrix"]
     },
     {
         id: "cas", rank: RANK.MEDIUM,
         name: "カシオペヤ座", en: "Cassiopeia",
         desc: "北の空に見えるW（ダブリュー）の形。北極星を見つける目印。",
-        myth: "【神話】古代エチオピアの王妃。「娘のアンドロメダの方が海の妖精より美しい」と自慢したため、海神ポセイドンの怒りを買い、娘を生贄に出す羽目になりました。今でも椅子に縛られたまま空を回っています。",
+        myth: "【神話】古代エチオピアの王妃。娘の美しさを自慢したため、神の怒りを買い、椅子に縛られたまま空を回っています。",
         desc_en: "The Queen. The W shape in the northern sky.",
         centerRA: 1.0, centerDec: 60.0,
         lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"]
@@ -359,8 +358,8 @@ const CONSTELLATION_DB = [
         id: "and", rank: RANK.MEDIUM,
         name: "アンドロメダ座", en: "Andromeda",
         desc: "ペガスス座の四辺形から伸びる星の列。肉眼で見える銀河「M31」がある。",
-        myth: "【神話】母カシオペヤの自慢のせいで、海の怪物（くじら座）の生贄にされそうになった悲劇の王女。間一髪で英雄ペルセウスに救出され、妻となりました。",
-        desc_en: "The Chained Princess. Contains the Andromeda Galaxy (M31).",
+        myth: "【神話】母の自慢のせいで生贄にされそうになった悲劇の王女。",
+        desc_en: "The Chained Princess.",
         centerRA: 0.7, centerDec: 38.0,
         lines: ["Alpheratz","Mirach", "Mirach","Almach"]
     },
@@ -368,17 +367,17 @@ const CONSTELLATION_DB = [
         id: "peg", rank: RANK.MEDIUM,
         name: "ペガスス座", en: "Pegasus",
         desc: "秋の空に浮かぶ大きな四角形（秋の四辺形）が胴体。",
-        myth: "【神話】英雄ペルセウスがメドゥーサの首を切り落とした時、その血から生まれた天馬です。背中に翼を持ち、空を駆けます。",
-        desc_en: "The Winged Horse. Known for the Great Square of Pegasus.",
+        myth: "【神話】メドゥーサの血から生まれた天馬です。",
+        desc_en: "The Winged Horse.",
         centerRA: 23.0, centerDec: 20.0,
-        lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab"] // Square
+        lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab"]
     },
     {
         id: "cyg", rank: RANK.MEDIUM,
         name: "はくちょう座", en: "Cygnus",
         desc: "天の川の上を飛ぶ十字架の形。「北十字」とも呼ばれる。",
-        myth: "【神話】大神ゼウスが、スパルタの王妃レダに会うために変身した白鳥の姿です。または、太陽神の息子パエトンの死を悲しんで白鳥になった親友キグナスの姿とも言われます。",
-        desc_en: "The Swan or Northern Cross flying along the Milky Way.",
+        myth: "【神話】大神ゼウスが変身した白鳥の姿です。",
+        desc_en: "The Swan or Northern Cross.",
         centerRA: 20.5, centerDec: 42.0,
         lines: ["Deneb","Sadr", "Sadr","Albireo", "Sadr","Gienah", "Sadr","Rukh"]
     },
@@ -386,8 +385,8 @@ const CONSTELLATION_DB = [
         id: "umi", rank: RANK.MEDIUM,
         name: "こぐま座", en: "Ursa Minor",
         desc: "ひしゃくの形。柄の先にあるのが、動かない星「北極星（ポラリス）」。",
-        myth: "【神話】母であるおおぐま座（カリスト）の息子アルカスが変えられた姿です。二人はゼウスによって空に上げられましたが、女神ヘラの呪いで海に沈む（休む）ことを許されず、北の空を回り続けています。",
-        desc_en: "The Little Dipper. Contains the North Star, Polaris.",
+        myth: "【神話】おおぐま座の息子アルカスが変えられた姿です。",
+        desc_en: "The Little Dipper.",
         centerRA: 15.0, centerDec: 75.0,
         lines: ["Polaris","Yildun", "Yildun","Epsilon UMi", "Epsilon UMi","Zeta UMi", "Zeta UMi","Kochab", "Kochab","Pherkad", "Pherkad","Zeta UMi"]
     },
@@ -395,7 +394,7 @@ const CONSTELLATION_DB = [
         id: "lep", rank: RANK.MINOR,
         name: "うさぎ座", en: "Lepus",
         desc: "オリオン座の足元に隠れている小さなうさぎの星座。",
-        myth: "【神話】狩人オリオンの獲物として、足元で逃げずにじっとしている野うさぎです。",
+        myth: "【神話】狩人オリオンの獲物として、足元でじっとしている野うさぎです。",
         desc_en: "A hare hiding under Orion's feet.",
         centerRA: 5.5, centerDec: -20.0,
         lines: ["Arneb","Nihal"]
@@ -419,69 +418,52 @@ const STARS_DATA = [
     { name: "Pollux", ra: 7.75, dec: 28.02, mag: 1.15, ci: 1.0 },
     { name: "Castor", ra: 7.58, dec: 31.88, mag: 1.58, ci: 0.0 },
     { name: "Regulus", ra: 10.14, dec: 11.96, mag: 1.36, ci: -0.1 },
-    // Orion
     { name: "Alnitak", ra: 5.67, dec: -1.94, mag: 1.7, ci: -0.2 },
     { name: "Alnilam", ra: 5.60, dec: -1.20, mag: 1.6, ci: -0.2 },
     { name: "Mintaka", ra: 5.53, dec: -0.29, mag: 2.2, ci: -0.2 },
     { name: "Saiph", ra: 5.79, dec: -9.66, mag: 2.0, ci: -0.1 },
     { name: "Bellatrix", ra: 5.41, dec: 6.34, mag: 1.6, ci: -0.2 },
-    // Cas
     { name: "Schedar", ra: 0.67, dec: 56.53, mag: 2.2, ci: 1.1 },
     { name: "Caph", ra: 0.15, dec: 59.14, mag: 2.2, ci: 0.3 },
     { name: "Gamma Cas", ra: 0.94, dec: 60.71, mag: 2.1, ci: -0.1 },
     { name: "Ruchbah", ra: 1.42, dec: 60.23, mag: 2.6, ci: 0.1 },
     { name: "Segin", ra: 1.90, dec: 63.67, mag: 3.3, ci: 0.3 },
-    // Scorpius (Components)
     { name: "Dschubba", ra: 16.00, dec: -22.62, mag: 2.3, ci: -0.1 },
     { name: "Graffias", ra: 16.08, dec: -19.80, mag: 2.5, ci: -0.1 },
     { name: "Wei", ra: 16.83, dec: -38.02, mag: 2.2, ci: 1.1 },
     { name: "Sargas", ra: 17.62, dec: -43.00, mag: 1.8, ci: 0.4 },
     { name: "Shaula", ra: 17.56, dec: -37.10, mag: 1.6, ci: -0.2 },
-    // Cygnus (Components)
     { name: "Sadr", ra: 20.37, dec: 40.25, mag: 2.2, ci: 0.6 },
     { name: "Albireo", ra: 19.51, dec: 27.96, mag: 3.0, ci: 1.0 },
     { name: "Gienah", ra: 20.77, dec: 33.96, mag: 2.4, ci: 1.0 },
     { name: "Rukh", ra: 19.76, dec: 45.13, mag: 2.8, ci: -0.1 },
-    // UMi
     { name: "Kochab", ra: 14.84, dec: 74.15, mag: 2.0, ci: 1.0 },
     { name: "Pherkad", ra: 15.34, dec: 71.83, mag: 3.0, ci: 0.0 },
     { name: "Yildun", ra: 17.53, dec: 86.58, mag: 4.3, ci: 0.0 },
-    // Lepus
     { name: "Arneb", ra: 5.55, dec: -17.82, mag: 2.5, ci: 0.2 },
     { name: "Nihal", ra: 5.47, dec: -20.76, mag: 2.8, ci: 0.5 },
-    // Peg/And
     { name: "Alpheratz", ra: 0.13, dec: 29.09, mag: 2.0, ci: -0.1 },
     { name: "Mirach", ra: 1.16, dec: 35.62, mag: 2.0, ci: 1.6 },
     { name: "Almach", ra: 2.06, dec: 42.33, mag: 2.1, ci: 1.3 },
     { name: "Markab", ra: 23.08, dec: 15.21, mag: 2.5, ci: -0.1 },
     { name: "Scheat", ra: 23.06, dec: 28.08, mag: 2.4, ci: 1.6 },
     { name: "Algenib", ra: 0.22, dec: 15.18, mag: 2.8, ci: -0.1 },
-    // Leo
     { name: "Denebola", ra: 11.82, dec: 14.57, mag: 2.1, ci: 0.0 },
     { name: "Algieba", ra: 10.33, dec: 19.84, mag: 2.0, ci: 1.2 },
-    // Tau
     { name: "Elnath", ra: 5.43, dec: 28.60, mag: 1.6, ci: -0.1 },
     { name: "Zeta Tau", ra: 5.62, dec: 21.14, mag: 3.0, ci: -0.2 },
-    // Vir
     { name: "Porrima", ra: 12.69, dec: -1.45, mag: 2.7, ci: 0.3 },
     { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
 ];
 
 // --- 1. UTILS ---
 const Utils = {
-    lerp: (start, end, amt) => (1 - amt) * start + amt * end,
     bvToColor: (bv) => {
         if (bv < 0.0) return {r:180, g:200, b:255}; 
         if (bv < 0.5) return {r:230, g:240, b:255}; 
         if (bv < 1.0) return {r:255, g:255, b:240}; 
         if (bv < 1.5) return {r:255, g:220, b:180}; 
         return {r:255, g:200, b:180}; 
-    },
-    angleDiff: (target, current) => {
-        let diff = target - current;
-        while (diff > 180) diff -= 360;
-        while (diff < -180) diff += 360;
-        return diff;
     },
     toast: (msg) => {
         const el = document.getElementById('toast');
@@ -512,84 +494,92 @@ const Gate = {
 };
 
 // --- 3. MATH ENGINE ---
+const Matrix = {
+    getRotationMatrix: (alpha, beta, gamma, screenOrientation) => {
+        const deg2rad = Math.PI / 180;
+        const x = beta * deg2rad;
+        const y = gamma * deg2rad;
+        const z = alpha * deg2rad;
+        const cX = Math.cos(x), sX = Math.sin(x);
+        const cY = Math.cos(y), sY = Math.sin(y);
+        const cZ = Math.cos(z), sZ = Math.sin(z);
+        const m11 = cZ * cY - sZ * sX * sY, m12 = -cX * sZ, m13 = cY * sZ * sX + cZ * sY;
+        const m21 = cY * sZ + cZ * sX * sY, m22 = cZ * cX, m23 = sZ * sY - cZ * cY * sX;
+        const m31 = -cX * sY, m32 = sX, m33 = cX * cY;
+        const screenRad = screenOrientation * deg2rad;
+        const cS = Math.cos(screenRad), sS = Math.sin(screenRad);
+        const r11 = cS * m11 + sS * m21, r12 = cS * m12 + sS * m22, r13 = cS * m13 + sS * m23;
+        const r21 = -sS * m11 + cS * m21, r22 = -sS * m12 + cS * m22, r23 = -sS * m13 + cS * m23;
+        const r31 = m31, r32 = m32, r33 = m33;
+        return [r11, r12, r13, r21, r22, r23, r31, r32, r33];
+    },
+    radecToVec: (ra, dec, lst, lat) => {
+        const ha = (lst - ra) * 15 * Math.PI/180;
+        const decRad = dec * Math.PI/180;
+        const latRad = lat * Math.PI/180;
+        const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(ha);
+        const altRad = Math.asin(sinAlt);
+        const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
+        let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
+        if (Math.sin(ha) > 0) azRad = 2*Math.PI - azRad;
+        return {
+            x: Math.cos(altRad) * Math.sin(azRad),
+            y: Math.cos(altRad) * Math.cos(azRad),
+            z: Math.sin(altRad)
+        };
+    }
+};
+
 const Astro = {
     getLST: (lon, date = new Date()) => {
         const d = (date.getTime()/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
+    // Restored for Milky Way Calculation compatibility
     eqToHor: (ra, dec, lat, lst) => {
-        const ha = (lst - ra) * 15;
-        const rad = Math.PI/180;
-        const sinAlt = Math.sin(dec*rad)*Math.sin(lat*rad) + Math.cos(dec*rad)*Math.cos(lat*rad)*Math.cos(ha*rad);
-        const alt = Math.asin(sinAlt) / rad;
-        const cosAz = (Math.sin(dec*rad) - Math.sin(alt*rad)*Math.sin(lat*rad)) / (Math.cos(alt*rad)*Math.cos(lat*rad));
-        let az = Math.acos(Math.min(1, Math.max(-1, cosAz))) / rad;
-        if (Math.sin(ha*rad) > 0) az = 360 - az;
+        const ha = (lst - ra) * 15 * Math.PI/180;
+        const decRad = dec * Math.PI/180;
+        const latRad = lat * Math.PI/180;
+        const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(ha);
+        const alt = Math.asin(sinAlt) * 180/Math.PI;
+        const cosAz = (Math.sin(decRad) - Math.sin(alt*Math.PI/180)*Math.sin(latRad)) / (Math.cos(alt*Math.PI/180)*Math.cos(latRad));
+        let az = Math.acos(Math.min(1, Math.max(-1, cosAz))) * 180/Math.PI;
+        if (Math.sin(ha) > 0) az = 360 - az;
         return {alt, az};
-    },
-    project: (objAz, objAlt, w, h, camAz, camAlt, fov) => {
-        let dAz = Utils.angleDiff(objAz, camAz);
-        if (Math.abs(dAz) > 90) return null;
-        const scale = Math.min(w, h) / fov;
-        const x = w/2 + dAz * scale * Math.cos(camAlt * Math.PI/180);
-        const y = h/2 - (objAlt - camAlt) * scale;
-        return {x, y};
     }
 };
 
 // --- 4. GUIDE SYSTEM ---
 const Guide = {
     target: null,
-    
     toggle: () => {
         const el = document.getElementById('guide-modal');
         const isHidden = el.classList.contains('hidden-force');
         if (isHidden) { Guide.buildList(); el.classList.remove('hidden-force'); } 
         else { el.classList.add('hidden-force'); }
     },
-    
     buildList: () => {
         const list = document.getElementById('guide-list');
         list.innerHTML = '';
-        const lst = Astro.getLST(App.state.lon);
-        
         CONSTELLATION_DB.forEach(c => {
             if (!App.state.ranks[c.rank]) return;
-
-            const hor = Astro.eqToHor(c.centerRA, c.centerDec, App.state.lat, lst);
-            const isVisible = hor.alt > 5;
             const name = App.state.lang === 'en' ? c.en : c.name;
             const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
             const myth = App.state.lang === 'ja' && c.myth ? `<p class="text-xs text-yellow-100/80 mb-2 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${c.myth}</p>` : '';
-            
             const card = document.createElement('div');
-            card.className = `p-4 rounded-xl border border-white/10 ${isVisible ? 'bg-slate-800/80' : 'bg-slate-900/50 opacity-70'} backdrop-blur-sm`;
+            card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h3 class="font-bold text-lg text-white">${name}</h3>
-                        ${App.state.lang !== 'en' ? `<p class="text-xs text-cyan-400 font-mono">${c.en}</p>` : ''}
-                    </div>
-                    ${isVisible 
-                        ? '<span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ Visible</span>'
-                        : '<span class="px-2 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold rounded uppercase">Low / Set</span>'}
+                    <div><h3 class="font-bold text-lg text-white">${name}</h3>${App.state.lang!=='en'?`<p class="text-xs text-cyan-400 font-mono">${c.en}</p>`:''}</div>
+                    <span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span>
                 </div>
-                <p class="text-sm text-slate-300 mb-2 leading-relaxed font-bold">${desc}</p>
-                ${myth}
-                <button onclick="Guide.startNav('${c.id}')" 
-                    class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2
-                    ${isVisible ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">
-                    ${isVisible ? '🔭 この星座を探す (NAVI)' : '今は見えません (Wait)'}
-                </button>
+                <p class="text-sm text-slate-300 mb-2 leading-relaxed font-bold">${desc}</p>${myth}
+                <button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>
             `;
             list.appendChild(card);
         });
-        
-        if (list.children.length === 0) {
-            list.innerHTML = '<p class="text-center text-slate-500 mt-10">表示する星座がありません。<br>設定でカテゴリをONにしてください。</p>';
-        }
+        if (list.children.length === 0) list.innerHTML = '<p class="text-center text-slate-500 mt-10">表示する星座がありません。</p>';
     },
-    
     startNav: (id) => {
         const c = CONSTELLATION_DB.find(x => x.id === id);
         if (!c) return;
@@ -602,7 +592,6 @@ const Guide = {
         App.state.showLines = true; 
         Utils.toast(`Navigating to ${App.state.lang==='en'?c.en:c.name} 🚀`);
     },
-    
     stopNav: () => {
         Guide.target = null;
         App.state.mode = 'normal';
@@ -617,16 +606,13 @@ const App = {
     canvas: null, ctx: null, width: 0, height: 0,
     state: {
         lat: 32.698, lon: 128.839, // Goto
-        az: 180, alt: 45, targetAz: 180, targetAlt: 45,
-        mode: 'normal',
-        viewMode: 0,
+        alpha: 0, beta: 90, gamma: 0,
+        mode: 'normal', viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
         isAR: false, showLines: true, useGPS: false, opacity: {bg:1, milky:0.5},
-        showInfo: false,
-        meteorEnabled: true,
+        showInfo: false, meteorEnabled: true,
         stars: [], milkyWay: [], meteors: [],
-        lang: 'ja', isDev: false,
-        fov: 70
+        lang: 'ja', isDev: false, fov: 70
     },
 
     init: async () => {
@@ -635,42 +621,28 @@ const App = {
         App.ctx = App.canvas.getContext('2d');
         
         STARS_DATA.forEach(s => App.state.stars.push(s));
-        for(let i=0;i<500;i++) App.state.stars.push({
-            ra:Math.random()*24, dec:Math.random()*180-90, mag:Math.random()*3+3.5, ci:Math.random()*1.5, isProc:true
-        });
+        for(let i=0;i<500;i++) App.state.stars.push({ra:Math.random()*24, dec:Math.random()*180-90, mag:Math.random()*3+3.5, ci:Math.random()*1.5, isProc:true});
         
-        const mwPoints = [
-            {ra: 0, dec: 63}, {ra: 3, dec: 50}, {ra: 6, dec: 10}, 
-            {ra: 7.5, dec: -20}, {ra: 12, dec: -60}, 
-            {ra: 17, dec: -30}, {ra: 18, dec: -15}, 
-            {ra: 20, dec: 40}, {ra: 23, dec: 60}
-        ];
+        const mwPoints = [{ra:0,dec:63},{ra:3,dec:50},{ra:6,dec:10},{ra:7.5,dec:-20},{ra:12,dec:-60},{ra:17,dec:-30},{ra:18,dec:-15},{ra:20,dec:40},{ra:23,dec:60}];
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            for(let j=0; j<100; j++) {
-                const t = j/100;
+            for(let j=0; j<80; j++) {
+                const t = j/80;
                 App.state.milkyWay.push({
-                    ra: p1.ra + (p2.ra-p1.ra)*t + (Math.random()-0.5)*2,
-                    dec: p1.dec + (p2.dec-p1.dec)*t + (Math.random()-0.5)*15, 
-                    size: Math.random()*40+20, alpha: Math.random()*0.025
+                    ra: p1.ra+(p2.ra-p1.ra)*t+(Math.random()-0.5)*2, dec: p1.dec+(p2.dec-p1.dec)*t+(Math.random()-0.5)*15, 
+                    size: Math.random()*30+15, alpha: Math.random()*0.02
                 });
             }
         }
 
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            try {
-                const res = await DeviceOrientationEvent.requestPermission();
-                if (res==='granted') window.addEventListener('deviceorientation', App.handleOri);
-            } catch(e){}
-        } else {
-            window.addEventListener('deviceorientation', App.handleOri);
-        }
+        if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try { const res = await DeviceOrientationEvent.requestPermission(); if (res==='granted') window.addEventListener('deviceorientation', App.handleOri); } catch(e){}
+        } else { window.addEventListener('deviceorientation', App.handleOri); }
 
         try { if(navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
 
-        // Orientation Handlers
         window.addEventListener('resize', App.resize);
-        window.addEventListener('orientationchange', () => { setTimeout(App.resize, 200); });
+        window.addEventListener('orientationchange', () => setTimeout(App.resize, 200));
         
         if(App.state.isDev) App.setupDev();
         App.setupTouch();
@@ -679,49 +651,23 @@ const App = {
     },
 
     handleOri: (e) => {
-        let alpha = 0, beta = 0; // Raw sensor data
-        
-        // 1. Get Compass Heading
+        let alpha = e.alpha ? e.alpha : 0;
         if (e.webkitCompassHeading) {
-            alpha = e.webkitCompassHeading; // iOS (0=North)
-            beta = e.beta; 
-        } else if (e.alpha !== null) {
-            alpha = 360 - e.alpha; // Android (0=North if calibrated)
-            beta = e.beta;
+            App.state.alpha = e.webkitCompassHeading;
+            App.state.beta = e.beta;
+            App.state.gamma = e.gamma;
+        } else {
+            App.state.alpha = 360 - alpha;
+            App.state.beta = e.beta;
+            App.state.gamma = e.gamma;
         }
-
-        // 2. Compensate for Screen Rotation
-        // When device is landscape, 'alpha' doesn't automatically rotate.
-        // We must add the screen orientation angle to align 'North' with screen top.
-        const orientation = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
-        
-        // Adjust Azimuth
-        let targetAz = alpha + orientation;
-        
-        // Adjust Altitude (Simplified logic for handheld AR)
-        // When portrait (0): beta=90 is horizon. alt = beta-90.
-        // When landscape: beta is still device pitch (long axis tilt). 
-        // We assume user holds device perpendicular to ground.
-        let targetAlt = beta - 90;
-
-        // Wrap
-        if (targetAz > 360) targetAz -= 360;
-        
-        let dAz = targetAz - App.state.az;
-        if (dAz > 180) App.state.az += 360; if (dAz < -180) App.state.az -= 360;
-        
-        App.state.targetAz = targetAz; 
-        App.state.targetAlt = targetAlt;
     },
 
     loop: () => {
         const {ctx, width, height, state} = App;
-        state.az = Utils.lerp(state.az, state.targetAz, 0.1);
-        state.alt = Utils.lerp(state.alt, state.targetAlt, 0.1);
-        const currAz = (state.az + 360) % 360;
-
         ctx.clearRect(0,0,width,height);
         
+        // 1. Background
         const isSolar = state.viewMode === 2;
         if (state.opacity.bg > 0) {
             const grad = ctx.createLinearGradient(0,0,0,height);
@@ -732,27 +678,38 @@ const App = {
         }
 
         const lst = Astro.getLST(state.lon);
+        const screenOri = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
+        const rotMat = Matrix.getRotationMatrix(state.alpha, state.beta, state.gamma, screenOri);
+        const fovRad = state.fov * Math.PI / 180;
+        const factor = width / (2 * Math.tan(fovRad / 2));
+
+        const project3D = (ra, dec) => {
+            const worldVec = Matrix.radecToVec(ra, dec, lst, state.lat);
+            const camX = rotMat[0]*worldVec.x + rotMat[3]*worldVec.y + rotMat[6]*worldVec.z;
+            const camY = rotMat[1]*worldVec.x + rotMat[4]*worldVec.y + rotMat[7]*worldVec.z;
+            const camZ = rotMat[2]*worldVec.x + rotMat[5]*worldVec.y + rotMat[8]*worldVec.z;
+            if (camZ < 0.1) return null;
+            return {x: width/2 + camX * (factor / camZ), y: height/2 - camY * (factor / camZ)};
+        };
+
         const starPos = {};
 
+        // 3. Milky Way
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter';
             state.milkyWay.forEach(p => {
-                const hor = Astro.eqToHor(p.ra, p.dec, state.lat, lst);
-                if (hor.alt < -20) return;
-                const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
+                const pos = project3D(p.ra, p.dec);
                 if (pos) {
-                    const ext = Math.max(0, Math.min(1, (hor.alt + 10) / 20));
-                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * state.opacity.milky * ext})`;
-                    ctx.beginPath(); ctx.arc(pos.x, pos.y, p.size * (width/1000), 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * state.opacity.milky})`;
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, p.size * (width/1500), 0, Math.PI*2); ctx.fill();
                 }
             });
             ctx.globalCompositeOperation = 'source-over';
         }
 
+        // 4. Stars
         state.stars.forEach(s => {
-            const hor = Astro.eqToHor(s.ra, s.dec, state.lat, lst);
-            if (hor.alt < -5) return;
-            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
+            const pos = project3D(s.ra, s.dec);
             if (pos) {
                 if(s.name) starPos[s.name] = pos;
                 let col = Utils.bvToColor(s.ci||0.5);
@@ -764,42 +721,29 @@ const App = {
             }
         });
 
-        // Collect visible constellations for Info Logic
+        // 5. Constellations & Info
         const visibleConsts = [];
-
         if (state.showLines) {
             ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.3)"; ctx.lineWidth = 1;
             ctx.beginPath();
-            
             CONSTELLATION_DB.forEach(c => {
                 if (!state.ranks[c.rank]) return;
                 const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
                 if (isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "rgba(50,255,100,0.8)"; ctx.lineWidth = 3; }
-                
                 for(let i=0; i<c.lines.length; i+=2) {
                     const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
                     if(p1 && p2) { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); }
                 }
-
-                // Calc Center for Label/Info
                 let cx=0, cy=0, n=0;
-                for(let i=0; i<c.lines.length; i++) {
-                    const p = starPos[c.lines[i]];
-                    if(p) { cx+=p.x; cy+=p.y; n++; }
-                }
+                for(let i=0; i<c.lines.length; i++) { const p = starPos[c.lines[i]]; if(p) { cx+=p.x; cy+=p.y; n++; } }
                 if(n>0) {
                     cx/=n; cy/=n;
                     if(cx>0 && cx<width && cy>0 && cy<height) {
-                         // Add to visible list for info sorting
                          const dist = Math.hypot(cx - width/2, cy - height/2);
                          visibleConsts.push({c, cx, cy, dist});
-
-                         // Draw Label
                          ctx.fillStyle = isSolar ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)";
                          ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "12px 'Zen Maru Gothic'";
-                         ctx.textAlign = "center";
-                         ctx.fillText(state.lang==='en' ? c.en : c.name, cx, cy);
-                         ctx.textAlign = "start";
+                         ctx.textAlign = "center"; ctx.fillText(state.lang==='en' ? c.en : c.name, cx, cy); ctx.textAlign = "start";
                     }
                 }
                 if (isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.3)"; ctx.lineWidth = 1; }
@@ -807,36 +751,21 @@ const App = {
             ctx.stroke();
         }
 
-        // --- SMART INFO OVERLAY ---
+        // Info Overlay
         if (state.showInfo && visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
             const count = Math.min(visibleConsts.length, 1); 
-            
             for(let i=0; i<count; i++) {
                 const item = visibleConsts[i];
                 if (item.dist < 250) {
                     const desc = state.lang === 'en' ? item.c.desc_en : item.c.desc;
                     const textWidth = Math.min(240, ctx.measureText(desc).width + 20);
-                    const bx = item.cx - textWidth/2;
-                    const by = item.cy + 15;
-                    
+                    const bx = item.cx - textWidth/2; const by = item.cy + 15;
                     ctx.fillStyle = isSolar ? "rgba(255,255,255,0.85)" : "rgba(15, 23, 42, 0.85)";
                     ctx.strokeStyle = isSolar ? "#000" : "rgba(34, 211, 238, 0.5)";
-                    ctx.beginPath();
-                    ctx.roundRect(bx, by, textWidth, 60, 8);
-                    ctx.fill(); ctx.stroke();
-                    
-                    ctx.fillStyle = isSolar ? "#000" : "#22d3ee";
-                    ctx.font = "bold 11px 'Zen Maru Gothic'";
-                    ctx.textAlign = "center";
-                    
-                    const limit = 18;
-                    const line1 = desc.substring(0, limit);
-                    const line2 = desc.substring(limit);
-                    
-                    ctx.fillText(line1 + (line2?"-":""), item.cx, by + 20);
-                    if(line2) ctx.fillText(line2, item.cx, by + 36);
-                    ctx.textAlign = "start";
+                    ctx.beginPath(); ctx.roundRect(bx, by, textWidth, 40, 8); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = isSolar ? "#000" : "#22d3ee"; ctx.font = "bold 11px 'Zen Maru Gothic'"; ctx.textAlign = "center";
+                    ctx.fillText(desc.substring(0, 20) + (desc.length>20?"...":""), item.cx, by + 24); ctx.textAlign = "start";
                 }
             }
         }
@@ -853,39 +782,24 @@ const App = {
 
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
-            const hor = Astro.eqToHor(t.centerRA, t.centerDec, state.lat, lst);
-            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
+            const pos = project3D(t.centerRA, t.centerDec);
             const lockEl = document.getElementById('lock-on');
-            
-            const dAz = Utils.angleDiff(hor.az, currAz);
-            const dAlt = hor.alt - state.alt;
-            
             if (pos && pos.x > 50 && pos.x < width-50 && pos.y > 50 && pos.y < height-50) {
                 lockEl.style.opacity = 1; lockEl.style.left = pos.x + 'px'; lockEl.style.top = pos.y + 'px';
             } else {
                 lockEl.style.opacity = 0;
-                const angle = Math.atan2(-dAlt, dAz);
-                const dist = Math.min(width, height) * 0.4;
-                const ax = width/2 + Math.cos(angle) * dist;
-                const ay = height/2 + Math.sin(angle) * dist;
-                
-                ctx.save(); ctx.translate(ax, ay); ctx.rotate(angle);
-                ctx.fillStyle = "#4ade80"; ctx.shadowBlur = 10; ctx.shadowColor = "#4ade80";
-                ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10); ctx.fill(); ctx.restore();
-                
-                ctx.fillStyle = isSolar ? "#000" : "white"; ctx.font = "bold 14px monospace"; ctx.textAlign = "center";
-                ctx.fillText(`あと ${Math.abs(dAz).toFixed(0)}°`, width/2, height/2 + 100);
+                // Simple target indicator logic
+                ctx.fillStyle = "#4ade80"; ctx.font = "bold 20px monospace"; ctx.textAlign = "center";
+                ctx.fillText("TARGET →", width/2, height/2 + 100);
             }
         }
-
         requestAnimationFrame(App.loop);
     },
 
     resize: () => { 
         App.width = window.innerWidth; App.height = window.innerHeight; 
         App.canvas.width = App.width; App.canvas.height = App.height; 
-        // Adjust FOV based on Aspect Ratio (Landscape needs wider FOV)
-        App.state.fov = (App.width > App.height) ? 90 : 70;
+        App.state.fov = (App.width > App.height) ? 60 : 75;
     },
     triggerMeteor: () => { App.state.meteors.push({x: Math.random()*App.width, y: Math.random()*App.height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1}); },
     toggleLocation: () => { App.state.useGPS = !App.state.useGPS; document.getElementById('loc-name').innerText=App.state.useGPS?"GPS (現在地)":"五島列島 (固定)"; Utils.toast(App.state.useGPS?"GPS Mode":"Goto Mode"); },
@@ -893,8 +807,7 @@ const App = {
     toggleAR: (v) => { App.state.isAR = v; document.getElementById('camera-feed').style.opacity = v?1:0; App.setOpacity('bg', v?0.4:1); document.querySelector('input[oninput*="bg"]').value = v?0.4:1; },
     toggleViewMode: () => {
         App.state.viewMode = (App.state.viewMode + 1) % 3;
-        const body = document.body;
-        const btn = document.getElementById('btn-mode');
+        const body = document.body; const btn = document.getElementById('btn-mode');
         body.classList.remove('mode-red', 'mode-solar');
         if(App.state.viewMode === 1) { body.classList.add('mode-red'); btn.innerText = "🔴"; Utils.toast("赤色モード (Red)"); }
         else if(App.state.viewMode === 2) { body.classList.add('mode-solar'); btn.innerText = "☀️"; Utils.toast("昼間モード (Solar)"); }
@@ -904,22 +817,27 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v12.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v13.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupDev: () => {
         let d=false,lx=0,ly=0;
         window.addEventListener('mousedown',e=>{d=true;lx=e.clientX;ly=e.clientY});
-        window.addEventListener('mousemove',e=>{if(!d)return; App.state.targetAz-=(e.clientX-lx)*0.2; App.state.targetAlt+=(e.clientY-ly)*0.2; lx=e.clientX;ly=e.clientY;});
+        window.addEventListener('mousemove',e=>{
+            if(!d)return; 
+            App.state.alpha = (App.state.alpha - (e.clientX-lx)*0.5 + 360)%360; 
+            App.state.beta = Math.max(0, Math.min(180, App.state.beta - (e.clientY-ly)*0.5));
+            lx=e.clientX;ly=e.clientY;
+        });
         window.addEventListener('mouseup',()=>d=false);
     },
     setupTouch: () => {
         let d=false,lx=0;
         window.addEventListener('touchstart',e=>{d=true;lx=e.touches[0].clientX});
-        window.addEventListener('touchmove',e=>{if(!d)return; App.state.targetAz-=(e.touches[0].clientX-lx)*0.1; lx=e.touches[0].clientX;});
+        window.addEventListener('touchmove',e=>{if(!d)return; App.state.alpha-=(e.touches[0].clientX-lx)*0.2; lx=e.touches[0].clientX;});
         window.addEventListener('touchend',()=>d=false);
     }
 };
 
-Gate.check();
+window.onload = () => Gate.check();
 </script>
 </body>
 </html>
