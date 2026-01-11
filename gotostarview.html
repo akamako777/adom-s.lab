@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v15.2 (Quaternion Fix)</title>
+    <title>Five Islands Stargazer v15.3 (Final Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,8 +92,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.2</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Quaternion Engine</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.3</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Quaternion Scaled</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -157,7 +157,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Quaternion v15.2</div>
+                    <div class="text-[8px] text-slate-400 mt-1">Quaternion v15.3</div>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.2</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.3</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -270,9 +270,9 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v15.2
- * Engine: Quaternion (No Gimbal Lock) + Landscape/Portrait Fix
- * 2026-2027 Protocol: The Robust Math Edition
+ * 🌌 FIVE ISLANDS STARGAZER v15.3
+ * Engine: Quaternion (No Double Radian Bug + Axis Fix)
+ * 2026-2027 Protocol: The Robust Math Edition (Corrected)
  */
 
 // --- 0. DATA & CONSTANTS ---
@@ -420,25 +420,19 @@ const STARS_DATA = [
     { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
 ];
 
-// --- 1. VECTOR & QUATERNION ENGINE (The Core V2) ---
-// Using Quaternions to avoid gimbal lock and correctly handle device/screen rotation
+// --- 1. VECTOR & QUATERNION ENGINE (The Core V3) ---
 const Math3D = {
     // Quaternion basic ops [x, y, z, w]
+    // FIXED: Inputs are already radians. Removed redundant deg2rad.
     qFromEuler: (alpha, beta, gamma) => {
-        // Z-X-Y intrinsic convention for device sensors
-        const deg2rad = Math.PI / 180;
-        const x = beta * deg2rad / 2;
-        const y = gamma * deg2rad / 2;
-        const z = alpha * deg2rad / 2;
-        const cX = Math.cos(x), sX = Math.sin(x);
-        const cY = Math.cos(y), sY = Math.sin(y);
-        const cZ = Math.cos(z), sZ = Math.sin(z);
-        return [
-            sX * cY * cZ - cX * sY * sZ,
-            cX * sY * cZ + sX * cY * sZ,
-            cX * cY * sZ + sX * sY * cZ,
-            cX * cY * cZ - sX * sY * sZ
-        ];
+        // Explicitly Chain: Z -> X -> Y order (Intrinsic) to avoid formula errors
+        const qZ = Math3D.qFromAxisAngle([0, 0, 1], alpha);
+        const qX = Math3D.qFromAxisAngle([1, 0, 0], beta);
+        const qY = Math3D.qFromAxisAngle([0, 1, 0], gamma);
+        // Compose: qFinal = qZ * qX * qY
+        let q = Math3D.qMultiply(qZ, qX);
+        q = Math3D.qMultiply(q, qY);
+        return q;
     },
     qMultiply: (a, b) => {
         const ax = a[0], ay = a[1], az = a[2], aw = a[3];
@@ -455,7 +449,6 @@ const Math3D = {
         const s = Math.sin(halfAngle);
         return [axis[0] * s, axis[1] * s, axis[2] * s, Math.cos(halfAngle)];
     },
-    // Convert Quaternion to 4x4 Matrix
     matFromQ: (q) => {
         const x = q[0], y = q[1], z = q[2], w = q[3];
         const x2 = x + x, y2 = y + y, z2 = z + z;
@@ -469,13 +462,17 @@ const Math3D = {
             0, 0, 0, 1
         ];
     },
-    // Standard Project
     project: (vec, viewMat, width, height, fovDeg) => {
-        const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8]; // Transpose multiply for view
+        // ViewMat is the Camera->World rotation (from sensors).
+        // To project World->Camera, we use Inverse (Transpose for rotation matrices).
+        // x = dot(vec, Right) = vec.x * m[0] + vec.y * m[4] + vec.z * m[8]
+        const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
-        // In Camera Space: Z is negative for visible objects (looking down -Z)
+        
+        // Z is negative in front of camera
         if (z >= -0.1) return null;
+        
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
         return { x: x*(scale/-z)+width/2, y: -y*(scale/-z)+height/2, z: z };
     }
@@ -487,7 +484,6 @@ const Astro = {
         const d = (date.getTime()/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
-    // World Coords: X=East, Y=North, Z=Up
     getStarVector: (ra, dec, lat, lst) => {
         const haRad = (lst - ra) * 15 * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
@@ -498,9 +494,6 @@ const Astro = {
         let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
         if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
         // Map to World: X=East, Y=North, Z=Up
-        // Azimuth is usually from North(0) -> East(90) -> South(180) -> West(270)
-        // If azRad is standard astro (0=North, clockwise), then:
-        // X = sin(az), Y = cos(az), Z = sin(alt)
         return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
     }
 };
@@ -631,14 +624,11 @@ const App = {
     handleOri: (e) => {
         if (!e.alpha && !e.beta && !e.gamma) return;
         let alpha = e.alpha, beta = e.beta, gamma = e.gamma;
-        // Normalize iOS/Android
-        // iOS WebkitCompassHeading is North=0, CW
-        // Android alpha is North=0, CCW (Standard)
         if (e.webkitCompassHeading) {
+            // iOS: 0=North, Clockwise. Math expects CCW.
             alpha = e.webkitCompassHeading;
-             // iOS usually needs -alpha for standard math rotation
         } else {
-             // Android usually standard
+            // Android: 0=North, CCW usually.
         }
         App.state.orientation = { alpha, beta, gamma, isIOS: !!e.webkitCompassHeading };
     },
@@ -649,82 +639,34 @@ const App = {
         const orient = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
         const rOrient = orient * deg2rad;
 
-        // --- THE QUATERNION SOLUTION ---
-        // 1. Device Rotation Quaternion
-        // Standard Web API: Z(alpha) -> X(beta) -> Y(gamma)
-        // Alpha: Z axis (0=North, CCW)
-        // Beta: X axis (Front-Back tilt, -180 to 180)
-        // Gamma: Y axis (Left-Right tilt, -90 to 90)
-        
-        // Adjust for IOS/Android differences to get a unified "Earth-Fixed" rotation
+        // 1. Device Rotation (Radians)
         let a = alpha;
         if (isIOS) {
-             a = -alpha; // Reverse for standard CCW math
+             a = -alpha; // Reverse for CCW math
         } else {
-             a = alpha - 270; // Adjust Android default? Or just alpha.
-             // Usually Android alpha=0 is North. 
-             // Three.js uses: alpha + manual offset
+             a = alpha - 270; // Android offset
         }
         
         const rAlpha = (a + App.state.manualOffset) * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
 
-        // Q_device = Qz(alpha) * Qx(beta) * Qy(gamma)
-        const q1 = Math3D.qFromEuler(rAlpha, rBeta, rGamma); // Standard intrinsic
+        // 2. Quaternion Z-X-Y
+        const q1 = Math3D.qFromEuler(rAlpha, rBeta, rGamma);
         
-        // 2. Screen Rotation Adjustment (-Z axis)
+        // 3. Screen Rotation (-Z)
         const q2 = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
         
-        // 3. Camera Orientation Adjustment (-90 deg around X)
-        // Phones are "Flat" (Beta=0) when screen up.
-        // Cameras are "Upright" (Beta=90) when looking at horizon.
-        // We need to rotate the "Flat" reference -90 deg around X to match "Looking Forward"
+        // 4. Camera Fix (-90 X) - align flat phone to upright camera
         const q3 = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
 
-        // Compose: Total = Q_device * Q_screen * Q_adjust
+        // Combine
         let qFinal = Math3D.qMultiply(q1, q2); 
         qFinal = Math3D.qMultiply(qFinal, q3);
 
-        // Convert to Matrix
         App.state.viewMat = Math3D.matFromQ(qFinal);
         
         // Debug
-        // Forward vector is usually (0,0,-1) in camera space.
-        // Inverse matrix * (0,0,-1) = World Direction.
-        // Here, viewMat IS the rotation matrix from World to Camera? 
-        // Or Camera to World? 
-        // qFromEuler constructs Local->World usually.
-        // So viewMat is Camera->World.
-        // To get ViewMatrix (World->Camera), we transpose (inverse).
-        
-        // But wait, our project function expects World->Camera transform?
-        // No, standard pipeline: 
-        // v_camera = Inverse(CameraWorldMatrix) * v_world
-        // Our 'viewMat' derived from sensors is usually "Orientation of Device in World" -> CameraWorldMatrix.
-        // So we need its inverse for projection.
-        // Rotation matrix inverse = transpose.
-        
-        // Let's use Transpose for projection.
-        const invMat = [
-            App.state.viewMat[0], App.state.viewMat[4], App.state.viewMat[8], 0,
-            App.state.viewMat[1], App.state.viewMat[5], App.state.viewMat[9], 0,
-            App.state.viewMat[2], App.state.viewMat[6], App.state.viewMat[10], 0,
-            0, 0, 0, 1
-        ];
-        
-        // Update global viewMat for projection usage (we pass the inverse to project function)
-        // Wait, Math3D.project implementation:
-        // x = vec.x*viewMat[0] + vec.y*viewMat[4]... 
-        // This effectively multiplies by TRANSPOSE if viewMat was row-major.
-        // Let's stick to passing the CameraWorldMatrix (App.state.viewMat) and letting Project handle projection.
-        // Math3D.project logic above: 
-        // x = vec.x*m[0] + vec.y*m[4] + vec.z*m[8]
-        // This is dot product with Col 0.
-        // If m is CameraWorld (cols are Right, Up, Back axes in World),
-        // Then dot(v, Right) is the projection onto Right axis (Camera X).
-        // Correct.
-        
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; const az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
         document.getElementById('debug-az').innerText = Math.round(az < 0 ? az+360 : az);
