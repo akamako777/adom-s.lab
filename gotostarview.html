@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v15 (Full Feature)</title>
+    <title>Five Islands Stargazer v15.1 (Fixed Axis)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,8 +92,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Core & Education</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.1</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Axis Fixed</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -157,7 +157,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Matrix v15 Full</div>
+                    <div class="text-[8px] text-slate-400 mt-1">Matrix v15.1 Fix</div>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.1</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -270,8 +270,8 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v15
- * Engine: Vector Matrix Core + Education Pack
+ * 🌌 FIVE ISLANDS STARGAZER v15.1
+ * Engine: Vector Matrix Core + Education Pack + Axis Fix
  * 2026-2027 Protocol: Robust Math & Rich Content
  */
 
@@ -437,6 +437,34 @@ const Math3D = {
     rotateX: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]; },
     rotateY: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]; },
     rotateZ: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [c,-s,0,0, s,c,0,0, 0,0,1,0, 0,0,0,1]; },
+    // New Helper: Create rotation matrix from Euler (Z-X-Y order) directly
+    makeRotationFromEuler: (alpha, beta, gamma) => {
+        const cA = Math.cos(alpha), sA = Math.sin(alpha);
+        const cB = Math.cos(beta), sB = Math.sin(beta);
+        const cG = Math.cos(gamma), sG = Math.sin(gamma);
+        
+        // R = Ry * Rx * Rz (Standard Extrinsic) or Z-X-Y Intrinsic
+        // For sensors usually: Z(Alpha) -> X(Beta) -> Y(Gamma)
+        
+        const m11 = cA*cG - sA*sB*sG;
+        const m12 = -cA*sG - sA*sB*cG;
+        const m13 = -sA*cB;
+
+        const m21 = sA*cG + cA*sB*sG;
+        const m22 = -sA*sG + cA*sB*cG;
+        const m23 = cA*cB;
+
+        const m31 = -cB*sG;
+        const m32 = -cB*cG;
+        const m33 = sB;
+        
+        return [
+            m11, m21, m31, 0,
+            m12, m22, m32, 0,
+            m13, m23, m33, 0,
+            0, 0, 0, 1
+        ];
+    },
     transpose: (m) => { const out=new Float32Array(16); for(let i=0;i<4;i++)for(let j=0;j<4;j++)out[i*4+j]=m[j*4+i]; return out; },
     project: (vec, viewMat, width, height, fovDeg) => {
         const x = vec.x*viewMat[0] + vec.y*viewMat[1] + vec.z*viewMat[2];
@@ -607,28 +635,47 @@ const App = {
 
     updateViewMatrix: () => {
         const { alpha, beta, gamma } = App.state.orientation; const deg2rad = Math.PI / 180;
-        const rAlpha = (alpha + App.state.manualOffset) * deg2rad;
-        const rBeta = beta * deg2rad; const rGamma = gamma * deg2rad;
         const orient = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
         const rOrient = orient * deg2rad;
 
-        // World(N,E,Up) -> Device -> Camera (Matrix Magic)
-        const Rz = Math3D.rotateZ(-rAlpha); const Rx = Math3D.rotateX(-rBeta); const Ry = Math3D.rotateY(rGamma);
-        let M = Math3D.multiply(Rx, Rz); M = Math3D.multiply(Ry, M);
-        const Rscr = Math3D.rotateZ(-rOrient); M = Math3D.multiply(Rscr, M);
+        // 1. Convert to Radians
+        // Normalize iOS/Android Alpha: 
+        // iOS: alpha = compass 0-360 CW. Android: 0-360 CCW.
+        // We unified in handleOri to standard compass (0=North, 360 CW?) or math (0=East CCW)?
+        // Let's assume standard math rotation for alpha is CCW around Z.
+        // Current logic in handleOri: alpha = (360-alpha) for Android.
         
-        // Empirical Axis Fix Matrix (Align Sensor to World North-East-Up)
-        const cA = Math.cos(rAlpha), sA = Math.sin(rAlpha), cB = Math.cos(rBeta), sB = Math.sin(rBeta), cG = Math.cos(rGamma), sG = Math.sin(rGamma);
-        const m11 = cA*cG - sA*sB*sG, m12 = -cA*sG - sA*sB*cG, m13 = -sA*cB;
-        const m21 = sA*cG + cA*sB*sG, m22 = -sA*sG + cA*sB*cG, m23 = cA*cB;
-        const m31 = -cB*sG, m32 = -cB*cG, m33 = sB;
-        let m = [m11, m21, m31, 0, m12, m22, m32, 0, m13, m23, m33, 0, 0, 0, 0, 1];
-        const rotScr = [Math.cos(-rOrient), -Math.sin(-rOrient), 0, 0, Math.sin(-rOrient), Math.cos(-rOrient), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-        m = Math3D.multiply(rotScr, m);
+        const rAlpha = (alpha + App.state.manualOffset) * deg2rad;
+        const rBeta = beta * deg2rad; 
+        const rGamma = gamma * deg2rad;
 
-        App.state.viewMat = Math3D.transpose(m);
+        // 2. Generate Rotation Matrix (Z-X-Y Order)
+        // R_device = MakeRotation(Z, X, Y)
+        const R_device = Math3D.makeRotationFromEuler(rAlpha, rBeta, rGamma);
+
+        // 3. Screen Rotation Adjustment
+        // The screen rotation must be applied as a rotation around the Z axis *of the screen*.
+        // Since we projected World->Device, now we rotate Device->Screen.
+        const R_screen = Math3D.rotateZ(-rOrient);
         
-        const fwdX = -m[8], fwdY = -m[9], fwdZ = -m[10];
+        // 4. Combine: R_final = R_device * R_screen
+        let M = Math3D.multiply(R_screen, R_device);
+        
+        // 5. Align World Axes to Camera Axes
+        // World: X=East, Y=North, Z=Up
+        // Camera: X=Right, Y=Up, Z=Back (Standard GL)
+        
+        // We need a base alignment because standard Euler ZXY mapping (North=Y) 
+        // implies a specific default device orientation (Portrait).
+        // Let's rely on the ViewMatrix = Inverse(World->Camera).
+        
+        // Since M represents the rotation of the device relative to the world frame,
+        // The View Matrix is the Transpose of M.
+        
+        App.state.viewMat = Math3D.transpose(M);
+        
+        // Debug
+        const fwdX = -M[8], fwdY = -M[9], fwdZ = -M[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; const az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
         document.getElementById('debug-az').innerText = Math.round(az < 0 ? az+360 : az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
