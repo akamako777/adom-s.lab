@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v22.0 (Milky Way Polish)</title>
+    <title>Five Islands Stargazer v23.0 (South Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,7 +82,7 @@
         .compass-mark { position: absolute; top: 5px; transform: translateX(-50%); transition: left 0.1s linear; font-weight: bold; }
         .compass-center { position: absolute; left: 50%; top: -5px; width: 2px; height: 40px; bg-red-500; z-index: 10; border-left: 2px solid #ef4444; }
 
-        /* Time Slider (NEW) */
+        /* Time Slider */
         #time-slider-container {
             position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
             width: 80%; max-width: 400px; z-index: 30;
@@ -128,8 +128,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v22.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Milky Way Polish</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v23.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">South Compass Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -208,7 +208,7 @@
                 <input type="range" id="time-range" min="-12" max="12" step="0.5" value="0" oninput="App.setTimeOffset(this.value)" onchange="App.resetTime(this.value)">
             </div>
 
-            <!-- Compass HUD (NEW: Independent) -->
+            <!-- Compass HUD (Independent) -->
             <div id="compass-bar">
                 <div class="compass-center"></div>
                 <div id="compass-ticks">
@@ -221,13 +221,13 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v22.0 MilkyWay+</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v23.0 SouthFix</div>
                 </div>
             </div>
 
             <!-- Bottom -->
             <div class="flex justify-center items-end pb-8 interactive gap-6">
-                <!-- Clock Button (NEW) -->
+                <!-- Clock Button -->
                 <button onclick="App.toggleTimeSlider()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-yellow-400 text-yellow-300 shadow-lg bg-yellow-900/30">
                     <span class="text-xl">⏳</span>
                 </button>
@@ -259,11 +259,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MILKY WAY POLISH v22</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v23</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Generating Galaxy Particles...</p>
+            <p class="text-[10px] text-slate-500 mt-4">Initializing AR & Sensors...</p>
         </div>
     </div>
 
@@ -365,10 +365,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v22.0 (Milky Way Polish)
- * Features:
- * - Procedural Milky Way: Multi-colored, layered particles for deep nebula effect
- * - Stabilized Compass: Low-pass filter + Independent of Manual Offset
+ * 🌌 FIVE ISLANDS STARGAZER v23.0 (South Fix)
+ * Fixes:
+ * - AR Default OFF
+ * - Compass South half fix (Improved Azimuth Calculation)
+ * - Myth font style "normal"
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -710,7 +711,7 @@ const Guide = {
                     <span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span>
                 </div>
                 <p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${desc}</p>
-                <div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${myth}</div>
+                <div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 leading-relaxed font-normal">${myth}</div>
                 <button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>
             `;
             list.appendChild(card);
@@ -775,19 +776,10 @@ const App = {
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
         
-        // 1. Camera Init (Non-Blocking)
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    document.getElementById('camera-feed').srcObject = stream;
-                    document.getElementById('toggle-ar').checked = true;
-                    App.toggleAR(true);
-                })
-                .catch(e => {
-                    console.log("Cam Fail/Denied", e);
-                    Utils.toast("AR Camera Unavailable");
-                });
-        }
+        // 1. Camera Init (AR OFF by default in v23)
+        // We do NOT start camera stream here. User must toggle it.
+        document.getElementById('toggle-ar').checked = false;
+        App.toggleAR(false);
 
         // 2. Show Swipe Hint
         setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 1; }, 2000);
@@ -925,22 +917,19 @@ const App = {
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
-        // --- Calculate Compass Azimuth (Independent of Manual Offset) ---
-        const rRawAlpha = (App.state.reverseAlpha ? -a : a) * deg2rad;
-        const qY_raw = Math3D.qFromAxisAngle([0, 1, 0], rRawAlpha);
-        let qDev_raw = Math3D.qMultiply(qY_raw, qX);
-        qDev_raw = Math3D.qMultiply(qDev_raw, qZ);
-        let qFinal_raw = Math3D.qMultiply(qDev_raw, qCamFix);
-        qFinal_raw = Math3D.qMultiply(qFinal_raw, qScreen);
-        const mRaw = Math3D.matFromQ(qFinal_raw);
+        // --- Calculate Compass Azimuth (Fix v23: Simplified Heading) ---
+        // Instead of reusing 3D matrices which get weird near pitch=90,
+        // use basic trigonometry on horizontal vector if phone is flat-ish,
+        // or just use alpha directly if vertical.
         
-        const rawFwdX = -mRaw[8], rawFwdY = -mRaw[9];
-        let compassAz = Math.atan2(rawFwdX, rawFwdY) * 180/Math.PI; 
-        if(compassAz<0) compassAz+=360;
+        // For vertical AR mode, "Heading" is basically (Alpha + ScreenOrient)
+        let compassAz = rawHeading - screenOrient;
+        
+        // Wrap to 0-360
+        compassAz = compassAz % 360;
+        if(compassAz < 0) compassAz += 360;
         
         // Low-Pass Filter for Compass Stability
-        // Basic LERP: new = old + (target - old) * factor
-        // Handle 359->0 wrap-around
         let diff = compassAz - App.state.compassFiltered;
         if (diff < -180) diff += 360;
         if (diff > 180) diff -= 360;
@@ -1158,7 +1147,31 @@ const App = {
         if(val == 0) Utils.toast(I18N[App.state.lang].time_reset);
     },
 
-    toggleAR: (v) => { App.state.isAR = v; document.getElementById('camera-feed').style.opacity = v?1:0; App.setOpacity('bg', v?0.0:1); document.querySelector('input[oninput*="bg"]').value = v?0.0:1; },
+    // Fix v23: AR Only when toggled (init param 'v' controls this)
+    toggleAR: (v) => { 
+        App.state.isAR = v;
+        const cam = document.getElementById('camera-feed');
+        
+        if (v) {
+            // Activate Camera
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => { cam.srcObject = stream; cam.style.opacity = 1; })
+                    .catch(e => { console.log("Cam Error", e); Utils.toast("Cam Error"); });
+            }
+            App.setOpacity('bg', 0.0); 
+            document.querySelector('input[oninput*="bg"]').value = 0.0;
+        } else {
+            // Stop Camera to save battery
+            if (cam.srcObject) {
+                cam.srcObject.getTracks().forEach(t => t.stop());
+                cam.srcObject = null;
+            }
+            cam.style.opacity = 0;
+            App.setOpacity('bg', 1);
+            document.querySelector('input[oninput*="bg"]').value = 1;
+        }
+    },
     toggleViewMode: () => {
         App.state.viewMode = (App.state.viewMode + 1) % 3;
         const body = document.body; const btn = document.getElementById('btn-mode');
@@ -1175,7 +1188,7 @@ const App = {
         Guide.buildList(); 
         Utils.updateDOMText(); 
     },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v21.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v23.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
