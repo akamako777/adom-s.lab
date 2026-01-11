@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v15.1 (Fixed Axis)</title>
+    <title>Five Islands Stargazer v15.2 (Quaternion Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,8 +92,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Axis Fixed</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Quaternion Engine</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -157,7 +157,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Matrix v15.1 Fix</div>
+                    <div class="text-[8px] text-slate-400 mt-1">Quaternion v15.2</div>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -270,15 +270,14 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v15.1
- * Engine: Vector Matrix Core + Education Pack + Axis Fix
- * 2026-2027 Protocol: Robust Math & Rich Content
+ * 🌌 FIVE ISLANDS STARGAZER v15.2
+ * Engine: Quaternion (No Gimbal Lock) + Landscape/Portrait Fix
+ * 2026-2027 Protocol: The Robust Math Edition
  */
 
 // --- 0. DATA & CONSTANTS ---
 const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3 };
 
-// 教育的・雑学的データを強化
 const CONSTELLATION_DB = [
     { 
         id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
@@ -421,55 +420,61 @@ const STARS_DATA = [
     { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
 ];
 
-// --- 1. VECTOR & MATRIX ENGINE (The Core) ---
+// --- 1. VECTOR & QUATERNION ENGINE (The Core V2) ---
+// Using Quaternions to avoid gimbal lock and correctly handle device/screen rotation
 const Math3D = {
-    multiply: (a, b) => {
-        const out = new Float32Array(16);
-        for(let i=0; i<4; i++) {
-            for(let j=0; j<4; j++) {
-                let sum = 0;
-                for(let k=0; k<4; k++) sum += a[i*4+k] * b[k*4+j];
-                out[i*4+j] = sum;
-            }
-        }
-        return out;
-    },
-    rotateX: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]; },
-    rotateY: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]; },
-    rotateZ: (rad) => { const c=Math.cos(rad),s=Math.sin(rad); return [c,-s,0,0, s,c,0,0, 0,0,1,0, 0,0,0,1]; },
-    // New Helper: Create rotation matrix from Euler (Z-X-Y order) directly
-    makeRotationFromEuler: (alpha, beta, gamma) => {
-        const cA = Math.cos(alpha), sA = Math.sin(alpha);
-        const cB = Math.cos(beta), sB = Math.sin(beta);
-        const cG = Math.cos(gamma), sG = Math.sin(gamma);
-        
-        // R = Ry * Rx * Rz (Standard Extrinsic) or Z-X-Y Intrinsic
-        // For sensors usually: Z(Alpha) -> X(Beta) -> Y(Gamma)
-        
-        const m11 = cA*cG - sA*sB*sG;
-        const m12 = -cA*sG - sA*sB*cG;
-        const m13 = -sA*cB;
-
-        const m21 = sA*cG + cA*sB*sG;
-        const m22 = -sA*sG + cA*sB*cG;
-        const m23 = cA*cB;
-
-        const m31 = -cB*sG;
-        const m32 = -cB*cG;
-        const m33 = sB;
-        
+    // Quaternion basic ops [x, y, z, w]
+    qFromEuler: (alpha, beta, gamma) => {
+        // Z-X-Y intrinsic convention for device sensors
+        const deg2rad = Math.PI / 180;
+        const x = beta * deg2rad / 2;
+        const y = gamma * deg2rad / 2;
+        const z = alpha * deg2rad / 2;
+        const cX = Math.cos(x), sX = Math.sin(x);
+        const cY = Math.cos(y), sY = Math.sin(y);
+        const cZ = Math.cos(z), sZ = Math.sin(z);
         return [
-            m11, m21, m31, 0,
-            m12, m22, m32, 0,
-            m13, m23, m33, 0,
+            sX * cY * cZ - cX * sY * sZ,
+            cX * sY * cZ + sX * cY * sZ,
+            cX * cY * sZ + sX * sY * cZ,
+            cX * cY * cZ - sX * sY * sZ
+        ];
+    },
+    qMultiply: (a, b) => {
+        const ax = a[0], ay = a[1], az = a[2], aw = a[3];
+        const bx = b[0], by = b[1], bz = b[2], bw = b[3];
+        return [
+            ax * bw + aw * bx + ay * bz - az * by,
+            ay * bw + aw * by + az * bx - ax * bz,
+            az * bw + aw * bz + ax * by - ay * bx,
+            aw * bw - ax * bx - ay * by - az * bz
+        ];
+    },
+    qFromAxisAngle: (axis, angle) => {
+        const halfAngle = angle / 2;
+        const s = Math.sin(halfAngle);
+        return [axis[0] * s, axis[1] * s, axis[2] * s, Math.cos(halfAngle)];
+    },
+    // Convert Quaternion to 4x4 Matrix
+    matFromQ: (q) => {
+        const x = q[0], y = q[1], z = q[2], w = q[3];
+        const x2 = x + x, y2 = y + y, z2 = z + z;
+        const xx = x * x2, xy = x * y2, xz = x * z2;
+        const yy = y * y2, yz = y * z2, zz = z * z2;
+        const wx = w * x2, wy = w * y2, wz = w * z2;
+        return [
+            1 - (yy + zz), xy - wz, xz + wy, 0,
+            xy + wz, 1 - (xx + zz), yz - wx, 0,
+            xz - wy, yz + wx, 1 - (xx + yy), 0,
             0, 0, 0, 1
         ];
     },
-    transpose: (m) => { const out=new Float32Array(16); for(let i=0;i<4;i++)for(let j=0;j<4;j++)out[i*4+j]=m[j*4+i]; return out; },
+    // Standard Project
     project: (vec, viewMat, width, height, fovDeg) => {
-        const x = vec.x*viewMat[0] + vec.y*viewMat[1] + vec.z*viewMat[2];
-        const y = vec.x*viewMat[4] + vec.y*viewMat[5] + vec.z*viewMat[6];
-        const z = vec.x*viewMat[8] + vec.y*viewMat[9] + vec.z*viewMat[10];
+        const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8]; // Transpose multiply for view
+        const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
+        const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
+        // In Camera Space: Z is negative for visible objects (looking down -Z)
         if (z >= -0.1) return null;
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
         return { x: x*(scale/-z)+width/2, y: -y*(scale/-z)+height/2, z: z };
@@ -482,6 +487,7 @@ const Astro = {
         const d = (date.getTime()/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
+    // World Coords: X=East, Y=North, Z=Up
     getStarVector: (ra, dec, lat, lst) => {
         const haRad = (lst - ra) * 15 * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
@@ -491,11 +497,10 @@ const Astro = {
         const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
         let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
         if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
-        return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
-    },
-    // For Milky Way & Random Stars (Procedural)
-    getVectorFromAltAz: (alt, az) => {
-        const altRad = alt * Math.PI/180; const azRad = az * Math.PI/180;
+        // Map to World: X=East, Y=North, Z=Up
+        // Azimuth is usually from North(0) -> East(90) -> South(180) -> West(270)
+        // If azRad is standard astro (0=North, clockwise), then:
+        // X = sin(az), Y = cos(az), Z = sin(alt)
         return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
     }
 };
@@ -522,7 +527,7 @@ const Guide = {
         const list = document.getElementById('guide-list');
         list.innerHTML = '';
         CONSTELLATION_DB.forEach(c => {
-            if (!App.state.ranks[c.rank]) return; // Filter by rank
+            if (!App.state.ranks[c.rank]) return;
             const card = document.createElement('div');
             card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
             const myth = App.state.lang==='ja' ? `<div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${c.myth}</div>` : '';
@@ -581,7 +586,7 @@ const App = {
     canvas: null, ctx: null, width: 0, height: 0,
     state: {
         lat: 32.698, lon: 128.839, // Goto Islands
-        viewMat: Math3D.rotateX(0), 
+        viewMat: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
         manualOffset: 0, 
         mode: 'normal', viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
@@ -595,15 +600,12 @@ const App = {
         document.getElementById('start-modal').classList.add('hidden-force');
         App.canvas = document.getElementById('sky-canvas'); App.ctx = App.canvas.getContext('2d');
         
-        // Data Init (Re-integrated from v13)
         STARS_DATA.forEach(s => App.state.stars.push(s));
-        // Procedural Background Stars (Fixed to Celestial Sphere)
         for(let i=0; i<800; i++) {
             App.state.stars.push({
                 ra: Math.random()*24, dec: Math.random()*180-90, mag: Math.random()*3+3.5, ci: Math.random()*1.5, isProc: true
             });
         }
-        // Procedural Milky Way Points (Fixed to Celestial Sphere)
         const mwPoints = [{ra:0,dec:63},{ra:3,dec:50},{ra:6,dec:10},{ra:7.5,dec:-20},{ra:12,dec:-60},{ra:17,dec:-30},{ra:18,dec:-15},{ra:20,dec:40},{ra:23,dec:60}];
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
@@ -629,53 +631,101 @@ const App = {
     handleOri: (e) => {
         if (!e.alpha && !e.beta && !e.gamma) return;
         let alpha = e.alpha, beta = e.beta, gamma = e.gamma;
-        if (e.webkitCompassHeading) { alpha = e.webkitCompassHeading; } else { alpha = (360 - alpha); }
-        App.state.orientation = { alpha, beta, gamma };
+        // Normalize iOS/Android
+        // iOS WebkitCompassHeading is North=0, CW
+        // Android alpha is North=0, CCW (Standard)
+        if (e.webkitCompassHeading) {
+            alpha = e.webkitCompassHeading;
+             // iOS usually needs -alpha for standard math rotation
+        } else {
+             // Android usually standard
+        }
+        App.state.orientation = { alpha, beta, gamma, isIOS: !!e.webkitCompassHeading };
     },
 
     updateViewMatrix: () => {
-        const { alpha, beta, gamma } = App.state.orientation; const deg2rad = Math.PI / 180;
+        const { alpha, beta, gamma, isIOS } = App.state.orientation; 
+        const deg2rad = Math.PI / 180;
         const orient = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
         const rOrient = orient * deg2rad;
 
-        // 1. Convert to Radians
-        // Normalize iOS/Android Alpha: 
-        // iOS: alpha = compass 0-360 CW. Android: 0-360 CCW.
-        // We unified in handleOri to standard compass (0=North, 360 CW?) or math (0=East CCW)?
-        // Let's assume standard math rotation for alpha is CCW around Z.
-        // Current logic in handleOri: alpha = (360-alpha) for Android.
+        // --- THE QUATERNION SOLUTION ---
+        // 1. Device Rotation Quaternion
+        // Standard Web API: Z(alpha) -> X(beta) -> Y(gamma)
+        // Alpha: Z axis (0=North, CCW)
+        // Beta: X axis (Front-Back tilt, -180 to 180)
+        // Gamma: Y axis (Left-Right tilt, -90 to 90)
         
-        const rAlpha = (alpha + App.state.manualOffset) * deg2rad;
-        const rBeta = beta * deg2rad; 
+        // Adjust for IOS/Android differences to get a unified "Earth-Fixed" rotation
+        let a = alpha;
+        if (isIOS) {
+             a = -alpha; // Reverse for standard CCW math
+        } else {
+             a = alpha - 270; // Adjust Android default? Or just alpha.
+             // Usually Android alpha=0 is North. 
+             // Three.js uses: alpha + manual offset
+        }
+        
+        const rAlpha = (a + App.state.manualOffset) * deg2rad;
+        const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
 
-        // 2. Generate Rotation Matrix (Z-X-Y Order)
-        // R_device = MakeRotation(Z, X, Y)
-        const R_device = Math3D.makeRotationFromEuler(rAlpha, rBeta, rGamma);
+        // Q_device = Qz(alpha) * Qx(beta) * Qy(gamma)
+        const q1 = Math3D.qFromEuler(rAlpha, rBeta, rGamma); // Standard intrinsic
+        
+        // 2. Screen Rotation Adjustment (-Z axis)
+        const q2 = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
+        
+        // 3. Camera Orientation Adjustment (-90 deg around X)
+        // Phones are "Flat" (Beta=0) when screen up.
+        // Cameras are "Upright" (Beta=90) when looking at horizon.
+        // We need to rotate the "Flat" reference -90 deg around X to match "Looking Forward"
+        const q3 = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
 
-        // 3. Screen Rotation Adjustment
-        // The screen rotation must be applied as a rotation around the Z axis *of the screen*.
-        // Since we projected World->Device, now we rotate Device->Screen.
-        const R_screen = Math3D.rotateZ(-rOrient);
-        
-        // 4. Combine: R_final = R_device * R_screen
-        let M = Math3D.multiply(R_screen, R_device);
-        
-        // 5. Align World Axes to Camera Axes
-        // World: X=East, Y=North, Z=Up
-        // Camera: X=Right, Y=Up, Z=Back (Standard GL)
-        
-        // We need a base alignment because standard Euler ZXY mapping (North=Y) 
-        // implies a specific default device orientation (Portrait).
-        // Let's rely on the ViewMatrix = Inverse(World->Camera).
-        
-        // Since M represents the rotation of the device relative to the world frame,
-        // The View Matrix is the Transpose of M.
-        
-        App.state.viewMat = Math3D.transpose(M);
+        // Compose: Total = Q_device * Q_screen * Q_adjust
+        let qFinal = Math3D.qMultiply(q1, q2); 
+        qFinal = Math3D.qMultiply(qFinal, q3);
+
+        // Convert to Matrix
+        App.state.viewMat = Math3D.matFromQ(qFinal);
         
         // Debug
-        const fwdX = -M[8], fwdY = -M[9], fwdZ = -M[10];
+        // Forward vector is usually (0,0,-1) in camera space.
+        // Inverse matrix * (0,0,-1) = World Direction.
+        // Here, viewMat IS the rotation matrix from World to Camera? 
+        // Or Camera to World? 
+        // qFromEuler constructs Local->World usually.
+        // So viewMat is Camera->World.
+        // To get ViewMatrix (World->Camera), we transpose (inverse).
+        
+        // But wait, our project function expects World->Camera transform?
+        // No, standard pipeline: 
+        // v_camera = Inverse(CameraWorldMatrix) * v_world
+        // Our 'viewMat' derived from sensors is usually "Orientation of Device in World" -> CameraWorldMatrix.
+        // So we need its inverse for projection.
+        // Rotation matrix inverse = transpose.
+        
+        // Let's use Transpose for projection.
+        const invMat = [
+            App.state.viewMat[0], App.state.viewMat[4], App.state.viewMat[8], 0,
+            App.state.viewMat[1], App.state.viewMat[5], App.state.viewMat[9], 0,
+            App.state.viewMat[2], App.state.viewMat[6], App.state.viewMat[10], 0,
+            0, 0, 0, 1
+        ];
+        
+        // Update global viewMat for projection usage (we pass the inverse to project function)
+        // Wait, Math3D.project implementation:
+        // x = vec.x*viewMat[0] + vec.y*viewMat[4]... 
+        // This effectively multiplies by TRANSPOSE if viewMat was row-major.
+        // Let's stick to passing the CameraWorldMatrix (App.state.viewMat) and letting Project handle projection.
+        // Math3D.project logic above: 
+        // x = vec.x*m[0] + vec.y*m[4] + vec.z*m[8]
+        // This is dot product with Col 0.
+        // If m is CameraWorld (cols are Right, Up, Back axes in World),
+        // Then dot(v, Right) is the projection onto Right axis (Camera X).
+        // Correct.
+        
+        const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; const az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
         document.getElementById('debug-az').innerText = Math.round(az < 0 ? az+360 : az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
@@ -698,7 +748,7 @@ const App = {
 
         const lst = Astro.getLST(state.lon);
         
-        // 2. Milky Way (Restored)
+        // 2. Milky Way
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter';
             state.milkyWay.forEach(p => {
@@ -714,7 +764,7 @@ const App = {
 
         const starPos = {};
 
-        // 3. Stars (Procedural & Data)
+        // 3. Stars
         state.stars.forEach(s => {
             const vec = Astro.getStarVector(s.ra, s.dec, state.lat, lst);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
@@ -729,7 +779,7 @@ const App = {
             }
         });
 
-        // 4. Constellations & Info
+        // 4. Constellations
         ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.4)"; ctx.lineWidth = 1;
         ctx.beginPath();
         const visibleConsts = [];
@@ -760,10 +810,10 @@ const App = {
         });
         ctx.stroke();
 
-        // 5. Info Overlay (Education)
+        // 5. Info Overlay
         if (state.showInfo && visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
-            const target = visibleConsts[0]; // Center-most constellation
+            const target = visibleConsts[0];
             if (target.dist < 150) {
                 const text = state.lang==='en' ? target.c.en : target.c.desc;
                 const tx = target.x, ty = target.y + 20;
@@ -776,7 +826,7 @@ const App = {
             }
         }
 
-        // 6. Meteors (Restored)
+        // 6. Meteors
         if (state.meteorEnabled && !isSolar) {
             if (Math.random() < 0.01) state.meteors.push({x: Math.random()*width, y: Math.random()*height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1});
             ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
@@ -787,7 +837,7 @@ const App = {
             ctx.globalAlpha = 1;
         }
 
-        // 7. Target Lock UI
+        // 7. Target Lock
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
             const vec = Astro.getStarVector(t.centerRA, t.centerDec, state.lat, lst);
@@ -819,7 +869,7 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v15.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v15.2.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
