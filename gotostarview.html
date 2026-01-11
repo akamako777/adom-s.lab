@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v11</title>
+    <title>Five Islands Stargazer v12</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,8 +93,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v11</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Mythology Edition</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v12</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Omni-Orientation</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -192,7 +192,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MYTHOLOGY EDITION v11</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">OMNI-ORIENTATION v12</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -274,9 +274,9 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v11 (Mythology Edition)
+ * 🌌 FIVE ISLANDS STARGAZER v12 (Omni-Orientation)
  * Architect: Gemini Canvas | Date: 2027 Protocol
- * Updates: Enhanced Constellation DB (Myths), Info Overlay Mode
+ * Fix: Correct AR orientation for Landscape/Tablet devices
  */
 
 // --- 0. DATA STRUCTURE ---
@@ -622,10 +622,11 @@ const App = {
         viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
         isAR: false, showLines: true, useGPS: false, opacity: {bg:1, milky:0.5},
-        showInfo: false, // New Info Mode
+        showInfo: false,
         meteorEnabled: true,
         stars: [], milkyWay: [], meteors: [],
-        lang: 'ja', isDev: false
+        lang: 'ja', isDev: false,
+        fov: 70
     },
 
     init: async () => {
@@ -638,7 +639,6 @@ const App = {
             ra:Math.random()*24, dec:Math.random()*180-90, mag:Math.random()*3+3.5, ci:Math.random()*1.5, isProc:true
         });
         
-        // Milky Way Path
         const mwPoints = [
             {ra: 0, dec: 63}, {ra: 3, dec: 50}, {ra: 6, dec: 10}, 
             {ra: 7.5, dec: -20}, {ra: 12, dec: -60}, 
@@ -668,7 +668,10 @@ const App = {
 
         try { if(navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
 
+        // Orientation Handlers
         window.addEventListener('resize', App.resize);
+        window.addEventListener('orientationchange', () => { setTimeout(App.resize, 200); });
+        
         if(App.state.isDev) App.setupDev();
         App.setupTouch();
         App.resize();
@@ -676,13 +679,39 @@ const App = {
     },
 
     handleOri: (e) => {
-        let az = 0, alt = 0;
-        if (e.webkitCompassHeading) { az = e.webkitCompassHeading; alt = e.beta - 90; } 
-        else if (e.alpha !== null) { az = 360 - e.alpha; alt = e.beta - 90; }
+        let alpha = 0, beta = 0; // Raw sensor data
         
-        let dAz = az - App.state.az;
+        // 1. Get Compass Heading
+        if (e.webkitCompassHeading) {
+            alpha = e.webkitCompassHeading; // iOS (0=North)
+            beta = e.beta; 
+        } else if (e.alpha !== null) {
+            alpha = 360 - e.alpha; // Android (0=North if calibrated)
+            beta = e.beta;
+        }
+
+        // 2. Compensate for Screen Rotation
+        // When device is landscape, 'alpha' doesn't automatically rotate.
+        // We must add the screen orientation angle to align 'North' with screen top.
+        const orientation = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
+        
+        // Adjust Azimuth
+        let targetAz = alpha + orientation;
+        
+        // Adjust Altitude (Simplified logic for handheld AR)
+        // When portrait (0): beta=90 is horizon. alt = beta-90.
+        // When landscape: beta is still device pitch (long axis tilt). 
+        // We assume user holds device perpendicular to ground.
+        let targetAlt = beta - 90;
+
+        // Wrap
+        if (targetAz > 360) targetAz -= 360;
+        
+        let dAz = targetAz - App.state.az;
         if (dAz > 180) App.state.az += 360; if (dAz < -180) App.state.az -= 360;
-        App.state.targetAz = az; App.state.targetAlt = alt;
+        
+        App.state.targetAz = targetAz; 
+        App.state.targetAlt = targetAlt;
     },
 
     loop: () => {
@@ -710,7 +739,7 @@ const App = {
             state.milkyWay.forEach(p => {
                 const hor = Astro.eqToHor(p.ra, p.dec, state.lat, lst);
                 if (hor.alt < -20) return;
-                const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+                const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
                 if (pos) {
                     const ext = Math.max(0, Math.min(1, (hor.alt + 10) / 20));
                     ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * state.opacity.milky * ext})`;
@@ -723,7 +752,7 @@ const App = {
         state.stars.forEach(s => {
             const hor = Astro.eqToHor(s.ra, s.dec, state.lat, lst);
             if (hor.alt < -5) return;
-            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
             if (pos) {
                 if(s.name) starPos[s.name] = pos;
                 let col = Utils.bvToColor(s.ci||0.5);
@@ -779,36 +808,29 @@ const App = {
         }
 
         // --- SMART INFO OVERLAY ---
-        // If enabled, pick closest 1-2 constellations to center and show description
         if (state.showInfo && visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
-            // Show info for top 1 (or 2 if close)
             const count = Math.min(visibleConsts.length, 1); 
             
             for(let i=0; i<count; i++) {
                 const item = visibleConsts[i];
-                // Only if reasonably close to center (within 150px)
                 if (item.dist < 250) {
                     const desc = state.lang === 'en' ? item.c.desc_en : item.c.desc;
                     const textWidth = Math.min(240, ctx.measureText(desc).width + 20);
                     const bx = item.cx - textWidth/2;
                     const by = item.cy + 15;
                     
-                    // Draw Box
                     ctx.fillStyle = isSolar ? "rgba(255,255,255,0.85)" : "rgba(15, 23, 42, 0.85)";
                     ctx.strokeStyle = isSolar ? "#000" : "rgba(34, 211, 238, 0.5)";
                     ctx.beginPath();
-                    // rounded rect manual
-                    ctx.roundRect(bx, by, textWidth, 60, 8); // height fixed for simplicity, multiline manual below
+                    ctx.roundRect(bx, by, textWidth, 60, 8);
                     ctx.fill(); ctx.stroke();
                     
-                    // Draw Text (Simple wrap logic or truncate)
                     ctx.fillStyle = isSolar ? "#000" : "#22d3ee";
                     ctx.font = "bold 11px 'Zen Maru Gothic'";
                     ctx.textAlign = "center";
                     
-                    // Simple split for 2 lines
-                    const limit = 18; // chars per line approx
+                    const limit = 18;
                     const line1 = desc.substring(0, limit);
                     const line2 = desc.substring(limit);
                     
@@ -832,7 +854,7 @@ const App = {
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
             const hor = Astro.eqToHor(t.centerRA, t.centerDec, state.lat, lst);
-            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, state.fov);
             const lockEl = document.getElementById('lock-on');
             
             const dAz = Utils.angleDiff(hor.az, currAz);
@@ -859,7 +881,12 @@ const App = {
         requestAnimationFrame(App.loop);
     },
 
-    resize: () => { App.width = window.innerWidth; App.height = window.innerHeight; App.canvas.width = App.width; App.canvas.height = App.height; },
+    resize: () => { 
+        App.width = window.innerWidth; App.height = window.innerHeight; 
+        App.canvas.width = App.width; App.canvas.height = App.height; 
+        // Adjust FOV based on Aspect Ratio (Landscape needs wider FOV)
+        App.state.fov = (App.width > App.height) ? 90 : 70;
+    },
     triggerMeteor: () => { App.state.meteors.push({x: Math.random()*App.width, y: Math.random()*App.height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1}); },
     toggleLocation: () => { App.state.useGPS = !App.state.useGPS; document.getElementById('loc-name').innerText=App.state.useGPS?"GPS (現在地)":"五島列島 (固定)"; Utils.toast(App.state.useGPS?"GPS Mode":"Goto Mode"); },
     toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
@@ -877,7 +904,7 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v11.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v12.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupDev: () => {
         let d=false,lx=0,ly=0;
         window.addEventListener('mousedown',e=>{d=true;lx=e.clientX;ly=e.clientY});
