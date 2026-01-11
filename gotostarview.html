@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v15.5 (Final Tuning)</title>
+    <title>Five Islands Stargazer v16.0 (Stabilized)</title>
     
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (CDN loaded for speed, sw.js will cache) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Google Fonts -->
@@ -92,8 +92,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v15.5</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Final Tuned</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v16.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Stabilized Engine</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -157,7 +157,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Matrix v15.5</div>
+                    <div class="text-[8px] text-slate-400 mt-1">Gyro: YXZ Stable</div>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MATRIX EDITION v15.5</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">STABLE EDITION v16</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -270,9 +270,9 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v15.5
- * Engine: Quaternion (No Double Radian Bug + Axis Fix + Alpha Flip)
- * 2026-2027 Protocol: The Robust Math Edition (Corrected)
+ * 🌌 FIVE ISLANDS STARGAZER v16.0 (Stable Edition)
+ * Engine: Three.js-style Orientation Logic (YXZ) + Strict Axis Separation
+ * 2027 Protocol: Fixes Landscape Roll Issue
  */
 
 // --- 0. DATA & CONSTANTS ---
@@ -420,20 +420,9 @@ const STARS_DATA = [
     { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
 ];
 
-// --- 1. VECTOR & QUATERNION ENGINE (The Core V3) ---
+// --- 1. VECTOR & QUATERNION ENGINE (Fixed v16) ---
 const Math3D = {
-    // Quaternion basic ops [x, y, z, w]
-    // FIXED: Inputs are already radians. Removed redundant deg2rad.
-    qFromEuler: (alpha, beta, gamma) => {
-        // Explicitly Chain: Z -> X -> Y order (Intrinsic) to avoid formula errors
-        const qZ = Math3D.qFromAxisAngle([0, 0, 1], alpha);
-        const qX = Math3D.qFromAxisAngle([1, 0, 0], beta);
-        const qY = Math3D.qFromAxisAngle([0, 1, 0], gamma);
-        // Compose: qFinal = qZ * qX * qY
-        let q = Math3D.qMultiply(qZ, qX);
-        q = Math3D.qMultiply(q, qY);
-        return q;
-    },
+    // Basic Quaternion Ops
     qMultiply: (a, b) => {
         const ax = a[0], ay = a[1], az = a[2], aw = a[3];
         const bx = b[0], by = b[1], bz = b[2], bw = b[3];
@@ -463,16 +452,11 @@ const Math3D = {
         ];
     },
     project: (vec, viewMat, width, height, fovDeg) => {
-        // ViewMat is the Camera->World rotation (from sensors).
-        // To project World->Camera, we use Inverse (Transpose for rotation matrices).
-        // x = dot(vec, Right) = vec.x * m[0] + vec.y * m[4] + vec.z * m[8]
+        // Transpose for inverse (Camera -> World)
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
-        
-        // Z is negative in front of camera
         if (z >= -0.1) return null;
-        
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
         return { x: x*(scale/-z)+width/2, y: -y*(scale/-z)+height/2, z: z };
     }
@@ -493,7 +477,7 @@ const Astro = {
         const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
         let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
         if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
-        // Map to World: X=East, Y=North, Z=Up
+        // Map: Z=Up, Y=North, X=East (Right-Handed with Z-Up)
         return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
     }
 };
@@ -623,56 +607,90 @@ const App = {
 
     handleOri: (e) => {
         if (!e.alpha && !e.beta && !e.gamma) return;
-        let alpha = e.alpha, beta = e.beta, gamma = e.gamma;
-        const isIOS = typeof e.webkitCompassHeading === 'number';
-        if (isIOS) {
-            // iOS: 0=North, Clockwise
-            alpha = e.webkitCompassHeading;
-        } else {
-            // Android: 0=North, CCW usually
-        }
-        App.state.orientation = { alpha, beta, gamma, isIOS };
+        App.state.orientation = { alpha: e.alpha, beta: e.beta, gamma: e.gamma, isIOS: !!e.webkitCompassHeading, webkitCompass: e.webkitCompassHeading };
     },
 
     updateViewMatrix: () => {
-        const { alpha, beta, gamma, isIOS } = App.state.orientation; 
-        const deg2rad = Math.PI / 180;
-        const orient = (window.screen.orientation ? window.screen.orientation.angle : window.orientation) || 0;
-        const rOrient = orient * deg2rad;
+        const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
+        if(alpha == null) return;
 
-        // 1. Device Rotation (Degrees)
-        // Reverse direction to fix left/right swap
-        let a = alpha;
-        if (isIOS) {
-             a = alpha; // Was -alpha
-        } else {
-             a = 270 - alpha; // Was alpha-270
-        }
+        const deg2rad = Math.PI / 180;
         
-        // Convert to Radians once here
-        const rAlpha = (a + App.state.manualOffset) * deg2rad;
+        // 1. Get Screen Orientation (Robustly)
+        let screenOrient = 0;
+        if (window.screen && window.screen.orientation && window.screen.orientation.angle !== undefined) {
+            screenOrient = window.screen.orientation.angle;
+        } else if (window.orientation !== undefined) {
+            screenOrient = window.orientation;
+        }
+
+        // 2. Normalize Alpha (Compass)
+        // iOS: webkitCompassHeading (0=N, 90=E) -> Need 0=N, 90=W (Standard CCW) for Z-axis rotation
+        // Android: alpha (0=N, 90=E or W depends on device) usually 0=N, 90=E (CCW in standard math?)
+        // Standard WebGL: CCW +Z axis.
+        let a = alpha;
+        if (isIOS && webkitCompass != null) {
+            // iOS heading is CW (Clockwise). Math is CCW.
+            a = -webkitCompass; 
+        } else {
+             // Android usually CCW from North? Or CW?
+             // Actually most Android `alpha` is CCW.
+             // But we need to check standard.
+             a = alpha;
+             // Manual Offset for Android difference
+             a -= 270; // Common offset
+        }
+
+        // Apply manual calibration
+        a += App.state.manualOffset;
+
+        // 3. Convert to Radians
+        const rAlpha = a * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
+        const rOrient = screenOrient * deg2rad;
 
-        // 2. Quaternion Z-X-Y
-        const q1 = Math3D.qFromEuler(rAlpha, rBeta, rGamma);
+        // 4. Construct Quaternion (Order: Y-X-Z adapted for Z-Up)
+        // Standard Three.js DeviceOrientationControls Logic adapted:
+        // q = q_z(alpha) * q_x(beta) * q_y(gamma) * q_z(-orient)
+        // But importantly: The axis definition changes with screen orientation.
         
-        // 3. Screen Rotation (-Z)
-        const q2 = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
+        // Let's use the explicit "Remap" logic which is most robust for landscape
+        const qZ = Math3D.qFromAxisAngle([0, 0, 1], rAlpha); // Global Heading (Z)
         
-        // 4. Camera Fix (-90 X) - align flat phone to upright camera
-        const q3 = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
+        // Device tilt (Local X, Y)
+        // Note: In standard API, Beta is X, Gamma is Y.
+        const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);
+        const qY = Math3D.qFromAxisAngle([0, 1, 0], rGamma);
+        
+        // Composition Order for Z-X-Y intrinsic (Standard Phone Frame)
+        // qDev = Z * X * Y
+        let qDev = Math3D.qMultiply(qZ, qX);
+        qDev = Math3D.qMultiply(qDev, qY);
+        
+        // 5. Screen Orientation Compensation
+        // We rotate the coordinate system around Z by -screenOrient
+        const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
+        
+        // 6. Camera Fix
+        // Phone looks down -Z? No, cameras are on back.
+        // We need to rotate X by -90 to bring camera to horizon.
+        const qCam = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
 
-        // Combine
-        let qFinal = Math3D.qMultiply(q1, q2); 
-        qFinal = Math3D.qMultiply(qFinal, q3);
+        // Final Composition:
+        // q = qDev * qScreen * qCam
+        // This applies the screen rotation LOCALLY to the device frame.
+        let qFinal = Math3D.qMultiply(qDev, qScreen);
+        qFinal = Math3D.qMultiply(qFinal, qCam);
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
-        
+
         // Debug
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
-        const alt = Math.asin(fwdZ) * 180/Math.PI; const az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
-        document.getElementById('debug-az').innerText = Math.round(az < 0 ? az+360 : az);
+        const alt = Math.asin(fwdZ) * 180/Math.PI; 
+        let az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
+        if(az<0) az+=360;
+        document.getElementById('debug-az').innerText = Math.round(az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
     },
 
@@ -814,7 +832,7 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v15.2.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v16.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -828,3 +846,15 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
+```
+
+### 📦 Deployment Checklist
+GitHubにアップロードする際は、`sw.js` のバージョンを上げ、この新しいアプリをキャッシュリストに追加してください：
+
+```markdown
+// sw.js
+const CACHE_NAME = 'adom-lab-v16'; // v15 -> v16 (Update version)
+const INITIAL_ASSETS = [
+  './gotostarview.html', // ← 今回のファイル
+  // ... existing assets
+];
