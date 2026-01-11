@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v25.0 (Reliable Tool)</title>
+    <title>Five Islands Stargazer v25.1 (Aurora Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,16 +79,16 @@
         #time-slider-container.active { opacity: 1; pointer-events: auto; }
         .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
 
-        /* Calibration Modal (NEW) */
+        /* Calibration Modal (UPDATED) */
         #calib-modal {
-            position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
+            position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.95);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         #calib-modal.active { opacity: 1; pointer-events: auto; }
         
         .level-bubble {
-            width: 200px; height: 200px; border: 4px solid #475569; border-radius: 50%;
+            width: 180px; height: 180px; border: 4px solid #475569; border-radius: 50%;
             position: relative; overflow: hidden; background: #0f172a; margin-bottom: 20px;
         }
         .level-target {
@@ -137,8 +137,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Reliable Tool</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.1</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Logic Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -197,7 +197,7 @@
                     </div>
                 </button>
                 <div class="flex gap-3">
-                    <!-- Calibration Button (NEW) -->
+                    <!-- Calibration Button (UPDATED) -->
                     <button onclick="App.startCalibration()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300">🎯</button>
                     
                     <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
@@ -225,7 +225,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v25.0 Calibration</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v25.1 Logic Fix</div>
                 </div>
             </div>
 
@@ -246,24 +246,41 @@
         </div>
     </div>
 
-    <!-- 🎯 CALIBRATION MODAL (NEW) -->
+    <!-- 🎯 CALIBRATION MODAL (UPDATED with +90° Button) -->
     <div id="calib-modal" class="interactive">
-        <div class="text-center px-6">
+        <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-xl font-bold text-white mb-2">方位合わせ (Calibration)</h2>
-            <p class="text-xs text-slate-400 mb-6">
-                スマホを水平に持ち、北(N)を向いてください。<br>
-                赤玉を中心に入れてボタンを押してください。
-            </p>
+            
+            <div class="bg-slate-800/80 p-4 rounded-xl border border-white/10 mb-4 w-full">
+                <ol class="text-xs text-slate-300 space-y-2 list-decimal list-inside text-left">
+                    <li><b class="text-white">スマホを水平</b>に持ってください。</li>
+                    <li><b class="text-cyan-400">上端を北(N)</b>に向けてください。</li>
+                    <li>赤玉を中心に入れ、<b class="text-white">決定</b>を押してください。</li>
+                </ol>
+            </div>
             
             <div class="level-bubble">
                 <div class="level-target"></div>
                 <div id="level-ball" class="level-ball"></div>
             </div>
-            <div id="calib-val" class="font-mono text-cyan-400 mb-6 text-2xl font-bold">0°</div>
+            <div id="calib-val" class="font-mono text-cyan-400 mb-4 text-2xl font-bold">0°</div>
             
-            <div class="flex gap-4">
-                <button onclick="App.cancelCalibration()" class="px-6 py-3 rounded-full bg-slate-700 text-white font-bold">キャンセル</button>
-                <button onclick="App.confirmCalibration()" class="px-6 py-3 rounded-full bg-cyan-600 text-white font-bold shadow-lg hover:bg-cyan-500">決定 (LOCK)</button>
+            <!-- Emergency Rotation Controls -->
+            <div class="flex gap-2 mb-6">
+                <button onclick="App.rotateOffset(90)" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] text-white font-bold border border-white/10">
+                    ↻ +90°
+                </button>
+                <button onclick="App.rotateOffset(-90)" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] text-white font-bold border border-white/10">
+                    ↺ -90°
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-500 mb-4 text-center max-w-xs">
+                ※古い機種や他社端末ではセンサー仕様が異なり、90°ズレる場合があります。その場合は上のボタンで調整してください。
+            </p>
+            
+            <div class="flex gap-4 w-full justify-center">
+                <button onclick="App.cancelCalibration()" class="px-6 py-3 rounded-full bg-slate-700 text-white font-bold w-1/3">戻る</button>
+                <button onclick="App.confirmCalibration()" class="px-6 py-3 rounded-full bg-cyan-600 text-white font-bold shadow-lg hover:bg-cyan-500 w-1/2">決定 (LOCK)</button>
             </div>
         </div>
     </div>
@@ -284,7 +301,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25.1</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -390,11 +407,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v25.0 (Reliable Tool)
- * Features:
- * - Calibration Mode: Use phone flat (like a real compass) to lock heading
- * - HUD Removed: No more misleading vertical compass
- * - Procedural Milky Way: High-quality nebula particles
+ * 🌌 FIVE ISLANDS STARGAZER v25.1 (Aurora Logic Fix)
+ * Changes:
+ * - REMOVED the legacy "a -= 270" logic for Android. Now trusts raw sensor.
+ * - ADDED +90/-90 Rotate buttons in Calibration for emergency fixes.
+ * - UPDATED Calibration instructions for clarity.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -803,7 +820,6 @@ const App = {
         document.getElementById('start-modal').classList.add('hidden-force');
         
         // 1. Camera Init (AR OFF by default in v23)
-        // We do NOT start camera stream here. User must toggle it.
         document.getElementById('toggle-ar').checked = false;
         App.toggleAR(false);
 
@@ -828,7 +844,6 @@ const App = {
         }
         
         // --- MILKY WAY GENERATOR (Procedural Nebula) ---
-        // Generates layered particles along galactic plane
         const mwPoints = [
             {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
             {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
@@ -837,38 +852,30 @@ const App = {
         
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            const steps = 150; // Denser particles
+            const steps = 150; 
             
             for(let j=0; j<steps; j++) {
                 const t = j/steps;
-                // Interpolate position
                 const baseRA = p1.ra + (p2.ra - p1.ra)*t;
                 const baseDec = p1.dec + (p2.dec - p1.dec)*t;
                 const baseW = p1.w + (p2.w - p1.w)*t;
                 
-                // Random scatter
                 const scatter = (Math.random() - 0.5) * baseW;
-                const finalRA = baseRA + (Math.random() - 0.5) * 2; // RA jitter
+                const finalRA = baseRA + (Math.random() - 0.5) * 2;
                 const finalDec = baseDec + scatter;
                 
-                // Color variation (Blue-ish to White)
-                // 0 = Blue, 1 = White, 2 = Reddish
                 const colorType = Math.random(); 
                 let r, g, b;
                 
-                if (colorType > 0.8) { // Hint of nebula red
-                    r=200; g=180; b=220; 
-                } else if (colorType > 0.4) { // Pure white core
-                    r=240; g=240; b=255;
-                } else { // Cosmic blue
-                    r=180; g=200; b=255;
-                }
+                if (colorType > 0.8) { r=200; g=180; b=220; } 
+                else if (colorType > 0.4) { r=240; g=240; b=255; } 
+                else { r=180; g=200; b=255; }
 
                 App.state.milkyWay.push({
                     ra: finalRA, 
                     dec: finalDec, 
-                    size: Math.random()*25 + 10, // Larger, softer particles
-                    alpha: Math.random()*0.08 + 0.02, // Very faint, additive
+                    size: Math.random()*25 + 10, 
+                    alpha: Math.random()*0.08 + 0.02, 
                     r, g, b
                 });
             }
@@ -932,33 +939,28 @@ const App = {
         App.state.calibMode = false;
         document.getElementById('calib-modal').classList.remove('active');
     },
+    // NEW: Rotate Offset Function
+    rotateOffset: (deg) => {
+        App.state.manualOffset += deg;
+        Utils.toast(`Offset Rotated: ${deg > 0 ? '+' : ''}${deg}°`);
+        // We do NOT close the modal, let them adjust more if needed.
+    },
     confirmCalibration: () => {
-        // Here we capture the CURRENT Heading (which is accurate because phone is flat)
-        // And we set manualOffset so that Alpha + Offset = 0 (North) ? 
-        // No, we want "Current Heading" to equal "Real North".
-        // The phone sensor 'alpha' ALREADY gives magnetic North when flat.
-        // The problem is DRIFT when lifted.
-        // So we record "alpha_flat". When AR runs, we compare "alpha_current" to "alpha_flat"
-        // But gyros don't work like that. 
-        // 
-        // Simplest "Heading Reset":
-        // We assume the user is pointing NORTH when they press the button.
-        // So we force the offset to make the current alpha = 0 (North).
-        
+        // v25.1: Reset Logic based on "Top = North" rule
         const { alpha, webkitCompass } = App.state.orientation;
         let currentH = alpha;
         if(webkitCompass) currentH = webkitCompass;
         
-        // If user is facing North (0 deg) in reality, but phone says X deg:
-        // We want displayed Azimuth to be 0.
-        // Formula: Display = Sensor + Offset
-        // 0 = X + Offset  => Offset = -X
+        // If user is holding phone flat and top is North, 'currentH' SHOULD be 0 (or close).
+        // If it says 90, we need offset -90.
+        // Formula: Display = Sensor + Offset. Target Display = 0.
+        // 0 = currentH + Offset => Offset = -currentH.
         
         App.state.manualOffset = -currentH;
         
         App.state.calibMode = false;
         document.getElementById('calib-modal').classList.remove('active');
-        Utils.toast("Heading Locked to NORTH 🔒");
+        Utils.toast("Compass LOCKED to North 🔒");
     },
 
     updateViewMatrix: () => {
@@ -973,15 +975,15 @@ const App = {
         // 2. Normalize Alpha (Base Heading)
         let a = safeAlpha;
         if (isIOS && webkitCompass != null) a = -webkitCompass;
-        else { a = safeAlpha; if (!isIOS) a -= 270; }
+        else { 
+            // 🛑 v25.1 FIX: Removed the "-270" magic number for Android.
+            // Trusts raw 'safeAlpha' (0=North on modern Chrome)
+            a = safeAlpha; 
+        }
         
         // 3. Magnetic Declination Fix
         a -= 7; 
 
-        // Store RAW Azimuth for Independent Compass
-        let rawHeading = a;
-        if (App.state.reverseAlpha) rawHeading = -rawHeading;
-        
         // 4. Apply Manual Offset for STAR rendering ONLY
         let starAlpha = a + App.state.manualOffset;
         if (App.state.reverseAlpha) starAlpha = -starAlpha;
@@ -1008,51 +1010,6 @@ const App = {
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
-        // --- Calculate Compass Azimuth (Fix v24: Matrix-based Heading) ---
-        // Using the same rotation matrix as the view (but without manual offset)
-        // allows us to know exactly where the camera is pointing in 3D space.
-        // We project the forward vector onto the horizontal plane.
-        
-        const rRawAlpha = (App.state.reverseAlpha ? -a : a) * deg2rad;
-        // Reconstruct matrix without manual offset
-        const qY_raw = Math3D.qFromAxisAngle([0, 1, 0], rRawAlpha);
-        let qDev_raw = Math3D.qMultiply(qY_raw, qX);
-        qDev_raw = Math3D.qMultiply(qDev_raw, qZ);
-        let qFinal_raw = Math3D.qMultiply(qDev_raw, qCamFix);
-        qFinal_raw = Math3D.qMultiply(qFinal_raw, qScreen);
-        const mRaw = Math3D.matFromQ(qFinal_raw);
-        
-        // Extract forward vector (negative Z axis of the camera)
-        // In our matrix, column 2 (index 8, 9, 10) is the Z axis vector.
-        // Forward is -Z.
-        const fwdX = -mRaw[8]; 
-        const fwdY = -mRaw[9];
-        // We ignore Z component for compass heading
-        
-        // Calculate azimuth from forward vector
-        // atan2(x, y) gives angle from Y axis (North)
-        let compassAz = Math.atan2(fwdX, fwdY) * 180 / Math.PI;
-        
-        // Fix for "Mirror Effect" (West/East Flip) if needed
-        // Standard math: +X is East, +Y is North.
-        // If the user reports E/W swap, we negate the angle or flip X.
-        // Let's try standard CCW first, then flip if it's mirrored.
-        // Based on user report: "North/South correct, East/West flipped" -> Flip X.
-        // Actually, atan2(x,y) is CW from North if X is East.
-        // Let's invert the angle to fix the mirror effect.
-        compassAz = -compassAz; 
-
-        // Wrap to 0-360
-        if(compassAz < 0) compassAz += 360;
-        
-        // Low-Pass Filter for Compass Stability
-        let diff = compassAz - App.state.compassFiltered;
-        if (diff < -180) diff += 360;
-        if (diff > 180) diff -= 360;
-        App.state.compassFiltered += diff * 0.1; // 0.1 = Smoothing factor
-        if (App.state.compassFiltered >= 360) App.state.compassFiltered -= 360;
-        if (App.state.compassFiltered < 0) App.state.compassFiltered += 360;
-
         // Debug Display
         const starFwdX = -App.state.viewMat[8], starFwdY = -App.state.viewMat[9], starFwdZ = -App.state.viewMat[10];
         const alt = Math.asin(starFwdZ) * 180/Math.PI; 
@@ -1060,18 +1017,6 @@ const App = {
 
         document.getElementById('debug-az').innerText = Math.round(starAz);
         document.getElementById('debug-alt').innerText = Math.round(alt);
-        
-        // Update Compass HUD with FILTERED, INDEPENDENT Azimuth
-        // v25: Wait, we REMOVED the HUD for v25. But maybe we keep it for "Confirmation"?
-        // The user asked for "Confirmation Mode" or HUD removed.
-        // Let's keep the HUD hidden by default, or remove it entirely as per plan.
-        // Plan says: "Compass HUD 廃止". So we comment this out.
-        // App.updateCompass(App.state.compassFiltered);
-    },
-    
-    // Compass Drawer (Disabled in v25 per spec)
-    updateCompass: (az) => {
-        // ... (Code removed/disabled for v25) ...
     },
 
     loop: () => {
@@ -1088,18 +1033,14 @@ const App = {
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
-        // Apply Time Offset here
         const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
-        // --- MILKY WAY RENDER (Updated) ---
         if (!isSolar && state.opacity.milky > 0) {
-            // Use 'lighter' for additive mixing (glowing effect)
             ctx.globalCompositeOperation = 'lighter'; 
             state.milkyWay.forEach(p => {
                 const vec = Astro.getStarVector(p.ra, p.dec, state.lat, lst);
                 const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if (pos) {
-                    // Create radial gradient for soft particle look
                     const size = p.size * (width/1500);
                     const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
                     const a = p.alpha * state.opacity.milky;
@@ -1226,11 +1167,9 @@ const App = {
     },
     toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
     
-    // NEW: Time Slider Toggle
     toggleTimeSlider: () => {
         const slider = document.getElementById('time-slider-container');
         slider.classList.toggle('active');
-        // Reset to 0 when closed? No, let them keep it.
         Utils.toast(I18N[App.state.lang].time_travel);
     },
     setTimeOffset: (val) => {
@@ -1242,13 +1181,10 @@ const App = {
         if(val == 0) Utils.toast(I18N[App.state.lang].time_reset);
     },
 
-    // Fix v23: AR Only when toggled (init param 'v' controls this)
     toggleAR: (v) => { 
         App.state.isAR = v;
         const cam = document.getElementById('camera-feed');
-        
         if (v) {
-            // Activate Camera
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
                     .then(stream => { cam.srcObject = stream; cam.style.opacity = 1; })
@@ -1257,7 +1193,6 @@ const App = {
             App.setOpacity('bg', 0.0); 
             document.querySelector('input[oninput*="bg"]').value = 0.0;
         } else {
-            // Stop Camera to save battery
             if (cam.srcObject) {
                 cam.srcObject.getTracks().forEach(t => t.stop());
                 cam.srcObject = null;
@@ -1283,7 +1218,7 @@ const App = {
         Guide.buildList(); 
         Utils.updateDOMText(); 
     },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v25.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v25.1.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -1295,3 +1230,14 @@ const App = {
 
 window.onload = () => Gate.check();
 </script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('StarGazer: SW Registered!', reg))
+                .catch(err => console.log('StarGazer: SW Failed', err));
+        });
+    }
+</script>
+</body>
+</html>
