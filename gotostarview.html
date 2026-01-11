@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v18.0 (The Holy Order)</title>
+    <title>Five Islands Stargazer v19.0 (Rich AR)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,6 +32,10 @@
         #layers-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity 0.8s; }
         #sky-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+        
+        /* Overlay for Smart Bubble (NEW) */
+        #overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; overflow: hidden; }
+
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
         .interactive { pointer-events: auto; cursor: pointer; }
         
@@ -51,6 +55,20 @@
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
         
+        /* Smart Bubble (NEW) */
+        .info-bubble {
+            position: absolute;
+            transition: opacity 0.3s, transform 0.1s linear;
+            will-change: transform, left, top;
+        }
+        .bubble-tail {
+            position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 8px solid transparent; border-right: 8px solid transparent;
+            border-top: 8px solid rgba(15, 23, 42, 0.9);
+        }
+        body.mode-solar .bubble-tail { border-top-color: rgba(255, 255, 255, 0.95); }
+
         /* 🚪 PC Gate */
         #star-gate {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
@@ -60,18 +78,13 @@
             overflow-y: auto; padding-top: 10vh; padding-bottom: 40px;
         }
 
-        /* Navigation Arrow */
         @keyframes pulse-target { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
         .target-lock { animation: pulse-target 1s infinite; }
-
         .hidden-force { display: none !important; }
         .check-box { appearance: none; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.5); border-radius: 6px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
         .check-box:checked { background: #22d3ee; border-color: #22d3ee; }
         .check-box:checked::after { content: '✔'; position: absolute; top: 0px; left: 5px; color: #000; font-size: 16px; font-weight: bold; }
-        body.mode-solar .check-box { border-color: rgba(0,0,0,0.3); }
-        body.mode-solar .check-box:checked { background: #0066cc; border-color: #0066cc; }
-        body.mode-solar .check-box:checked::after { color: #fff; }
-
+        
         /* Range Slider */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
@@ -79,11 +92,12 @@
             background: #22d3ee; border: 2px solid #ffffff; cursor: pointer; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
-        body.mode-solar input[type=range]::-webkit-slider-thumb { background: #0066cc; border-color: #fff; }
-        body.mode-solar input[type=range]::-webkit-slider-runnable-track { background: rgba(0,0,0,0.2); }
         
-        /* Debug HUD */
         #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 10px; text-shadow: 1px 1px 0 #000; }
+        
+        /* Swipe Hint Animation */
+        @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
+        .swipe-hint { animation: swipe-anim 2s infinite; }
     </style>
 </head>
 <body>
@@ -92,19 +106,15 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v18.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">The Holy Order</p>
-            
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v19.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Rich AR Edition</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
-            
             <p class="text-slate-300 text-sm leading-relaxed font-medium mb-8">
                 モバイルデバイス専用です。<br>QRコードをスキャンしてください。
             </p>
-            
-            <button onclick="Gate.startUnlock()" 
-                class="group flex items-center gap-2 px-6 py-3 rounded-full bg-slate-800/50 border border-slate-700 hover:bg-slate-700 hover:border-cyan-500 transition-all cursor-pointer">
+            <button onclick="Gate.startUnlock()" class="group flex items-center gap-2 px-6 py-3 rounded-full bg-slate-800/50 border border-slate-700 hover:bg-slate-700 hover:border-cyan-500 transition-all cursor-pointer">
                 <span class="text-yellow-400 text-xl group-hover:animate-spin">★</span>
                 <span class="text-xs font-bold text-slate-300 group-hover:text-white">PC DEBUG MODE</span>
             </button>
@@ -116,6 +126,16 @@
         <div id="layers-container">
             <video id="camera-feed" autoplay playsinline muted></video>
             <canvas id="sky-canvas"></canvas>
+            
+            <!-- NEW: HTML Overlay for Rich Bubbles -->
+            <div id="overlay-layer">
+                <div id="smart-bubble" class="info-bubble opacity-0 w-64 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 backdrop-blur-md shadow-2xl flex flex-col items-center text-center">
+                    <h3 id="bubble-title" class="text-lg font-bold text-cyan-400 mb-1 leading-tight">Title</h3>
+                    <div id="bubble-tag" class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-slate-300 mb-2">Constellation</div>
+                    <p id="bubble-desc" class="text-sm text-white font-medium leading-relaxed text-left w-full">Description here...</p>
+                    <div class="bubble-tail"></div>
+                </div>
+            </div>
         </div>
 
         <!-- NAV UI -->
@@ -142,7 +162,7 @@
                     <span id="gps-icon" class="text-sm">📍</span>
                     <div class="flex flex-col items-start">
                         <span class="text-[8px] font-bold text-cyan-400 tracking-widest uppercase">LOCATION</span>
-                        <span id="loc-name" class="text-[10px] font-bold text-white leading-none">五島列島 (固定)</span>
+                        <span id="loc-name" class="text-[10px] font-bold text-white leading-none">五島列島 (Fixed)</span>
                     </div>
                 </button>
                 <div class="flex gap-3">
@@ -152,12 +172,20 @@
                 </div>
             </div>
 
+            <!-- Swipe Hint (Center) -->
+            <div id="swipe-hint" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-1000 opacity-0">
+                <div class="flex flex-col items-center">
+                    <div class="text-4xl mb-2 swipe-hint">↔️</div>
+                    <div class="bg-black/60 px-3 py-1 rounded-full text-xs text-white backdrop-blur border border-white/20">Swipe to Adjust</div>
+                </div>
+            </div>
+
             <!-- Debug Info (Lower Left) -->
             <div class="absolute bottom-24 left-4 pointer-events-none opacity-60">
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Gyro: YXZ Remapped</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v19.0 (Cam+Bubble)</div>
                 </div>
             </div>
 
@@ -189,11 +217,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">FIXED EDITION v18</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RICH AR EDITION v19</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">ARエンジンの初期化を行います</p>
+            <p class="text-[10px] text-slate-500 mt-4">ARカメラとセンサーを起動します</p>
         </div>
     </div>
 
@@ -229,7 +257,7 @@
                 <div class="flex items-center justify-between bg-cyan-900/30 p-2 rounded-lg border border-cyan-500/20">
                     <div>
                         <span class="text-sm font-bold text-cyan-300">🌟 星座の解説を表示</span>
-                        <div class="text-[10px] text-slate-400">見ている星座の特徴を表示します</div>
+                        <div class="text-[10px] text-slate-400">吹き出しで解説を表示します</div>
                     </div>
                     <input type="checkbox" checked onchange="App.setFlag('showInfo', this.checked)" class="check-box">
                 </div>
@@ -242,11 +270,6 @@
                 <div class="space-y-2">
                     <div class="flex justify-between text-xs font-bold text-slate-400"><span>背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="1" oninput="App.setOpacity('bg', this.value)">
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
-                    <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="App.setOpacity('milky', this.value)">
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
@@ -281,9 +304,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v18.0 (The Holy Order)
- * Engine: YXZ Euler Order + Gamma Inversion + Last-Step Screen Rotation
- * 2027 Protocol: The Definitive Fix for Landscape AR
+ * 🌌 FIVE ISLANDS STARGAZER v19.0 (Rich AR Edition)
+ * Features:
+ * - Fixed AR Camera (getUserMedia)
+ * - HTML/CSS Smart Bubble for Descriptions
+ * - Magnetic Declination Fix (-7 deg for Japan/Goto)
+ * - v18.0 YXZ Rotation Logic (Stable)
  */
 
 // --- 0. DATA & CONSTANTS ---
@@ -293,84 +319,84 @@ const CONSTELLATION_DB = [
     { 
         id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
         desc: "【冬の王者】真ん中の三つ星が特徴。左上の赤い星「ベテルギウス」は、もうすぐ爆発するかもしれない超巨大な星です。", 
-        myth: "【神話】海の神ポセイドンの子で、乱暴者の狩人。サソリに刺されて死んだため、サソリ座が昇ると逃げるように沈んでいきます。【豆知識】日本では三つ星を「平家星」「源氏星」と呼んでいました。",
+        myth: "海の神ポセイドンの子で、乱暴者の狩人。サソリに刺されて死んだため、サソリ座が昇ると逃げるように沈んでいきます。",
         centerRA: 5.6, centerDec: 0.0, 
         lines: ["Betelgeuse","Alnitak", "Alnitak","Saiph", "Rigel","Mintaka", "Mintaka","Alnilam", "Alnilam","Alnitak", "Betelgeuse","Bellatrix", "Mintaka","Bellatrix", "Alnitak","Rigel"] 
     },
     { 
         id: "sco", rank: 1, name: "さそり座", en: "Scorpius", 
         desc: "【夏のS字】南の空の大きなS字カーブ。赤い1等星「アンタレス」は「火星に対抗するもの」という意味です。", 
-        myth: "【神話】オリオンを倒した手柄で星座になりました。だからオリオン座とは決して同じ空には現れません。",
+        myth: "オリオンを倒した手柄で星座になりました。だからオリオン座とは決して同じ空には現れません。",
         centerRA: 16.5, centerDec: -26.0, 
         lines: ["Antares","Dschubba", "Dschubba","Graffias", "Antares","Wei", "Antares","Tau Sco", "Tau Sco","Epsilon Sco", "Epsilon Sco","Mu Sco", "Mu Sco","Zeta Sco", "Zeta Sco","Eta Sco", "Eta Sco","Sargas", "Sargas","Shaula"] 
     },
     { 
         id: "sum", rank: 1, name: "夏の大三角", en: "Summer Triangle", 
         desc: "【夏の目印】こと座のベガ（織姫）、わし座のアルタイル（彦星）、はくちょう座のデネブを結ぶ巨大な三角形。", 
-        myth: "【理科】ベガまでの距離は25光年ですが、デネブは1400光年も彼方にあります。デネブは超・超巨大な星だから、遠くても明るく見えるのです。",
+        myth: "ベガまでの距離は25光年ですが、デネブは1400光年も彼方にあります。デネブは超・超巨大な星だから、遠くても明るく見えるのです。",
         centerRA: 19.5, centerDec: 28.0, 
         lines: ["Vega","Altair", "Altair","Deneb", "Deneb","Vega"] 
     },
     { 
         id: "tau", rank: 1, name: "おうし座", en: "Taurus", 
         desc: "【冬のV字】V字型の顔と、美しい星団「プレアデス（すばる）」が特徴。", 
-        myth: "【豆知識】「すばる」は「統（す）べる＝集まる」という意味の古い日本語。自動車メーカー「SUBARU」のエンブレムにもなっています。",
+        myth: "「すばる」は「統（す）べる＝集まる」という意味の古い日本語。自動車メーカー「SUBARU」のエンブレムにもなっています。",
         centerRA: 4.5, centerDec: 16.0, 
         lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau"] 
     },
     { 
         id: "gem", rank: 1, name: "ふたご座", en: "Gemini", 
         desc: "【仲良し兄弟】カストル（兄・銀）とポルックス（弟・金）が並んで輝いています。", 
-        myth: "【理科】実はカストルは6つの星が重なった「6重連星」という、とんでもなく複雑な星です。望遠鏡がないと1つに見えます。",
+        myth: "実はカストルは6つの星が重なった「6重連星」という、とんでもなく複雑な星です。望遠鏡がないと1つに見えます。",
         centerRA: 7.0, centerDec: 22.0, 
         lines: ["Castor","Pollux"] 
     },
     { 
         id: "leo", rank: 1, name: "しし座", en: "Leo", 
         desc: "【春の鎌】「？」を裏返したような形（ししの大鎌）が頭。1等星レグルスは「小さな王様」という意味。", 
-        myth: "【神話】英雄ヘラクレスと戦った不死身のライオン。硬い皮膚を持っていましたが、ヘラクレスに首を絞められて退治されました。",
+        myth: "英雄ヘラクレスと戦った不死身のライオン。硬い皮膚を持っていましたが、ヘラクレスに首を絞められて退治されました。",
         centerRA: 10.5, centerDec: 15.0, 
         lines: ["Regulus","Denebola", "Regulus","Algieba"] 
     },
     { 
         id: "vir", rank: 1, name: "おとめ座", en: "Virgo", 
         desc: "【春の女神】白く輝くスピカが目印。「スピカ」は「麦の穂」という意味です。", 
-        myth: "【神話】農業の女神デメテル、またはその娘ペルセポネの姿。彼女が地下の国に行くと冬になり、戻ってくると春になります。",
+        myth: "農業の女神デメテル、またはその娘ペルセポネの姿。彼女が地下の国に行くと冬になり、戻ってくると春になります。",
         centerRA: 13.3, centerDec: -2.0, 
         lines: ["Spica","Porrima", "Spica","Vindemiatrix"] 
     },
     { 
         id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
         desc: "【北のW】北極星を探すための目印。季節によって「W」に見えたり「M」に見えたりします。", 
-        myth: "【神話】「娘の方が神より美しい」と自慢したため、罰として椅子に縛られたまま空を回され続けている王妃です。",
+        myth: "「娘の方が神より美しい」と自慢したため、罰として椅子に縛られたまま空を回され続けている王妃です。",
         centerRA: 1.0, centerDec: 60.0, 
         lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"] 
     },
     { 
         id: "and", rank: 2, name: "アンドロメダ座", en: "Andromeda", 
         desc: "【銀河の窓】肉眼で見える最も遠い天体「アンドロメダ銀河」がある場所です。", 
-        myth: "【理科】アンドロメダ銀河は、私たちの天の川銀河と約40億年後に衝突・合体すると予想されています。",
+        myth: "アンドロメダ銀河は、私たちの天の川銀河と約40億年後に衝突・合体すると予想されています。",
         centerRA: 0.7, centerDec: 38.0, 
         lines: ["Alpheratz","Mirach", "Mirach","Almach"] 
     },
     { 
         id: "peg", rank: 2, name: "ペガスス座", en: "Pegasus", 
         desc: "【秋の四辺形】大きな四角形が胴体。逆さまになって飛んでいる天馬の姿です。", 
-        myth: "【神話】メドゥーサの血から生まれた翼のある馬。英雄ベレロフォンを乗せて怪物キマイラを倒しました。",
+        myth: "メドゥーサの血から生まれた翼のある馬。英雄ベレロフォンを乗せて怪物キマイラを倒しました。",
         centerRA: 23.0, centerDec: 20.0, 
         lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab"] 
     },
     { 
         id: "cyg", rank: 2, name: "はくちょう座", en: "Cygnus", 
         desc: "【北十字】天の川の上を飛ぶ十字架の形。くちばしの星アルビレオは、宝石のように美しい二重星です。", 
-        myth: "【理科】デネブの近くには、ブラックホール候補として有名な「はくちょう座X-1」があります（目には見えません）。",
+        myth: "デネブの近くには、ブラックホール候補として有名な「はくちょう座X-1」があります（目には見えません）。",
         centerRA: 20.5, centerDec: 42.0, 
         lines: ["Deneb","Sadr", "Sadr","Albireo", "Sadr","Gienah", "Sadr","Rukh"] 
     },
     { 
         id: "umi", rank: 2, name: "こぐま座", en: "Ursa Minor", 
         desc: "【動かない星】北極星（ポラリス）がある星座。一年中、北の空に見えます。", 
-        myth: "【理科】現在の北極星はポラリスですが、地球の首振り運動（歳差）により、1万2千年後には「ベガ」が北極星になります。",
+        myth: "現在の北極星はポラリスですが、地球の首振り運動（歳差）により、1万2千年後には「ベガ」が北極星になります。",
         centerRA: 15.0, centerDec: 75.0, 
         lines: ["Polaris","Yildun", "Yildun","Epsilon UMi", "Epsilon UMi","Zeta UMi", "Zeta UMi","Kochab", "Kochab","Pherkad", "Pherkad","Zeta UMi"] 
     }
@@ -462,7 +488,6 @@ const Math3D = {
         ];
     },
     project: (vec, viewMat, width, height, fovDeg) => {
-        // Transpose for inverse (Camera -> World)
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
@@ -487,7 +512,6 @@ const Astro = {
         const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
         let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
         if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
-        // Map: Z=Up, Y=North, X=East (Right-Handed with Z-Up)
         return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
     }
 };
@@ -585,6 +609,21 @@ const App = {
 
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
+        
+        // 1. Camera Init (New)
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('camera-feed').srcObject = stream;
+                document.getElementById('toggle-ar').checked = true;
+                App.toggleAR(true);
+            } catch(e) { console.log("Cam Fail", e); }
+        }
+
+        // 2. Show Swipe Hint
+        setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 1; }, 2000);
+        setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 0; }, 6000);
+
         App.canvas = document.getElementById('sky-canvas'); App.ctx = App.canvas.getContext('2d');
         
         STARS_DATA.forEach(s => App.state.stars.push(s));
@@ -625,61 +664,45 @@ const App = {
         if(alpha == null) return;
 
         const deg2rad = Math.PI / 180;
-        
-        // 1. Get Screen Orientation
         let screenOrient = 0;
-        if (window.screen && window.screen.orientation && window.screen.orientation.angle !== undefined) {
-            screenOrient = window.screen.orientation.angle;
-        } else if (window.orientation !== undefined) {
-            screenOrient = window.orientation;
-        }
+        if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
+        else if (window.orientation) screenOrient = window.orientation;
 
-        // 2. Normalize Alpha (Z-Axis)
+        // 2. Normalize Alpha
         let a = alpha;
-        if (isIOS && webkitCompass != null) {
-            a = -webkitCompass; 
-        } else {
-             a = alpha;
-             if (!isIOS) a -= 270; 
-        }
+        if (isIOS && webkitCompass != null) a = -webkitCompass;
+        else { a = alpha; if (!isIOS) a -= 270; }
+        
+        // 3. Magnetic Declination Fix (Japan/Goto approx -7 deg)
+        a -= 7; 
+
         a += App.state.manualOffset;
         if (App.state.reverseAlpha) a = -a;
 
-        // 3. Convert to Radians
         const rAlpha = a * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
         const rOrient = screenOrient * deg2rad;
 
-        // 4. Construct Quaternion (THE HOLY ORDER: Y-X-Z)
-        // Three.js Standard: setFromEuler(beta, alpha, -gamma, 'YXZ')
-        // Important: Gamma is inverted here for proper landscape behavior
-        const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     // Alpha -> Y axis (in YXZ logic)
-        const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      // Beta -> X axis
-        const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    // Gamma -> Z axis (INVERTED!)
+        // YXZ Order (v18 Stable)
+        const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     
+        const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      
+        const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    
 
-        // Composition: qDev = Y * X * Z
         let qDev = Math3D.qMultiply(qY, qX);
         qDev = Math3D.qMultiply(qDev, qZ);
 
-        // 5. Camera Adjustment (-90 deg X to look forward)
         const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
-        
-        // 6. Screen Orientation Adjustment (Rotate around Z)
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
 
-        // Final Chain: 
-        // q = qDev * qCamFix * qScreen (Applied in local space chain)
         let qFinal = Math3D.qMultiply(qDev, qCamFix);
         qFinal = Math3D.qMultiply(qFinal, qScreen);
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
-        // Debug output
         const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
         const alt = Math.asin(fwdZ) * 180/Math.PI; 
-        let az = Math.atan2(fwdX, fwdY) * 180/Math.PI;
-        if(az<0) az+=360;
+        let az = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(az<0) az+=360;
         document.getElementById('debug-az').innerText = Math.round(az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
     },
@@ -689,7 +712,6 @@ const App = {
         const {ctx, width, height, state} = App;
         ctx.clearRect(0,0,width,height);
         
-        // 1. Background
         const isSolar = state.viewMode === 2;
         if (state.opacity.bg > 0) {
             const alpha = state.isAR ? state.opacity.bg : 1;
@@ -701,7 +723,6 @@ const App = {
 
         const lst = Astro.getLST(state.lon);
         
-        // 2. Milky Way
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter';
             state.milkyWay.forEach(p => {
@@ -716,8 +737,6 @@ const App = {
         }
 
         const starPos = {};
-
-        // 3. Stars
         state.stars.forEach(s => {
             const vec = Astro.getStarVector(s.ra, s.dec, state.lat, lst);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
@@ -732,7 +751,6 @@ const App = {
             }
         });
 
-        // 4. Constellations
         ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.4)"; ctx.lineWidth = 1;
         ctx.beginPath();
         const visibleConsts = [];
@@ -763,23 +781,30 @@ const App = {
         });
         ctx.stroke();
 
-        // 5. Info Overlay
+        // 5. Smart Bubble Logic (Replaced Canvas Text)
+        const bubble = document.getElementById('smart-bubble');
         if (state.showInfo && visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
             const target = visibleConsts[0];
             if (target.dist < 150) {
-                const text = state.lang==='en' ? target.c.en : target.c.desc;
-                const tx = target.x, ty = target.y + 20;
-                ctx.fillStyle = isSolar ? "rgba(255,255,255,0.9)" : "rgba(15,23,42,0.9)";
-                ctx.strokeStyle = "#22d3ee";
-                const w = Math.min(260, ctx.measureText(text).width*1.5);
-                ctx.beginPath(); ctx.roundRect(tx - w/2, ty, w, 40, 8); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = isSolar ? "#000" : "#fff"; ctx.font = "11px 'Zen Maru Gothic'"; ctx.textAlign = "center";
-                ctx.fillText(text.substring(0,35)+(text.length>35?"...":""), tx, ty+24); ctx.textAlign = "start";
+                // Update Content
+                document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
+                document.getElementById('bubble-tag').innerText = state.lang==='en' ? 'Constellation' : (target.c.rank===1 ? '有名な星座' : '星座');
+                document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.en : target.c.desc;
+                
+                // Position Bubble (Above Star)
+                const bx = Math.min(Math.max(target.x, 140), width-140); // Clamp X
+                const by = Math.max(target.y - 140, 20); // Clamp Y
+                bubble.style.left = (bx - 128) + 'px'; // Center 256px wide bubble
+                bubble.style.top = by + 'px';
+                bubble.style.opacity = 1;
+            } else {
+                bubble.style.opacity = 0;
             }
+        } else {
+            bubble.style.opacity = 0;
         }
 
-        // 6. Meteors
         if (state.meteorEnabled && !isSolar) {
             if (Math.random() < 0.01) state.meteors.push({x: Math.random()*width, y: Math.random()*height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1});
             ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
@@ -790,7 +815,6 @@ const App = {
             ctx.globalAlpha = 1;
         }
 
-        // 7. Target Lock
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
             const vec = Astro.getStarVector(t.centerRA, t.centerDec, state.lat, lst);
@@ -807,7 +831,20 @@ const App = {
     },
 
     resize: () => { App.width = window.innerWidth; App.height = window.innerHeight; App.canvas.width = App.width; App.canvas.height = App.height; App.state.fov = (App.width>App.height)?45:60; },
-    toggleLocation: () => { App.state.useGPS = !App.state.useGPS; document.getElementById('loc-name').innerText=App.state.useGPS?"GPS (現在地)":"五島列島 (固定)"; Utils.toast(App.state.useGPS?"GPS Mode":"Goto Mode"); },
+    toggleLocation: () => { 
+        if(!App.state.useGPS) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                App.state.lat = pos.coords.latitude; App.state.lon = pos.coords.longitude;
+                App.state.useGPS = true;
+                document.getElementById('loc-name').innerText=`GPS (${App.state.lat.toFixed(2)},${App.state.lon.toFixed(2)})`;
+                Utils.toast("現在地を取得しました 🛰️");
+            }, () => Utils.toast("GPS取得エラー"));
+        } else {
+            App.state.lat = 32.698; App.state.lon = 128.839; App.state.useGPS = false;
+            document.getElementById('loc-name').innerText="五島列島 (Fixed)";
+            Utils.toast("五島列島モードに戻しました");
+        }
+    },
     toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
     toggleAR: (v) => { App.state.isAR = v; document.getElementById('camera-feed').style.opacity = v?1:0; App.setOpacity('bg', v?0.0:1); document.querySelector('input[oninput*="bg"]').value = v?0.0:1; },
     toggleViewMode: () => {
@@ -822,7 +859,7 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v18.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v19.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -836,3 +873,15 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
+```
+
+### 📦 Deployment Checklist
+GitHubにアップロードする際は、`sw.js` のバージョンを上げ、この新しいアプリをキャッシュリストに追加してください：
+
+```markdown
+// sw.js
+const CACHE_NAME = 'adom-lab-v19'; // v18 -> v19 (Update version)
+const INITIAL_ASSETS = [
+  './gotostarview.html', // ← 今回のファイル
+  // ... existing assets
+];
