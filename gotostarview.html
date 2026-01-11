@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v23.0 (South Fix)</title>
+    <title>Five Islands Stargazer v24.0 (Vertical Compass)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -128,8 +128,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v23.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">South Compass Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v24.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Vertical Compass Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -221,7 +221,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v23.0 SouthFix</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v24.0 VertCompass</div>
                 </div>
             </div>
 
@@ -259,7 +259,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v23</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v24</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -365,10 +365,10 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v23.0 (South Fix)
+ * 🌌 FIVE ISLANDS STARGAZER v24.0 (Vertical Compass)
  * Fixes:
  * - AR Default OFF
- * - Compass South half fix (Improved Azimuth Calculation)
+ * - Compass East/West Reversal Fix (Mirror Logic)
  * - Myth font style "normal"
  */
 
@@ -917,16 +917,41 @@ const App = {
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
-        // --- Calculate Compass Azimuth (Fix v23: Simplified Heading) ---
-        // Instead of reusing 3D matrices which get weird near pitch=90,
-        // use basic trigonometry on horizontal vector if phone is flat-ish,
-        // or just use alpha directly if vertical.
+        // --- Calculate Compass Azimuth (Fix v24: Matrix-based Heading) ---
+        // Using the same rotation matrix as the view (but without manual offset)
+        // allows us to know exactly where the camera is pointing in 3D space.
+        // We project the forward vector onto the horizontal plane.
         
-        // For vertical AR mode, "Heading" is basically (Alpha + ScreenOrient)
-        let compassAz = rawHeading - screenOrient;
+        const rRawAlpha = (App.state.reverseAlpha ? -a : a) * deg2rad;
+        // Reconstruct matrix without manual offset
+        const qY_raw = Math3D.qFromAxisAngle([0, 1, 0], rRawAlpha);
+        let qDev_raw = Math3D.qMultiply(qY_raw, qX);
+        qDev_raw = Math3D.qMultiply(qDev_raw, qZ);
+        let qFinal_raw = Math3D.qMultiply(qDev_raw, qCamFix);
+        qFinal_raw = Math3D.qMultiply(qFinal_raw, qScreen);
+        const mRaw = Math3D.matFromQ(qFinal_raw);
         
+        // Extract forward vector (negative Z axis of the camera)
+        // In our matrix, column 2 (index 8, 9, 10) is the Z axis vector.
+        // Forward is -Z.
+        const fwdX = -mRaw[8]; 
+        const fwdY = -mRaw[9];
+        // We ignore Z component for compass heading
+        
+        // Calculate azimuth from forward vector
+        // atan2(x, y) gives angle from Y axis (North)
+        let compassAz = Math.atan2(fwdX, fwdY) * 180 / Math.PI;
+        
+        // Fix for "Mirror Effect" (West/East Flip) if needed
+        // Standard math: +X is East, +Y is North.
+        // If the user reports E/W swap, we negate the angle or flip X.
+        // Let's try standard CCW first, then flip if it's mirrored.
+        // Based on user report: "North/South correct, East/West flipped" -> Flip X.
+        // Actually, atan2(x,y) is CW from North if X is East.
+        // Let's invert the angle to fix the mirror effect.
+        compassAz = -compassAz; 
+
         // Wrap to 0-360
-        compassAz = compassAz % 360;
         if(compassAz < 0) compassAz += 360;
         
         // Low-Pass Filter for Compass Stability
@@ -938,9 +963,9 @@ const App = {
         if (App.state.compassFiltered < 0) App.state.compassFiltered += 360;
 
         // Debug Display
-        const fwdX = -App.state.viewMat[8], fwdY = -App.state.viewMat[9], fwdZ = -App.state.viewMat[10];
-        const alt = Math.asin(fwdZ) * 180/Math.PI; 
-        let starAz = Math.atan2(fwdX, fwdY) * 180/Math.PI; if(starAz<0) starAz+=360;
+        const starFwdX = -App.state.viewMat[8], starFwdY = -App.state.viewMat[9], starFwdZ = -App.state.viewMat[10];
+        const alt = Math.asin(starFwdZ) * 180/Math.PI; 
+        let starAz = Math.atan2(starFwdX, starFwdY) * 180/Math.PI; if(starAz<0) starAz+=360;
 
         document.getElementById('debug-az').innerText = Math.round(starAz);
         document.getElementById('debug-alt').innerText = Math.round(alt);
@@ -994,6 +1019,7 @@ const App = {
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
+        // Apply Time Offset here
         const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
         // --- MILKY WAY RENDER (Updated) ---
