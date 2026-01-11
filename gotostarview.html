@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v24.0 (Vertical Compass)</title>
+    <title>Five Islands Stargazer v25.0 (Reliable Tool)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,19 +69,6 @@
         }
         body.mode-solar .bubble-tail { border-top-color: rgba(255, 255, 255, 0.95); }
 
-        /* Compass HUD (Independent) */
-        #compass-bar {
-            position: absolute; bottom: 120px; left: 0; width: 100%; height: 30px;
-            pointer-events: none; opacity: 0.9;
-            background: linear-gradient(to right, transparent, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.6) 80%, transparent);
-            display: flex; justify-content: center; align-items: center;
-            font-family: 'Share Tech Mono', monospace; font-size: 14px; color: #22d3ee;
-            border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        #compass-ticks { position: relative; width: 300px; height: 100%; overflow: hidden; }
-        .compass-mark { position: absolute; top: 5px; transform: translateX(-50%); transition: left 0.1s linear; font-weight: bold; }
-        .compass-center { position: absolute; left: 50%; top: -5px; width: 2px; height: 40px; bg-red-500; z-index: 10; border-left: 2px solid #ef4444; }
-
         /* Time Slider */
         #time-slider-container {
             position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
@@ -90,8 +77,30 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         #time-slider-container.active { opacity: 1; pointer-events: auto; }
-        
         .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
+
+        /* Calibration Modal (NEW) */
+        #calib-modal {
+            position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #calib-modal.active { opacity: 1; pointer-events: auto; }
+        
+        .level-bubble {
+            width: 200px; height: 200px; border: 4px solid #475569; border-radius: 50%;
+            position: relative; overflow: hidden; background: #0f172a; margin-bottom: 20px;
+        }
+        .level-target {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 20px; height: 20px; border: 2px solid #22d3ee; border-radius: 50%; z-index: 10;
+        }
+        .level-ball {
+            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px;
+            background: #ef4444; border-radius: 50%; opacity: 0.8;
+            transform: translate(-50%, -50%); transition: all 0.1s linear;
+        }
+        .level-ok .level-ball { background: #22c55e; }
 
         /* 🚪 PC Gate */
         #star-gate {
@@ -128,8 +137,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v24.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Vertical Compass Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Reliable Tool</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -188,6 +197,9 @@
                     </div>
                 </button>
                 <div class="flex gap-3">
+                    <!-- Calibration Button (NEW) -->
+                    <button onclick="App.startCalibration()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300">🎯</button>
+                    
                     <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
                     <button onclick="App.toggleSettings()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition">⚙️</button>
                     <button onclick="App.toggleViewMode()" id="btn-mode" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-indigo-900/50 border-indigo-500/30">🌙</button>
@@ -202,18 +214,10 @@
                 </div>
             </div>
 
-            <!-- Time Slider (NEW: Centered Bottom) -->
+            <!-- Time Slider -->
             <div id="time-slider-container">
                 <div id="time-display" class="time-label">TIME TRAVEL: +0h</div>
                 <input type="range" id="time-range" min="-12" max="12" step="0.5" value="0" oninput="App.setTimeOffset(this.value)" onchange="App.resetTime(this.value)">
-            </div>
-
-            <!-- Compass HUD (Independent) -->
-            <div id="compass-bar">
-                <div class="compass-center"></div>
-                <div id="compass-ticks">
-                    <!-- JS will fill this -->
-                </div>
             </div>
 
             <!-- Debug Info (Lower Left) -->
@@ -221,13 +225,12 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v24.0 VertCompass</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v25.0 Calibration</div>
                 </div>
             </div>
 
             <!-- Bottom -->
             <div class="flex justify-center items-end pb-8 interactive gap-6">
-                <!-- Clock Button -->
                 <button onclick="App.toggleTimeSlider()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-yellow-400 text-yellow-300 shadow-lg bg-yellow-900/30">
                     <span class="text-xl">⏳</span>
                 </button>
@@ -239,6 +242,28 @@
                 <button id="btn-cancel-nav" onclick="Guide.stopNav()" class="hidden-force glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-500/50 bg-red-900/20 active:scale-90 transition text-red-300 font-bold text-xs">
                     STOP
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 CALIBRATION MODAL (NEW) -->
+    <div id="calib-modal" class="interactive">
+        <div class="text-center px-6">
+            <h2 class="text-xl font-bold text-white mb-2">方位合わせ (Calibration)</h2>
+            <p class="text-xs text-slate-400 mb-6">
+                スマホを水平に持ち、北(N)を向いてください。<br>
+                赤玉を中心に入れてボタンを押してください。
+            </p>
+            
+            <div class="level-bubble">
+                <div class="level-target"></div>
+                <div id="level-ball" class="level-ball"></div>
+            </div>
+            <div id="calib-val" class="font-mono text-cyan-400 mb-6 text-2xl font-bold">0°</div>
+            
+            <div class="flex gap-4">
+                <button onclick="App.cancelCalibration()" class="px-6 py-3 rounded-full bg-slate-700 text-white font-bold">キャンセル</button>
+                <button onclick="App.confirmCalibration()" class="px-6 py-3 rounded-full bg-cyan-600 text-white font-bold shadow-lg hover:bg-cyan-500">決定 (LOCK)</button>
             </div>
         </div>
     </div>
@@ -259,11 +284,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GLOBAL EDITION v24</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Initializing AR & Sensors...</p>
+            <p class="text-[10px] text-slate-500 mt-4">Manual Compass Calibration Mode</p>
         </div>
     </div>
 
@@ -365,11 +390,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v24.0 (Vertical Compass)
- * Fixes:
- * - AR Default OFF
- * - Compass East/West Reversal Fix (Mirror Logic)
- * - Myth font style "normal"
+ * 🌌 FIVE ISLANDS STARGAZER v25.0 (Reliable Tool)
+ * Features:
+ * - Calibration Mode: Use phone flat (like a real compass) to lock heading
+ * - HUD Removed: No more misleading vertical compass
+ * - Procedural Milky Way: High-quality nebula particles
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -389,7 +414,7 @@ const I18N = {
         opt_milky: "天の川 (Milky Way)",
         opt_meteor: "🌠 流れ星 (Meteors)",
         warn_drift: "⚠️ センサーのズレについて",
-        warn_drift_desc: "スマホの電子コンパスは、周囲の金属や磁気の影響で数度〜数十度ズレることがあります（ドリフト現象）。<br>ズレていると感じたら、画面を左右にスワイプして手動で微調整してください。",
+        warn_drift_desc: "方位がズレた場合は、上の「🎯 方位合わせ」ボタンを押し、スマホを水平にして調整してください。",
         axis_fix: "🔄 Axis Fix (回転補正)",
         axis_fix_desc: "回転が逆になる場合のみON",
         loc_fixed: "五島列島 (Fixed)",
@@ -416,7 +441,7 @@ const I18N = {
         opt_milky: "Milky Way Visibility",
         opt_meteor: "🌠 Meteors",
         warn_drift: "⚠️ Sensor Drift Warning",
-        warn_drift_desc: "Phone compasses can drift due to magnetic interference. <br>If stars are misaligned, SWIPE the screen left/right to calibrate manually.",
+        warn_drift_desc: "If stars are misaligned, tap the '🎯 Calibrate' button and hold your phone flat to reset heading.",
         axis_fix: "🔄 Axis Fix (Reverse)",
         axis_fix_desc: "Enable if rotation is reversed",
         loc_fixed: "Goto Islands (Fixed)",
@@ -770,7 +795,8 @@ const App = {
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
         isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
-        azimuth: 0, timeOffset: 0, compassFiltered: 0 // New: Filtered Compass
+        azimuth: 0, timeOffset: 0, compassFiltered: 0,
+        calibMode: false // Calibration Mode Flag
     },
 
     init: async () => {
@@ -868,6 +894,71 @@ const App = {
             isIOS: !!e.webkitCompassHeading, 
             webkitCompass: e.webkitCompassHeading 
         };
+        
+        // Calibration Logic (Level Bubble)
+        if (App.state.calibMode) {
+            const ball = document.getElementById('level-ball');
+            const maxTilt = 20; // degrees
+            let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
+            let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
+            
+            // Map tilt to px (-50 to 50)
+            const px = (bx / maxTilt) * 80;
+            const py = (by / maxTilt) * 80;
+            
+            ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+            
+            // Show compass value
+            let h = alpha;
+            if(e.webkitCompassHeading) h = e.webkitCompassHeading;
+            document.getElementById('calib-val').innerText = `${Math.round(h)}°`;
+            
+            if(Math.abs(bx)<3 && Math.abs(by)<3) {
+                document.querySelector('.level-bubble').classList.add('level-ok');
+            } else {
+                document.querySelector('.level-bubble').classList.remove('level-ok');
+            }
+        }
+    },
+
+    // --- CALIBRATION FUNCTIONS ---
+    startCalibration: () => {
+        App.state.calibMode = true;
+        document.getElementById('calib-modal').classList.add('active');
+        // Stop AR while calibrating
+        App.toggleAR(false);
+    },
+    cancelCalibration: () => {
+        App.state.calibMode = false;
+        document.getElementById('calib-modal').classList.remove('active');
+    },
+    confirmCalibration: () => {
+        // Here we capture the CURRENT Heading (which is accurate because phone is flat)
+        // And we set manualOffset so that Alpha + Offset = 0 (North) ? 
+        // No, we want "Current Heading" to equal "Real North".
+        // The phone sensor 'alpha' ALREADY gives magnetic North when flat.
+        // The problem is DRIFT when lifted.
+        // So we record "alpha_flat". When AR runs, we compare "alpha_current" to "alpha_flat"
+        // But gyros don't work like that. 
+        // 
+        // Simplest "Heading Reset":
+        // We assume the user is pointing NORTH when they press the button.
+        // So we force the offset to make the current alpha = 0 (North).
+        
+        const { alpha, webkitCompass } = App.state.orientation;
+        let currentH = alpha;
+        if(webkitCompass) currentH = webkitCompass;
+        
+        // If user is facing North (0 deg) in reality, but phone says X deg:
+        // We want displayed Azimuth to be 0.
+        // Formula: Display = Sensor + Offset
+        // 0 = X + Offset  => Offset = -X
+        
+        App.state.manualOffset = -currentH;
+        
+        App.state.calibMode = false;
+        document.getElementById('calib-modal').classList.remove('active');
+        Utils.toast("Heading Locked to NORTH 🔒");
     },
 
     updateViewMatrix: () => {
@@ -971,38 +1062,16 @@ const App = {
         document.getElementById('debug-alt').innerText = Math.round(alt);
         
         // Update Compass HUD with FILTERED, INDEPENDENT Azimuth
-        App.updateCompass(App.state.compassFiltered);
+        // v25: Wait, we REMOVED the HUD for v25. But maybe we keep it for "Confirmation"?
+        // The user asked for "Confirmation Mode" or HUD removed.
+        // Let's keep the HUD hidden by default, or remove it entirely as per plan.
+        // Plan says: "Compass HUD 廃止". So we comment this out.
+        // App.updateCompass(App.state.compassFiltered);
     },
     
-    // Compass Drawer
+    // Compass Drawer (Disabled in v25 per spec)
     updateCompass: (az) => {
-        const hud = document.getElementById('compass-ticks');
-        hud.innerHTML = '';
-        const width = hud.clientWidth;
-        const pxPerDeg = width / 120; 
-        
-        const dirs = [
-            {v:0, l:'N'}, {v:45, l:'NE'}, {v:90, l:'E'}, {v:135, l:'SE'},
-            {v:180, l:'S'}, {v:225, l:'SW'}, {v:270, l:'W'}, {v:315, l:'NW'}, {v:360, l:'N'}
-        ];
-        
-        dirs.forEach(d => {
-            let diff = d.v - az;
-            if(diff < -180) diff += 360;
-            if(diff > 180) diff -= 360;
-            
-            if (Math.abs(diff) < 60) {
-                const pos = (width/2) + (diff * pxPerDeg);
-                const tick = document.createElement('div');
-                tick.className = 'compass-mark';
-                tick.style.left = pos + 'px';
-                tick.style.color = (d.l.length===1) ? '#ef4444' : '#94a3b8';
-                if(d.l === 'N') tick.style.color = '#ef4444';
-                tick.style.fontSize = (d.l.length===1) ? '16px' : '10px';
-                tick.innerText = d.l;
-                hud.appendChild(tick);
-            }
-        });
+        // ... (Code removed/disabled for v25) ...
     },
 
     loop: () => {
@@ -1214,7 +1283,7 @@ const App = {
         Guide.buildList(); 
         Utils.updateDOMText(); 
     },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v23.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v25.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
