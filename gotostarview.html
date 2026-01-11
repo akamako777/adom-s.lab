@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v17.0 (Golden Axis)</title>
+    <title>Five Islands Stargazer v18.0 (The Holy Order)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,8 +92,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v17.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Golden Axis</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v18.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">The Holy Order</p>
             
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -157,7 +157,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight">
                     <div>AZ: <span id="debug-az">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">Gyro: W3C ZXY Stable</div>
+                    <div class="text-[8px] text-slate-400 mt-1">Gyro: YXZ Remapped</div>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">GOLDEN EDITION v17</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">FIXED EDITION v18</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 星空へ出発 (START)
             </button>
@@ -281,9 +281,9 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v17.0 (Golden Axis Edition)
- * Engine: STRICT W3C Order (Z-X-Y) with Decoupled Screen Rotation
- * 2027 Protocol: Fixed Yaw-Roll Coupling in Landscape
+ * 🌌 FIVE ISLANDS STARGAZER v18.0 (The Holy Order)
+ * Engine: YXZ Euler Order + Gamma Inversion + Last-Step Screen Rotation
+ * 2027 Protocol: The Definitive Fix for Landscape AR
  */
 
 // --- 0. DATA & CONSTANTS ---
@@ -431,7 +431,7 @@ const STARS_DATA = [
     { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
 ];
 
-// --- 1. VECTOR & QUATERNION ENGINE (v17 W3C Standard) ---
+// --- 1. VECTOR & QUATERNION ENGINE (v18 YXZ + Gamma Fix) ---
 const Math3D = {
     qMultiply: (a, b) => {
         const ax = a[0], ay = a[1], az = a[2], aw = a[3];
@@ -626,7 +626,7 @@ const App = {
 
         const deg2rad = Math.PI / 180;
         
-        // 1. Get Screen Orientation (Standard)
+        // 1. Get Screen Orientation
         let screenOrient = 0;
         if (window.screen && window.screen.orientation && window.screen.orientation.angle !== undefined) {
             screenOrient = window.screen.orientation.angle;
@@ -634,52 +634,44 @@ const App = {
             screenOrient = window.orientation;
         }
 
-        // 2. Normalize Alpha
-        // W3C spec: alpha is Z-axis rotation (0=North, CCW).
-        // iOS: webkitCompassHeading is 0=North, CW. So alpha = -webkitCompassHeading.
+        // 2. Normalize Alpha (Z-Axis)
         let a = alpha;
         if (isIOS && webkitCompass != null) {
             a = -webkitCompass; 
         } else {
              a = alpha;
-             if (!isIOS) a -= 270; // Android Offset
+             if (!isIOS) a -= 270; 
         }
-        
-        // Manual Calibration + Emergency Reverse
         a += App.state.manualOffset;
         if (App.state.reverseAlpha) a = -a;
 
+        // 3. Convert to Radians
         const rAlpha = a * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
         const rOrient = screenOrient * deg2rad;
 
-        // 3. Construct Quaternion (Strict Z-X-Y Order)
-        // This creates the Device -> World rotation.
-        // Important: Z-X-Y is the physical sensor order.
-        const qZ = Math3D.qFromAxisAngle([0, 0, 1], rAlpha); 
-        const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);
-        const qY = Math3D.qFromAxisAngle([0, 1, 0], rGamma);
-        
-        // qDev = Z * X * Y
-        let qDev = Math3D.qMultiply(qZ, qX);
-        qDev = Math3D.qMultiply(qDev, qY);
-        
-        // 4. Screen Orientation (Local Z rotation)
-        // We must rotate the device frame around its own Z axis by -screenOrient.
-        // Since we are building Device -> World, and qDev represents Device Frame,
-        // we simply multiply qScreen on the right (local rotation).
-        const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
-        
-        // 5. Camera Frame Adjustment
-        // Phone: Z=Up (Screen), Y=Top. Camera: Y=Up, Z=Back.
-        // Rotate -90 around X to align.
-        const qCam = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
+        // 4. Construct Quaternion (THE HOLY ORDER: Y-X-Z)
+        // Three.js Standard: setFromEuler(beta, alpha, -gamma, 'YXZ')
+        // Important: Gamma is inverted here for proper landscape behavior
+        const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     // Alpha -> Y axis (in YXZ logic)
+        const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      // Beta -> X axis
+        const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    // Gamma -> Z axis (INVERTED!)
 
-        // Composition: q = qDev * qScreen * qCam
-        // This is the Three.js standard logic.
-        let qFinal = Math3D.qMultiply(qDev, qScreen);
-        qFinal = Math3D.qMultiply(qFinal, qCam);
+        // Composition: qDev = Y * X * Z
+        let qDev = Math3D.qMultiply(qY, qX);
+        qDev = Math3D.qMultiply(qDev, qZ);
+
+        // 5. Camera Adjustment (-90 deg X to look forward)
+        const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
+        
+        // 6. Screen Orientation Adjustment (Rotate around Z)
+        const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
+
+        // Final Chain: 
+        // q = qDev * qCamFix * qScreen (Applied in local space chain)
+        let qFinal = Math3D.qMultiply(qDev, qCamFix);
+        qFinal = Math3D.qMultiply(qFinal, qScreen);
 
         App.state.viewMat = Math3D.matFromQ(qFinal);
 
@@ -830,7 +822,7 @@ const App = {
     setRank: (r,v) => App.state.ranks[r] = v,
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v17.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v18.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -844,15 +836,3 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
-```
-
-### 📦 Deployment Checklist
-GitHubにアップロードする際は、`sw.js` のバージョンを上げ、この新しいアプリをキャッシュリストに追加してください：
-
-```markdown
-// sw.js
-const CACHE_NAME = 'adom-lab-v17'; // v16 -> v17 (Update version)
-const INITIAL_ASSETS = [
-  './gotostarview.html', // ← 今回のファイル
-  // ... existing assets
-];
