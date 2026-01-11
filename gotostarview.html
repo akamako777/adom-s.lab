@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>Five Islands Stargazer v11</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+    <style>
+        /* 🛑 Core Stability */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #000;
+            touch-action: none; font-family: 'Zen Maru Gothic', sans-serif;
+            -webkit-user-select: none; user-select: none; color: white;
+            overscroll-behavior: none;
+        }
+
+        /* 🌌 Layers */
+        #layers-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity 0.8s; }
+        #sky-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .interactive { pointer-events: auto; cursor: pointer; }
+        
+        .glass {
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* 🌓 Modes */
+        body.mode-red #layers-container { filter: sepia(100%) hue-rotate(-50deg) saturate(300%) contrast(1.2) brightness(0.6); }
+        body.mode-red #ui-layer { filter: sepia(100%) hue-rotate(-50deg) saturate(200%); }
+        
+        body.mode-solar { background-color: #87CEEB; color: #0f172a; }
+        body.mode-solar .glass { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0,0,0,0.1); color: #0f172a; }
+        body.mode-solar h1, body.mode-solar h2, body.mode-solar h3, body.mode-solar span, body.mode-solar div { color: #0f172a; text-shadow: none !important; }
+        body.mode-solar .text-cyan-400 { color: #0066cc !important; }
+        body.mode-solar .text-white { color: #0f172a !important; }
+        
+        /* 🚪 PC Gate Fix */
+        #star-gate {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+            display: flex; flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            overflow-y: auto; 
+            padding-top: 10vh; padding-bottom: 40px;
+        }
+
+        /* Navigation Arrow */
+        @keyframes pulse-target { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+        .target-lock { animation: pulse-target 1s infinite; }
+
+        /* Range Slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: #22d3ee; border: 2px solid #ffffff; cursor: pointer; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+        body.mode-solar input[type=range]::-webkit-slider-thumb { background: #0066cc; border-color: #fff; }
+        body.mode-solar input[type=range]::-webkit-slider-runnable-track { background: rgba(0,0,0,0.2); }
+
+        .hidden-force { display: none !important; }
+        
+        /* Checkbox Custom */
+        .check-box { appearance: none; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.5); border-radius: 6px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
+        .check-box:checked { background: #22d3ee; border-color: #22d3ee; }
+        .check-box:checked::after { content: '✔'; position: absolute; top: 0px; left: 5px; color: #000; font-size: 16px; font-weight: bold; }
+        body.mode-solar .check-box { border-color: rgba(0,0,0,0.3); }
+        body.mode-solar .check-box:checked { background: #0066cc; border-color: #0066cc; }
+        body.mode-solar .check-box:checked::after { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- 🚪 PC GATE -->
+    <div id="star-gate" class="hidden-force">
+        <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
+            <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v11</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Mythology Edition</p>
+            
+            <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
+                <canvas id="qr-canvas"></canvas>
+            </div>
+            
+            <p class="text-slate-300 text-sm leading-relaxed font-medium mb-8">
+                五島の星空を、ポケットに。<br>
+                スマホでスキャンしてください。
+            </p>
+            
+            <button onclick="Gate.startUnlock()" 
+                class="group flex items-center gap-2 px-6 py-3 rounded-full bg-slate-800/50 border border-slate-700 hover:bg-slate-700 hover:border-cyan-500 transition-all cursor-pointer">
+                <span class="text-yellow-400 text-xl group-hover:animate-spin">★</span>
+                <span class="text-xs font-bold text-slate-300 group-hover:text-white">PC DEBUG MODE</span>
+            </button>
+        </div>
+        
+        <div class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-30 z-0">
+            <div class="absolute top-[10%] left-[10%] w-96 h-96 bg-blue-600 rounded-full blur-[120px] mix-blend-screen"></div>
+            <div class="absolute bottom-[10%] right-[10%] w-80 h-80 bg-cyan-600 rounded-full blur-[120px] mix-blend-screen"></div>
+        </div>
+    </div>
+
+    <!-- 📱 APP CONTAINER -->
+    <div id="app-container" class="hidden-force w-full h-full relative">
+        <div id="layers-container">
+            <video id="camera-feed" autoplay playsinline muted></video>
+            <canvas id="sky-canvas"></canvas>
+        </div>
+
+        <!-- NAV UI -->
+        <div id="nav-ui" class="absolute inset-0 pointer-events-none hidden-force z-30">
+            <div id="nav-msg" class="absolute top-24 w-full text-center">
+                <div class="inline-block bg-black/60 backdrop-blur px-4 py-2 rounded-lg border border-cyan-500/50">
+                    <div class="text-[10px] text-cyan-300 uppercase tracking-widest mb-1 font-mono">NAVIGATING TO</div>
+                    <div id="nav-target-name" class="text-xl font-bold text-white drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]">Target</div>
+                </div>
+            </div>
+            <div id="lock-on" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300">
+                <div class="w-24 h-24 border-2 border-green-400 rounded-full target-lock flex items-center justify-center">
+                    <div class="w-1 h-1 bg-green-400 rounded-full"></div>
+                </div>
+                <div class="absolute top-28 w-full text-center text-green-400 font-bold text-sm tracking-widest bg-black/50 px-2 rounded font-mono">TARGET LOCKED</div>
+            </div>
+        </div>
+
+        <!-- UI LAYER -->
+        <div id="ui-layer" class="safe-area-inset p-4">
+            <!-- Top -->
+            <div class="flex justify-between items-start interactive pt-2">
+                <button onclick="App.toggleLocation()" class="glass px-3 py-2 rounded-full flex items-center gap-2 active:scale-95 transition">
+                    <span id="gps-icon" class="text-sm">📍</span>
+                    <div class="flex flex-col items-start">
+                        <span class="text-[8px] font-bold text-cyan-400 tracking-widest uppercase">LOCATION</span>
+                        <span id="loc-name" class="text-[10px] font-bold text-white leading-none">五島列島 (固定)</span>
+                    </div>
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
+                    <button onclick="App.toggleSettings()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition">⚙️</button>
+                    <button onclick="App.toggleViewMode()" id="btn-mode" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-indigo-900/50 border-indigo-500/30">🌙</button>
+                </div>
+            </div>
+
+            <!-- Bottom -->
+            <div class="flex justify-center items-end pb-8 interactive gap-6">
+                <button onclick="App.takeScreenshot()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-cyan-400 shadow-lg">
+                    <span class="text-xl">📸</span>
+                </button>
+                <button id="btn-cancel-nav" onclick="Guide.stopNav()" class="hidden-force glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-500/50 bg-red-900/20 active:scale-90 transition text-red-300 font-bold text-xs">
+                    STOP
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📖 GUIDE MODAL -->
+    <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
+        <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
+            <h2 class="font-bold text-white text-lg flex items-center gap-2">
+                <span class="text-2xl">📖</span> 星座図鑑 (神話と科学)
+            </h2>
+            <button onclick="Guide.toggle()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition text-xl">✕</button>
+        </div>
+        <div id="guide-list" class="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+            <!-- Generated by JS -->
+        </div>
+    </div>
+
+    <!-- 🚀 START MODAL -->
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] interactive">
+         <div class="absolute inset-0 overflow-hidden pointer-events-none">
+             <div class="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] bg-blue-900/20 blur-[100px] rounded-full"></div>
+        </div>
+        <div class="relative z-10 w-full max-w-sm px-6 text-center">
+            <div class="text-6xl mb-4 animate-bounce">✨</div>
+            <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">MYTHOLOGY EDITION v11</p>
+            <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
+                星空へ出発 (START)
+            </button>
+            <p class="text-[10px] text-slate-500 mt-4">AR機能のためにカメラと方位磁針を使います</p>
+        </div>
+    </div>
+
+    <!-- ⚙️ SETTINGS MODAL -->
+    <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
+        <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
+            <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                <h2 class="font-bold text-white text-lg">設定 (Settings)</h2>
+                <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
+            </div>
+            
+            <!-- Category Boxes -->
+            <div class="space-y-3">
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider">表示カテゴリ (Categories)</p>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold">🦁 有名な星座 (Famous)</span>
+                    <input type="checkbox" checked onchange="App.setRank(1, this.checked)" class="check-box">
+                </label>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold">🐻 普通の星座 (Medium)</span>
+                    <input type="checkbox" checked onchange="App.setRank(2, this.checked)" class="check-box">
+                </label>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold">🦎 マイナー星座 (Minor)</span>
+                    <input type="checkbox" onchange="App.setRank(3, this.checked)" class="check-box">
+                </label>
+            </div>
+
+            <!-- Visibility -->
+            <div class="space-y-4 pt-4 border-t border-white/10">
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider">表示オプション (Visibility)</p>
+                
+                <!-- NEW FEATURE: Info Overlay -->
+                <div class="flex items-center justify-between bg-cyan-900/30 p-2 rounded-lg border border-cyan-500/20">
+                    <div>
+                        <span class="text-sm font-bold text-cyan-300">🌟 星座の解説を表示</span>
+                        <div class="text-[10px] text-slate-400">見ている星座の特徴を表示します</div>
+                    </div>
+                    <input type="checkbox" onchange="App.setFlag('showInfo', this.checked)" class="check-box">
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">🎥 ARカメラ</span>
+                    <input type="checkbox" id="toggle-ar" onchange="App.toggleAR(this.checked)" class="check-box">
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
+                    <input type="range" min="0" max="1" step="0.1" value="1" oninput="App.setOpacity('bg', this.value)">
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
+                    <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="App.setOpacity('milky', this.value)">
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-sm">🌠 流れ星 (Meteors)</span>
+                    <input type="checkbox" checked onchange="App.setFlag('meteorEnabled', this.checked)" class="check-box">
+                </div>
+            </div>
+
+            <!-- Language -->
+            <div class="pt-4 border-t border-white/10">
+                 <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-300">🇺🇸 English Mode</span>
+                    <input type="checkbox" onchange="App.setLang(this.checked ? 'en' : 'ja')" class="check-box">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-6 py-3 rounded-full shadow-2xl text-sm opacity-0 pointer-events-none transition-opacity z-[60] border border-cyan-500/30 font-bold text-center w-max max-w-[90%] backdrop-blur">Msg</div>
+
+<script>
+/**
+ * 🌌 FIVE ISLANDS STARGAZER v11 (Mythology Edition)
+ * Architect: Gemini Canvas | Date: 2027 Protocol
+ * Updates: Enhanced Constellation DB (Myths), Info Overlay Mode
+ */
+
+// --- 0. DATA STRUCTURE ---
+const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3 };
+
+const CONSTELLATION_DB = [
+    {
+        id: "ori", rank: RANK.FAMOUS,
+        name: "オリオン座", en: "Orion",
+        desc: "冬の夜空の王者。真ん中の三つ星と、赤いベテルギウス、青いリゲルが目印。",
+        myth: "【神話】海の神ポセイドンの子で、優れた狩人でした。しかし、「俺に倒せない獲物はいない」と豪語したため、神々の怒りを買い、大サソリに刺されて命を落としました。だから今でもサソリ座が昇るとオリオンは沈んで逃げていくのです。",
+        desc_en: "The hunter. Look for the three stars in the belt, red Betelgeuse, and blue Rigel.",
+        centerRA: 5.6, centerDec: 0.0,
+        lines: ["Betelgeuse","Alnitak", "Alnitak","Saiph", "Rigel","Mintaka", "Mintaka","Alnilam", "Alnilam","Alnitak", "Betelgeuse","Bellatrix", "Mintaka","Bellatrix", "Alnitak","Rigel"]
+    },
+    {
+        id: "sco", rank: RANK.FAMOUS,
+        name: "さそり座", en: "Scorpius",
+        desc: "南の空に浮かぶS字カーブ。心臓で赤く輝くアンタレスが美しい。",
+        myth: "【神話】傲慢な狩人オリオンをこらしめるために、女神ヘラ（一説にはガイア）が放った巨大な毒サソリです。その功績で空に上げられました。心臓の星アンタレスは「火星に対抗するもの」という意味です。",
+        desc_en: "A large S-shape in the south. Antares shines red at its heart.",
+        centerRA: 16.5, centerDec: -26.0,
+        lines: ["Antares","Dschubba", "Dschubba","Graffias", "Antares","Wei", "Antares","Tau Sco", "Tau Sco","Epsilon Sco", "Epsilon Sco","Mu Sco", "Mu Sco","Zeta Sco", "Zeta Sco","Eta Sco", "Eta Sco","Sargas", "Sargas","Shaula"]
+    },
+    {
+        id: "sum", rank: RANK.FAMOUS,
+        name: "夏の大三角", en: "Summer Triangle",
+        desc: "こと座のベガ、わし座のアルタイル、はくちょう座のデネブを結ぶ巨大な三角形。",
+        myth: "【神話】日本では「七夕伝説」で有名です。ベガが織姫、アルタイルが彦星。天の川によって引き裂かれた二人は、年に一度、7月7日の夜だけ会うことが許されています。",
+        desc_en: "A giant triangle formed by Vega, Altair, and Deneb.",
+        centerRA: 19.5, centerDec: 28.0,
+        lines: ["Vega","Altair", "Altair","Deneb", "Deneb","Vega"]
+    },
+    {
+        id: "tau", rank: RANK.FAMOUS,
+        name: "おうし座", en: "Taurus",
+        desc: "オリオン座の右上にあるV字型と、プレアデス星団（すばる）が特徴。",
+        myth: "【神話】大神ゼウスが、美しい王女エウロペに恋をし、彼女に近づくために変身した「白い牡牛」の姿だと言われています。",
+        desc_en: "The Bull. Known for the Hyades V-shape and the Pleiades cluster.",
+        centerRA: 4.5, centerDec: 16.0,
+        lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau"] // Simplified
+    },
+    {
+        id: "gem", rank: RANK.FAMOUS,
+        name: "ふたご座", en: "Gemini",
+        desc: "仲良く並んだ二つの明るい星、カストルとポルックスが目印。",
+        myth: "【神話】スパルタの王妃レダの双子の息子、カストルとポルックス。兄カストルが戦死した時、不死身の弟ポルックスは「兄と一緒でなければ不死などいらない」とゼウスに願い、二人で星座になりました。",
+        desc_en: "The Twins. Marked by the two bright stars Castor and Pollux.",
+        centerRA: 7.0, centerDec: 22.0,
+        lines: ["Castor","Pollux"] // Simplified
+    },
+    {
+        id: "leo", rank: RANK.FAMOUS,
+        name: "しし座", en: "Leo",
+        desc: "春の夜空に見える、「？」を裏返したような形（ししの大鎌）が特徴。",
+        myth: "【神話】英雄ヘルクレスの12の冒険の最初に登場する、ネメアの森の人食いライオン。決して刃物を通さない強靭な皮膚を持っていましたが、ヘルクレスに絞め殺されました。",
+        desc_en: "The Lion. Look for the backward question mark pattern.",
+        centerRA: 10.5, centerDec: 15.0,
+        lines: ["Regulus","Denebola", "Regulus","Algieba"] // Simplified
+    },
+    {
+        id: "vir", rank: RANK.FAMOUS,
+        name: "おとめ座", en: "Virgo",
+        desc: "春の夜空に白く輝く1等星スピカを持つ、大きな星座。",
+        myth: "【神話】農業の女神デメテル、またはその娘ペルセポネの姿と言われています。彼女が地下の冥界に行っている間（冬）、地上は草木が枯れ、帰ってくると春が来るとされています。",
+        desc_en: "The Maiden. Holds the bright white star Spica.",
+        centerRA: 13.3, centerDec: -2.0,
+        lines: ["Spica","Porrima", "Spica","Vindemiatrix"] // Simplified
+    },
+    {
+        id: "cas", rank: RANK.MEDIUM,
+        name: "カシオペヤ座", en: "Cassiopeia",
+        desc: "北の空に見えるW（ダブリュー）の形。北極星を見つける目印。",
+        myth: "【神話】古代エチオピアの王妃。「娘のアンドロメダの方が海の妖精より美しい」と自慢したため、海神ポセイドンの怒りを買い、娘を生贄に出す羽目になりました。今でも椅子に縛られたまま空を回っています。",
+        desc_en: "The Queen. The W shape in the northern sky.",
+        centerRA: 1.0, centerDec: 60.0,
+        lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"]
+    },
+    {
+        id: "and", rank: RANK.MEDIUM,
+        name: "アンドロメダ座", en: "Andromeda",
+        desc: "ペガスス座の四辺形から伸びる星の列。肉眼で見える銀河「M31」がある。",
+        myth: "【神話】母カシオペヤの自慢のせいで、海の怪物（くじら座）の生贄にされそうになった悲劇の王女。間一髪で英雄ペルセウスに救出され、妻となりました。",
+        desc_en: "The Chained Princess. Contains the Andromeda Galaxy (M31).",
+        centerRA: 0.7, centerDec: 38.0,
+        lines: ["Alpheratz","Mirach", "Mirach","Almach"]
+    },
+    {
+        id: "peg", rank: RANK.MEDIUM,
+        name: "ペガスス座", en: "Pegasus",
+        desc: "秋の空に浮かぶ大きな四角形（秋の四辺形）が胴体。",
+        myth: "【神話】英雄ペルセウスがメドゥーサの首を切り落とした時、その血から生まれた天馬です。背中に翼を持ち、空を駆けます。",
+        desc_en: "The Winged Horse. Known for the Great Square of Pegasus.",
+        centerRA: 23.0, centerDec: 20.0,
+        lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab"] // Square
+    },
+    {
+        id: "cyg", rank: RANK.MEDIUM,
+        name: "はくちょう座", en: "Cygnus",
+        desc: "天の川の上を飛ぶ十字架の形。「北十字」とも呼ばれる。",
+        myth: "【神話】大神ゼウスが、スパルタの王妃レダに会うために変身した白鳥の姿です。または、太陽神の息子パエトンの死を悲しんで白鳥になった親友キグナスの姿とも言われます。",
+        desc_en: "The Swan or Northern Cross flying along the Milky Way.",
+        centerRA: 20.5, centerDec: 42.0,
+        lines: ["Deneb","Sadr", "Sadr","Albireo", "Sadr","Gienah", "Sadr","Rukh"]
+    },
+    {
+        id: "umi", rank: RANK.MEDIUM,
+        name: "こぐま座", en: "Ursa Minor",
+        desc: "ひしゃくの形。柄の先にあるのが、動かない星「北極星（ポラリス）」。",
+        myth: "【神話】母であるおおぐま座（カリスト）の息子アルカスが変えられた姿です。二人はゼウスによって空に上げられましたが、女神ヘラの呪いで海に沈む（休む）ことを許されず、北の空を回り続けています。",
+        desc_en: "The Little Dipper. Contains the North Star, Polaris.",
+        centerRA: 15.0, centerDec: 75.0,
+        lines: ["Polaris","Yildun", "Yildun","Epsilon UMi", "Epsilon UMi","Zeta UMi", "Zeta UMi","Kochab", "Kochab","Pherkad", "Pherkad","Zeta UMi"]
+    },
+    {
+        id: "lep", rank: RANK.MINOR,
+        name: "うさぎ座", en: "Lepus",
+        desc: "オリオン座の足元に隠れている小さなうさぎの星座。",
+        myth: "【神話】狩人オリオンの獲物として、足元で逃げずにじっとしている野うさぎです。",
+        desc_en: "A hare hiding under Orion's feet.",
+        centerRA: 5.5, centerDec: -20.0,
+        lines: ["Arneb","Nihal"]
+    }
+];
+
+const STARS_DATA = [
+    { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.97, ci: 0.6 },
+    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 },
+    { name: "Betelgeuse", ra: 5.91, dec: 7.40, mag: 0.45, ci: 1.5 },
+    { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.12, ci: -0.03 },
+    { name: "Vega", ra: 18.61, dec: 38.78, mag: 0.03, ci: 0.0 },
+    { name: "Altair", ra: 19.84, dec: 8.87, mag: 0.77, ci: 0.22 },
+    { name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, ci: 0.09 },
+    { name: "Antares", ra: 16.49, dec: -26.43, mag: 1.06, ci: 1.83 },
+    { name: "Arcturus", ra: 14.26, dec: 19.18, mag: -0.05, ci: 1.23 },
+    { name: "Capella", ra: 5.27, dec: 45.99, mag: 0.08, ci: 0.8 },
+    { name: "Procyon", ra: 7.65, dec: 5.22, mag: 0.34, ci: 0.4 },
+    { name: "Spica", ra: 13.42, dec: -11.16, mag: 0.98, ci: -0.2 },
+    { name: "Aldebaran", ra: 4.60, dec: 16.50, mag: 0.87, ci: 1.5 },
+    { name: "Pollux", ra: 7.75, dec: 28.02, mag: 1.15, ci: 1.0 },
+    { name: "Castor", ra: 7.58, dec: 31.88, mag: 1.58, ci: 0.0 },
+    { name: "Regulus", ra: 10.14, dec: 11.96, mag: 1.36, ci: -0.1 },
+    // Orion
+    { name: "Alnitak", ra: 5.67, dec: -1.94, mag: 1.7, ci: -0.2 },
+    { name: "Alnilam", ra: 5.60, dec: -1.20, mag: 1.6, ci: -0.2 },
+    { name: "Mintaka", ra: 5.53, dec: -0.29, mag: 2.2, ci: -0.2 },
+    { name: "Saiph", ra: 5.79, dec: -9.66, mag: 2.0, ci: -0.1 },
+    { name: "Bellatrix", ra: 5.41, dec: 6.34, mag: 1.6, ci: -0.2 },
+    // Cas
+    { name: "Schedar", ra: 0.67, dec: 56.53, mag: 2.2, ci: 1.1 },
+    { name: "Caph", ra: 0.15, dec: 59.14, mag: 2.2, ci: 0.3 },
+    { name: "Gamma Cas", ra: 0.94, dec: 60.71, mag: 2.1, ci: -0.1 },
+    { name: "Ruchbah", ra: 1.42, dec: 60.23, mag: 2.6, ci: 0.1 },
+    { name: "Segin", ra: 1.90, dec: 63.67, mag: 3.3, ci: 0.3 },
+    // Scorpius (Components)
+    { name: "Dschubba", ra: 16.00, dec: -22.62, mag: 2.3, ci: -0.1 },
+    { name: "Graffias", ra: 16.08, dec: -19.80, mag: 2.5, ci: -0.1 },
+    { name: "Wei", ra: 16.83, dec: -38.02, mag: 2.2, ci: 1.1 },
+    { name: "Sargas", ra: 17.62, dec: -43.00, mag: 1.8, ci: 0.4 },
+    { name: "Shaula", ra: 17.56, dec: -37.10, mag: 1.6, ci: -0.2 },
+    // Cygnus (Components)
+    { name: "Sadr", ra: 20.37, dec: 40.25, mag: 2.2, ci: 0.6 },
+    { name: "Albireo", ra: 19.51, dec: 27.96, mag: 3.0, ci: 1.0 },
+    { name: "Gienah", ra: 20.77, dec: 33.96, mag: 2.4, ci: 1.0 },
+    { name: "Rukh", ra: 19.76, dec: 45.13, mag: 2.8, ci: -0.1 },
+    // UMi
+    { name: "Kochab", ra: 14.84, dec: 74.15, mag: 2.0, ci: 1.0 },
+    { name: "Pherkad", ra: 15.34, dec: 71.83, mag: 3.0, ci: 0.0 },
+    { name: "Yildun", ra: 17.53, dec: 86.58, mag: 4.3, ci: 0.0 },
+    // Lepus
+    { name: "Arneb", ra: 5.55, dec: -17.82, mag: 2.5, ci: 0.2 },
+    { name: "Nihal", ra: 5.47, dec: -20.76, mag: 2.8, ci: 0.5 },
+    // Peg/And
+    { name: "Alpheratz", ra: 0.13, dec: 29.09, mag: 2.0, ci: -0.1 },
+    { name: "Mirach", ra: 1.16, dec: 35.62, mag: 2.0, ci: 1.6 },
+    { name: "Almach", ra: 2.06, dec: 42.33, mag: 2.1, ci: 1.3 },
+    { name: "Markab", ra: 23.08, dec: 15.21, mag: 2.5, ci: -0.1 },
+    { name: "Scheat", ra: 23.06, dec: 28.08, mag: 2.4, ci: 1.6 },
+    { name: "Algenib", ra: 0.22, dec: 15.18, mag: 2.8, ci: -0.1 },
+    // Leo
+    { name: "Denebola", ra: 11.82, dec: 14.57, mag: 2.1, ci: 0.0 },
+    { name: "Algieba", ra: 10.33, dec: 19.84, mag: 2.0, ci: 1.2 },
+    // Tau
+    { name: "Elnath", ra: 5.43, dec: 28.60, mag: 1.6, ci: -0.1 },
+    { name: "Zeta Tau", ra: 5.62, dec: 21.14, mag: 3.0, ci: -0.2 },
+    // Vir
+    { name: "Porrima", ra: 12.69, dec: -1.45, mag: 2.7, ci: 0.3 },
+    { name: "Vindemiatrix", ra: 13.04, dec: 10.96, mag: 2.8, ci: 0.9 }
+];
+
+// --- 1. UTILS ---
+const Utils = {
+    lerp: (start, end, amt) => (1 - amt) * start + amt * end,
+    bvToColor: (bv) => {
+        if (bv < 0.0) return {r:180, g:200, b:255}; 
+        if (bv < 0.5) return {r:230, g:240, b:255}; 
+        if (bv < 1.0) return {r:255, g:255, b:240}; 
+        if (bv < 1.5) return {r:255, g:220, b:180}; 
+        return {r:255, g:200, b:180}; 
+    },
+    angleDiff: (target, current) => {
+        let diff = target - current;
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+        return diff;
+    },
+    toast: (msg) => {
+        const el = document.getElementById('toast');
+        el.innerText = msg; el.style.opacity = 1;
+        setTimeout(() => el.style.opacity = 0, 3000);
+    }
+};
+
+// --- 2. GATEKEEPER ---
+const Gate = {
+    check: () => {
+        const isMobile = ('ontouchstart' in window) && (window.innerWidth <= 1024);
+        if (isMobile) {
+            document.getElementById('app-container').classList.remove('hidden-force');
+            document.getElementById('start-modal').classList.remove('hidden-force');
+        } else {
+            document.getElementById('star-gate').classList.remove('hidden-force');
+            new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180});
+        }
+    },
+    startUnlock: () => {
+        Utils.toast("PC DEBUG STARTED");
+        document.getElementById('star-gate').classList.add('hidden-force');
+        document.getElementById('app-container').classList.remove('hidden-force');
+        document.getElementById('start-modal').classList.remove('hidden-force');
+        App.state.isDev = true;
+    }
+};
+
+// --- 3. MATH ENGINE ---
+const Astro = {
+    getLST: (lon, date = new Date()) => {
+        const d = (date.getTime()/1000 - 946727935.816) / 86400;
+        return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
+    },
+    eqToHor: (ra, dec, lat, lst) => {
+        const ha = (lst - ra) * 15;
+        const rad = Math.PI/180;
+        const sinAlt = Math.sin(dec*rad)*Math.sin(lat*rad) + Math.cos(dec*rad)*Math.cos(lat*rad)*Math.cos(ha*rad);
+        const alt = Math.asin(sinAlt) / rad;
+        const cosAz = (Math.sin(dec*rad) - Math.sin(alt*rad)*Math.sin(lat*rad)) / (Math.cos(alt*rad)*Math.cos(lat*rad));
+        let az = Math.acos(Math.min(1, Math.max(-1, cosAz))) / rad;
+        if (Math.sin(ha*rad) > 0) az = 360 - az;
+        return {alt, az};
+    },
+    project: (objAz, objAlt, w, h, camAz, camAlt, fov) => {
+        let dAz = Utils.angleDiff(objAz, camAz);
+        if (Math.abs(dAz) > 90) return null;
+        const scale = Math.min(w, h) / fov;
+        const x = w/2 + dAz * scale * Math.cos(camAlt * Math.PI/180);
+        const y = h/2 - (objAlt - camAlt) * scale;
+        return {x, y};
+    }
+};
+
+// --- 4. GUIDE SYSTEM ---
+const Guide = {
+    target: null,
+    
+    toggle: () => {
+        const el = document.getElementById('guide-modal');
+        const isHidden = el.classList.contains('hidden-force');
+        if (isHidden) { Guide.buildList(); el.classList.remove('hidden-force'); } 
+        else { el.classList.add('hidden-force'); }
+    },
+    
+    buildList: () => {
+        const list = document.getElementById('guide-list');
+        list.innerHTML = '';
+        const lst = Astro.getLST(App.state.lon);
+        
+        CONSTELLATION_DB.forEach(c => {
+            if (!App.state.ranks[c.rank]) return;
+
+            const hor = Astro.eqToHor(c.centerRA, c.centerDec, App.state.lat, lst);
+            const isVisible = hor.alt > 5;
+            const name = App.state.lang === 'en' ? c.en : c.name;
+            const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
+            const myth = App.state.lang === 'ja' && c.myth ? `<p class="text-xs text-yellow-100/80 mb-2 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 italic leading-relaxed">${c.myth}</p>` : '';
+            
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-xl border border-white/10 ${isVisible ? 'bg-slate-800/80' : 'bg-slate-900/50 opacity-70'} backdrop-blur-sm`;
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-bold text-lg text-white">${name}</h3>
+                        ${App.state.lang !== 'en' ? `<p class="text-xs text-cyan-400 font-mono">${c.en}</p>` : ''}
+                    </div>
+                    ${isVisible 
+                        ? '<span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ Visible</span>'
+                        : '<span class="px-2 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold rounded uppercase">Low / Set</span>'}
+                </div>
+                <p class="text-sm text-slate-300 mb-2 leading-relaxed font-bold">${desc}</p>
+                ${myth}
+                <button onclick="Guide.startNav('${c.id}')" 
+                    class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2
+                    ${isVisible ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}">
+                    ${isVisible ? '🔭 この星座を探す (NAVI)' : '今は見えません (Wait)'}
+                </button>
+            `;
+            list.appendChild(card);
+        });
+        
+        if (list.children.length === 0) {
+            list.innerHTML = '<p class="text-center text-slate-500 mt-10">表示する星座がありません。<br>設定でカテゴリをONにしてください。</p>';
+        }
+    },
+    
+    startNav: (id) => {
+        const c = CONSTELLATION_DB.find(x => x.id === id);
+        if (!c) return;
+        Guide.target = { ...c };
+        App.state.mode = 'guide';
+        document.getElementById('guide-modal').classList.add('hidden-force');
+        document.getElementById('nav-ui').classList.remove('hidden-force');
+        document.getElementById('nav-target-name').innerText = App.state.lang==='en' ? c.en : c.name;
+        document.getElementById('btn-cancel-nav').classList.remove('hidden-force');
+        App.state.showLines = true; 
+        Utils.toast(`Navigating to ${App.state.lang==='en'?c.en:c.name} 🚀`);
+    },
+    
+    stopNav: () => {
+        Guide.target = null;
+        App.state.mode = 'normal';
+        document.getElementById('nav-ui').classList.add('hidden-force');
+        document.getElementById('btn-cancel-nav').classList.add('hidden-force');
+        Utils.toast("Navigation Ended");
+    }
+};
+
+// --- 5. APP CORE ---
+const App = {
+    canvas: null, ctx: null, width: 0, height: 0,
+    state: {
+        lat: 32.698, lon: 128.839, // Goto
+        az: 180, alt: 45, targetAz: 180, targetAlt: 45,
+        mode: 'normal',
+        viewMode: 0,
+        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
+        isAR: false, showLines: true, useGPS: false, opacity: {bg:1, milky:0.5},
+        showInfo: false, // New Info Mode
+        meteorEnabled: true,
+        stars: [], milkyWay: [], meteors: [],
+        lang: 'ja', isDev: false
+    },
+
+    init: async () => {
+        document.getElementById('start-modal').classList.add('hidden-force');
+        App.canvas = document.getElementById('sky-canvas');
+        App.ctx = App.canvas.getContext('2d');
+        
+        STARS_DATA.forEach(s => App.state.stars.push(s));
+        for(let i=0;i<500;i++) App.state.stars.push({
+            ra:Math.random()*24, dec:Math.random()*180-90, mag:Math.random()*3+3.5, ci:Math.random()*1.5, isProc:true
+        });
+        
+        // Milky Way Path
+        const mwPoints = [
+            {ra: 0, dec: 63}, {ra: 3, dec: 50}, {ra: 6, dec: 10}, 
+            {ra: 7.5, dec: -20}, {ra: 12, dec: -60}, 
+            {ra: 17, dec: -30}, {ra: 18, dec: -15}, 
+            {ra: 20, dec: 40}, {ra: 23, dec: 60}
+        ];
+        for(let i=0; i<mwPoints.length-1; i++) {
+            const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
+            for(let j=0; j<100; j++) {
+                const t = j/100;
+                App.state.milkyWay.push({
+                    ra: p1.ra + (p2.ra-p1.ra)*t + (Math.random()-0.5)*2,
+                    dec: p1.dec + (p2.dec-p1.dec)*t + (Math.random()-0.5)*15, 
+                    size: Math.random()*40+20, alpha: Math.random()*0.025
+                });
+            }
+        }
+
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const res = await DeviceOrientationEvent.requestPermission();
+                if (res==='granted') window.addEventListener('deviceorientation', App.handleOri);
+            } catch(e){}
+        } else {
+            window.addEventListener('deviceorientation', App.handleOri);
+        }
+
+        try { if(navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
+
+        window.addEventListener('resize', App.resize);
+        if(App.state.isDev) App.setupDev();
+        App.setupTouch();
+        App.resize();
+        App.loop();
+    },
+
+    handleOri: (e) => {
+        let az = 0, alt = 0;
+        if (e.webkitCompassHeading) { az = e.webkitCompassHeading; alt = e.beta - 90; } 
+        else if (e.alpha !== null) { az = 360 - e.alpha; alt = e.beta - 90; }
+        
+        let dAz = az - App.state.az;
+        if (dAz > 180) App.state.az += 360; if (dAz < -180) App.state.az -= 360;
+        App.state.targetAz = az; App.state.targetAlt = alt;
+    },
+
+    loop: () => {
+        const {ctx, width, height, state} = App;
+        state.az = Utils.lerp(state.az, state.targetAz, 0.1);
+        state.alt = Utils.lerp(state.alt, state.targetAlt, 0.1);
+        const currAz = (state.az + 360) % 360;
+
+        ctx.clearRect(0,0,width,height);
+        
+        const isSolar = state.viewMode === 2;
+        if (state.opacity.bg > 0) {
+            const grad = ctx.createLinearGradient(0,0,0,height);
+            const alpha = state.isAR ? state.opacity.bg : 1;
+            if (isSolar) { grad.addColorStop(0, `rgba(135,206,235,${alpha})`); grad.addColorStop(1, `rgba(224,247,250,${alpha})`); }
+            else { grad.addColorStop(0, `rgba(2,6,23,${alpha})`); grad.addColorStop(1, `rgba(15,23,42,${alpha})`); }
+            ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
+        }
+
+        const lst = Astro.getLST(state.lon);
+        const starPos = {};
+
+        if (!isSolar && state.opacity.milky > 0) {
+            ctx.globalCompositeOperation = 'lighter';
+            state.milkyWay.forEach(p => {
+                const hor = Astro.eqToHor(p.ra, p.dec, state.lat, lst);
+                if (hor.alt < -20) return;
+                const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+                if (pos) {
+                    const ext = Math.max(0, Math.min(1, (hor.alt + 10) / 20));
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * state.opacity.milky * ext})`;
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, p.size * (width/1000), 0, Math.PI*2); ctx.fill();
+                }
+            });
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        state.stars.forEach(s => {
+            const hor = Astro.eqToHor(s.ra, s.dec, state.lat, lst);
+            if (hor.alt < -5) return;
+            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+            if (pos) {
+                if(s.name) starPos[s.name] = pos;
+                let col = Utils.bvToColor(s.ci||0.5);
+                let size = Math.max(0.5, (4-s.mag));
+                let alpha = (s.mag<2?0.9:0.5);
+                if (isSolar) { col = {r:0, g:0, b:0}; alpha = 0.6; }
+                ctx.fillStyle = `rgba(${col.r},${col.g},${col.b}, ${alpha})`;
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
+            }
+        });
+
+        // Collect visible constellations for Info Logic
+        const visibleConsts = [];
+
+        if (state.showLines) {
+            ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.3)"; ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            CONSTELLATION_DB.forEach(c => {
+                if (!state.ranks[c.rank]) return;
+                const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
+                if (isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "rgba(50,255,100,0.8)"; ctx.lineWidth = 3; }
+                
+                for(let i=0; i<c.lines.length; i+=2) {
+                    const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
+                    if(p1 && p2) { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); }
+                }
+
+                // Calc Center for Label/Info
+                let cx=0, cy=0, n=0;
+                for(let i=0; i<c.lines.length; i++) {
+                    const p = starPos[c.lines[i]];
+                    if(p) { cx+=p.x; cy+=p.y; n++; }
+                }
+                if(n>0) {
+                    cx/=n; cy/=n;
+                    if(cx>0 && cx<width && cy>0 && cy<height) {
+                         // Add to visible list for info sorting
+                         const dist = Math.hypot(cx - width/2, cy - height/2);
+                         visibleConsts.push({c, cx, cy, dist});
+
+                         // Draw Label
+                         ctx.fillStyle = isSolar ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)";
+                         ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "12px 'Zen Maru Gothic'";
+                         ctx.textAlign = "center";
+                         ctx.fillText(state.lang==='en' ? c.en : c.name, cx, cy);
+                         ctx.textAlign = "start";
+                    }
+                }
+                if (isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.3)"; ctx.lineWidth = 1; }
+            });
+            ctx.stroke();
+        }
+
+        // --- SMART INFO OVERLAY ---
+        // If enabled, pick closest 1-2 constellations to center and show description
+        if (state.showInfo && visibleConsts.length > 0) {
+            visibleConsts.sort((a,b) => a.dist - b.dist);
+            // Show info for top 1 (or 2 if close)
+            const count = Math.min(visibleConsts.length, 1); 
+            
+            for(let i=0; i<count; i++) {
+                const item = visibleConsts[i];
+                // Only if reasonably close to center (within 150px)
+                if (item.dist < 250) {
+                    const desc = state.lang === 'en' ? item.c.desc_en : item.c.desc;
+                    const textWidth = Math.min(240, ctx.measureText(desc).width + 20);
+                    const bx = item.cx - textWidth/2;
+                    const by = item.cy + 15;
+                    
+                    // Draw Box
+                    ctx.fillStyle = isSolar ? "rgba(255,255,255,0.85)" : "rgba(15, 23, 42, 0.85)";
+                    ctx.strokeStyle = isSolar ? "#000" : "rgba(34, 211, 238, 0.5)";
+                    ctx.beginPath();
+                    // rounded rect manual
+                    ctx.roundRect(bx, by, textWidth, 60, 8); // height fixed for simplicity, multiline manual below
+                    ctx.fill(); ctx.stroke();
+                    
+                    // Draw Text (Simple wrap logic or truncate)
+                    ctx.fillStyle = isSolar ? "#000" : "#22d3ee";
+                    ctx.font = "bold 11px 'Zen Maru Gothic'";
+                    ctx.textAlign = "center";
+                    
+                    // Simple split for 2 lines
+                    const limit = 18; // chars per line approx
+                    const line1 = desc.substring(0, limit);
+                    const line2 = desc.substring(limit);
+                    
+                    ctx.fillText(line1 + (line2?"-":""), item.cx, by + 20);
+                    if(line2) ctx.fillText(line2, item.cx, by + 36);
+                    ctx.textAlign = "start";
+                }
+            }
+        }
+
+        if (state.meteorEnabled && !isSolar) {
+            if (Math.random() < 0.01) App.triggerMeteor();
+            ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
+            state.meteors = state.meteors.filter(m => {
+                ctx.globalAlpha = m.life; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*4, m.y-m.vy*4); ctx.stroke();
+                m.x+=m.vx; m.y+=m.vy; m.life-=0.04; return m.life>0;
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        if (state.mode === 'guide' && Guide.target) {
+            const t = Guide.target;
+            const hor = Astro.eqToHor(t.centerRA, t.centerDec, state.lat, lst);
+            const pos = Astro.project(hor.az, hor.alt, width, height, currAz, state.alt, 70);
+            const lockEl = document.getElementById('lock-on');
+            
+            const dAz = Utils.angleDiff(hor.az, currAz);
+            const dAlt = hor.alt - state.alt;
+            
+            if (pos && pos.x > 50 && pos.x < width-50 && pos.y > 50 && pos.y < height-50) {
+                lockEl.style.opacity = 1; lockEl.style.left = pos.x + 'px'; lockEl.style.top = pos.y + 'px';
+            } else {
+                lockEl.style.opacity = 0;
+                const angle = Math.atan2(-dAlt, dAz);
+                const dist = Math.min(width, height) * 0.4;
+                const ax = width/2 + Math.cos(angle) * dist;
+                const ay = height/2 + Math.sin(angle) * dist;
+                
+                ctx.save(); ctx.translate(ax, ay); ctx.rotate(angle);
+                ctx.fillStyle = "#4ade80"; ctx.shadowBlur = 10; ctx.shadowColor = "#4ade80";
+                ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10); ctx.fill(); ctx.restore();
+                
+                ctx.fillStyle = isSolar ? "#000" : "white"; ctx.font = "bold 14px monospace"; ctx.textAlign = "center";
+                ctx.fillText(`あと ${Math.abs(dAz).toFixed(0)}°`, width/2, height/2 + 100);
+            }
+        }
+
+        requestAnimationFrame(App.loop);
+    },
+
+    resize: () => { App.width = window.innerWidth; App.height = window.innerHeight; App.canvas.width = App.width; App.canvas.height = App.height; },
+    triggerMeteor: () => { App.state.meteors.push({x: Math.random()*App.width, y: Math.random()*App.height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1}); },
+    toggleLocation: () => { App.state.useGPS = !App.state.useGPS; document.getElementById('loc-name').innerText=App.state.useGPS?"GPS (現在地)":"五島列島 (固定)"; Utils.toast(App.state.useGPS?"GPS Mode":"Goto Mode"); },
+    toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
+    toggleAR: (v) => { App.state.isAR = v; document.getElementById('camera-feed').style.opacity = v?1:0; App.setOpacity('bg', v?0.4:1); document.querySelector('input[oninput*="bg"]').value = v?0.4:1; },
+    toggleViewMode: () => {
+        App.state.viewMode = (App.state.viewMode + 1) % 3;
+        const body = document.body;
+        const btn = document.getElementById('btn-mode');
+        body.classList.remove('mode-red', 'mode-solar');
+        if(App.state.viewMode === 1) { body.classList.add('mode-red'); btn.innerText = "🔴"; Utils.toast("赤色モード (Red)"); }
+        else if(App.state.viewMode === 2) { body.classList.add('mode-solar'); btn.innerText = "☀️"; Utils.toast("昼間モード (Solar)"); }
+        else { btn.innerText = "🌙"; Utils.toast("通常モード (Night)"); }
+    },
+    setOpacity: (k,v) => { App.state.opacity[k] = parseFloat(v); if(k==='bg')document.getElementById('val-bg').innerText=Math.round(v*100)+"%"; if(k==='milky')document.getElementById('val-milky').innerText=Math.round(v*100)+"%"; },
+    setRank: (r,v) => App.state.ranks[r] = v,
+    setFlag: (k,v) => App.state[k] = v,
+    setLang: (l) => { App.state.lang = l; Guide.buildList(); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v11.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    setupDev: () => {
+        let d=false,lx=0,ly=0;
+        window.addEventListener('mousedown',e=>{d=true;lx=e.clientX;ly=e.clientY});
+        window.addEventListener('mousemove',e=>{if(!d)return; App.state.targetAz-=(e.clientX-lx)*0.2; App.state.targetAlt+=(e.clientY-ly)*0.2; lx=e.clientX;ly=e.clientY;});
+        window.addEventListener('mouseup',()=>d=false);
+    },
+    setupTouch: () => {
+        let d=false,lx=0;
+        window.addEventListener('touchstart',e=>{d=true;lx=e.touches[0].clientX});
+        window.addEventListener('touchmove',e=>{if(!d)return; App.state.targetAz-=(e.touches[0].clientX-lx)*0.1; lx=e.touches[0].clientX;});
+        window.addEventListener('touchend',()=>d=false);
+    }
+};
+
+Gate.check();
+</script>
+</body>
+</html>
