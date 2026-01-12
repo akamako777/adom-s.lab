@@ -1525,17 +1525,66 @@ const App = {
         App.setupTouch(); App.resize(); App.loop();
     },
 
-    handleOri: (e) => {
-        const alpha = e.alpha || 0;
-        const beta = e.beta || 0;
-        const gamma = e.gamma || 0;
+  handleOri: (e) => {
+        // --- 🌊 Smoothing Factor (0.1 = Strong, 1.0 = None) ---
+        const k = 0.15; 
+
+        // Get raw sensor data
+        let alpha = e.alpha || 0;
+        let beta = e.beta || 0;
+        let gamma = e.gamma || 0;
+
+        // Initialize state if first run
+        if (!App.state.lastOri) {
+            App.state.lastOri = { alpha, beta, gamma };
+        }
+
+        const last = App.state.lastOri;
+
+        // Anti-Gimbal Lock Logic: Prevent spin when crossing 0/360
+        if (Math.abs(alpha - last.alpha) > 300) last.alpha = alpha;
+        if (Math.abs(beta - last.beta) > 300) last.beta = beta;
+        if (Math.abs(gamma - last.gamma) > 300) last.gamma = gamma;
+
+        // Apply Low-Pass Filter
+        alpha = last.alpha + (alpha - last.alpha) * k;
+        beta = last.beta + (beta - last.beta) * k;
+        gamma = last.gamma + (gamma - last.gamma) * k;
+
+        // Save smoothed values for next frame
+        App.state.lastOri = { alpha, beta, gamma };
         
+        // Update App State
         App.state.orientation = { 
             alpha, beta, gamma, 
             isIOS: !!e.webkitCompassHeading, 
             webkitCompass: e.webkitCompassHeading 
         };
         
+        // Calibration Logic (Level Bubble) - Remains Unchanged
+        if (App.state.calibMode) {
+            const ball = document.getElementById('level-ball');
+            const maxTilt = 20; // degrees
+            let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
+            let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
+            
+            const px = (bx / maxTilt) * 80;
+            const py = (by / maxTilt) * 80;
+            
+            ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+            
+            let h = alpha;
+            if(e.webkitCompassHeading) h = e.webkitCompassHeading;
+            document.getElementById('calib-val').innerText = `${Math.round(h)}°`;
+            
+            if(Math.abs(bx)<3 && Math.abs(by)<3) {
+                document.querySelector('.level-bubble').classList.add('level-ok');
+            } else {
+                document.querySelector('.level-bubble').classList.remove('level-ok');
+            }
+        }
+    },
+
         // Calibration Logic (Level Bubble)
         if (App.state.calibMode) {
             const ball = document.getElementById('level-ball');
