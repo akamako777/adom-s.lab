@@ -1885,9 +1885,9 @@ const App = {
         // ★ アスペクト比に応じたFOVの最適化
         if (App.width > App.height) {
             // 横持ち (Landscape):
-            // 縦の解像度が低いので、FOVを30度くらいまで「望遠」にしないと、
+            // 縦の解像度が低いので、FOVを27度くらいまで「望遠」にしないと、
             // 星が小さく見えて迫力がなくなります。
-            App.state.fov = 30; 
+            App.state.fov = 27; 
         } else {
             // 縦持ち (Portrait):
             // 標準的な60度でOK
