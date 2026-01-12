@@ -338,7 +338,7 @@
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer border-l-4 border-yellow-400">
                     <span class="text-sm font-bold" data-i18n="cat_star_gal">✨ 有名な星・銀河 (Stars & Gal)</span>
-                    <input type="checkbox" checked onchange="App.setRank(4, this.checked)" class="check-box">
+                    <input type="checkbox" onchange="App.setRank(4, this.checked)" class="check-box">
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
                     <span class="text-sm font-bold" data-i18n="cat_medium">🐻 普通の星座 (Medium)</span>
@@ -1650,10 +1650,10 @@ const App = {
         Utils.toast("Compass LOCKED to North 🔒");
     },
 
-   updateViewMatrix: () => {
+  updateViewMatrix: () => {
+        // 分離: スムージング済みの値(orientation)と、生の値(lastOri内のcompass等)を使い分ける
         const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
         
-        // --- 画面の向きを取得 (ここはリアルタイムな値を使う) ---
         let screenOrient = 0;
         if (window.screen && window.screen.orientation) {
             screenOrient = window.screen.orientation.angle;
@@ -1663,28 +1663,28 @@ const App = {
 
         const deg2rad = Math.PI / 180;
 
-        // 2. Normalize Alpha (Base Heading)
-        let a = alpha; // スムージング済みの値
+        // Base Heading Calculation
+        let a = alpha; 
         if (isIOS && webkitCompass != null) {
-            // iOSはコンパス値を優先
             a = -webkitCompass;
         }
         
-        // 3. Magnetic Declination Fix
+        // Magnetic Declination
         a -= 7; 
 
-        // 4. Apply Manual Offset & Sky Rotation
+        // Manual Offset & Sky Rotation
         let starAlpha = a + App.state.manualOffset + App.state.skyRotation;
         if (App.state.reverseAlpha) starAlpha = -starAlpha;
 
-        // --- Calculate View Matrix for Stars ---
+        // Rotation Angles
+        // ※ 横持ち時の挙動改善のため、screenOrientの影響をアルファ計算に混ぜない
         const rAlpha = starAlpha * deg2rad;
         const rBeta = beta * deg2rad;
         const rGamma = gamma * deg2rad;
-        const rOrient = screenOrient * deg2rad;
+        const rOrient = screenOrient * deg2rad; // 画面回転量
 
-        // YXZ Order (Device Rotation - Sensor only)
-        // センサーの回転行列だけを先に作る
+        // 1. デバイスの姿勢行列 (Device Attitude)
+        // YXZ順 (標準的なセンサー座標系)
         const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     
         const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      
         const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    
@@ -1692,15 +1692,15 @@ const App = {
         let qDev = Math3D.qMultiply(qY, qX);
         qDev = Math3D.qMultiply(qDev, qZ);
 
-        // --- 修正ポイント: 画面回転の適用順序 ---
-        // カメラ座標系への変換 (-90度ピッチ)
+        // 2. 座標系の変換 (Sensor Frame -> GL Frame)
+        // スマホの「裏側」がZマイナスになるように -90度ピッチ
         const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
         
-        // 画面回転 (Z軸回転)
-        // ※ screenOrient はセンサー値とは独立して、最後に適用する
+        // 3. 画面の回転補正 (Screen Orientation)
+        // 画面を横にした時、カメラ自体をZ軸で回す
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
 
-        // センサー回転 × カメラ補正 × 画面回転 の順で適用
+        // 合成順序: デバイス姿勢 → 座標変換 → 画面回転
         let qFinal = Math3D.qMultiply(qDev, qCamFix);
         qFinal = Math3D.qMultiply(qFinal, qScreen);
 
