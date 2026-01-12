@@ -1585,31 +1585,7 @@ const App = {
         }
     },
 
-        // Calibration Logic (Level Bubble)
-        if (App.state.calibMode) {
-            const ball = document.getElementById('level-ball');
-            const maxTilt = 20; // degrees
-            let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
-            let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
-            
-            // Map tilt to px (-50 to 50)
-            const px = (bx / maxTilt) * 80;
-            const py = (by / maxTilt) * 80;
-            
-            ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
-            
-            // Show compass value
-            let h = alpha;
-            if(e.webkitCompassHeading) h = e.webkitCompassHeading;
-            document.getElementById('calib-val').innerText = `${Math.round(h)}°`;
-            
-            if(Math.abs(bx)<3 && Math.abs(by)<3) {
-                document.querySelector('.level-bubble').classList.add('level-ok');
-            } else {
-                document.querySelector('.level-bubble').classList.remove('level-ok');
-            }
-        }
-    },
+ 
 
     // --- CALIBRATION FUNCTIONS ---
     startCalibration: () => {
