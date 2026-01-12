@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v29.0 (Aurora Sextant)</title>
+    <title>Five Islands Stargazer v29.1 (Aurora Sextant)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -184,8 +184,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Sextant</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.1</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Sextant v2</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -251,7 +251,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v29.0 Sextant</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v29.1 Sextant v2</div>
                 </div>
             </div>
 
@@ -324,7 +324,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.0</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.1</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -398,12 +398,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v29.0 (Aurora Sextant)
+ * 🌌 FIVE ISLANDS STARGAZER v29.1 (Aurora Sextant)
  * ==========================================
- * [New Architecture]
- * - ANCHOR: Uses North Star (Polaris) as the absolute anchor based on GPS Latitude.
- * - SEXTANT: Calibrate Magnetic North once, then track using Gyro relative to North.
- * - WORLD: Stars are fixed in Alt/Az coordinates; Camera rotates inside the dome.
+ * [FIXED]
+ * - Gyro: Changed Quaternion calculation to standard Z-X-Y order (Intrinsic).
+ * - UI: Fixed "Ready" message persisting bug.
+ * - Logic: North offset applied directly to Alpha.
  */
 
 // I18N and Data Constants
@@ -773,7 +773,6 @@ const App = {
             const btn = document.getElementById('btn-confirm-setup');
             const ring = document.getElementById('compass-ring');
             const valDisplay = document.getElementById('compass-val');
-            const setupContainer = document.getElementById('setup-wizard');
             
             if (alpha !== 0 || beta !== 0 || gamma !== 0) {
                 status.innerText = "Sensor: Active OK";
@@ -795,21 +794,13 @@ const App = {
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
-            // Use Raw Alpha or WebkitCompass for visual feedback
             let heading = alpha;
             if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
             
-            // Visual rotation of the ring
             ring.style.transform = `rotate(${-heading}deg)`;
             valDisplay.innerText = `${Math.round(heading)}°`;
 
-            // Setup logic: Aligning N mark with Real North
-            // If user aligns phone N with real N, heading should be near 0 (or 360).
             const isNorth = (heading > 355 || heading < 5);
-            if (isNorth) {
-                // setupContainer.classList.add('north-aligned');
-                // valDisplay.style.color = "#4ade80"; 
-            }
         }
     },
 
@@ -820,21 +811,16 @@ const App = {
     },
     
     confirmSetup: () => {
-        // SEXTANT CALIBRATION:
-        // Capture the current sensor Alpha when user says "This is North".
-        // This 'offset' effectively zeroes the compass to True North.
-        
         const { alpha, webkitCompass } = App.state.orientation;
         let current = alpha;
         if (webkitCompass != null) current = webkitCompass;
         
-        App.state.northOffset = current; // Saving the Offset
+        App.state.northOffset = current; 
         
         App.state.setupMode = false;
         
         document.getElementById('setup-wizard').classList.add('hidden-force');
         
-        // Show tutorial swipe hint
         const hint = document.createElement('div');
         hint.id = "swipe-hint";
         hint.className = "swipe-hint fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-2xl pointer-events-none z-50 transition-opacity duration-1000 opacity-0";
@@ -842,7 +828,10 @@ const App = {
         document.body.appendChild(hint);
         
         setTimeout(() => { hint.style.opacity = 1; }, 500);
-        setTimeout(() => { hint.style.opacity = 0; }, 2000);
+        setTimeout(() => { 
+            hint.style.opacity = 0; 
+            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 1000); // Remove DOM
+        }, 2000);
         
         Utils.toast("基準セット完了 (Zero Locked) 🔒");
     },
@@ -912,10 +901,7 @@ const App = {
     setLang: (l) => { App.state.lang = l; Guide.buildList(); Utils.updateDOMText(); },
     takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v29.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     
-    setupTouch: () => {
-        // No manual offset in Sextant Logic - Camera follows user
-        // But maybe allow slight tweak? Not needed if Sextant is robust.
-    },
+    setupTouch: () => {},
     
     resize: () => {
         App.width = window.innerWidth;
@@ -925,69 +911,41 @@ const App = {
     }
 };
 
-// --- CORE: CAMERA MATRIX UPDATE (Sextant Logic) ---
+// --- CORE: CAMERA MATRIX UPDATE (Sextant Logic v2 - Intrinsic) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
 
-    // 1. Determine "Sensor Alpha" (Raw Heading)
     let currentAlpha = alpha;
     if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
 
-    // 2. Apply Sextant Offset
-    // TrueHeading = RawSensor - NorthOffset
-    // e.g. If NorthOffset was 45 (User said 45 is North), and now sensor is 45, TrueHeading is 0 (North).
+    // Apply Sextant Offset
     let trueHeading = currentAlpha - App.state.northOffset; 
-    
-    // Normalize to 0-360
     if (trueHeading < 0) trueHeading += 360;
+
+    // Use standard WebGL/DeviceOrientation calculation (Z-X-Y Intrinsic)
+    // alpha: Z, beta: X, gamma: Y
+    const _x = beta  ? beta  * deg2rad : 0;
+    const _y = gamma ? gamma * deg2rad : 0;
+    const _z = trueHeading ? trueHeading * deg2rad : 0;
+
+    const cX = Math.cos( _x/2 );
+    const cY = Math.cos( _y/2 );
+    const cZ = Math.cos( _z/2 );
+    const sX = Math.sin( _x/2 );
+    const sY = Math.sin( _y/2 );
+    const sZ = Math.sin( _z/2 );
+
+    // Z-X-Y Intrinsic Quaternion
+    // This correctly handles the "gimbal" behavior of phones
+    const w = cX * cY * cZ - sX * sY * sZ;
+    const x = sX * cY * cZ - cX * sY * sZ;
+    const y = cX * sY * cZ + sX * cY * sZ;
+    const z = cX * cY * sZ + sX * sY * cZ;
     
-    // 3. Construct Camera Rotation Matrix
-    // Note: Device Orientation axes:
-    // Alpha (Z axis): 0 is North(initially), increases anti-clockwise (Android) or clockwise?
-    // iOS WebkitCompass: 0 is North, increases Clockwise.
-    // Standard Android: 0 is North, increases Counter-Clockwise.
-    // We need to Unify.
+    let q = [x, y, z, w];
     
-    // Let's assume standard "Compass" behavior: Increasing Clockwise.
-    // If Android is Counter-Clockwise, we negate alpha.
-    // But usually 'alpha' is Z rotation...
-    
-    // Let's use a robust Euler construction:
-    // Heading (Y rot), Pitch (X rot), Roll (Z rot) in World Space (Y-up convention for camera?)
-    // Wait, our World is Z=Up.
-    
-    // World: Z=Up, Y=North, X=East.
-    // Camera: when looking North (Heading=0) and Horizon (Beta=90):
-    // Should align.
-    
-    // Let's construct Quaternion from Euler Angles (Z-X-Y order usually works for phones)
-    // Alpha is Z rotation (Azimuth).
-    // Beta is X rotation (Pitch).
-    // Gamma is Y rotation (Roll).
-    
-    // Convert to Rads
-    // Important: For "Looking at Sky", we invert rotations to place camera in world?
-    // No, we create Camera Matrix, then Invert it for View Matrix.
-    
-    const rAlpha = trueHeading * deg2rad;
-    const rBeta = beta * deg2rad; 
-    const rGamma = gamma * deg2rad;
-    
-    // Basic Phone Rotation (Z-X-Y sequence)
-    // Z: Azimuth (alpha) - rotates around world Z
-    // X: Pitch (beta) - rotates around local X
-    // Y: Roll (gamma) - rotates around local Y
-    
-    const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rAlpha); // Negate for standard rotation?
-    const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);
-    const qY = Math3D.qFromAxisAngle([0, 1, 0], rGamma);
-    
-    // Combine: q = qZ * qX * qY
-    let q = Math3D.qMultiply(qZ, qX);
-    q = Math3D.qMultiply(q, qY);
-    
-    // 4. Adjust for Screen Orientation (Portrait/Landscape)
+    // 4. Adjust for Screen Orientation
     let screenOrient = 0;
     if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
     else if (window.orientation) screenOrient = window.orientation;
@@ -995,42 +953,25 @@ App.updateViewMatrix = () => {
     const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
     q = Math3D.qMultiply(q, qScreen);
     
-    // 5. Adjust for Camera Frame vs World Frame
-    // Our World: Z=Up, Y=North.
-    // Phone identity (Alpha=0, Beta=0, Gamma=0): Phone is lying on table, screen up.
-    // Camera is looking down (-Z). Top is +Y.
-    // We want: Beta=90 (Phone vertical) -> Looking at Horizon.
-    
-    // The "Standard" WebGL transform for device orientation usually requires a fix.
-    // Rotate -90 around X to bring Camera from "Looking Down" to "Looking Forward"
+    // 5. Adjust for World Frame alignment
+    // Device identity (a=0,b=0,g=0) means lying flat, Top point North.
+    // Our Camera (looking down -Z) needs to be rotated to look Horizon.
+    // Rotate -90 deg around X.
     const qFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
     q = Math3D.qMultiply(q, qFix);
 
-    // 6. Generate View Matrix (Inverse of Camera Matrix)
+    // 6. View Matrix
     const mCam = Math3D.matFromQ(q);
     App.state.viewMat = Math3D.matInvert(mCam);
 
-    // DEBUG INFO
-    // Calculate where camera is looking in World Coords (Forward Vector)
-    // Forward in Camera Space is (0, 0, -1).
-    // WorldForward = CameraMatrix * (0,0,-1)
-    // mCam indices: 
-    // 0 4 8 12
-    // 1 5 9 13
-    // 2 6 10 14
-    // 3 7 11 15
-    const fx = -mCam[8];
-    const fy = -mCam[9];
-    const fz = -mCam[10];
-    
-    // Convert Vector to Alt/Az
+    // Debug
+    const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
     const alt = Math.asin(fz) * 180/Math.PI;
-    let az = Math.atan2(fx, fy) * 180/Math.PI; // atan2(x, y) gives angle from Y axis (North)
+    let az = Math.atan2(fx, fy) * 180/Math.PI;
     if (az < 0) az += 360;
-    
     document.getElementById('debug-az').innerText = Math.round(az);
     document.getElementById('debug-alt').innerText = Math.round(alt);
-    App.state.azimuth = az; // for guide logic
+    App.state.azimuth = az;
 };
 
 App.loop = () => {
@@ -1242,3 +1183,4 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
+
