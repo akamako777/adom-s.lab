@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v28.0 (Polaris Core)</title>
+    <title>Five Islands Stargazer v28.1 (Polaris Core)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -75,9 +75,10 @@
         #setup-wizard {
             position: fixed; inset: 0; z-index: 100; background: #000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s;
+            transition: opacity 0.5s, visibility 0.5s;
+            opacity: 1; visibility: visible;
         }
-        #setup-wizard.hidden-force { opacity: 0; pointer-events: none; }
+        #setup-wizard.hidden-force { opacity: 0; visibility: hidden; pointer-events: none; }
         
         .level-bubble {
             width: 180px; height: 180px; border: 4px solid #475569; border-radius: 50%;
@@ -148,11 +149,11 @@
 </head>
 <body>
 
-    <!-- 🚪 PC GATE -->
+    <!-- 🚪 PC GATE (Simplified) -->
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.0</span></h1>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.1</span></h1>
             <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Polaris Core</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -160,10 +161,7 @@
             <p class="text-slate-300 text-sm leading-relaxed font-medium mb-8">
                 モバイルデバイス専用です。<br>QRコードをスキャンしてください。
             </p>
-            <button onclick="Gate.startUnlock()" class="group flex items-center gap-2 px-6 py-3 rounded-full bg-slate-800/50 border border-slate-700 hover:bg-slate-700 hover:border-cyan-500 transition-all cursor-pointer">
-                <span class="text-yellow-400 text-xl group-hover:animate-spin">★</span>
-                <span class="text-xs font-bold text-slate-300 group-hover:text-white">PC DEBUG MODE</span>
-            </button>
+            <!-- Debug Button Removed -->
         </div>
     </div>
 
@@ -232,7 +230,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v28.0 Polaris Core</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v28.1 Polaris Core</div>
                 </div>
             </div>
 
@@ -256,7 +254,7 @@
     </div>
 
     <!-- 🪄 SETUP WIZARD (Polaris Anchor) -->
-    <div id="setup-wizard" class="interactive">
+    <div id="setup-wizard" class="hidden-force interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-2xl font-black text-white mb-2 tracking-tighter">ALIGNMENT</h2>
             <p class="text-xs font-bold text-cyan-400 mb-6 tracking-widest">POLARIS ANCHOR SYSTEM</p>
@@ -265,7 +263,7 @@
                 <ol class="text-xs text-slate-300 space-y-3 list-decimal list-inside text-left">
                     <li><b class="text-white">スマホを水平</b>に持ってください。</li>
                     <li><b class="text-cyan-400">上端を北(N)</b>に向けてください。</li>
-                    <li>この状態で<b class="text-yellow-400">基準セット</b>を押すと、<br>そこが宇宙の中心（北）になります。</li>
+                    <li><b class="text-yellow-400">基準セット</b>を押すと、<br>そこが宇宙の中心（北）になります。</li>
                 </ol>
             </div>
             
@@ -273,13 +271,14 @@
                 <div class="level-target"></div>
                 <div id="level-ball" class="level-ball"></div>
             </div>
+            <div id="sensor-status" class="text-[10px] font-mono text-slate-400 mb-2">Sensor: Waiting...</div>
             
             <p class="text-[10px] text-slate-500 mb-4 text-center max-w-xs">
                 ※この操作でセンサーのズレを全てリセットし、<br>現在の向きを強制的に「北」として定義します。
             </p>
             
-            <button onclick="App.confirmSetup()" class="px-8 py-4 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition w-3/4">
-                基準セット (SET ZERO)
+            <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-3/4 transition-all duration-300">
+                センサー準備中...
             </button>
         </div>
     </div>
@@ -293,6 +292,19 @@
             <button onclick="Guide.toggle()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition text-xl">✕</button>
         </div>
         <div id="guide-list" class="flex-1 overflow-y-auto p-4 space-y-4 pb-20"></div>
+    </div>
+
+    <!-- 🚀 START MODAL -->
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] interactive">
+        <div class="relative z-10 w-full max-w-sm px-6 text-center">
+            <div class="text-6xl mb-4 animate-bounce">✨</div>
+            <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.1</p>
+            <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
+                START / 出発
+            </button>
+            <p class="text-[10px] text-slate-500 mt-4">Polaris Anchor System</p>
+        </div>
     </div>
 
     <!-- ⚙️ SETTINGS MODAL -->
@@ -385,13 +397,13 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v28.0 (Polaris Core)
+ * 🌌 FIVE ISLANDS STARGAZER v28.1 (Fix & Polish)
  * ==========================================
- * System Rewrite:
- * - START WIZARD: Forces initial "Level & North" alignment to set Reference Zero.
- * - POLARIS ANCHOR: Uses the captured Reference Zero as the absolute origin for all rotations.
- * - TIME TRAVEL: Restored (Beta) now that the axis is anchored.
- * - CLEANUP: Removed Mirror Mode & simple Reset logic.
+ * Changelog:
+ * - FIX: Setup Wizard now waits for Sensor Permission before appearing.
+ * - FIX: Setup Wizard correctly hides after confirmation (visibility check).
+ * - UI: Added "Sensor Status" to Setup Wizard.
+ * - CLEANUP: Removed PC Debug button.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -943,13 +955,7 @@ const Gate = {
             new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180});
         }
     },
-    startUnlock: () => {
-        Utils.toast("PC DEBUG STARTED");
-        document.getElementById('star-gate').classList.add('hidden-force');
-        document.getElementById('app-container').classList.remove('hidden-force');
-        document.getElementById('start-modal').classList.remove('hidden-force');
-        App.state.isDev = true;
-    }
+    // No dedicated unlock needed now, start modal handles it
 };
 
 // --- 6. APP CORE ---
@@ -975,12 +981,27 @@ const App = {
     },
 
     init: async () => {
+        // HIDE START MODAL
         document.getElementById('start-modal').classList.add('hidden-force');
         
-        // Show Setup Wizard immediately
+        // 1. REQUEST PERMISSION FIRST
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try { 
+                const res = await DeviceOrientationEvent.requestPermission(); 
+                if (res === 'granted') {
+                    window.addEventListener('deviceorientation', App.handleOri); 
+                } else {
+                    alert("センサーの許可が必要です。");
+                }
+            } catch(e){ console.error(e); }
+        } else { 
+            window.addEventListener('deviceorientation', App.handleOri); 
+        }
+
+        // 2. SHOW SETUP WIZARD (WAITING FOR SENSOR)
         App.startSetup();
 
-        // 1. Camera Init
+        // 3. Init Camera & Canvas
         document.getElementById('toggle-ar').checked = false;
         App.toggleAR(false);
 
@@ -988,8 +1009,6 @@ const App = {
         
         if (typeof STARS_DATA !== 'undefined' && Array.isArray(STARS_DATA)) {
             STARS_DATA.forEach(s => App.state.stars.push(s));
-        } else {
-            console.error("STARS_DATA missing");
         }
 
         for(let i=0; i<800; i++) {
@@ -998,7 +1017,7 @@ const App = {
             });
         }
         
-        // Milky Way (Gaussian)
+        // Milky Way
         const mwPoints = [
             {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
             {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
@@ -1026,10 +1045,6 @@ const App = {
                 });
             }
         }
-
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            try { const res = await DeviceOrientationEvent.requestPermission(); if (res==='granted') window.addEventListener('deviceorientation', App.handleOri); } catch(e){}
-        } else { window.addEventListener('deviceorientation', App.handleOri); }
         
         try { if(navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
 
@@ -1071,6 +1086,19 @@ const App = {
         // Setup Wizard UI Update
         if (App.state.setupMode) {
             const ball = document.getElementById('level-ball');
+            const status = document.getElementById('sensor-status');
+            const btn = document.getElementById('btn-confirm-setup');
+            
+            // Check if sensor is alive (values not null/0)
+            if (alpha !== 0 || beta !== 0 || gamma !== 0) {
+                status.innerText = "Sensor: Active OK";
+                status.style.color = "#4ade80"; // Green
+                btn.disabled = false;
+                btn.innerText = "基準セット (SET ZERO)";
+                btn.classList.remove('bg-slate-700', 'text-slate-400');
+                btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
+            }
+
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
@@ -1086,27 +1114,26 @@ const App = {
     // --- SETUP WIZARD (ALIGNMENT) ---
     startSetup: () => {
         App.state.setupMode = true;
-        document.getElementById('setup-wizard').classList.remove('hidden-force');
+        const wiz = document.getElementById('setup-wizard');
+        wiz.classList.remove('hidden-force');
         App.toggleAR(false);
     },
     confirmSetup: () => {
         const { alpha, webkitCompass } = App.state.orientation;
         
         // CAPTURE REFERENCE ZERO
-        // If user says "This is North", we record the current sensor value.
-        // Future calculations will be: (CurrentSensor - Reference) = True North
         let current = alpha;
         if (webkitCompass != null) current = webkitCompass;
         
         App.state.referenceAlpha = current;
         App.state.setupMode = false;
-        
-        // Clear manual offsets (start fresh)
         App.state.manualOffset = 0;
         
-        document.getElementById('setup-wizard').classList.add('hidden-force');
+        // Hide Wizard
+        const wiz = document.getElementById('setup-wizard');
+        wiz.classList.add('hidden-force');
         
-        // Show swipe hint again
+        // Show swipe hint
         setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 1; }, 500);
         setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 0; }, 4000);
         
@@ -1185,7 +1212,6 @@ const App = {
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
         window.addEventListener('touchmove', e => {
             const dx = e.touches[0].clientX - lx;
-            // Always allow manual fine-tuning (dragging sky)
             App.state.manualOffset += dx * 0.2;
             lx = e.touches[0].clientX;
         });
@@ -1207,21 +1233,8 @@ App.updateViewMatrix = () => {
     // Use Reference from Setup
     let ref = App.state.referenceAlpha || 0; // Default 0 if skipped
     
-    // Calculate Delta (How much we moved from "Zero")
-    // Note: iOS compass 0=North, increases clockwise. Alpha is similar.
-    // If we set zero at 90 (East), and move to 180 (South), delta is +90.
-    // We want the sky to rotate -90 to match?
-    // Let's stick to standard math: 
-    // Target Azimuth = Current Sensor - Reference + Manual
-    
-    // BUT! Since getStarVector returns "True North" based coordinates (Y=North),
-    // We want camera to look at North when Sensor = Reference.
-    // So rotation angle should be -(Current - Reference).
-    
     let heading = currentAlpha - ref;
     
-    // Add Manual Drag Offset
-    // Important: Dragging left (dx < 0) should rotate sky right (increase offset)
     let totalHeading = heading - App.state.manualOffset; 
     
     // Standard corrections
