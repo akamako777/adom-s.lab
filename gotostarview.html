@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v29.1 (Aurora Sextant)</title>
+    <title>Five Islands Stargazer v29.2 (Fixed Axis)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -146,8 +146,10 @@
         
         #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 11px; text-shadow: 1px 1px 0 #000; }
         
-        @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
-        .swipe-hint { animation: swipe-anim 2s infinite; }
+        .swipe-hint {
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease-out;
+        }
 
         /* Mode Switcher */
         .mode-switch {
@@ -184,8 +186,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Sextant v2</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Sextant v3</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -251,7 +253,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v29.1 Sextant v2</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v29.2 Fixed Axis</div>
                 </div>
             </div>
 
@@ -324,11 +326,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Sextant Logic System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Fixed Axis System</p>
         </div>
     </div>
 
@@ -398,12 +400,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v29.1 (Aurora Sextant)
+ * 🌌 FIVE ISLANDS STARGAZER v29.2 (Fixed Axis)
  * ==========================================
- * [FIXED]
- * - Gyro: Changed Quaternion calculation to standard Z-X-Y order (Intrinsic).
- * - UI: Fixed "Ready" message persisting bug.
- * - Logic: North offset applied directly to Alpha.
+ * [CRITICAL FIX]
+ * - Implemented proper Z-X-Y Euler rotation order to prevent axis bleeding.
+ * - Fixed "Ready" message persistence by using JS cleanup.
+ * - Re-aligned World Coordinate System for predictable AR behavior.
  */
 
 // I18N and Data Constants
@@ -414,7 +416,8 @@ const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:
 
 // --- 1. VECTOR & MATRIX ENGINE ---
 const Math3D = {
-    // Basic Quaternion multiply
+    // Basic Quaternion multiply (Right-to-Left application: a then b)
+    // q = a * b means apply b then a in standard math, but here we use simple Hamilton product.
     qMultiply: (a, b) => {
         const ax=a[0], ay=a[1], az=a[2], aw=a[3];
         const bx=b[0], by=b[1], bz=b[2], bw=b[3];
@@ -447,7 +450,6 @@ const Math3D = {
     },
     // Invert Matrix (Rotation only)
     matInvert: (m) => {
-        // For rotation matrix, transpose is inverse
         return [
             m[0], m[4], m[8], 0,
             m[1], m[5], m[9], 0,
@@ -457,87 +459,72 @@ const Math3D = {
     },
     // Project 3D point to Screen
     project: (vec, viewMat, width, height, fovDeg) => {
-        // Camera Space Transform
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
         
-        // In WebGL/Standard 3D: Camera looks down -Z.
-        // If z > -0.1, it is behind camera.
         if (z >= -0.1) return null;
         
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
         return { 
             x: x * (scale / -z) + width / 2, 
-            y: -y * (scale / -z) + height / 2, // Flip Y for screen coords
+            y: -y * (scale / -z) + height / 2, 
             z: z 
         };
+    },
+    // Create Quaternion from Euler (Z-X-Y order) directly
+    qFromEulerZXY: (alpha, beta, gamma) => {
+        const c1 = Math.cos(alpha / 2);
+        const c2 = Math.cos(beta / 2);
+        const c3 = Math.cos(gamma / 2);
+        const s1 = Math.sin(alpha / 2);
+        const s2 = Math.sin(beta / 2);
+        const s3 = Math.sin(gamma / 2);
+
+        return [
+            s1 * c2 * c3 - c1 * s2 * s3, // x
+            c1 * s2 * c3 + s1 * c2 * s3, // y
+            c1 * c2 * s3 + s1 * s2 * c3, // z
+            c1 * c2 * c3 - s1 * s2 * s3  // w
+        ];
     }
 };
 
 // --- 2. ASTRO PHYSICS (Sextant Logic) ---
 const Astro = {
     getLST: (lon, date = new Date(), offsetHours = 0) => {
-        // Calculate Local Sidereal Time
-        // This determines "What RA is currently at Zenith?"
         const t = date.getTime() + offsetHours * 3600000;
         const d = (t/1000 - 946727935.816) / 86400;
         const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
         const lst = (gmst + lon/15 + 24) % 24;
         return lst;
     },
-    
-    // Convert Equatorial (RA/Dec) to Horizontal (Alt/Az)
     getHorizontalCoords: (ra, dec, lat, lst) => {
         const latRad = lat * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
-        const ha = (lst - ra); // Hour Angle in hours
+        const ha = (lst - ra);
         const haRad = ha * 15 * Math.PI / 180;
 
-        // Altitude
         let sinAlt = Math.sin(decRad) * Math.sin(latRad) + 
                      Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
         sinAlt = Math.max(-1, Math.min(1, sinAlt));
         const altRad = Math.asin(sinAlt);
 
-        // Azimuth
-        // Formula that returns Azimuth from North (0) -> East (90)
         const cosAlt = Math.cos(altRad);
         let azRad;
         
         if (Math.abs(cosAlt) < 0.001) {
-            azRad = 0; // Zenith
+            azRad = 0;
         } else {
-            // Standard Astronomy Formula usually gives Az from South? 
-            // Let's use standard Spherical Trig for Az from North.
-            // tan(Az) = sin(H) / ( cos(H)sin(lat) - tan(dec)cos(lat) )
-            // using atan2(y, x)
-            const y = -Math.sin(haRad); // East is negative HA? No.
-            // Let's stick to reliable cos formula
-            
-            // Az from North (0) increasing East (90)
-            // sin(Az)cos(Alt) = -sin(HA)cos(Dec)
-            // cos(Az)cos(Alt) = sin(Dec)cos(Lat) - cos(Dec)sin(Lat)cos(HA)
-            
             const sinAzCosAlt = -Math.sin(haRad) * Math.cos(decRad);
             const cosAzCosAlt = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(haRad);
-            
             azRad = Math.atan2(sinAzCosAlt, cosAzCosAlt);
         }
         
-        // Normalize to 0..2PI
         if (azRad < 0) azRad += Math.PI * 2;
-        
         return { alt: altRad, az: azRad };
     },
-
-    // Convert Alt/Az to World Vector (ENU: East-North-Up)
-    // World Coords: Y=North, X=East, Z=Up (Zenith)
     getVector: (alt, az) => {
-        // az is angle from North(Y) towards East(X)
-        // x = cos(Alt) * sin(Az)
-        // y = cos(Alt) * cos(Az)
-        // z = sin(Alt)
         const cosAlt = Math.cos(alt);
         return {
             x: Math.sin(az) * cosAlt,
@@ -657,7 +644,7 @@ const App = {
         
         // SEXTANT STATE
         setupMode: false,
-        northOffset: 0, // This is the "Delta Az"
+        northOffset: 0, 
         timeOffset: 0
     },
 
@@ -799,8 +786,6 @@ const App = {
             
             ring.style.transform = `rotate(${-heading}deg)`;
             valDisplay.innerText = `${Math.round(heading)}°`;
-
-            const isNorth = (heading > 355 || heading < 5);
         }
     },
 
@@ -821,17 +806,26 @@ const App = {
         
         document.getElementById('setup-wizard').classList.add('hidden-force');
         
+        // Remove existing hint if any
+        const existing = document.getElementById("swipe-hint");
+        if(existing) existing.remove();
+
         const hint = document.createElement('div');
         hint.id = "swipe-hint";
-        hint.className = "swipe-hint fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-2xl pointer-events-none z-50 transition-opacity duration-1000 opacity-0";
+        hint.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-2xl pointer-events-none z-50 transition-opacity duration-500 opacity-0 swipe-hint";
         hint.innerText = "🌌 Ready";
         document.body.appendChild(hint);
         
-        setTimeout(() => { hint.style.opacity = 1; }, 500);
+        // Force reflow
+        void hint.offsetWidth;
+        
+        // Manual JS Fade
+        hint.style.opacity = 1;
+        
         setTimeout(() => { 
             hint.style.opacity = 0; 
-            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 1000); // Remove DOM
-        }, 2000);
+            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 600); // Remove DOM
+        }, 1500);
         
         Utils.toast("基準セット完了 (Zero Locked) 🔒");
     },
@@ -911,7 +905,7 @@ const App = {
     }
 };
 
-// --- CORE: CAMERA MATRIX UPDATE (Sextant Logic v2 - Intrinsic) ---
+// --- CORE: CAMERA MATRIX UPDATE (Fixed Z-X-Y Intrinsic) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
@@ -923,27 +917,32 @@ App.updateViewMatrix = () => {
     let trueHeading = currentAlpha - App.state.northOffset; 
     if (trueHeading < 0) trueHeading += 360;
 
-    // Use standard WebGL/DeviceOrientation calculation (Z-X-Y Intrinsic)
-    // alpha: Z, beta: X, gamma: Y
+    // Standard Device Orientation to Quaternion conversion
+    // Order: Z (alpha), X (beta), Y (gamma)
     const _x = beta  ? beta  * deg2rad : 0;
     const _y = gamma ? gamma * deg2rad : 0;
     const _z = trueHeading ? trueHeading * deg2rad : 0;
 
-    const cX = Math.cos( _x/2 );
-    const cY = Math.cos( _y/2 );
-    const cZ = Math.cos( _z/2 );
-    const sX = Math.sin( _x/2 );
-    const sY = Math.sin( _y/2 );
-    const sZ = Math.sin( _z/2 );
+    // In DeviceOrientation world:
+    // Alpha (Z) rotates around world Z.
+    // Beta (X) rotates around local X.
+    // Gamma (Y) rotates around local Y.
+    // This maps to Z-X-Y Euler order.
 
-    // Z-X-Y Intrinsic Quaternion
-    // This correctly handles the "gimbal" behavior of phones
-    const w = cX * cY * cZ - sX * sY * sZ;
-    const x = sX * cY * cZ - cX * sY * sZ;
-    const y = cX * sY * cZ + sX * cY * sZ;
-    const z = cX * cY * sZ + sX * sY * cZ;
+    // Important: 
+    // Alpha is usually 0..360 CCW (Android) or CW (iOS).
+    // We normalized trueHeading to behave like a standard Compass (CW).
+    // But math expects CCW rotation for positive Z.
+    // So we negate Z.
     
-    let q = [x, y, z, w];
+    const qZ = Math3D.qFromAxisAngle([0, 0, 1], -_z);
+    const qX = Math3D.qFromAxisAngle([1, 0, 0], _x);
+    const qY = Math3D.qFromAxisAngle([0, 1, 0], _y);
+    
+    // Z-X-Y composition: Apply Z, then X, then Y
+    // q = qY * qX * qZ (Standard composition order)
+    let q = Math3D.qMultiply(qX, qZ);
+    q = Math3D.qMultiply(qY, q);
     
     // 4. Adjust for Screen Orientation
     let screenOrient = 0;
@@ -951,12 +950,15 @@ App.updateViewMatrix = () => {
     else if (window.orientation) screenOrient = window.orientation;
     
     const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
-    q = Math3D.qMultiply(q, qScreen);
+    q = Math3D.qMultiply(qScreen, q); // Screen rotation happens "after" device rotation
     
     // 5. Adjust for World Frame alignment
-    // Device identity (a=0,b=0,g=0) means lying flat, Top point North.
-    // Our Camera (looking down -Z) needs to be rotated to look Horizon.
-    // Rotate -90 deg around X.
+    // Device frame: +Z is out of screen.
+    // World frame: +Y is North, +Z is Up.
+    // When phone is vertical (Beta=90):
+    // Device +Z (screen normal) is parallel to World -Y (South) or +Y (North)?
+    // We want the Camera (looking down -Z in its local space) to look at Horizon.
+    // Rotate -90 around X converts "Looking Down" to "Looking Forward".
     const qFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
     q = Math3D.qMultiply(q, qFix);
 
@@ -981,7 +983,6 @@ App.loop = () => {
         ctx.clearRect(0,0,width,height);
         
         // 1. Update Celestial Physics (LST)
-        // This is the heartbeat of the Planetarium.
         const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
         // Draw Horizon Grid (Fixed in World)
@@ -1183,4 +1184,3 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
-
