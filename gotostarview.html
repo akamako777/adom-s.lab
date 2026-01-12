@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v29.4 (Final Axis)</title>
+    <title>Five Islands Stargazer v29.5 (Direct Link)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -186,7 +186,7 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.4</span></h1>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v29.5</span></h1>
             <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Sextant v3</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
@@ -253,7 +253,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v29.4 Final Axis</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v29.5 Direct Link</div>
                 </div>
             </div>
 
@@ -326,11 +326,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.4</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v29.5</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Final Axis System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Direct Link System</p>
         </div>
     </div>
 
@@ -400,12 +400,14 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v29.4 (Final Axis)
+ * 🌌 FIVE ISLANDS STARGAZER v29.5 (Direct Link)
  * ==========================================
- * [CRITICAL FIX]
- * - Corrected Quaternion Order to Intrinsic Z-X-Y (Z then X then Y).
- * - Previous code was applying extrinsic (Y * X * Z), causing axis lock at Beta=90.
- * - Retained the "negative" sign convention that the user confirmed works for Pitch.
+ * [DIRECT SENSOR MAPPING]
+ * - Removed complex matrix rotations (qFix) that were causing axis flipping.
+ * - Implemented Direct Logic: 
+ * * Pitch = Beta - 90 (Smartphone Upright = Horizon)
+ * * Yaw = Alpha (Smartphone Turn = World Rotation)
+ * - This fixes the "Look Up -> Drift Left" and "Turn Right -> Roll" issues.
  */
 
 // I18N and Data Constants
@@ -905,7 +907,7 @@ const App = {
     }
 };
 
-// --- CORE: CAMERA MATRIX UPDATE (Fixed Z-X-Y Intrinsic) ---
+// --- CORE: CAMERA MATRIX UPDATE (Direct Link: No Matrix Rotations) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
@@ -913,68 +915,45 @@ App.updateViewMatrix = () => {
     let currentAlpha = alpha;
     if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
 
-    // Apply Sextant Offset
+    // 1. Sextant Offset (Calibration)
     let trueHeading = currentAlpha - App.state.northOffset; 
     if (trueHeading < 0) trueHeading += 360;
 
-    // Standard Device Orientation to Quaternion conversion
-    // Order: Z (alpha), X (beta), Y (gamma)
-    const _x = beta  ? beta  * deg2rad : 0;
-    const _y = gamma ? gamma * deg2rad : 0;
-    const _z = trueHeading ? trueHeading * deg2rad : 0;
+    // 2. Direct Logic Mapping (Physically-based)
+    // Beta: Smartphone Tilt (0=Flat, 90=Upright)
+    // Camera Pitch: (0=Level, 90=Up)
+    // Relation: Pitch = Beta - 90
+    // If Beta=90 (Upright) -> Pitch=0 (Level)
+    // If Beta=180 (Tilted Up/Back) -> Pitch=90 (Up)
+    let pitch = beta - 90;
 
-    // In DeviceOrientation world:
-    // Alpha (Z) rotates around world Z.
-    // Beta (X) rotates around local X.
-    // Gamma (Y) rotates around local Y.
-    // This maps to Z-X-Y Euler order.
+    // Alpha: Compass Heading (0=North, 90=East)
+    // Camera Yaw: Rotation around World Y-Axis
+    let yaw = trueHeading;
 
-    // Important: 
-    // Alpha is usually 0..360 CCW (Android) or CW (iOS).
-    // We normalized trueHeading to behave like a standard Compass (CW).
-    // But math expects CCW rotation for positive Z.
-    // So we negate Z.
-    
-    // 軸反転修正 (Invert Axis for Correct AR Movement)
-    // ユーザー報告: 「上にむけると上に逃げる」＝動きが逆。
-    // 対策: 回転角の符号を全て反転させる。
-    
-    // Z: Heading. Originally -_z. Flip to _z.
-    const qZ = Math3D.qFromAxisAngle([0, 0, 1], _z);
-    
-    // X: Pitch. Originally _x. Flip to -_x.
-    const qX = Math3D.qFromAxisAngle([1, 0, 0], -_x);
-    
-    // Y: Roll. Originally _y. Flip to -_y.
-    const qY = Math3D.qFromAxisAngle([0, 1, 0], -_y);
-    
-    // Z-X-Y composition: Apply Z, then X, then Y
-    // CORRECT ORDER: q = qZ * qX * qY (Intrinsic Z-X-Y)
-    // Previous code used qY * qX * qZ which is Extrinsic Z-X-Y (or Intrinsic Y-X-Z)
-    // causing gimbal lock behavior at Beta=90.
-    
-    let q = Math3D.qMultiply(qZ, qX);
-    q = Math3D.qMultiply(q, qY);
-    
-    // 4. Adjust for Screen Orientation
-    let screenOrient = 0;
-    if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
-    else if (window.orientation) screenOrient = window.orientation;
-    
-    const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
-    q = Math3D.qMultiply(qScreen, q); // Screen rotation happens "after" device rotation
-    
-    // 5. Adjust for World Frame alignment
-    // Device frame: +Z is out of screen.
-    // World frame: +Y is North, +Z is Up.
-    // When phone is vertical (Beta=90):
-    // Device +Z (screen normal) is parallel to World -Y (South) or +Y (North)?
-    // We want the Camera (looking down -Z in its local space) to look at Horizon.
-    // Rotate -90 around X converts "Looking Down" to "Looking Forward".
-    const qFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
-    q = Math3D.qMultiply(q, qFix);
+    // Gamma: Tilt Left/Right (-90 to 90)
+    // Camera Roll: Rotation around Z-Axis
+    let roll = gamma;
 
-    // 6. View Matrix
+    // 3. Construct Quaternions for Camera Axes
+    // World Y Axis (Yaw): Rotates the camera horizontally
+    const qYaw = Math3D.qFromAxisAngle([0, 1, 0], yaw * deg2rad);
+
+    // Local X Axis (Pitch): Rotates the camera up/down
+    // Note: We use -pitch because in GL, positive X rotation looks down? 
+    // Let's stick to standard Right-Hand Rule.
+    const qPitch = Math3D.qFromAxisAngle([1, 0, 0], -pitch * deg2rad); 
+
+    // Local Z Axis (Roll): Rotates the view
+    const qRoll = Math3D.qFromAxisAngle([0, 0, 1], roll * deg2rad);
+
+    // 4. Combine Rotations (Yaw -> Pitch -> Roll)
+    // Order matters! Global Yaw first, then Local Pitch, then Local Roll.
+    // q = qYaw * qPitch * qRoll
+    let q = Math3D.qMultiply(qYaw, qPitch); // Yaw then Pitch
+    q = Math3D.qMultiply(q, qRoll);         // Then Roll
+
+    // 5. Generate View Matrix (Invert Camera)
     const mCam = Math3D.matFromQ(q);
     App.state.viewMat = Math3D.matInvert(mCam);
 
