@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v28.3 (Polaris Guard)</title>
+    <title>Five Islands Stargazer v28.4 (Sextant Logic)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +33,7 @@
         #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity 0.8s; }
         #sky-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
         
-        /* Overlay for Smart Bubble */
+        /* Overlay */
         #overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; overflow: hidden; }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
@@ -45,7 +45,7 @@
             transition: all 0.3s ease;
         }
 
-        /* 🌓 Modes */
+        /* Modes */
         body.mode-red #layers-container { filter: sepia(100%) hue-rotate(-50deg) saturate(300%) contrast(1.2) brightness(0.6); }
         body.mode-red #ui-layer { filter: sepia(100%) hue-rotate(-50deg) saturate(200%); }
         
@@ -55,7 +55,7 @@
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
         
-        /* Smart Bubble (Crown Position) */
+        /* Smart Bubble */
         .info-bubble {
             position: absolute;
             transition: opacity 0.3s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -80,7 +80,7 @@
         }
         #setup-wizard.hidden-force { opacity: 0; visibility: hidden; pointer-events: none; }
         
-        /* COMPASS RING STYLES */
+        /* Compass Viz */
         .compass-container {
             position: relative; width: 220px; height: 220px; margin-bottom: 20px;
             display: flex; justify-content: center; align-items: center;
@@ -123,7 +123,7 @@
         .north-aligned .compass-ring { border-color: #22c55e; border-width: 4px; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
         .level-ok .level-ball { background: #22c55e; }
 
-        /* 🚪 PC Gate */
+        /* PC Gate */
         #star-gate {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
             display: flex; flex-direction: column; 
@@ -132,8 +132,6 @@
             overflow-y: auto; padding-top: 10vh; padding-bottom: 40px;
         }
 
-        @keyframes pulse-target { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
-        .target-lock { animation: pulse-target 1s infinite; }
         .hidden-force { display: none !important; }
         .check-box { appearance: none; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.5); border-radius: 6px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
         .check-box:checked { background: #22d3ee; border-color: #22d3ee; }
@@ -151,7 +149,7 @@
         @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
         .swipe-hint { animation: swipe-anim 2s infinite; }
 
-        /* Mode Switcher UI */
+        /* Mode Switcher */
         .mode-switch {
             display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; p-1;
             border: 1px solid rgba(255,255,255,0.2); overflow: hidden;
@@ -164,7 +162,6 @@
             background: #22d3ee; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
-        /* Time Slider (Restored for Polaris Rotation) */
         #time-slider-container {
             position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
             width: 80%; max-width: 400px; z-index: 30;
@@ -173,16 +170,22 @@
         }
         #time-slider-container.active { opacity: 1; pointer-events: auto; }
         .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
+        
+        /* Guide Accordion */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: sweep .3s ease-in-out; }
+        @keyframes sweep { 0% {opacity: 0; transform: translateY(-10px)} 100% {opacity: 1; transform: translateY(0)} }
     </style>
 </head>
 <body>
 
-    <!-- 🚪 PC GATE (Simplified) -->
+    <!-- 🚪 PC GATE -->
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.3</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Polaris Guard</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.4</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Sextant Logic</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -197,8 +200,6 @@
         <div id="layers-container">
             <video id="camera-feed" autoplay playsinline muted></video>
             <canvas id="sky-canvas"></canvas>
-            
-            <!-- NEW: HTML Overlay for Rich Bubbles -->
             <div id="overlay-layer">
                 <div id="smart-bubble" class="info-bubble opacity-0 w-64 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 backdrop-blur-md shadow-2xl flex flex-col items-center text-center">
                     <h3 id="bubble-title" class="text-base font-bold text-cyan-400 mb-1 leading-tight">Title</h3>
@@ -209,7 +210,6 @@
             </div>
         </div>
 
-        <!-- NAV UI -->
         <div id="nav-ui" class="absolute inset-0 pointer-events-none hidden-force z-30">
             <div id="nav-msg" class="absolute top-24 w-full text-center">
                 <div class="inline-block bg-black/60 backdrop-blur px-4 py-2 rounded-lg border border-cyan-500/50">
@@ -225,9 +225,7 @@
             </div>
         </div>
 
-        <!-- UI LAYER -->
         <div id="ui-layer" class="safe-area-inset p-4">
-            <!-- Top -->
             <div class="flex justify-between items-start interactive pt-2">
                 <button onclick="App.toggleLocation()" class="glass px-3 py-2 rounded-full flex items-center gap-2 active:scale-95 transition">
                     <span id="gps-icon" class="text-sm">📍</span>
@@ -237,42 +235,33 @@
                     </div>
                 </button>
                 <div class="flex gap-3">
-                    <!-- Setup (Re-Align) Button -->
                     <button onclick="App.startSetup()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300">🎯</button>
-                    
                     <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
                     <button onclick="App.toggleSettings()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition">⚙️</button>
                     <button onclick="App.toggleViewMode()" id="btn-mode" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-indigo-900/50 border-indigo-500/30">🌙</button>
                 </div>
             </div>
 
-            <!-- Time Slider (Restored) -->
             <div id="time-slider-container">
                 <div id="time-display" class="time-label">TIME TRAVEL: +0h</div>
                 <input type="range" id="time-range" min="-12" max="12" step="0.5" value="0" oninput="App.setTimeOffset(this.value)" onchange="App.resetTime(this.value)">
             </div>
 
-            <!-- Debug Info (Lower Left) -->
             <div class="absolute bottom-24 left-4 pointer-events-none opacity-80">
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v28.3 Guard</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v28.4 Sextant</div>
                 </div>
             </div>
 
-            <!-- Bottom Buttons -->
             <div class="flex justify-center items-end pb-8 interactive gap-6">
-                <!-- Time Travel Button -->
                 <button onclick="App.toggleTimeSlider()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-yellow-400 text-yellow-300 shadow-lg bg-yellow-900/30">
                     <span class="text-xl">⏳</span>
                 </button>
-
-                <!-- Screenshot -->
                 <button onclick="App.takeScreenshot()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-cyan-400 shadow-lg">
                     <span class="text-xl">📸</span>
                 </button>
-                
                 <button id="btn-cancel-nav" onclick="Guide.stopNav()" class="hidden-force glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-red-500/50 bg-red-900/20 active:scale-90 transition text-red-300 font-bold text-xs">
                     STOP
                 </button>
@@ -280,21 +269,20 @@
         </div>
     </div>
 
-    <!-- 🪄 SETUP WIZARD (Visual Compass) -->
+    <!-- 🪄 SETUP WIZARD -->
     <div id="setup-wizard" class="hidden-force interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-2xl font-black text-white mb-2 tracking-tighter">ALIGNMENT</h2>
-            <p class="text-xs font-bold text-cyan-400 mb-6 tracking-widest">POLARIS ANCHOR SYSTEM</p>
+            <p class="text-xs font-bold text-cyan-400 mb-6 tracking-widest">SEXTANT CALIBRATION</p>
             
             <div class="bg-slate-800/80 p-4 rounded-xl border border-white/10 mb-6 w-full">
                 <ol class="text-xs text-slate-300 space-y-3 list-decimal list-inside text-left">
                     <li><b class="text-white">スマホを水平</b>にし、泡を中心に。</li>
-                    <li><b class="text-cyan-400">コンパスの「N」</b>を上に合わせる。</li>
+                    <li><b class="text-cyan-400">「N」を北</b>に合わせる。</li>
                     <li>枠が<b class="text-green-400">緑色</b>になったらセット！</li>
                 </ol>
             </div>
             
-            <!-- COMPASS VISUALIZER -->
             <div id="compass-viz" class="compass-container">
                 <div class="north-arrow"></div>
                 <div id="compass-ring" class="compass-ring">
@@ -311,7 +299,7 @@
             
             <div class="flex flex-col items-center mb-4">
                 <div id="compass-val" class="text-3xl font-mono font-bold text-white">---°</div>
-                <div id="sensor-status" class="text-[10px] font-mono text-slate-400">Sensor: Waiting...</div>
+                <div id="sensor-status" class="text-[10px] font-mono text-slate-400">Waiting for Sensor...</div>
             </div>
             
             <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-3/4 transition-all duration-300 transform active:scale-95">
@@ -320,7 +308,7 @@
         </div>
     </div>
 
-    <!-- 📖 GUIDE MODAL (ACCORDION) -->
+    <!-- GUIDE MODAL -->
     <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
         <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 class="font-bold text-white text-lg flex items-center gap-2">
@@ -331,28 +319,26 @@
         <div id="guide-list" class="flex-1 overflow-y-auto p-4 space-y-4 pb-20"></div>
     </div>
 
-    <!-- 🚀 START MODAL -->
+    <!-- START MODAL -->
     <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] interactive">
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.3</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.4</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Polaris Guard System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Sextant Logic System</p>
         </div>
     </div>
 
-    <!-- ⚙️ SETTINGS MODAL -->
+    <!-- SETTINGS MODAL -->
     <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
         <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
             <div class="flex justify-between items-center border-b border-white/10 pb-4">
                 <h2 class="font-bold text-white text-lg" data-i18n="settings_title">設定 (Settings)</h2>
                 <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
             </div>
-            
-            <!-- Category Boxes -->
             <div class="space-y-3">
                 <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="cat_title">表示カテゴリ</p>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
@@ -372,12 +358,8 @@
                     <input type="checkbox" checked onchange="App.setRank(3, this.checked)" class="check-box">
                 </label>
             </div>
-
-            <!-- Visibility -->
             <div class="space-y-4 pt-4 border-t border-white/10">
                 <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="opt_title">表示オプション</p>
-                
-                <!-- Display Mode Switcher -->
                 <div class="space-y-2">
                     <span class="text-sm font-bold text-cyan-300" data-i18n="opt_info">🌟 星座の表示</span>
                     <div class="mode-switch">
@@ -386,40 +368,23 @@
                         <div onclick="App.setInfoMode(2)" id="mode-2" class="mode-option active" data-i18n="mode_full">Full</div>
                     </div>
                 </div>
-                
                 <div class="flex items-center justify-between pt-2">
                     <span class="text-sm" data-i18n="opt_ar">🎥 ARカメラ</span>
                     <input type="checkbox" id="toggle-ar" onchange="App.toggleAR(this.checked)" class="check-box">
                 </div>
-                
                 <div class="space-y-2">
                     <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_bg">背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="1" oninput="App.setOpacity('bg', this.value)">
                 </div>
-
                 <div class="space-y-2">
                     <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_milky">天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="App.setOpacity('milky', this.value)">
                 </div>
-
                 <div class="flex items-center justify-between pt-2">
                     <span class="text-sm" data-i18n="opt_meteor">🌠 流れ星 (Meteors)</span>
                     <input type="checkbox" checked onchange="App.setFlag('meteorEnabled', this.checked)" class="check-box">
                 </div>
             </div>
-
-            <!-- Emergency Axis Fix (Kept for safety) -->
-             <div class="pt-4 border-t border-white/10">
-                 <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-sm font-bold text-red-300" data-i18n="axis_fix">🔄 Axis Fix (回転補正)</span>
-                        <div class="text-[10px] text-slate-400" data-i18n="axis_fix_desc">回転が逆になる場合のみON</div>
-                    </div>
-                    <input type="checkbox" onchange="App.state.reverseAlpha = this.checked" class="check-box">
-                </div>
-            </div>
-
-            <!-- Language -->
             <div class="pt-4 border-t border-white/10">
                  <div class="flex items-center justify-between">
                     <span class="text-sm font-bold text-slate-300">🇺🇸 English Mode</span>
@@ -429,475 +394,136 @@
         </div>
     </div>
 
-    <!-- TOAST -->
     <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-6 py-3 rounded-full shadow-2xl text-sm opacity-0 pointer-events-none transition-opacity z-[60] border border-cyan-500/30 font-bold text-center w-max max-w-[90%] backdrop-blur">Msg</div>
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v28.3 (Polaris Guard)
+ * 🌌 FIVE ISLANDS STARGAZER v28.4 (Sextant Logic)
  * ==========================================
- * Changelog:
- * - MATH GUARD: Added strict clamping to all Math.asin/acos calls to prevent NaN crashes.
- * - ERROR HANDLER: Wrapped App.loop in try-catch to prevent full freeze on error.
- * - VISUAL COMPASS: Kept v28.2 features.
+ * - SEXTANT CALIBRATION: Uses reference offset relative to North.
+ * - HORIZONTAL COORDINATES: Implemented robust Alt/Az math.
+ * - NO MIRRORS: Clean, standard astronomy logic.
  */
 
-// --- 0. DATA & CONSTANTS (Dictionary) ---
-const I18N = {
-    ja: {
-        guide_title: "星座詳細解説",
-        settings_title: "設定 (Settings)",
-        cat_title: "表示カテゴリ (Categories)",
-        cat_famous: "🦁 有名な星座 (Famous)",
-        cat_star_gal: "✨ 有名な星・銀河 (Stars/Gal)",
-        cat_medium: "🐻 普通の星座 (Medium)",
-        cat_minor: "🦎 マイナー星座 (Minor)",
-        opt_title: "表示オプション (Visibility)",
-        opt_info: "🌟 星座の表示",
-        mode_off: "OFF",
-        mode_name: "名前のみ",
-        mode_full: "解説あり",
-        opt_info_desc: "吹き出しで解説を表示します",
-        opt_ar: "🎥 ARカメラ",
-        opt_bg: "背景の濃さ",
-        opt_milky: "天の川 (Milky Way)",
-        opt_meteor: "🌠 流れ星 (Meteors)",
-        axis_fix: "🔄 Axis Fix (回転補正)",
-        axis_fix_desc: "回転が逆になる場合のみON",
-        loc_fixed: "五島列島 (Fixed)",
-        loc_gps: "現在地 (GPS)",
-        nav_start: "へのナビを開始 🚀",
-        nav_end: "ナビを終了しました",
-        constellation: "星座",
-        famous_const: "有名な星座",
-        star_gal: "有名な星・銀河",
-        time_travel: "時間旅行",
-        time_reset: "現在時刻に戻る"
-    },
-    en: {
-        guide_title: "Star Detailed Guide",
-        settings_title: "Settings",
-        cat_title: "Categories",
-        cat_famous: "🦁 Famous Stars",
-        cat_star_gal: "✨ Major Stars & Galaxy",
-        cat_medium: "🐻 Medium Stars",
-        cat_minor: "🦎 Minor Stars",
-        opt_title: "Visibility Options",
-        opt_info: "🌟 Constellation Info",
-        mode_off: "OFF",
-        mode_name: "Name",
-        mode_full: "Full",
-        opt_info_desc: "Show star descriptions in AR",
-        opt_ar: "🎥 AR Camera",
-        opt_bg: "Background Opacity",
-        opt_milky: "Milky Way Visibility",
-        opt_meteor: "🌠 Meteors",
-        axis_fix: "🔄 Axis Fix (Reverse)",
-        axis_fix_desc: "Enable if rotation is reversed",
-        loc_fixed: "Goto Islands (Fixed)",
-        loc_gps: "Current loc (GPS)",
-        nav_start: "Navigating to ",
-        nav_end: "Navigation Ended",
-        constellation: "Constellation",
-        famous_const: "Famous Constellation",
-        star_gal: "Major Star/Galaxy",
-        time_travel: "TIME TRAVEL",
-        time_reset: "Reset Time"
-    }
-};
+// I18N and Data Constants
+const I18N={ja:{guide_title:"星座詳細解説",settings_title:"設定 (Settings)",cat_title:"表示カテゴリ (Categories)",cat_famous:"🦁 有名な星座 (Famous)",cat_star_gal:"✨ 有名な星・銀河 (Stars/Gal)",cat_medium:"🐻 普通の星座 (Medium)",cat_minor:"🦎 マイナー星座 (Minor)",opt_title:"表示オプション (Visibility)",opt_info:"🌟 星座の表示",mode_off:"OFF",mode_name:"名前のみ",mode_full:"解説あり",opt_info_desc:"吹き出しで解説を表示します",opt_ar:"🎥 ARカメラ",opt_bg:"背景の濃さ",opt_milky:"天の川 (Milky Way)",opt_meteor:"🌠 流れ星 (Meteors)",axis_fix:"🔄 Axis Fix (回転補正)",axis_fix_desc:"回転が逆になる場合のみON",loc_fixed:"五島列島 (Fixed)",loc_gps:"現在地 (GPS)",nav_start:"へのナビを開始 🚀",nav_end:"ナビを終了しました",constellation:"星座",famous_const:"有名な星座",star_gal:"有名な星・銀河",time_travel:"時間旅行",time_reset:"現在時刻に戻る"},en:{guide_title:"Star Detailed Guide",settings_title:"Settings",cat_title:"Categories",cat_famous:"🦁 Famous Stars",cat_star_gal:"✨ Major Stars & Galaxy",cat_medium:"🐻 Medium Stars",cat_minor:"🦎 Minor Stars",opt_title:"Visibility Options",opt_info:"🌟 Constellation Info",mode_off:"OFF",mode_name:"Name",mode_full:"Full",opt_info_desc:"Show star descriptions in AR",opt_ar:"🎥 AR Camera",opt_bg:"Background Opacity",opt_milky:"Milky Way Visibility",opt_meteor:"🌠 Meteors",axis_fix:"🔄 Axis Fix (Reverse)",axis_fix_desc:"Enable if rotation is reversed",loc_fixed:"Goto Islands (Fixed)",loc_gps:"Current loc (GPS)",nav_start:"Navigating to ",nav_end:"Navigation Ended",constellation:"Constellation",famous_const:"Famous Constellation",star_gal:"Major Star/Galaxy",time_travel:"TIME TRAVEL",time_reset:"Reset Time"}};
+const RANK={FAMOUS:1,MEDIUM:2,MINOR:3,STAR_GAL:4};
+const CONSTELLATION_DB=[{id:"ori",rank:1,name:"オリオン座",en:"Orion",desc:"【冬の王者】...",desc_en:"[Winter King]...",myth:"...",myth_en:"...",centerRA:5.5,centerDec:-1.0,lines:["Betelgeuse","Alnitak","Bellatrix","Mintaka","Alnitak","Saiph","Mintaka","Rigel","Alnitak","Alnilam","Alnilam","Mintaka","Betelgeuse","Bellatrix","Saiph","Rigel","Betelgeuse","Meissa","Bellatrix","Meissa"]},{id:"cas",rank:2,name:"カシオペヤ座",en:"Cassiopeia",desc:"【北のW字】...",desc_en:"[North W]...",myth:"...",myth_en:"...",centerRA:1.0,centerDec:60.0,lines:["Caph","Schedar","Schedar","Gamma Cas","Gamma Cas","Ruchbah","Ruchbah","Segin"]},{id:"lep",rank:3,name:"うさぎ座",en:"Lepus",desc:"【オリオンの獲物】...",desc_en:"[The Hare]...",myth:"...",myth_en:"...",centerRA:5.5,centerDec:-20.0,lines:["Arneb","Nihal","Nihal","Epsilon Lep","Epsilon Lep","Mu Lep","Mu Lep","Arneb"]},{id:"sirius",rank:4,name:"シリウス",en:"Sirius",desc:"【焼き焦がすもの】...",desc_en:"[The Scorcher]...",myth:"...",myth_en:"...",centerRA:6.75,centerDec:-16.7,lines:[]}];
+const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:"Rigel",ra:5.242,dec:-8.202,mag:0.12,ci:-0.03},{name:"Bellatrix",ra:5.418,dec:6.349,mag:1.64,ci:-0.22},{name:"Saiph",ra:5.795,dec:-9.669,mag:2.07,ci:-0.18},{name:"Alnitak",ra:5.679,dec:-1.943,mag:1.74,ci:-0.21},{name:"Alnilam",ra:5.603,dec:-1.202,mag:1.69,ci:-0.19},{name:"Mintaka",ra:5.533,dec:-0.299,mag:2.25,ci:-0.21},{name:"Meissa",ra:5.585,dec:9.934,mag:3.39,ci:-0.14},{name:"Antares",ra:16.490,dec:-26.432,mag:1.06,ci:1.83},{name:"Graffias",ra:16.088,dec:-19.805,mag:2.56,ci:-0.11},{name:"Dschubba",ra:16.005,dec:-22.622,mag:2.29,ci:-0.13},{name:"Pi Sco",ra:15.979,dec:-26.114,mag:2.89,ci:-0.21},{name:"Wei",ra:16.834,dec:-38.020,mag:2.29,ci:1.14},{name:"Mu Sco",ra:16.863,dec:-38.048,mag:3.00,ci:-0.20},{name:"Zeta Sco",ra:16.904,dec:-42.360,mag:3.62,ci:1.50},{name:"Eta Sco",ra:17.202,dec:-43.238,mag:3.32,ci:0.05},{name:"Sargas",ra:17.623,dec:-42.998,mag:1.86,ci:0.38},{name:"Iota Sco",ra:17.795,dec:-40.125,mag:2.99,ci:0.17},{name:"Kappa Sco",ra:17.703,dec:-39.029,mag:2.39,ci:-0.20},{name:"Shaula",ra:17.560,dec:-37.104,mag:1.62,ci:-0.22},{name:"Lesath",ra:17.513,dec:-37.291,mag:2.70,ci:-0.21},{name:"Vega",ra:18.615,dec:38.783,mag:0.03,ci:0.00},{name:"Altair",ra:19.846,dec:8.868,mag:0.76,ci:0.22},{name:"Deneb",ra:20.690,dec:45.280,mag:1.25,ci:0.09},{name:"Aldebaran",ra:4.598,dec:16.509,mag:0.87,ci:1.54},{name:"Elnath",ra:5.438,dec:28.607,mag:1.65,ci:-0.13},{name:"Zeta Tau",ra:5.627,dec:21.142,mag:2.97,ci:-0.22},{name:"Ain",ra:4.478,dec:19.180,mag:3.53,ci:1.02},{name:"Hyadum I",ra:4.331,dec:15.627,mag:3.65,ci:0.97},{name:"Delta Tau",ra:4.381,dec:17.542,mag:3.77,ci:0.96},{name:"Alcyone",ra:3.791,dec:24.105,mag:2.85,ci:-0.09},{name:"Pollux",ra:7.755,dec:28.026,mag:1.16,ci:1.00},{name:"Castor",ra:7.576,dec:31.888,mag:1.58,ci:0.04},{name:"Alhena",ra:6.628,dec:16.399,mag:1.93,ci:0.00},{name:"Tejat",ra:6.248,dec:22.506,mag:2.87,ci:1.56},{name:"Mebsuta",ra:6.733,dec:25.131,mag:3.06,ci:1.40},{name:"Wasat",ra:7.336,dec:21.982,mag:3.50,ci:0.16},{name:"Regulus",ra:10.139,dec:11.967,mag:1.36,ci:-0.11},{name:"Denebola",ra:11.817,dec:14.572,mag:2.14,ci:0.09},{name:"Algieba",ra:10.333,dec:19.841,mag:2.01,ci:1.15},{name:"Zosma",ra:11.236,dec:20.523,mag:2.56,ci:0.12},{name:"Adhafera",ra:10.276,dec:23.417,mag:3.43,ci:1.25},{name:"Rasalas",ra:9.764,dec:23.774,mag:2.97,ci:1.62},{name:"Chertan",ra:11.236,dec:15.428,mag:3.33,ci:0.07},{name:"Spica",ra:13.416,dec:-11.161,mag:0.98,ci:-0.23},{name:"Porrima",ra:12.693,dec:-1.450,mag:2.74,ci:0.36},{name:"Vindemiatrix",ra:13.036,dec:10.959,mag:2.85,ci:0.94},{name:"Heze",ra:13.578,dec:-0.595,mag:3.38,ci:0.16},{name:"Auva",ra:12.926,dec:3.398,mag:3.39,ci:1.38},{name:"Zavijava",ra:11.841,dec:1.765,mag:3.61,ci:0.56},{name:"Dubhe",ra:11.062,dec:61.751,mag:1.81,ci:1.07},{name:"Merak",ra:11.030,dec:56.382,mag:2.34,ci:0.04},{name:"Phecda",ra:11.897,dec:53.694,mag:2.41,ci:0.02},{name:"Megrez",ra:12.257,dec:57.032,mag:3.32,ci:0.08},{name:"Alioth",ra:12.900,dec:55.959,mag:1.76,ci:0.02},{name:"Mizar",ra:13.398,dec:54.925,mag:2.23,ci:0.06},{name:"Alkaid",ra:13.792,dec:49.313,mag:1.85,ci:-0.19},{name:"Talitha",ra:8.987,dec:48.041,mag:3.12,ci:0.20},{name:"Tania Borealis",ra:10.284,dec:42.914,mag:3.45,ci:-0.05},{name:"Mu UMa",ra:10.373,dec:41.498,mag:3.06,ci:1.45},{name:"Kaus Australis",ra:18.402,dec:-34.384,mag:1.79,ci:-0.03},{name:"Nunki",ra:18.918,dec:-26.296,mag:2.05,ci:-0.13},{name:"Ascella",ra:19.043,dec:-29.880,mag:2.60,ci:0.10},{name:"Kaus Media",ra:18.347,dec:-29.828,mag:2.72,ci:1.04},{name:"Kaus Borealis",ra:18.466,dec:-25.422,mag:2.82,ci:1.05},{name:"Alnasl",ra:18.097,dec:-30.421,mag:2.98,ci:1.03},{name:"Phi Sgr",ra:18.756,dec:-26.989,mag:3.17,ci:-0.06},{name:"Tau Sgr",ra:19.115,dec:-27.670,mag:3.32,ci:1.10},{name:"Sirius",ra:6.752,dec:-16.716,mag:-1.46,ci:0.00},{name:"Adhara",ra:6.977,dec:-28.972,mag:1.50,ci:-0.19},{name:"Wezen",ra:7.141,dec:-26.393,mag:1.83,ci:0.68},{name:"Mirzam",ra:6.378,dec:-17.955,mag:1.98,ci:-0.22},{name:"Aludra",ra:7.401,dec:-29.303,mag:2.45,ci:-0.08},{name:"Furud",ra:6.339,dec:-30.063,mag:3.02,ci:-0.18},{name:"Muliphein",ra:7.065,dec:-15.632,mag:4.11,ci:-0.14},{name:"Procyon",ra:7.655,dec:5.224,mag:0.34,ci:0.42},{name:"Gomeisa",ra:7.451,dec:8.291,mag:2.89,ci:-0.08},{name:"Capella",ra:5.278,dec:45.997,mag:0.08,ci:0.80},{name:"Menkalinan",ra:5.992,dec:44.947,mag:1.90,ci:0.07},{name:"Mahasim",ra:5.995,dec:37.212,mag:2.65,ci:-0.06},{name:"Hassaleh",ra:4.949,dec:33.166,mag:2.69,ci:1.25},{name:"Arcturus",ra:14.261,dec:19.182,mag:-0.05,ci:1.23},{name:"Izar",ra:14.751,dec:27.074,mag:2.35,ci:1.00},{name:"Muphrid",ra:13.911,dec:18.397,mag:2.68,ci:0.58},{name:"Seginus",ra:14.536,dec:38.308,mag:3.04,ci:0.16},{name:"Nekkar",ra:15.032,dec:40.391,mag:3.49,ci:0.99},{name:"Alkalurops",ra:15.407,dec:37.375,mag:4.31,ci:0.39},{name:"Schedar",ra:0.675,dec:56.537,mag:2.24,ci:1.17},{name:"Caph",ra:0.153,dec:59.150,mag:2.28,ci:0.34},{name:"Gamma Cas",ra:0.945,dec:60.717,mag:2.15,ci:-0.1},{name:"Ruchbah",ra:1.430,dec:60.235,mag:2.66,ci:0.13},{name:"Segin",ra:1.907,dec:63.670,mag:3.35,ci:0.26},{name:"Alpheratz",ra:0.139,dec:29.090,mag:2.07,ci:-0.11},{name:"Mirach",ra:1.162,dec:35.620,mag:2.07,ci:1.64},{name:"Almach",ra:2.064,dec:42.329,mag:2.10,ci:1.37},{name:"Markab",ra:23.079,dec:15.205,mag:2.49,ci:-0.04},{name:"Scheat",ra:23.062,dec:28.082,mag:2.44,ci:1.65},{name:"Algenib",ra:0.221,dec:15.183,mag:2.83,ci:-0.23},{name:"Enif",ra:21.736,dec:9.875,mag:2.38,ci:1.53},{name:"Sadr",ra:20.370,dec:40.256,mag:2.23,ci:0.67},{name:"Albireo",ra:19.512,dec:27.960,mag:3.05,ci:1.13},{name:"Gienah",ra:20.771,dec:33.959,mag:2.48,ci:1.03},{name:"Delta Cyg",ra:19.762,dec:45.130,mag:2.86,ci:-0.01},{name:"Polaris",ra:2.530,dec:89.264,mag:1.97,ci:0.63},{name:"Kochab",ra:14.845,dec:74.155,mag:2.07,ci:1.28},{name:"Pherkad",ra:15.346,dec:71.834,mag:3.00,ci:0.05},{name:"Yildun",ra:17.538,dec:86.586,mag:4.35,ci:0.01},{name:"Zeta UMi",ra:15.734,dec:77.795,mag:4.29,ci:-0.06},{name:"Eta UMi",ra:16.292,dec:75.753,mag:4.95,ci:0.40},{name:"Sheliak",ra:18.834,dec:33.362,mag:3.52,ci:0.05},{name:"Sulafat",ra:18.979,dec:32.689,mag:3.25,ci:-0.06},{name:"Delta Lyr",ra:18.900,dec:36.900,mag:4.30,ci:0.00},{name:"Tarazed",ra:19.771,dec:10.613,mag:2.72,ci:1.52},{name:"Alshain",ra:19.923,dec:6.406,mag:3.71,ci:0.86},{name:"Delta Aql",ra:19.418,dec:3.113,mag:3.36,ci:0.28},{name:"Zeta Aql",ra:19.088,dec:13.863,mag:2.99,ci:0.06},{name:"Mirfak",ra:3.405,dec:49.861,mag:1.79,ci:0.48},{name:"Algol",ra:3.136,dec:40.955,mag:2.09,ci:-0.05},{name:"Gamma Per",ra:3.078,dec:53.506,mag:2.91,ci:0.65},{name:"Delta Per",ra:3.715,dec:47.788,mag:3.01,ci:-0.13},{name:"Rasalhague",ra:17.582,dec:12.560,mag:2.08,ci:0.15},{name:"Sabik",ra:17.172,dec:-15.724,mag:2.43,ci:0.09},{name:"Zeta Oph",ra:16.619,dec:-10.567,mag:2.54,ci:-0.21},{name:"Yed Prior",ra:16.236,dec:-3.696,mag:2.73,ci:1.62},{name:"Cebalrai",ra:17.722,dec:4.567,mag:2.76,ci:1.17},{name:"Fomalhaut",ra:22.960,dec:-29.622,mag:1.17,ci:0.09},{name:"Alphecca",ra:15.578,dec:26.714,mag:2.22,ci:-0.02},{name:"Nusakan",ra:15.464,dec:29.111,mag:3.66,ci:0.41},{name:"Sualocin",ra:20.663,dec:15.912,mag:3.77,ci:-0.07},{name:"Rotanev",ra:20.627,dec:14.600,mag:3.64,ci:0.65},{name:"Gamma Del",ra:20.778,dec:16.124,mag:4.27,ci:0.45},{name:"Delta Del",ra:20.722,dec:15.057,mag:4.43,ci:0.35},{name:"Arneb",ra:5.545,dec:-17.822,mag:2.58,ci:0.21},{name:"Nihal",ra:5.470,dec:-20.760,mag:2.81,ci:0.46},{name:"Epsilon Lep",ra:5.087,dec:-22.404,mag:3.19,ci:1.43},{name:"Mu Lep",ra:5.216,dec:-16.208,mag:3.29,ci:-0.12},{name:"Acubens",ra:8.974,dec:11.857,mag:4.26,ci:0.14},{name:"Altarf",ra:8.276,dec:9.186,mag:3.53,ci:1.13},{name:"Asellus Borealis",ra:8.721,dec:21.468,mag:4.66,ci:0.08},{name:"Asellus Australis",ra:8.740,dec:18.156,mag:3.94,ci:1.00},{name:"Zubenelgenubi",ra:14.846,dec:-16.041,mag:2.75,ci:0.09},{name:"Zubeneschamali",ra:15.283,dec:-9.380,mag:2.61,ci:-0.12},{name:"Brachium",ra:15.068,dec:-25.280,mag:3.25,ci:1.58},{name:"Algedi",ra:20.293,dec:-12.540,mag:3.58,ci:0.96},{name:"Dabih",ra:20.352,dec:-14.781,mag:3.05,ci:0.82},{name:"Deneb Algedi",ra:21.785,dec:-16.128,mag:2.85,ci:0.18},{name:"Nashira",ra:21.673,dec:-16.662,mag:3.69,ci:0.07},{name:"Sadalmelik",ra:22.095,dec:-0.319,mag:2.95,ci:0.96},{name:"Sadalsuud",ra:21.526,dec:-5.571,mag:2.90,ci:0.96},{name:"Skat",ra:22.913,dec:-15.820,mag:3.27,ci:0.05},{name:"Sadachbia",ra:22.360,dec:-1.391,mag:3.86,ci:0.03},{name:"Eta Aqr",ra:22.588,dec:-0.119,mag:4.04,ci:-0.05},{name:"Alrescha",ra:2.034,dec:2.763,mag:3.82,ci:0.11},{name:"Alpherg",ra:1.524,dec:15.348,mag:3.62,ci:0.54},{name:"Gamma Psc",ra:23.283,dec:3.280,mag:3.70,ci:0.94},{name:"Omega Psc",ra:23.990,dec:6.863,mag:4.03,ci:0.49},{name:"Hamal",ra:2.118,dec:23.462,mag:2.01,ci:1.15},{name:"Sheratan",ra:1.911,dec:20.806,mag:2.64,ci:0.15},{name:"Mesarthim",ra:1.896,dec:19.288,mag:3.88,ci:0.03},{name:"Gienah Corvi",ra:12.264,dec:-17.542,mag:2.58,ci:-0.09},{name:"Kraz",ra:12.570,dec:-23.400,mag:2.65,ci:0.96},{name:"Algorab",ra:12.498,dec:-16.516,mag:2.94,ci:0.05},{name:"Minkar",ra:12.169,dec:-22.619,mag:3.02,ci:1.33},{name:"Diadem",ra:13.166,dec:17.536,mag:4.32,ci:0.57},{name:"Beta Com",ra:13.198,dec:27.884,mag:4.23,ci:0.57},{name:"Achernar",ra:1.628,dec:-57.241,mag:0.45,ci:-0.16},{name:"Cursa",ra:5.131,dec:-5.086,mag:2.78,ci:0.15},{name:"Zaurak",ra:3.973,dec:-13.509,mag:2.97,ci:1.59},{name:"Acamar",ra:2.972,dec:-40.304,mag:3.24,ci:0.13},{name:"Diphda",ra:0.726,dec:-17.986,mag:2.04,ci:1.02},{name:"Menkar",ra:3.037,dec:4.089,mag:2.54,ci:1.63},{name:"Mira",ra:2.323,dec:-2.977,mag:2.00,ci:1.53},{name:"Baten Kaitos",ra:1.733,dec:-10.334,mag:3.74,ci:1.29},{name:"M31 Andromeda Galaxy",ra:0.712,dec:41.269,mag:3.44,ci:0.80},{name:"M45 Pleiades",ra:3.783,dec:24.116,mag:1.6,ci:-0.05},{name:"M42 Orion Nebula",ra:5.588,dec:-5.391,mag:4.0,ci:0.50},{name:"Galactic Center",ra:17.761,dec:-29.007,mag:5.0,ci:1.0}];
 
-// --- 0. DATA & CONSTANTS (Dictionary) ---
-const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3, STAR_GAL: 4 };
-
-// --- 統合済み CONSTELLATION_DB (Base: Text 1, Content: Text 2) ---
-const CONSTELLATION_DB = [
-    // --- 🦁 FAMOUS CONSTELLATIONS ---
-    // --- 1. ORION (オリオン座) ---
-    { 
-        id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
-        desc: "【冬の王者】夜空で最も華やかで整った星座です。中央に並ぶ「三つ星」と、それを取り囲む4つの星が特徴的な「鼓（つづみ）」の形を描きます。左上の赤色超巨星「ベテルギウス」は太陽の約1000倍もの大きさがあり、天文学的なスケールでは寿命が尽きかけているため、いつ超新星爆発を起こしてもおかしくないと言われています。三つ星の下には、肉眼でもぼんやりと見える「オリオン大星雲（M42）」があり、そこでは今まさに新しい星が生まれています。", 
-        desc_en: "[Winter King] The most spectacular constellation. The three belt stars are surrounded by four stars forming an hourglass shape. The red supergiant Betelgeuse is 1,000 times larger than the Sun and might explode soon. Below the belt lies the Orion Nebula (M42), a stellar nursery.",
-        myth: "海の神ポセイドンの子で、怪力の巨人の狩人でした。月の女神アルテミスと恋に落ちましたが、それをよく思わなかった彼女の兄アポロンの策略により、アルテミス自身の矢で誤って射抜かれ、命を落としました。死後、悲しんだ女神によって空に上げられましたが、生前の傲慢さを神に咎められ放たれた「サソリ」が苦手で、さそり座が東から昇ると、逃げるように西へ沈んでいきます。", 
-        myth_en: "Son of Poseidon and a mighty hunter. He was accidentally killed by his love Artemis due to Apollo's trickery. He sets in the west whenever his enemy, the Scorpion, rises.",
-        centerRA: 5.5, centerDec: -1.0, 
-        lines: ["Betelgeuse","Alnitak", "Bellatrix","Mintaka", "Alnitak","Saiph", "Mintaka","Rigel", "Alnitak","Alnilam", "Alnilam","Mintaka", "Betelgeuse","Bellatrix", "Saiph","Rigel", "Betelgeuse","Meissa", "Bellatrix","Meissa"] 
-    },
-
-
-
-    // --- 🐻 MEDIUM CONSTELLATIONS ---
-    // --- 1. CASSIOPEIA (カシオペヤ座) ---
-    { 
-        id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
-        desc: "【北のW字】5つの星がアルファベットの「W」（またはM）の形に並んでいるのが特徴です。北極星を探すための重要な目印として、北斗七星と対をなす存在です。秋の夜空高くに見え、天の川の中に位置しているため、双眼鏡で覗くと多くの微光星が見えます。", 
-        desc_en: "[North W] Features a distinctive 'W' or 'M' shape. A key guide to finding Polaris, opposite the Big Dipper.",
-        myth: "古代エチオピアの王妃です。「自分の娘アンドロメダの方が、海の妖精たちより美しい」と自慢したため、海神ポセイドンの怒りを買いました。罰として、椅子に縛り付けられたまま北の空を回り続け、一日の半分は逆さまに吊るされる姿になっています。", 
-        myth_en: "The vain queen who boasted of her daughter's beauty. Punished by rotating in the sky while tied to her chair.",
-        centerRA: 1.0, centerDec: 60.0, 
-        lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"] 
-    },
-
-
-
-    // --- 🦎 MINOR CONSTELLATIONS ---
-    // --- 1. LEPUS (うさぎ座) ---
-    { 
-        id: "lep", rank: 3, name: "うさぎ座", en: "Lepus", 
-        desc: "【オリオンの獲物】狩人オリオンの足元で、うずくまっているような形の星座です。オリオンが連れているおおいぬ座の方向から逃げるように西へ沈んでいきます。目立つ星はありませんが、α星アーネブはアラビア語でそのまま「ウサギ」を意味します。", 
-        desc_en: "[The Hare] Located at Orion's feet. Being chased by Canis Major. The star Arneb means 'Hare' in Arabic.",
-        myth: "特に大きな神話はありませんが、狩りを好んだオリオンの獲物として配置されたと言われています。また、ウサギは多産であることから、生命のシンボルとして空に上げられたという説もあります。", 
-        myth_en: "Placed at the feet of Orion the Hunter. A symbol of fertility or simply Orion's prey.",
-        centerRA: 5.5, centerDec: -20.0, 
-        lines: ["Arneb", "Nihal", "Nihal", "Epsilon Lep", "Epsilon Lep", "Mu Lep", "Mu Lep", "Arneb"] 
-    },
-
-
-
-    // --- ✨ RANK 4: STARS & GALAXIES ---
-    // --- 1. SIRIUS (シリウス) ---
-    { 
-        id: "sirius", rank: 4, name: "シリウス", en: "Sirius", 
-        desc: "【焼き焦がすもの】おおいぬ座の口元にある全天一明るい恒星です。ギリシャ語で「焼き焦がすもの」という意味があります。真夏に太陽と同じ方向にあって見えない時期を「ドッグ・デイズ（犬の日々＝酷暑）」と呼ぶのは、この星の熱が暑さをもたらすと信じられていたためです。", 
-        desc_en: "[The Scorcher] The brightest star in the night sky. The phrase 'Dog Days of Summer' comes from the belief that Sirius added heat to the sun.",
-        myth: "映画『ハリー・ポッター』に登場する「シリウス・ブラック」の名前の由来です。彼は黒い犬に変身する能力を持っていました。古代エジプトでは「ナイルの星（ソティス）」と呼ばれ、ピラミッド建設の向きを決める基準にもなった極めて重要な星です。", 
-        myth_en: "Namesake of Sirius Black in Harry Potter, who transforms into a dog. In Egypt, it was known as Sothis and predicted the Nile floods.",
-        centerRA: 6.75, centerDec: -16.7, 
-        lines: [] 
-    },
-
-
-];
-
-// --- 修正済み STARS_DATA (Strictly from Text 1 to avoid Duplicates) ---
-const STARS_DATA = [
-    // --- 🦁 1. ORION (オリオン座) ---
-    { name: "Betelgeuse", ra: 5.919, dec: 7.407, mag: 0.45, ci: 1.85 },
-    { name: "Rigel", ra: 5.242, dec: -8.202, mag: 0.12, ci: -0.03 },
-    { name: "Bellatrix", ra: 5.418, dec: 6.349, mag: 1.64, ci: -0.22 },
-    { name: "Saiph", ra: 5.795, dec: -9.669, mag: 2.07, ci: -0.18 },
-    { name: "Alnitak", ra: 5.679, dec: -1.943, mag: 1.74, ci: -0.21 },
-    { name: "Alnilam", ra: 5.603, dec: -1.202, mag: 1.69, ci: -0.19 },
-    { name: "Mintaka", ra: 5.533, dec: -0.299, mag: 2.25, ci: -0.21 },
-    { name: "Meissa", ra: 5.585, dec: 9.934, mag: 3.39, ci: -0.14 },
-
-    // --- 🦂 2. SCORPIUS (さそり座) ---
-    { name: "Antares", ra: 16.490, dec: -26.432, mag: 1.06, ci: 1.83 },
-    { name: "Graffias", ra: 16.088, dec: -19.805, mag: 2.56, ci: -0.11 },
-    { name: "Dschubba", ra: 16.005, dec: -22.622, mag: 2.29, ci: -0.13 },
-    { name: "Pi Sco", ra: 15.979, dec: -26.114, mag: 2.89, ci: -0.21 },
-    { name: "Wei", ra: 16.834, dec: -38.020, mag: 2.29, ci: 1.14 },
-    { name: "Mu Sco", ra: 16.863, dec: -38.048, mag: 3.00, ci: -0.20 },
-    { name: "Zeta Sco", ra: 16.904, dec: -42.360, mag: 3.62, ci: 1.50 },
-    { name: "Eta Sco", ra: 17.202, dec: -43.238, mag: 3.32, ci: 0.05 },
-    { name: "Sargas", ra: 17.623, dec: -42.998, mag: 1.86, ci: 0.38 },
-    { name: "Iota Sco", ra: 17.795, dec: -40.125, mag: 2.99, ci: 0.17 },
-    { name: "Kappa Sco", ra: 17.703, dec: -39.029, mag: 2.39, ci: -0.20 },
-    { name: "Shaula", ra: 17.560, dec: -37.104, mag: 1.62, ci: -0.22 },
-    { name: "Lesath", ra: 17.513, dec: -37.291, mag: 2.70, ci: -0.21 },
-
-    // --- 📐 3. SUMMER TRIANGLE STARS ---
-    { name: "Vega", ra: 18.615, dec: 38.783, mag: 0.03, ci: 0.00 },
-    { name: "Altair", ra: 19.846, dec: 8.868, mag: 0.76, ci: 0.22 },
-    { name: "Deneb", ra: 20.690, dec: 45.280, mag: 1.25, ci: 0.09 },
-
-    // --- 🐂 4. TAURUS (おうし座) ---
-    { name: "Aldebaran", ra: 4.598, dec: 16.509, mag: 0.87, ci: 1.54 },
-    { name: "Elnath", ra: 5.438, dec: 28.607, mag: 1.65, ci: -0.13 },
-    { name: "Zeta Tau", ra: 5.627, dec: 21.142, mag: 2.97, ci: -0.22 },
-    { name: "Ain", ra: 4.478, dec: 19.180, mag: 3.53, ci: 1.02 },
-    { name: "Hyadum I", ra: 4.331, dec: 15.627, mag: 3.65, ci: 0.97 },
-    { name: "Delta Tau", ra: 4.381, dec: 17.542, mag: 3.77, ci: 0.96 },
-    { name: "Alcyone", ra: 3.791, dec: 24.105, mag: 2.85, ci: -0.09 },
-
-    // --- 👯 5. GEMINI (ふたご座) ---
-    { name: "Pollux", ra: 7.755, dec: 28.026, mag: 1.16, ci: 1.00 },
-    { name: "Castor", ra: 7.576, dec: 31.888, mag: 1.58, ci: 0.04 },
-    { name: "Alhena", ra: 6.628, dec: 16.399, mag: 1.93, ci: 0.00 },
-    { name: "Tejat", ra: 6.248, dec: 22.506, mag: 2.87, ci: 1.56 },
-    { name: "Mebsuta", ra: 6.733, dec: 25.131, mag: 3.06, ci: 1.40 },
-    { name: "Wasat", ra: 7.336, dec: 21.982, mag: 3.50, ci: 0.16 },
-
-    // --- 🦁 6. LEO (しし座) ---
-    { name: "Regulus", ra: 10.139, dec: 11.967, mag: 1.36, ci: -0.11 },
-    { name: "Denebola", ra: 11.817, dec: 14.572, mag: 2.14, ci: 0.09 },
-    { name: "Algieba", ra: 10.333, dec: 19.841, mag: 2.01, ci: 1.15 },
-    { name: "Zosma", ra: 11.236, dec: 20.523, mag: 2.56, ci: 0.12 },
-    { name: "Adhafera", ra: 10.276, dec: 23.417, mag: 3.43, ci: 1.25 },
-    { name: "Rasalas", ra: 9.764, dec: 23.774, mag: 2.97, ci: 1.62 },
-    { name: "Chertan", ra: 11.236, dec: 15.428, mag: 3.33, ci: 0.07 },
-
-    // --- ♍ 7. VIRGO (おとめ座) ---
-    { name: "Spica", ra: 13.416, dec: -11.161, mag: 0.98, ci: -0.23 },
-    { name: "Porrima", ra: 12.693, dec: -1.450, mag: 2.74, ci: 0.36 },
-    { name: "Vindemiatrix", ra: 13.036, dec: 10.959, mag: 2.85, ci: 0.94 },
-    { name: "Heze", ra: 13.578, dec: -0.595, mag: 3.38, ci: 0.16 },
-    { name: "Auva", ra: 12.926, dec: 3.398, mag: 3.39, ci: 1.38 },
-    { name: "Zavijava", ra: 11.841, dec: 1.765, mag: 3.61, ci: 0.56 },
-
-    // --- 🐻 8. URSA MAJOR (おおぐま座 - 北斗七星) ---
-    { name: "Dubhe", ra: 11.062, dec: 61.751, mag: 1.81, ci: 1.07 },
-    { name: "Merak", ra: 11.030, dec: 56.382, mag: 2.34, ci: 0.04 },
-    { name: "Phecda", ra: 11.897, dec: 53.694, mag: 2.41, ci: 0.02 },
-    { name: "Megrez", ra: 12.257, dec: 57.032, mag: 3.32, ci: 0.08 },
-    { name: "Alioth", ra: 12.900, dec: 55.959, mag: 1.76, ci: 0.02 },
-    { name: "Mizar", ra: 13.398, dec: 54.925, mag: 2.23, ci: 0.06 },
-    { name: "Alkaid", ra: 13.792, dec: 49.313, mag: 1.85, ci: -0.19 },
-    { name: "Talitha", ra: 8.987, dec: 48.041, mag: 3.12, ci: 0.20 },
-    { name: "Tania Borealis", ra: 10.284, dec: 42.914, mag: 3.45, ci: -0.05 },
-    { name: "Mu UMa", ra: 10.373, dec: 41.498, mag: 3.06, ci: 1.45 },
-
-    // --- 🏹 9. SAGITTARIUS (いて座) ---
-    { name: "Kaus Australis", ra: 18.402, dec: -34.384, mag: 1.79, ci: -0.03 },
-    { name: "Nunki", ra: 18.918, dec: -26.296, mag: 2.05, ci: -0.13 },
-    { name: "Ascella", ra: 19.043, dec: -29.880, mag: 2.60, ci: 0.10 },
-    { name: "Kaus Media", ra: 18.347, dec: -29.828, mag: 2.72, ci: 1.04 },
-    { name: "Kaus Borealis", ra: 18.466, dec: -25.422, mag: 2.82, ci: 1.05 },
-    { name: "Alnasl", ra: 18.097, dec: -30.421, mag: 2.98, ci: 1.03 },
-    { name: "Phi Sgr", ra: 18.756, dec: -26.989, mag: 3.17, ci: -0.06 },
-    { name: "Tau Sgr", ra: 19.115, dec: -27.670, mag: 3.32, ci: 1.10 },
-
-    // --- 🐕 10. CANIS MAJOR (おおいぬ座) ---
-    { name: "Sirius", ra: 6.752, dec: -16.716, mag: -1.46, ci: 0.00 },
-    { name: "Adhara", ra: 6.977, dec: -28.972, mag: 1.50, ci: -0.19 },
-    { name: "Wezen", ra: 7.141, dec: -26.393, mag: 1.83, ci: 0.68 },
-    { name: "Mirzam", ra: 6.378, dec: -17.955, mag: 1.98, ci: -0.22 },
-    { name: "Aludra", ra: 7.401, dec: -29.303, mag: 2.45, ci: -0.08 },
-    { name: "Furud", ra: 6.339, dec: -30.063, mag: 3.02, ci: -0.18 },
-    { name: "Muliphein", ra: 7.065, dec: -15.632, mag: 4.11, ci: -0.14 },
-
-    // --- 🐕 11. CANIS MINOR (こいぬ座) ---
-    { name: "Procyon", ra: 7.655, dec: 5.224, mag: 0.34, ci: 0.42 },
-    { name: "Gomeisa", ra: 7.451, dec: 8.291, mag: 2.89, ci: -0.08 },
-
-    // --- 🚜 12. AURIGA (ぎょしゃ座) ---
-    { name: "Capella", ra: 5.278, dec: 45.997, mag: 0.08, ci: 0.80 },
-    { name: "Menkalinan", ra: 5.992, dec: 44.947, mag: 1.90, ci: 0.07 },
-    { name: "Mahasim", ra: 5.995, dec: 37.212, mag: 2.65, ci: -0.06 },
-    { name: "Hassaleh", ra: 4.949, dec: 33.166, mag: 2.69, ci: 1.25 },
-
-    // --- 🐂 13. BOÖTES (うしかい座) ---
-    { name: "Arcturus", ra: 14.261, dec: 19.182, mag: -0.05, ci: 1.23 },
-    { name: "Izar", ra: 14.751, dec: 27.074, mag: 2.35, ci: 1.00 },
-    { name: "Muphrid", ra: 13.911, dec: 18.397, mag: 2.68, ci: 0.58 },
-    { name: "Seginus", ra: 14.536, dec: 38.308, mag: 3.04, ci: 0.16 },
-    { name: "Nekkar", ra: 15.032, dec: 40.391, mag: 3.49, ci: 0.99 },
-    { name: "Alkalurops", ra: 15.407, dec: 37.375, mag: 4.31, ci: 0.39 },
-
-    // --- 💺 1. CASSIOPEIA (カシオペヤ座) ---
-    { name: "Schedar", ra: 0.675, dec: 56.537, mag: 2.24, ci: 1.17 },
-    { name: "Caph", ra: 0.153, dec: 59.150, mag: 2.28, ci: 0.34 },
-    { name: "Gamma Cas", ra: 0.945, dec: 60.717, mag: 2.15, ci: -0.1 },
-    { name: "Ruchbah", ra: 1.430, dec: 60.235, mag: 2.66, ci: 0.13 },
-    { name: "Segin", ra: 1.907, dec: 63.670, mag: 3.35, ci: 0.26 },
-
-    // --- ⛓️ 2. ANDROMEDA (アンドロメダ座) ---
-    { name: "Alpheratz", ra: 0.139, dec: 29.090, mag: 2.07, ci: -0.11 },
-    { name: "Mirach", ra: 1.162, dec: 35.620, mag: 2.07, ci: 1.64 },
-    { name: "Almach", ra: 2.064, dec: 42.329, mag: 2.10, ci: 1.37 },
-
-    // --- 🐎 3. PEGASUS (ペガスス座) ---
-    { name: "Markab", ra: 23.079, dec: 15.205, mag: 2.49, ci: -0.04 },
-    { name: "Scheat", ra: 23.062, dec: 28.082, mag: 2.44, ci: 1.65 },
-    { name: "Algenib", ra: 0.221, dec: 15.183, mag: 2.83, ci: -0.23 },
-    { name: "Enif", ra: 21.736, dec: 9.875, mag: 2.38, ci: 1.53 },
-
-    // --- 🦢 4. CYGNUS (はくちょう座) ---
-    { name: "Sadr", ra: 20.370, dec: 40.256, mag: 2.23, ci: 0.67 },
-    { name: "Albireo", ra: 19.512, dec: 27.960, mag: 3.05, ci: 1.13 },
-    { name: "Gienah", ra: 20.771, dec: 33.959, mag: 2.48, ci: 1.03 },
-    { name: "Delta Cyg", ra: 19.762, dec: 45.130, mag: 2.86, ci: -0.01 },
-
-    // --- 🐻 5. URSA MINOR (こぐま座) ---
-    { name: "Polaris", ra: 2.530, dec: 89.264, mag: 1.97, ci: 0.63 },
-    { name: "Kochab", ra: 14.845, dec: 74.155, mag: 2.07, ci: 1.28 },
-    { name: "Pherkad", ra: 15.346, dec: 71.834, mag: 3.00, ci: 0.05 },
-    { name: "Yildun", ra: 17.538, dec: 86.586, mag: 4.35, ci: 0.01 },
-    { name: "Zeta UMi", ra: 15.734, dec: 77.795, mag: 4.29, ci: -0.06 },
-    { name: "Eta UMi", ra: 16.292, dec: 75.753, mag: 4.95, ci: 0.40 },
-
-    // --- 🎻 6. LYRA (こと座) ---
-    { name: "Sheliak", ra: 18.834, dec: 33.362, mag: 3.52, ci: 0.05 },
-    { name: "Sulafat", ra: 18.979, dec: 32.689, mag: 3.25, ci: -0.06 },
-    { name: "Delta Lyr", ra: 18.900, dec: 36.900, mag: 4.30, ci: 0.00 },
-
-    // --- 🦅 7. AQUILA (わし座) ---
-    { name: "Tarazed", ra: 19.771, dec: 10.613, mag: 2.72, ci: 1.52 },
-    { name: "Alshain", ra: 19.923, dec: 6.406, mag: 3.71, ci: 0.86 },
-    { name: "Delta Aql", ra: 19.418, dec: 3.113, mag: 3.36, ci: 0.28 },
-    { name: "Zeta Aql", ra: 19.088, dec: 13.863, mag: 2.99, ci: 0.06 },
-
-    // --- ⚔️ 8. PERSEUS (ペルセウス座) ---
-    { name: "Mirfak", ra: 3.405, dec: 49.861, mag: 1.79, ci: 0.48 },
-    { name: "Algol", ra: 3.136, dec: 40.955, mag: 2.09, ci: -0.05 },
-    { name: "Gamma Per", ra: 3.078, dec: 53.506, mag: 2.91, ci: 0.65 },
-    { name: "Delta Per", ra: 3.715, dec: 47.788, mag: 3.01, ci: -0.13 },
-
-    // --- ⚕️ 9. OPHIUCHUS (へびつかい座) ---
-    { name: "Rasalhague", ra: 17.582, dec: 12.560, mag: 2.08, ci: 0.15 },
-    { name: "Sabik", ra: 17.172, dec: -15.724, mag: 2.43, ci: 0.09 },
-    { name: "Zeta Oph", ra: 16.619, dec: -10.567, mag: 2.54, ci: -0.21 },
-    { name: "Yed Prior", ra: 16.236, dec: -3.696, mag: 2.73, ci: 1.62 },
-    { name: "Cebalrai", ra: 17.722, dec: 4.567, mag: 2.76, ci: 1.17 },
-
-    // --- 🐟 10. PISCIS AUSTRINUS (みなみのうお座) ---
-    { name: "Fomalhaut", ra: 22.960, dec: -29.622, mag: 1.17, ci: 0.09 },
-
-    // --- 👑 11. CORONA BOREALIS (かんむり座) ---
-    { name: "Alphecca", ra: 15.578, dec: 26.714, mag: 2.22, ci: -0.02 },
-    { name: "Nusakan", ra: 15.464, dec: 29.111, mag: 3.66, ci: 0.41 },
-
-    // --- 🐬 12. DELPHINUS (いるか座) ---
-    { name: "Sualocin", ra: 20.663, dec: 15.912, mag: 3.77, ci: -0.07 },
-    { name: "Rotanev", ra: 20.627, dec: 14.600, mag: 3.64, ci: 0.65 },
-    { name: "Gamma Del", ra: 20.778, dec: 16.124, mag: 4.27, ci: 0.45 },
-    { name: "Delta Del", ra: 20.722, dec: 15.057, mag: 4.43, ci: 0.35 },
-
-    // --- 🐇 1. LEPUS (うさぎ座) ---
-    { name: "Arneb", ra: 5.545, dec: -17.822, mag: 2.58, ci: 0.21 },
-    { name: "Nihal", ra: 5.470, dec: -20.760, mag: 2.81, ci: 0.46 },
-    { name: "Epsilon Lep", ra: 5.087, dec: -22.404, mag: 3.19, ci: 1.43 },
-    { name: "Mu Lep", ra: 5.216, dec: -16.208, mag: 3.29, ci: -0.12 },
-
-    // --- 🦀 2. CANCER (かに座) ---
-    { name: "Acubens", ra: 8.974, dec: 11.857, mag: 4.26, ci: 0.14 },
-    { name: "Altarf", ra: 8.276, dec: 9.186, mag: 3.53, ci: 1.13 },
-    { name: "Asellus Borealis", ra: 8.721, dec: 21.468, mag: 4.66, ci: 0.08 },
-    { name: "Asellus Australis", ra: 8.740, dec: 18.156, mag: 3.94, ci: 1.00 },
-
-    // --- ⚖️ 3. LIBRA (てんびん座) ---
-    { name: "Zubenelgenubi", ra: 14.846, dec: -16.041, mag: 2.75, ci: 0.09 },
-    { name: "Zubeneschamali", ra: 15.283, dec: -9.380, mag: 2.61, ci: -0.12 },
-    { name: "Brachium", ra: 15.068, dec: -25.280, mag: 3.25, ci: 1.58 },
-
-    // --- 🐐 4. CAPRICORNUS (やぎ座) ---
-    { name: "Algedi", ra: 20.293, dec: -12.540, mag: 3.58, ci: 0.96 },
-    { name: "Dabih", ra: 20.352, dec: -14.781, mag: 3.05, ci: 0.82 },
-    { name: "Deneb Algedi", ra: 21.785, dec: -16.128, mag: 2.85, ci: 0.18 },
-    { name: "Nashira", ra: 21.673, dec: -16.662, mag: 3.69, ci: 0.07 },
-
-    // --- 🏺 5. AQUARIUS (みずがめ座) ---
-    { name: "Sadalmelik", ra: 22.095, dec: -0.319, mag: 2.95, ci: 0.96 },
-    { name: "Sadalsuud", ra: 21.526, dec: -5.571, mag: 2.90, ci: 0.96 },
-    { name: "Skat", ra: 22.913, dec: -15.820, mag: 3.27, ci: 0.05 },
-    { name: "Sadachbia", ra: 22.360, dec: -1.391, mag: 3.86, ci: 0.03 },
-    { name: "Eta Aqr", ra: 22.588, dec: -0.119, mag: 4.04, ci: -0.05 },
-
-    // --- 🐟 6. PISCES (うお座) ---
-    { name: "Alrescha", ra: 2.034, dec: 2.763, mag: 3.82, ci: 0.11 },
-    { name: "Alpherg", ra: 1.524, dec: 15.348, mag: 3.62, ci: 0.54 },
-    { name: "Gamma Psc", ra: 23.283, dec: 3.280, mag: 3.70, ci: 0.94 },
-    { name: "Omega Psc", ra: 23.990, dec: 6.863, mag: 4.03, ci: 0.49 },
-
-    // --- 🐏 7. ARIES (おひつじ座) ---
-    { name: "Hamal", ra: 2.118, dec: 23.462, mag: 2.01, ci: 1.15 },
-    { name: "Sheratan", ra: 1.911, dec: 20.806, mag: 2.64, ci: 0.15 },
-    { name: "Mesarthim", ra: 1.896, dec: 19.288, mag: 3.88, ci: 0.03 },
-
-    // --- 🐦‍⬛ 8. CORVUS (からす座) ---
-    { name: "Gienah Corvi", ra: 12.264, dec: -17.542, mag: 2.58, ci: -0.09 },
-    { name: "Kraz", ra: 12.570, dec: -23.400, mag: 2.65, ci: 0.96 },
-    { name: "Algorab", ra: 12.498, dec: -16.516, mag: 2.94, ci: 0.05 },
-    { name: "Minkar", ra: 12.169, dec: -22.619, mag: 3.02, ci: 1.33 },
-
-    // --- 💇‍♀️ 9. COMA BERENICES (かみのけ座) ---
-    { name: "Diadem", ra: 13.166, dec: 17.536, mag: 4.32, ci: 0.57 },
-    { name: "Beta Com", ra: 13.198, dec: 27.884, mag: 4.23, ci: 0.57 },
-
-    // --- 🌊 10. ERIDANUS (エリダヌス座) ---
-    { name: "Achernar", ra: 1.628, dec: -57.241, mag: 0.45, ci: -0.16 },
-    { name: "Cursa", ra: 5.131, dec: -5.086, mag: 2.78, ci: 0.15 },
-    { name: "Zaurak", ra: 3.973, dec: -13.509, mag: 2.97, ci: 1.59 },
-    { name: "Acamar", ra: 2.972, dec: -40.304, mag: 3.24, ci: 0.13 },
-
-    // --- 🐋 11. CETUS (くじら座) ---
-    { name: "Diphda", ra: 0.726, dec: -17.986, mag: 2.04, ci: 1.02 },
-    { name: "Menkar", ra: 3.037, dec: 4.089, mag: 2.54, ci: 1.63 },
-    { name: "Mira", ra: 2.323, dec: -2.977, mag: 2.00, ci: 1.53 },
-    { name: "Baten Kaitos", ra: 1.733, dec: -10.334, mag: 3.74, ci: 1.29 },
-
-    // --- ✨ OBJECTS (M31, M45, etc.) ---
-    { name: "M31 Andromeda Galaxy", ra: 0.712, dec: 41.269, mag: 3.44, ci: 0.80 },
-    { name: "M45 Pleiades", ra: 3.783, dec: 24.116, mag: 1.6, ci: -0.05 },
-    { name: "M42 Orion Nebula", ra: 5.588, dec: -5.391, mag: 4.0, ci: 0.50 },
-    { name: "Galactic Center", ra: 17.761, dec: -29.007, mag: 5.0, ci: 1.0 }
-];
-// --- 1. VECTOR & QUATERNION ENGINE (v28.3 Guard) ---
+// --- 1. VECTOR & MATRIX ENGINE ---
 const Math3D = {
+    // Basic Quaternion multiply
     qMultiply: (a, b) => {
-        const ax = a[0], ay = a[1], az = a[2], aw = a[3];
-        const bx = b[0], by = b[1], bz = b[2], bw = b[3];
+        const ax=a[0], ay=a[1], az=a[2], aw=a[3];
+        const bx=b[0], by=b[1], bz=b[2], bw=b[3];
         return [
-            ax * bw + aw * bx + ay * bz - az * by,
-            ay * bw + aw * by + az * bx - ax * bz,
-            az * bw + aw * bz + ax * by - ay * bx,
-            aw * bw - ax * bx - ay * by - az * bz
+            ax*bw + aw*bx + ay*bz - az*by,
+            ay*bw + aw*by + az*bx - ax*bz,
+            az*bw + aw*bz + ax*by - ay*bx,
+            aw*bw - ax*bx - ay*by - az*bz
         ];
     },
+    // Axis Angle to Quaternion
     qFromAxisAngle: (axis, angle) => {
-        const halfAngle = angle / 2;
-        const s = Math.sin(halfAngle);
-        return [axis[0] * s, axis[1] * s, axis[2] * s, Math.cos(halfAngle)];
+        const half = angle / 2;
+        const s = Math.sin(half);
+        return [axis[0]*s, axis[1]*s, axis[2]*s, Math.cos(half)];
     },
+    // Matrix from Quaternion
     matFromQ: (q) => {
-        const x = q[0], y = q[1], z = q[2], w = q[3];
-        const x2 = x + x, y2 = y + y, z2 = z + z;
-        const xx = x * x2, xy = x * y2, xz = x * z2;
-        const yy = y * y2, yz = y * z2, zz = z * z2;
-        const wx = w * x2, wy = w * y2, wz = w * z2;
+        const x=q[0], y=q[1], z=q[2], w=q[3];
+        const x2=x+x, y2=y+y, z2=z+z;
+        const xx=x*x2, xy=x*y2, xz=x*z2;
+        const yy=y*y2, yz=y*z2, zz=z*z2;
+        const wx=w*x2, wy=w*y2, wz=w*z2;
         return [
-            1 - (yy + zz), xy - wz, xz + wy, 0,
-            xy + wz, 1 - (xx + zz), yz - wx, 0,
-            xz - wy, yz + wx, 1 - (xx + yy), 0,
+            1-(yy+zz), xy-wz, xz+wy, 0,
+            xy+wz, 1-(xx+zz), yz-wx, 0,
+            xz-wy, yz+wx, 1-(xx+yy), 0,
             0, 0, 0, 1
         ];
     },
+    // Simple Perspective Projection
     project: (vec, viewMat, width, height, fovDeg) => {
+        // Apply view matrix (Rotate vector into camera space)
+        // Note: matrix is column-major usually in WebGL but here we do manual mul.
+        // Let's assume standard row-vector * matrix or matrix * col-vector.
+        // Here we use: x' = x*m0 + y*m4 + z*m8... equivalent to standard math.
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
+        
+        // Clipping: objects behind camera (z > 0 in standard GL, but here -Z is forward?)
+        // Let's assume standard GL camera looking down -Z.
+        // If z >= -0.1, it's behind or too close.
         if (z >= -0.1) return null;
+        
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
-        return { x: x*(scale/-z)+width/2, y: -y*(scale/-z)+height/2, z: z };
+        // Perspective divide
+        return { 
+            x: x * (scale / -z) + width / 2, 
+            y: -y * (scale / -z) + height / 2, // Flip Y for screen coords
+            z: z 
+        };
     }
 };
 
-// --- 2. ASTRO PHYSICS (v28.3 Guard) ---
+// --- 2. ASTRO PHYSICS (Sextant Logic) ---
 const Astro = {
-    // Adjusted to accept time offset in hours
     getLST: (lon, date = new Date(), offsetHours = 0) => {
         const t = date.getTime() + offsetHours * 3600000;
         const d = (t/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
-    getStarVector: (ra, dec, lst) => {
-        const lat = App.state.lat; // Use app state directly
+    // The "Classic" Formula for Horizontal Coords
+    getHorizontalCoords: (ra, dec, lat, lst) => {
         const latRad = lat * Math.PI / 180;
-        const haRad = (lst - ra) * 15 * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
-        
-        let sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
-        // GUARD: Clamp input for asin
-        sinAlt = Math.max(-1, Math.min(1, sinAlt));
+        const haRad = (lst - ra) * 15 * Math.PI / 180; // Hour Angle
+
+        // Altitude
+        let sinAlt = Math.sin(decRad) * Math.sin(latRad) + 
+                     Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
+        sinAlt = Math.max(-1, Math.min(1, sinAlt)); // Clamp
         const altRad = Math.asin(sinAlt);
-        
+
+        // Azimuth
+        // Formula: tan(Az) = sin(H) / ( cos(H)sin(lat) - tan(dec)cos(lat) )? 
+        // Or using cos rule:
         const cosAlt = Math.cos(altRad);
         let azRad;
         
-        // GUARD: Avoid division by zero at Zenith
+        // Avoid singularity at zenith
         if (Math.abs(cosAlt) < 0.001) {
             azRad = 0;
         } else {
-            let cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (cosAlt*Math.cos(latRad));
-            // GUARD: Clamp input for acos
-            cosAz = Math.max(-1, Math.min(1, cosAz));
+            let cosAz = (Math.sin(decRad) - Math.sin(altRad) * Math.sin(latRad)) / 
+                        (cosAlt * Math.cos(latRad));
+            cosAz = Math.max(-1, Math.min(1, cosAz)); // Clamp
             azRad = Math.acos(cosAz);
-            if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
+            
+            // Resolve quadrant using HA
+            if (Math.sin(haRad) > 0) {
+                azRad = 2 * Math.PI - azRad;
+            }
         }
-        
-        return { 
-            x: Math.sin(azRad)*Math.cos(altRad), 
-            y: Math.cos(azRad)*Math.cos(altRad), 
-            z: Math.sin(altRad) 
+        return { alt: altRad, az: azRad };
+    },
+    // Convert Horizontal (Alt/Az) to Cartesian (ENU)
+    // X=East, Y=North, Z=Up
+    getVector: (alt, az) => {
+        // Standard mapping:
+        // x = sin(Az) * cos(Alt)
+        // y = cos(Az) * cos(Alt)
+        // z = sin(Alt)
+        // BUT check Az definition. Usually N=0, E=90.
+        // If Az=0 (N), sin(0)=0, cos(0)=1 -> (0, 1, 0) -> North. Correct.
+        // If Az=90 (E), sin(90)=1, cos(90)=0 -> (1, 0, 0) -> East. Correct.
+        return {
+            x: Math.sin(az) * Math.cos(alt),
+            y: Math.cos(az) * Math.cos(alt),
+            z: Math.sin(alt)
         };
     }
 };
@@ -914,7 +540,7 @@ const Utils = {
         const dict = I18N[App.state.lang];
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (dict[key]) el.innerHTML = dict[key]; // Allow HTML for <br>
+            if (dict[key]) el.innerHTML = dict[key]; 
         });
         ['off', 'name', 'full'].forEach((m, i) => {
             const el = document.getElementById(`mode-${i}`);
@@ -926,7 +552,7 @@ const Utils = {
     }
 };
 
-// --- 4. GUIDE SYSTEM (ACCORDION) ---
+// --- 4. GUIDE SYSTEM ---
 const Guide = {
     target: null,
     toggle: () => {
@@ -994,7 +620,6 @@ const Gate = {
             new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180});
         }
     },
-    // No dedicated unlock needed now, start modal handles it
 };
 
 // --- 6. APP CORE ---
@@ -1004,7 +629,7 @@ const App = {
         lat: 32.698, lon: 128.839, // Goto Islands
         viewMat: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
         manualOffset: 0, reverseAlpha: false,
-        skyRotation: 0, // Should be 0 if aligned correctly
+        skyRotation: 0, 
         mode: 'normal', viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: false },
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
@@ -1014,16 +639,14 @@ const App = {
         isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
         azimuth: 0, timeOffset: 0, compassFiltered: 0,
         
-        // POLARIS ANCHOR STATE
+        // SEXTANT STATE
         setupMode: false,
-        referenceAlpha: null // The sensor value when user clicked "Set Zero"
+        referenceAlpha: 0 // Default 0
     },
 
     init: async () => {
-        // HIDE START MODAL
         document.getElementById('start-modal').classList.add('hidden-force');
         
-        // 1. REQUEST PERMISSION FIRST
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try { 
                 const res = await DeviceOrientationEvent.requestPermission(); 
@@ -1037,10 +660,8 @@ const App = {
             window.addEventListener('deviceorientation', App.handleOri); 
         }
 
-        // 2. SHOW SETUP WIZARD (WAITING FOR SENSOR)
         App.startSetup();
 
-        // 3. Init Camera & Canvas
         document.getElementById('toggle-ar').checked = false;
         App.toggleAR(false);
 
@@ -1056,7 +677,6 @@ const App = {
             });
         }
         
-        // Milky Way
         const mwPoints = [
             {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
             {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
@@ -1092,7 +712,6 @@ const App = {
     },
 
     handleOri: (e) => {
-        // --- 🌊 Simple Smoothing (v25.5 Logic) ---
         const k = 0.15;
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
@@ -1122,7 +741,6 @@ const App = {
             webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
         };
         
-        // Setup Wizard UI Update
         if (App.state.setupMode) {
             const ball = document.getElementById('level-ball');
             const status = document.getElementById('sensor-status');
@@ -1131,7 +749,6 @@ const App = {
             const valDisplay = document.getElementById('compass-val');
             const setupContainer = document.getElementById('setup-wizard');
             
-            // Check if sensor is alive
             if (alpha !== 0 || beta !== 0 || gamma !== 0) {
                 status.innerText = "Sensor: Active OK";
                 status.style.color = "#4ade80"; 
@@ -1141,7 +758,6 @@ const App = {
                 btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
             }
 
-            // LEVEL LOGIC
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
@@ -1153,22 +769,16 @@ const App = {
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
-            // COMPASS LOGIC
-            // In setup mode, we show RAW compass value
             let heading = alpha;
             if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
             
-            // Rotate the ring opposite to phone rotation to simulate "Fixed North"
             ring.style.transform = `rotate(${-heading}deg)`;
             valDisplay.innerText = `${Math.round(heading)}°`;
 
-            // Check Alignment (North ±5 deg)
-            // 0 is North. Range: 355-360 OR 0-5
             const isNorth = (heading > 355 || heading < 5);
-            
             if (isNorth) {
                 setupContainer.classList.add('north-aligned');
-                valDisplay.style.color = "#4ade80"; // Green text
+                valDisplay.style.color = "#4ade80"; 
             } else {
                 setupContainer.classList.remove('north-aligned');
                 valDisplay.style.color = "white";
@@ -1176,36 +786,35 @@ const App = {
         }
     },
 
-    // --- SETUP WIZARD (ALIGNMENT) ---
     startSetup: () => {
         App.state.setupMode = true;
         const wiz = document.getElementById('setup-wizard');
         wiz.classList.remove('hidden-force');
         App.toggleAR(false);
     },
+    
     confirmSetup: () => {
         const { alpha, webkitCompass } = App.state.orientation;
-        
-        // CAPTURE REFERENCE ZERO
         let current = alpha;
         if (webkitCompass != null) current = webkitCompass;
         
-        App.state.referenceAlpha = current;
+        // This is the offset to convert "Current Sensor North" to "True North" (0)
+        // If user says "This is North" (0), and sensor says 10, then Delta is +10.
+        // We will subtract this reference from future readings.
+        App.state.referenceAlpha = current; 
+        
         App.state.setupMode = false;
         App.state.manualOffset = 0;
         
-        // Hide Wizard
         const wiz = document.getElementById('setup-wizard');
         wiz.classList.add('hidden-force');
         
-        // Show swipe hint
         setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 1; }, 500);
         setTimeout(() => { document.getElementById('swipe-hint').style.opacity = 0; }, 4000);
         
         Utils.toast("基準セット完了 (Zero Locked) 🔒");
     },
 
-    // --- UTILS ---
     toggleLocation: () => { 
         if(!App.state.useGPS) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -1269,9 +878,8 @@ const App = {
     setRank: (r,v) => { App.state.ranks[r] = v; Guide.buildList(); },
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); Utils.updateDOMText(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v28.2.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v28.4.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     
-    // --- MANUAL ADJUSTMENT ---
     setupTouch: () => {
         let lx = 0;
         window.addEventListener('touchstart', e => lx = e.touches[0].clientX);
@@ -1291,28 +899,36 @@ App.updateViewMatrix = () => {
 
     const deg2rad = Math.PI / 180;
 
-    // --- POLARIS ANCHOR LOGIC ---
     let currentAlpha = alpha;
-    if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; // iOS Compass
+    if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
 
-    // Use Reference from Setup
-    let ref = App.state.referenceAlpha || 0; // Default 0 if skipped
+    // Apply Reference Offset (Sextant Logic)
+    let ref = App.state.referenceAlpha || 0; 
+    let heading = currentAlpha - ref; // If looking North (ref), heading is 0.
     
-    let heading = currentAlpha - ref;
-    
+    // Add manual tweak
     let totalHeading = heading - App.state.manualOffset; 
     
-    // Standard corrections
     if (App.state.reverseAlpha) totalHeading = -totalHeading;
-    totalHeading += App.state.skyRotation;
-
-    // Convert to Radians
-    const rAlpha = -totalHeading * deg2rad; // Negate because device rotation moves sky opposite
+    
+    // In typical Alt/Az, +Az is East.
+    // Sensor Alpha increases counter-clockwise on Android? No, usually 0=N, 90=E.
+    // iOS 0=N, 90=E.
+    // If phone turns Right (East), heading becomes 90.
+    // We want the sky to rotate LEFT to keep North in center? No, sky stays, camera moves.
+    // Camera Yaw = -Heading.
+    
+    const rAlpha = -totalHeading * deg2rad; 
     const rBeta = beta * deg2rad;
     const rGamma = gamma * deg2rad;
     const rOrient = screenOrient * deg2rad;
 
-    // 1. Device Attitude (YXZ)
+    // Standard Device Orientation Rotation (YXZ order usually)
+    // Actually, usually Z-X-Y for Euler?
+    // Let's use standard web logic: Z (alpha), X (beta), Y (gamma)?
+    // MDN says: Z (alpha), X (beta), Y (gamma).
+    // Here we use YXZ axis-angle composition which is robust.
+    
     const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     
     const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      
     const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    
@@ -1320,10 +936,13 @@ App.updateViewMatrix = () => {
     let qDev = Math3D.qMultiply(qY, qX);
     qDev = Math3D.qMultiply(qDev, qZ);
 
-    // 2. Camera Orientation Fix (Phone back is -Z)
+    // Fix Camera Frame (Phone back is -Z, Screen is +Z?)
+    // Standard GL: Camera looks down -Z.
+    // Phone Frame: +Y is Top of screen, -Z is out of back of screen.
+    // We rotate -90 around X to bring +Y (Top) to -Z (Look).
     const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
     
-    // 3. Screen Rotation
+    // Screen Orientation (Landscape/Portrait)
     const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
 
     let qFinal = Math3D.qMultiply(qDev, qCamFix);
@@ -1345,6 +964,25 @@ App.loop = () => {
         const {ctx, width, height, state} = App;
         ctx.clearRect(0,0,width,height);
         
+        // Draw Horizon Grid (New for v28.4)
+        // Project points at Horizon (Alt=0) for Az 0..360
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        let firstH = null;
+        for(let a=0; a<=360; a+=10) {
+            const rad = a * Math.PI/180;
+            const vec = Astro.getVector(0, rad); // Alt=0
+            const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
+            if (pos) {
+                if (firstH === null) { ctx.moveTo(pos.x, pos.y); firstH = pos; }
+                else ctx.lineTo(pos.x, pos.y);
+            } else {
+                firstH = null; // Break line if behind camera
+            }
+        }
+        ctx.stroke();
+
         const isSolar = state.viewMode === 2;
         if (state.opacity.bg > 0) {
             const alpha = state.isAR ? state.opacity.bg : 1;
@@ -1354,14 +992,16 @@ App.loop = () => {
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
-        // Time Travel Logic
         const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
         
-        // Draw Milky Way
+        // Milky Way
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter'; 
             state.milkyWay.forEach(p => {
-                const vec = Astro.getStarVector(p.ra, p.dec, lst);
+                // Use robust horizontal coords
+                const hc = Astro.getHorizontalCoords(p.ra, p.dec, state.lat, lst);
+                const vec = Astro.getVector(hc.alt, hc.az);
+                
                 const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if (pos) {
                     const size = p.size * (width/1500);
@@ -1376,10 +1016,11 @@ App.loop = () => {
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        // Draw Stars
+        // Stars
         const starPos = {};
         state.stars.forEach(s => {
-            const vec = Astro.getStarVector(s.ra, s.dec, lst);
+            const hc = Astro.getHorizontalCoords(s.ra, s.dec, state.lat, lst);
+            const vec = Astro.getVector(hc.alt, hc.az);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
             if (p) {
                 if(s.name) starPos[s.name] = p;
@@ -1392,7 +1033,7 @@ App.loop = () => {
             }
         });
 
-        // Draw Constellations
+        // Constellations
         ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 2;
         ctx.beginPath();
         const visibleConsts = [];
@@ -1427,7 +1068,8 @@ App.loop = () => {
                     }
                 }
             } else {
-                const vec = Astro.getStarVector(c.centerRA, c.centerDec, lst);
+                const hc = Astro.getHorizontalCoords(c.centerRA, c.centerDec, state.lat, lst);
+                const vec = Astro.getVector(hc.alt, hc.az);
                 const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if(p) {
                     const d = Math.hypot(p.x-width/2, p.y-height/2);
@@ -1483,7 +1125,8 @@ App.loop = () => {
         // Guide Target
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
-            const vec = Astro.getStarVector(t.centerRA, t.centerDec, lst);
+            const hc = Astro.getHorizontalCoords(t.centerRA, t.centerDec, state.lat, lst);
+            const vec = Astro.getVector(hc.alt, hc.az);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
             const lockEl = document.getElementById('lock-on');
             if (p && p.x>50 && p.x<width-50 && p.y>50 && p.y<height-50) {
@@ -1493,7 +1136,7 @@ App.loop = () => {
         }
     } catch (e) {
         console.error(e);
-        // Utils.toast("Error: " + e.message); // Optional: Uncomment to see error on screen
+        // Utils.toast("Error: " + e.message); 
     }
     requestAnimationFrame(App.loop);
 };
