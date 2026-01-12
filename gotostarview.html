@@ -1882,19 +1882,19 @@ const App = {
         App.canvas.width = App.width; 
         App.canvas.height = App.height; 
         
-        // ★ アスペクト比に応じてFOVを調整するロジック
-        // 縦持ち(Portrait): 60度基準
-        // 横持ち(Landscape): 縦が短くなる分、FOVを広げてスケールを維持する
-        
+        // ★ アスペクト比に応じたFOVの最適化
         if (App.width > App.height) {
-            // 横持ちの場合：縦の画角を広げることで、見た目の倍率を合わせる
-            // 45度だと「望遠」すぎて小さく見えるので、逆に「80〜90度」くらいが必要
-            App.state.fov = 85; 
+            // 横持ち (Landscape):
+            // 縦の解像度が低いので、FOVを35度くらいまで「望遠」にしないと、
+            // 星が小さく見えて迫力がなくなります。
+            App.state.fov = 35; 
         } else {
-            // 縦持ちの場合：標準的な60度
+            // 縦持ち (Portrait):
+            // 標準的な60度でOK
             App.state.fov = 60;
         }
     },
+
 
     toggleLocation: () => { 
         if(!App.state.useGPS) {
