@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v25.1 (Aurora Fix)</title>
+    <title>Five Islands Stargazer v25.2 (Aurora Fix Phase 2)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -125,7 +125,7 @@
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
         
-        #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 10px; text-shadow: 1px 1px 0 #000; }
+        #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 11px; text-shadow: 1px 1px 0 #000; }
         
         @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
         .swipe-hint { animation: swipe-anim 2s infinite; }
@@ -137,8 +137,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Logic Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Aurora Fix Phase 2</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -221,11 +221,11 @@
             </div>
 
             <!-- Debug Info (Lower Left) -->
-            <div class="absolute bottom-24 left-4 pointer-events-none opacity-60">
-                <div id="debug-hud" class="text-cyan-300 leading-tight">
-                    <div>AZ: <span id="debug-az">0</span>°</div>
+            <div class="absolute bottom-24 left-4 pointer-events-none opacity-80">
+                <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
+                    <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v25.1 Logic Fix</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v25.2 Phase2</div>
                 </div>
             </div>
 
@@ -246,7 +246,7 @@
         </div>
     </div>
 
-    <!-- 🎯 CALIBRATION MODAL (UPDATED with +90° Button) -->
+    <!-- 🎯 CALIBRATION MODAL (UPDATED with RESET) -->
     <div id="calib-modal" class="interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-xl font-bold text-white mb-2">方位合わせ (Calibration)</h2>
@@ -266,7 +266,7 @@
             <div id="calib-val" class="font-mono text-cyan-400 mb-4 text-2xl font-bold">0°</div>
             
             <!-- Emergency Rotation Controls -->
-            <div class="flex gap-2 mb-6">
+            <div class="flex gap-2 mb-2 w-full justify-center">
                 <button onclick="App.rotateOffset(90)" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-[10px] text-white font-bold border border-white/10">
                     ↻ +90°
                 </button>
@@ -274,6 +274,11 @@
                     ↺ -90°
                 </button>
             </div>
+            <!-- Reset Button -->
+            <button onclick="App.resetOffset()" class="mb-4 px-3 py-2 rounded-lg bg-red-900/50 hover:bg-red-800 text-[10px] text-red-200 font-bold border border-red-500/30">
+                ⚡ RESET (0°)
+            </button>
+            
             <p class="text-[10px] text-slate-500 mb-4 text-center max-w-xs">
                 ※古い機種や他社端末ではセンサー仕様が異なり、90°ズレる場合があります。その場合は上のボタンで調整してください。
             </p>
@@ -301,7 +306,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -309,7 +314,7 @@
         </div>
     </div>
 
-    <!-- ⚙️ SETTINGS MODAL -->
+    <!-- ⚙️ SETTINGS MODAL (Updated) -->
     <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
         <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
             <div class="flex justify-between items-center border-b border-white/10 pb-4">
@@ -367,20 +372,6 @@
                 </div>
             </div>
 
-            <!-- Drift Warning -->
-            <div class="pt-4 border-t border-white/10">
-                <details class="group">
-                    <summary class="flex justify-between items-center cursor-pointer list-none text-yellow-200/80 text-xs font-bold">
-                        <span data-i18n="warn_drift">⚠️ センサーのズレについて</span>
-                        <span class="transition group-open:rotate-180">▼</span>
-                    </summary>
-                    <div class="text-[10px] text-slate-400 mt-2 leading-relaxed bg-black/20 p-2 rounded" data-i18n="warn_drift_desc">
-                        スマホの電子コンパスは、周囲の金属や磁気の影響で数度〜数十度ズレることがあります（ドリフト現象）。<br>
-                        ズレていると感じたら、画面を左右にスワイプして手動で微調整してください。
-                    </div>
-                </details>
-            </div>
-
             <!-- Emergency Axis Fix -->
              <div class="pt-4 border-t border-white/10">
                  <div class="flex items-center justify-between">
@@ -389,6 +380,14 @@
                         <div class="text-[10px] text-slate-400" data-i18n="axis_fix_desc">回転が逆になる場合のみON</div>
                     </div>
                     <input type="checkbox" onchange="App.state.reverseAlpha = this.checked" class="check-box">
+                </div>
+                 <!-- 180 Rotation Fix Switch -->
+                 <div class="flex items-center justify-between mt-2">
+                    <div>
+                        <span class="text-sm font-bold text-yellow-300">🔄 Sky Rotate 180°</span>
+                        <div class="text-[10px] text-slate-400">北にオリオンが見える場合にON</div>
+                    </div>
+                    <input type="checkbox" checked onchange="App.toggleSkyRotation(this.checked)" class="check-box">
                 </div>
             </div>
 
@@ -407,11 +406,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v25.1 (Aurora Logic Fix)
+ * 🌌 FIVE ISLANDS STARGAZER v25.2 (Aurora Fix Phase 2)
  * Changes:
- * - REMOVED the legacy "a -= 270" logic for Android. Now trusts raw sensor.
- * - ADDED +90/-90 Rotate buttons in Calibration for emergency fixes.
- * - UPDATED Calibration instructions for clarity.
+ * - ADDED 180-degree Sky Rotation by default (Fixing the inverted North/South issue).
+ * - ADDED 'Reset' button in Calibration.
+ * - ADDED 'Sky Rotate 180' toggle in Settings.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -806,6 +805,7 @@ const App = {
         lat: 32.698, lon: 128.839, // Goto Islands
         viewMat: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
         manualOffset: 0, reverseAlpha: false,
+        skyRotation: 180, // Default 180 degree rotation for fix
         mode: 'normal', viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
@@ -945,6 +945,16 @@ const App = {
         Utils.toast(`Offset Rotated: ${deg > 0 ? '+' : ''}${deg}°`);
         // We do NOT close the modal, let them adjust more if needed.
     },
+    // NEW: Reset Offset Function
+    resetOffset: () => {
+        App.state.manualOffset = 0;
+        Utils.toast("Offset RESET to 0°");
+    },
+    // NEW: Toggle Sky Rotation
+    toggleSkyRotation: (checked) => {
+        App.state.skyRotation = checked ? 180 : 0;
+        Utils.toast(`Sky Rotation: ${App.state.skyRotation}°`);
+    },
     confirmCalibration: () => {
         // v25.1: Reset Logic based on "Top = North" rule
         const { alpha, webkitCompass } = App.state.orientation;
@@ -984,8 +994,8 @@ const App = {
         // 3. Magnetic Declination Fix
         a -= 7; 
 
-        // 4. Apply Manual Offset for STAR rendering ONLY
-        let starAlpha = a + App.state.manualOffset;
+        // 4. Apply Manual Offset & Sky Rotation for STAR rendering
+        let starAlpha = a + App.state.manualOffset + App.state.skyRotation;
         if (App.state.reverseAlpha) starAlpha = -starAlpha;
 
         // --- Calculate View Matrix for Stars ---
