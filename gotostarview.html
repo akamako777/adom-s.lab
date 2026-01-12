@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v28.2 (Visual Compass)</title>
+    <title>Five Islands Stargazer v28.3 (Polaris Guard)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -93,7 +93,7 @@
             position: absolute; font-weight: bold; font-family: 'Share Tech Mono', monospace; font-size: 16px;
             color: #94a3b8; width: 20px; height: 20px; text-align: center; line-height: 20px;
         }
-        .mark-n { top: 5px; left: 50%; transform: translateX(-50%); color: #ef4444; } /* North Red */
+        .mark-n { top: 5px; left: 50%; transform: translateX(-50%); color: #ef4444; }
         .mark-e { right: 5px; top: 50%; transform: translateY(-50%); }
         .mark-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
         .mark-w { left: 5px; top: 50%; transform: translateY(-50%); }
@@ -112,7 +112,6 @@
             transform: translate(-50%, -50%); transition: all 0.1s linear;
         }
         
-        /* North Indicator Arrow */
         .north-arrow {
             position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
             width: 0; height: 0; 
@@ -120,7 +119,6 @@
             border-bottom: 20px solid #ef4444; opacity: 0.3; transition: opacity 0.3s;
         }
         
-        /* Active State */
         .north-aligned .north-arrow { opacity: 1; border-bottom-color: #22c55e; }
         .north-aligned .compass-ring { border-color: #22c55e; border-width: 4px; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
         .level-ok .level-ball { background: #22c55e; }
@@ -183,8 +181,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.2</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Visual Compass</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.3</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Polaris Guard</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -259,7 +257,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v28.2 Visual Compass</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v28.3 Guard</div>
                 </div>
             </div>
 
@@ -298,18 +296,13 @@
             
             <!-- COMPASS VISUALIZER -->
             <div id="compass-viz" class="compass-container">
-                <!-- North Arrow Indicator (Fixed to top) -->
                 <div class="north-arrow"></div>
-                
-                <!-- Rotating Ring (Controlled by Sensor) -->
                 <div id="compass-ring" class="compass-ring">
                     <div class="compass-mark mark-n">N</div>
                     <div class="compass-mark mark-e">E</div>
                     <div class="compass-mark mark-s">S</div>
                     <div class="compass-mark mark-w">W</div>
                 </div>
-                
-                <!-- Level Bubble (Center) -->
                 <div class="level-bubble">
                     <div class="level-target"></div>
                     <div id="level-ball" class="level-ball"></div>
@@ -343,11 +336,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.2</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.3</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Visual Compass System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Polaris Guard System</p>
         </div>
     </div>
 
@@ -441,12 +434,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v28.2 (Visual Compass)
+ * 🌌 FIVE ISLANDS STARGAZER v28.3 (Polaris Guard)
  * ==========================================
  * Changelog:
- * - VISUAL COMPASS: Added a rotating ring in Setup Wizard to show current heading.
- * - NORTH LOCK: Added visual feedback (Green Highlight) when North (0 deg) is aligned.
- * - SENSOR FLOW: Improved start sequence logic.
+ * - MATH GUARD: Added strict clamping to all Math.asin/acos calls to prevent NaN crashes.
+ * - ERROR HANDLER: Wrapped App.loop in try-catch to prevent full freeze on error.
+ * - VISUAL COMPASS: Kept v28.2 features.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -828,7 +821,7 @@ const STARS_DATA = [
     { name: "M42 Orion Nebula", ra: 5.588, dec: -5.391, mag: 4.0, ci: 0.50 },
     { name: "Galactic Center", ra: 17.761, dec: -29.007, mag: 5.0, ci: 1.0 }
 ];
-// --- 1. VECTOR & QUATERNION ENGINE ---
+// --- 1. VECTOR & QUATERNION ENGINE (v28.3 Guard) ---
 const Math3D = {
     qMultiply: (a, b) => {
         const ax = a[0], ay = a[1], az = a[2], aw = a[3];
@@ -868,7 +861,7 @@ const Math3D = {
     }
 };
 
-// --- 2. ASTRO PHYSICS ---
+// --- 2. ASTRO PHYSICS (v28.3 Guard) ---
 const Astro = {
     // Adjusted to accept time offset in hours
     getLST: (lon, date = new Date(), offsetHours = 0) => {
@@ -876,16 +869,36 @@ const Astro = {
         const d = (t/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
-    getStarVector: (ra, dec, lat, lst) => {
+    getStarVector: (ra, dec, lst) => {
+        const lat = App.state.lat; // Use app state directly
+        const latRad = lat * Math.PI / 180;
         const haRad = (lst - ra) * 15 * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
-        const latRad = lat * Math.PI / 180;
-        const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
+        
+        let sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
+        // GUARD: Clamp input for asin
+        sinAlt = Math.max(-1, Math.min(1, sinAlt));
         const altRad = Math.asin(sinAlt);
-        const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
-        let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
-        if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
-        return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
+        
+        const cosAlt = Math.cos(altRad);
+        let azRad;
+        
+        // GUARD: Avoid division by zero at Zenith
+        if (Math.abs(cosAlt) < 0.001) {
+            azRad = 0;
+        } else {
+            let cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (cosAlt*Math.cos(latRad));
+            // GUARD: Clamp input for acos
+            cosAz = Math.max(-1, Math.min(1, cosAz));
+            azRad = Math.acos(cosAz);
+            if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
+        }
+        
+        return { 
+            x: Math.sin(azRad)*Math.cos(altRad), 
+            y: Math.cos(azRad)*Math.cos(altRad), 
+            z: Math.sin(altRad) 
+        };
     }
 };
 
@@ -1327,155 +1340,160 @@ App.updateViewMatrix = () => {
 };
 
 App.loop = () => {
-    App.updateViewMatrix();
-    const {ctx, width, height, state} = App;
-    ctx.clearRect(0,0,width,height);
-    
-    const isSolar = state.viewMode === 2;
-    if (state.opacity.bg > 0) {
-        const alpha = state.isAR ? state.opacity.bg : 1;
-        const grad = ctx.createLinearGradient(0,0,0,height);
-        if (isSolar) { grad.addColorStop(0, `rgba(135,206,235,${alpha})`); grad.addColorStop(1, `rgba(224,247,250,${alpha})`); }
-        else { grad.addColorStop(0, `rgba(2,6,23,${alpha})`); grad.addColorStop(1, `rgba(15,23,42,${alpha})`); }
-        ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
-    }
-
-    // Time Travel Logic
-    const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
-    
-    // Draw Milky Way
-    if (!isSolar && state.opacity.milky > 0) {
-        ctx.globalCompositeOperation = 'lighter'; 
-        state.milkyWay.forEach(p => {
-            const vec = Astro.getStarVector(p.ra, p.dec, state.lat, lst);
-            const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
-            if (pos) {
-                const size = p.size * (width/1500);
-                const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
-                const a = p.alpha * state.opacity.milky;
-                grad.addColorStop(0, `rgba(${p.r},${p.g},${p.b},${a})`);
-                grad.addColorStop(1, `rgba(${p.r},${p.g},${p.b},0)`);
-                ctx.fillStyle = grad;
-                ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
-            }
-        });
-        ctx.globalCompositeOperation = 'source-over';
-    }
-
-    // Draw Stars
-    const starPos = {};
-    state.stars.forEach(s => {
-        const vec = Astro.getStarVector(s.ra, s.dec, state.lat, lst);
-        const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
-        if (p) {
-            if(s.name) starPos[s.name] = p;
-            let col = s.isProc ? {r:255,g:255,b:255} : Utils.bvToColor(s.ci||0.5);
-            let size = s.isProc ? Math.random()*1 : Math.max(0.8, (3.5-s.mag)*1.2);
-            let alpha = (s.mag<2?1.0:0.6);
-            if (isSolar) { size*=0.8; alpha=0.7; col={r:0,g:0,b:0}; }
-            ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${alpha})`;
-            ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
-        }
-    });
-
-    // Draw Constellations
-    ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 2;
-    ctx.beginPath();
-    const visibleConsts = [];
-    const isInfoOn = state.infoMode > 0;
-    
-    CONSTELLATION_DB.forEach(c => {
-        if (!state.ranks[c.rank]) return;
-        const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
-        if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 3; }
+    try {
+        App.updateViewMatrix();
+        const {ctx, width, height, state} = App;
+        ctx.clearRect(0,0,width,height);
         
-        let highestY = height;
-        let crownX = 0;
-        let hasVisibleStars = false;
+        const isSolar = state.viewMode === 2;
+        if (state.opacity.bg > 0) {
+            const alpha = state.isAR ? state.opacity.bg : 1;
+            const grad = ctx.createLinearGradient(0,0,0,height);
+            if (isSolar) { grad.addColorStop(0, `rgba(135,206,235,${alpha})`); grad.addColorStop(1, `rgba(224,247,250,${alpha})`); }
+            else { grad.addColorStop(0, `rgba(2,6,23,${alpha})`); grad.addColorStop(1, `rgba(15,23,42,${alpha})`); }
+            ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
+        }
 
-        if (c.lines && c.lines.length > 0) {
-            let cx=0, cy=0, n=0;
-            for(let i=0; i<c.lines.length; i+=2) {
-                const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
-                if(p1 && p2) { 
-                    ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
-                    cx+=(p1.x+p2.x)/2; cy+=(p1.y+p2.y)/2; n++;
-                    if(p1.y < highestY) { highestY = p1.y; crownX = p1.x; }
-                    if(p2.y < highestY) { highestY = p2.y; crownX = p2.x; }
+        // Time Travel Logic
+        const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
+        
+        // Draw Milky Way
+        if (!isSolar && state.opacity.milky > 0) {
+            ctx.globalCompositeOperation = 'lighter'; 
+            state.milkyWay.forEach(p => {
+                const vec = Astro.getStarVector(p.ra, p.dec, lst);
+                const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
+                if (pos) {
+                    const size = p.size * (width/1500);
+                    const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
+                    const a = p.alpha * state.opacity.milky;
+                    grad.addColorStop(0, `rgba(${p.r},${p.g},${p.b},${a})`);
+                    grad.addColorStop(1, `rgba(${p.r},${p.g},${p.b},0)`);
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
                 }
-            }
-            if(n>0) {
-                cx/=n; cy/=n;
-                const d = Math.hypot(cx-width/2, cy-height/2);
-                if(c.rank === 1 || d < 200) {
-                    visibleConsts.push({c, x:cx, y:cy, dist:d, crownX, crownY: highestY});
-                    hasVisibleStars = true;
-                }
-            }
-        } else {
-            const vec = Astro.getStarVector(c.centerRA, c.centerDec, state.lat, lst);
+            });
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Draw Stars
+        const starPos = {};
+        state.stars.forEach(s => {
+            const vec = Astro.getStarVector(s.ra, s.dec, lst);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
-            if(p) {
-                const d = Math.hypot(p.x-width/2, p.y-height/2);
-                if(d < 200 || isTarget) {
-                    visibleConsts.push({c, x:p.x, y:p.y, dist:d, crownX: p.x, crownY: p.y});
-                    hasVisibleStars = true;
-                    if(isInfoOn) { ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); }
+            if (p) {
+                if(s.name) starPos[s.name] = p;
+                let col = s.isProc ? {r:255,g:255,b:255} : Utils.bvToColor(s.ci||0.5);
+                let size = s.isProc ? Math.random()*1 : Math.max(0.8, (3.5-s.mag)*1.2);
+                let alpha = (s.mag<2?1.0:0.6);
+                if (isSolar) { size*=0.8; alpha=0.7; col={r:0,g:0,b:0}; }
+                ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${alpha})`;
+                ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
+            }
+        });
+
+        // Draw Constellations
+        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        const visibleConsts = [];
+        const isInfoOn = state.infoMode > 0;
+        
+        CONSTELLATION_DB.forEach(c => {
+            if (!state.ranks[c.rank]) return;
+            const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
+            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 3; }
+            
+            let highestY = height;
+            let crownX = 0;
+            let hasVisibleStars = false;
+
+            if (c.lines && c.lines.length > 0) {
+                let cx=0, cy=0, n=0;
+                for(let i=0; i<c.lines.length; i+=2) {
+                    const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
+                    if(p1 && p2) { 
+                        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
+                        cx+=(p1.x+p2.x)/2; cy+=(p1.y+p2.y)/2; n++;
+                        if(p1.y < highestY) { highestY = p1.y; crownX = p1.x; }
+                        if(p2.y < highestY) { highestY = p2.y; crownX = p2.x; }
+                    }
+                }
+                if(n>0) {
+                    cx/=n; cy/=n;
+                    const d = Math.hypot(cx-width/2, cy-height/2);
+                    if(c.rank === 1 || d < 200) {
+                        visibleConsts.push({c, x:cx, y:cy, dist:d, crownX, crownY: highestY});
+                        hasVisibleStars = true;
+                    }
+                }
+            } else {
+                const vec = Astro.getStarVector(c.centerRA, c.centerDec, lst);
+                const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
+                if(p) {
+                    const d = Math.hypot(p.x-width/2, p.y-height/2);
+                    if(d < 200 || isTarget) {
+                        visibleConsts.push({c, x:p.x, y:p.y, dist:d, crownX: p.x, crownY: p.y});
+                        hasVisibleStars = true;
+                        if(isInfoOn) { ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); }
+                    }
                 }
             }
-        }
-        
-        if (hasVisibleStars && isInfoOn) {
-                ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "rgba(255,255,255,0.7)");
-                ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
-                const tName = state.lang==='en' ? c.en : c.name;
-                const centerConst = visibleConsts[visibleConsts.length-1];
-                ctx.fillText(tName, centerConst.x, centerConst.y);
-        }
-        if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.6)"; ctx.lineWidth = 2; }
-    });
-    ctx.stroke();
-
-    // Smart Bubble
-    const bubble = document.getElementById('smart-bubble');
-    if (state.infoMode === 2 && visibleConsts.length > 0) { 
-        visibleConsts.sort((a,b) => a.dist - b.dist);
-        const target = visibleConsts[0];
-        const bx = Math.min(Math.max(target.crownX, 100), width-100);
-        const by = Math.max(target.crownY, 60);
-        if (target.dist < 150) {
-            document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
-            const dict = I18N[state.lang];
-            let tag = dict.constellation;
-            if(target.c.rank === 1) tag = dict.famous_const;
-            if(target.c.rank === 4) tag = dict.star_gal; 
-            document.getElementById('bubble-tag').innerText = tag;
-            document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.desc_en : target.c.desc;
-            bubble.style.left = bx + 'px'; bubble.style.top = by + 'px'; bubble.style.opacity = 1;
-        } else { bubble.style.opacity = 0; }
-    } else { bubble.style.opacity = 0; }
-
-    // Meteors
-    if (state.meteorEnabled && !isSolar) {
-        if (Math.random() < 0.01) state.meteors.push({x: Math.random()*width, y: Math.random()*height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1});
-        ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
-        state.meteors = state.meteors.filter(m => {
-            ctx.globalAlpha = m.life; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*4, m.y-m.vy*4); ctx.stroke();
-            m.x+=m.vx; m.y+=m.vy; m.life-=0.04; return m.life>0;
+            
+            if (hasVisibleStars && isInfoOn) {
+                    ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "rgba(255,255,255,0.7)");
+                    ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
+                    const tName = state.lang==='en' ? c.en : c.name;
+                    const centerConst = visibleConsts[visibleConsts.length-1];
+                    ctx.fillText(tName, centerConst.x, centerConst.y);
+            }
+            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.6)"; ctx.lineWidth = 2; }
         });
-        ctx.globalAlpha = 1;
-    }
+        ctx.stroke();
 
-    // Guide Target
-    if (state.mode === 'guide' && Guide.target) {
-        const t = Guide.target;
-        const vec = Astro.getStarVector(t.centerRA, t.centerDec, state.lat, lst);
-        const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
-        const lockEl = document.getElementById('lock-on');
-        if (p && p.x>50 && p.x<width-50 && p.y>50 && p.y<height-50) {
-            lockEl.style.opacity = 1; lockEl.style.left = p.x + 'px'; lockEl.style.top = p.y + 'px';
-            document.getElementById('nav-msg').style.transform = `translate(0,0)`;
-        } else { lockEl.style.opacity = 0; }
+        // Smart Bubble
+        const bubble = document.getElementById('smart-bubble');
+        if (state.infoMode === 2 && visibleConsts.length > 0) { 
+            visibleConsts.sort((a,b) => a.dist - b.dist);
+            const target = visibleConsts[0];
+            const bx = Math.min(Math.max(target.crownX, 100), width-100);
+            const by = Math.max(target.crownY, 60);
+            if (target.dist < 150) {
+                document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
+                const dict = I18N[state.lang];
+                let tag = dict.constellation;
+                if(target.c.rank === 1) tag = dict.famous_const;
+                if(target.c.rank === 4) tag = dict.star_gal; 
+                document.getElementById('bubble-tag').innerText = tag;
+                document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.desc_en : target.c.desc;
+                bubble.style.left = bx + 'px'; bubble.style.top = by + 'px'; bubble.style.opacity = 1;
+            } else { bubble.style.opacity = 0; }
+        } else { bubble.style.opacity = 0; }
+
+        // Meteors
+        if (state.meteorEnabled && !isSolar) {
+            if (Math.random() < 0.01) state.meteors.push({x: Math.random()*width, y: Math.random()*height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1});
+            ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
+            state.meteors = state.meteors.filter(m => {
+                ctx.globalAlpha = m.life; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*4, m.y-m.vy*4); ctx.stroke();
+                m.x+=m.vx; m.y+=m.vy; m.life-=0.04; return m.life>0;
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Guide Target
+        if (state.mode === 'guide' && Guide.target) {
+            const t = Guide.target;
+            const vec = Astro.getStarVector(t.centerRA, t.centerDec, lst);
+            const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
+            const lockEl = document.getElementById('lock-on');
+            if (p && p.x>50 && p.x<width-50 && p.y>50 && p.y<height-50) {
+                lockEl.style.opacity = 1; lockEl.style.left = p.x + 'px'; lockEl.style.top = p.y + 'px';
+                document.getElementById('nav-msg').style.transform = `translate(0,0)`;
+            } else { lockEl.style.opacity = 0; }
+        }
+    } catch (e) {
+        console.error(e);
+        // Utils.toast("Error: " + e.message); // Optional: Uncomment to see error on screen
     }
     requestAnimationFrame(App.loop);
 };
