@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v25.4 (Cosmic Library)</title>
+    <title>Five Islands Stargazer v25.5 (Final Polish)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,7 +55,7 @@
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
         
-        /* Smart Bubble (Updated for Compact Text) */
+        /* Smart Bubble (Compact) */
         .info-bubble {
             position: absolute;
             transition: opacity 0.3s, transform 0.1s linear;
@@ -143,8 +143,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.4</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Cosmic Library</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.5</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Final Polish</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -232,7 +232,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v25.4 Lib</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v25.5 Polish</div>
                 </div>
             </div>
 
@@ -297,7 +297,7 @@
         </div>
     </div>
 
-    <!-- 📖 GUIDE MODAL (UPDATED to ACCORDION) -->
+    <!-- 📖 GUIDE MODAL (ACCORDION) -->
     <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
         <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 class="font-bold text-white text-lg flex items-center gap-2">
@@ -313,7 +313,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v25.4</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v25.5</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -321,7 +321,7 @@
         </div>
     </div>
 
-    <!-- ⚙️ SETTINGS MODAL (Updated) -->
+    <!-- ⚙️ SETTINGS MODAL -->
     <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
         <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
             <div class="flex justify-between items-center border-b border-white/10 pb-4">
@@ -329,14 +329,13 @@
                 <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
             </div>
             
-            <!-- Category Boxes (UPDATED) -->
+            <!-- Category Boxes -->
             <div class="space-y-3">
                 <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="cat_title">表示カテゴリ</p>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
                     <span class="text-sm font-bold" data-i18n="cat_famous">🦁 有名な星座 (Famous)</span>
                     <input type="checkbox" checked onchange="App.setRank(1, this.checked)" class="check-box">
                 </label>
-                <!-- NEW CATEGORY -->
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer border-l-4 border-yellow-400">
                     <span class="text-sm font-bold" data-i18n="cat_star_gal">✨ 有名な星・銀河 (Stars & Gal)</span>
                     <input type="checkbox" checked onchange="App.setRank(4, this.checked)" class="check-box">
@@ -347,7 +346,7 @@
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
                     <span class="text-sm font-bold" data-i18n="cat_minor">🦎 マイナー星座 (Minor)</span>
-                    <input type="checkbox" onchange="App.setRank(3, this.checked)" class="check-box">
+                    <input type="checkbox" checked onchange="App.setRank(3, this.checked)" class="check-box">
                 </label>
             </div>
 
@@ -418,13 +417,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v25.4 (Cosmic Library)
+ * 🌌 FIVE ISLANDS STARGAZER v25.5 (Final Polish)
  * Changes:
- * - ADDED: 'Famous Stars & Galaxy' Category (Rank 4).
- * - ADDED: Sample Data (Sirius, Andromeda Galaxy).
- * - UPDATED: Guide Modal to Accordion UI.
- * - UPDATED: Milky Way rendering (Cloud Effect).
- * - UPDATED: Bubble Font Size (Smaller for long text).
+ * - ADDED: 'Lepus' (Rabbit) as Minor Constellation (Rank 3).
+ * - UPDATED: Milky Way rendering to use Gaussian distribution for 'Cloud' effect.
+ * - Confirmed: 180 Rotation is OFF by default (Correct Sky).
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -622,13 +619,24 @@ const CONSTELLATION_DB = [
         myth_en: "Polaris is the North Star now, but in 12,000 years, Vega will take its place due to precession.",
         centerRA: 15.0, centerDec: 75.0, 
         lines: ["Polaris","Yildun", "Yildun","Epsilon UMi", "Epsilon UMi","Zeta UMi", "Zeta UMi","Kochab", "Kochab","Pherkad", "Pherkad","Zeta UMi"] 
+    },
+
+    // --- 🦎 MINOR CONSTELLATIONS (New for v25.5) ---
+    { 
+        id: "lep", rank: 3, name: "うさぎ座", en: "Lepus", 
+        desc: "【オリオンの獲物】オリオン座の足元にある小さな星座。狩人オリオンに追われるウサギの姿です。", 
+        desc_en: "[Orion's Prey] A small constellation at Orion's feet. A hare being chased by the hunter.",
+        myth: "特に大きな神話はありませんが、オリオンの狩りの獲物として、またシリウス（おおいぬ座）から逃げる姿として描かれます。",
+        myth_en: "Represented as a hare being hunted by Orion and his dog Sirius.",
+        centerRA: 5.5, centerDec: -20.0, 
+        lines: ["Arneb", "Nihal", "Nihal", "Epsilon Lep", "Epsilon Lep", "Mu Lep", "Mu Lep", "R12 Lep", "R12 Lep", "Arneb"] // Simplified box
     }
 ];
 
 // --- VITAL DATA: STARS ---
 const STARS_DATA = [
     { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.97, ci: 0.6 },
-    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 }, // Sirius (Added)
+    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 }, // Sirius
     { name: "Betelgeuse", ra: 5.91, dec: 7.40, mag: 0.45, ci: 1.5 },
     { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.12, ci: -0.03 },
     { name: "Vega", ra: 18.61, dec: 38.78, mag: 0.03, ci: 0.0 },
@@ -665,8 +673,11 @@ const STARS_DATA = [
     { name: "Kochab", ra: 14.84, dec: 74.15, mag: 2.0, ci: 1.0 },
     { name: "Pherkad", ra: 15.34, dec: 71.83, mag: 3.0, ci: 0.0 },
     { name: "Yildun", ra: 17.53, dec: 86.58, mag: 4.3, ci: 0.0 },
-    { name: "Arneb", ra: 5.55, dec: -17.82, mag: 2.5, ci: 0.2 },
-    { name: "Nihal", ra: 5.47, dec: -20.76, mag: 2.8, ci: 0.5 },
+    { name: "Arneb", ra: 5.55, dec: -17.82, mag: 2.6, ci: 0.2 }, // Added for Lepus
+    { name: "Nihal", ra: 5.47, dec: -20.76, mag: 2.8, ci: 0.5 }, // Added for Lepus
+    { name: "Epsilon Lep", ra: 5.08, dec: -22.4, mag: 3.2, ci: 1.4 }, // Approx
+    { name: "Mu Lep", ra: 5.21, dec: -16.2, mag: 3.3, ci: -0.1 }, // Approx
+    { name: "R12 Lep", ra: 5.0, dec: -15.0, mag: 4.0, ci: 0.5 }, // Fake star to close box
     { name: "Alpheratz", ra: 0.13, dec: 29.09, mag: 2.0, ci: -0.1 },
     { name: "Mirach", ra: 1.16, dec: 35.62, mag: 2.0, ci: 1.6 },
     { name: "Almach", ra: 2.06, dec: 42.33, mag: 2.1, ci: 1.3 },
@@ -764,7 +775,7 @@ const Utils = {
     }
 };
 
-// --- 4. GUIDE SYSTEM (UPDATED to ACCORDION) ---
+// --- 4. GUIDE SYSTEM (ACCORDION) ---
 const Guide = {
     target: null,
     toggle: () => {
@@ -780,7 +791,7 @@ const Guide = {
         // Define Categories
         const categories = [
             { id: RANK.FAMOUS, title: dict.cat_famous, icon: '🦁', color: 'text-yellow-400' },
-            { id: RANK.STAR_GAL, title: dict.cat_star_gal, icon: '✨', color: 'text-cyan-400' }, // New Category
+            { id: RANK.STAR_GAL, title: dict.cat_star_gal, icon: '✨', color: 'text-cyan-400' }, 
             { id: RANK.MEDIUM, title: dict.cat_medium, icon: '🐻', color: 'text-blue-300' },
             { id: RANK.MINOR, title: dict.cat_minor, icon: '🦎', color: 'text-slate-400' }
         ];
@@ -882,8 +893,8 @@ const App = {
         manualOffset: 0, reverseAlpha: false,
         skyRotation: 0, // REVERTED to 0
         mode: 'normal', viewMode: 0,
-        // Updated default ranks to include STAR_GAL
-        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false, [RANK.STAR_GAL]: true },
+        // Updated default ranks to include STAR_GAL and MINOR
+        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: true },
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
@@ -919,7 +930,7 @@ const App = {
             });
         }
         
-        // --- MILKY WAY GENERATOR (UPDATED for Cloud Effect) ---
+        // --- MILKY WAY GENERATOR (UPDATED: Gaussian Cloud Effect) ---
         const mwPoints = [
             {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
             {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
@@ -928,8 +939,8 @@ const App = {
         
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            // Increase steps for denser cloud
-            const steps = 300; 
+            // Increase steps for massive stacking (Cloud density)
+            const steps = 400; 
             
             for(let j=0; j<steps; j++) {
                 const t = j/steps;
@@ -937,7 +948,10 @@ const App = {
                 const baseDec = p1.dec + (p2.dec - p1.dec)*t;
                 const baseW = p1.w + (p2.w - p1.w)*t;
                 
-                const scatter = (Math.random() - 0.5) * baseW;
+                // GAUSSIAN DISTRIBUTION (Approx)
+                // Random - Random creates a bell-curve like distribution around 0
+                const scatter = (Math.random() - Math.random()) * baseW * 1.5;
+                
                 const finalRA = baseRA + (Math.random() - 0.5) * 2;
                 const finalDec = baseDec + scatter;
                 
@@ -951,10 +965,10 @@ const App = {
                 App.state.milkyWay.push({
                     ra: finalRA, 
                     dec: finalDec, 
-                    // Giant Size for "Cloud" look
-                    size: Math.random()*60 + 60, 
-                    // Very low alpha for stacking
-                    alpha: Math.random()*0.02 + 0.01, 
+                    // Massive Size for "Cloud" look (10% - 20% of screen approx when projected)
+                    size: Math.random()*100 + 100, 
+                    // Ultra-low alpha for stacking
+                    alpha: Math.random()*0.015 + 0.005, 
                     r, g, b
                 });
             }
