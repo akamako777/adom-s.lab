@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v28.1 (Polaris Core)</title>
+    <title>Five Islands Stargazer v28.2 (Visual Compass)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -80,19 +80,49 @@
         }
         #setup-wizard.hidden-force { opacity: 0; visibility: hidden; pointer-events: none; }
         
+        /* COMPASS RING STYLES */
+        .compass-container {
+            position: relative; width: 220px; height: 220px; margin-bottom: 20px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .compass-ring {
+            position: absolute; inset: 0; border: 2px solid #475569; border-radius: 50%;
+            transition: transform 0.1s ease-out, border-color 0.3s;
+        }
+        .compass-mark {
+            position: absolute; font-weight: bold; font-family: 'Share Tech Mono', monospace; font-size: 16px;
+            color: #94a3b8; width: 20px; height: 20px; text-align: center; line-height: 20px;
+        }
+        .mark-n { top: 5px; left: 50%; transform: translateX(-50%); color: #ef4444; } /* North Red */
+        .mark-e { right: 5px; top: 50%; transform: translateY(-50%); }
+        .mark-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .mark-w { left: 5px; top: 50%; transform: translateY(-50%); }
+        
         .level-bubble {
-            width: 180px; height: 180px; border: 4px solid #475569; border-radius: 50%;
-            position: relative; overflow: hidden; background: #0f172a; margin-bottom: 20px;
+            width: 140px; height: 140px; border: 4px solid #334155; border-radius: 50%;
+            position: relative; overflow: hidden; background: #0f172a; z-index: 10;
         }
         .level-target {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 20px; height: 20px; border: 2px solid #22d3ee; border-radius: 50%; z-index: 10;
         }
         .level-ball {
-            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px;
+            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px;
             background: #ef4444; border-radius: 50%; opacity: 0.8;
             transform: translate(-50%, -50%); transition: all 0.1s linear;
         }
+        
+        /* North Indicator Arrow */
+        .north-arrow {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-bottom: 20px solid #ef4444; opacity: 0.3; transition: opacity 0.3s;
+        }
+        
+        /* Active State */
+        .north-aligned .north-arrow { opacity: 1; border-bottom-color: #22c55e; }
+        .north-aligned .compass-ring { border-color: #22c55e; border-width: 4px; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
         .level-ok .level-ball { background: #22c55e; }
 
         /* 🚪 PC Gate */
@@ -153,15 +183,14 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Polaris Core</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v28.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Visual Compass</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed font-medium mb-8">
                 モバイルデバイス専用です。<br>QRコードをスキャンしてください。
             </p>
-            <!-- Debug Button Removed -->
         </div>
     </div>
 
@@ -230,7 +259,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v28.1 Polaris Core</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v28.2 Visual Compass</div>
                 </div>
             </div>
 
@@ -253,7 +282,7 @@
         </div>
     </div>
 
-    <!-- 🪄 SETUP WIZARD (Polaris Anchor) -->
+    <!-- 🪄 SETUP WIZARD (Visual Compass) -->
     <div id="setup-wizard" class="hidden-force interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-2xl font-black text-white mb-2 tracking-tighter">ALIGNMENT</h2>
@@ -261,23 +290,38 @@
             
             <div class="bg-slate-800/80 p-4 rounded-xl border border-white/10 mb-6 w-full">
                 <ol class="text-xs text-slate-300 space-y-3 list-decimal list-inside text-left">
-                    <li><b class="text-white">スマホを水平</b>に持ってください。</li>
-                    <li><b class="text-cyan-400">上端を北(N)</b>に向けてください。</li>
-                    <li><b class="text-yellow-400">基準セット</b>を押すと、<br>そこが宇宙の中心（北）になります。</li>
+                    <li><b class="text-white">スマホを水平</b>にし、泡を中心に。</li>
+                    <li><b class="text-cyan-400">コンパスの「N」</b>を上に合わせる。</li>
+                    <li>枠が<b class="text-green-400">緑色</b>になったらセット！</li>
                 </ol>
             </div>
             
-            <div class="level-bubble">
-                <div class="level-target"></div>
-                <div id="level-ball" class="level-ball"></div>
+            <!-- COMPASS VISUALIZER -->
+            <div id="compass-viz" class="compass-container">
+                <!-- North Arrow Indicator (Fixed to top) -->
+                <div class="north-arrow"></div>
+                
+                <!-- Rotating Ring (Controlled by Sensor) -->
+                <div id="compass-ring" class="compass-ring">
+                    <div class="compass-mark mark-n">N</div>
+                    <div class="compass-mark mark-e">E</div>
+                    <div class="compass-mark mark-s">S</div>
+                    <div class="compass-mark mark-w">W</div>
+                </div>
+                
+                <!-- Level Bubble (Center) -->
+                <div class="level-bubble">
+                    <div class="level-target"></div>
+                    <div id="level-ball" class="level-ball"></div>
+                </div>
             </div>
-            <div id="sensor-status" class="text-[10px] font-mono text-slate-400 mb-2">Sensor: Waiting...</div>
             
-            <p class="text-[10px] text-slate-500 mb-4 text-center max-w-xs">
-                ※この操作でセンサーのズレを全てリセットし、<br>現在の向きを強制的に「北」として定義します。
-            </p>
+            <div class="flex flex-col items-center mb-4">
+                <div id="compass-val" class="text-3xl font-mono font-bold text-white">---°</div>
+                <div id="sensor-status" class="text-[10px] font-mono text-slate-400">Sensor: Waiting...</div>
+            </div>
             
-            <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-3/4 transition-all duration-300">
+            <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-3/4 transition-all duration-300 transform active:scale-95">
                 センサー準備中...
             </button>
         </div>
@@ -299,11 +343,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v28.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Polaris Anchor System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Visual Compass System</p>
         </div>
     </div>
 
@@ -397,13 +441,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v28.1 (Fix & Polish)
+ * 🌌 FIVE ISLANDS STARGAZER v28.2 (Visual Compass)
  * ==========================================
  * Changelog:
- * - FIX: Setup Wizard now waits for Sensor Permission before appearing.
- * - FIX: Setup Wizard correctly hides after confirmation (visibility check).
- * - UI: Added "Sensor Status" to Setup Wizard.
- * - CLEANUP: Removed PC Debug button.
+ * - VISUAL COMPASS: Added a rotating ring in Setup Wizard to show current heading.
+ * - NORTH LOCK: Added visual feedback (Green Highlight) when North (0 deg) is aligned.
+ * - SENSOR FLOW: Improved start sequence logic.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -825,41 +868,24 @@ const Math3D = {
     }
 };
 
-// --- 2. ASTRO PHYSICS (Polaris Core) ---
+// --- 2. ASTRO PHYSICS ---
 const Astro = {
+    // Adjusted to accept time offset in hours
     getLST: (lon, date = new Date(), offsetHours = 0) => {
         const t = date.getTime() + offsetHours * 3600000;
         const d = (t/1000 - 946727935.816) / 86400;
         return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
     },
-    // Modified: Returns vector directly in Celestial Frame (Z = Polaris)
-    getStarVector: (ra, dec, lst) => {
-        // Basic equatorial coordinates (Z = North Pole, X = Vernal Equinox)
+    getStarVector: (ra, dec, lat, lst) => {
         const haRad = (lst - ra) * 15 * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
-        
-        // This vector assumes Earth's axis is Z.
-        // We need to rotate it based on Latitude to get Local Horizontal coordinates.
-        // BUT, since we are anchoring to Polaris, we might simplify.
-        // Let's stick to standard conversion to Alt/Az first, then let the Sensor Offset handle the rotation to North.
-        
-        // Standard Alt/Az conversion (relative to local horizon)
-        // We will trust this math, and use the 'Setup Wizard' to align the sensor's North to True North.
-        const lat = App.state.lat; 
         const latRad = lat * Math.PI / 180;
-        
         const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
         const altRad = Math.asin(sinAlt);
         const cosAz = (Math.sin(decRad) - Math.sin(altRad)*Math.sin(latRad)) / (Math.cos(altRad)*Math.cos(latRad));
         let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
         if (Math.sin(haRad) > 0) azRad = 2*Math.PI - azRad;
-        
-        // Convert Alt/Az to Cartesian (X=East, Y=North, Z=Up)
-        return { 
-            x: Math.sin(azRad)*Math.cos(altRad), 
-            y: Math.cos(azRad)*Math.cos(altRad), 
-            z: Math.sin(altRad) 
-        };
+        return { x: Math.sin(azRad)*Math.cos(altRad), y: Math.cos(azRad)*Math.cos(altRad), z: Math.sin(altRad) };
     }
 };
 
@@ -875,7 +901,7 @@ const Utils = {
         const dict = I18N[App.state.lang];
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if (dict[key]) el.innerHTML = dict[key]; 
+            if (dict[key]) el.innerHTML = dict[key]; // Allow HTML for <br>
         });
         ['off', 'name', 'full'].forEach((m, i) => {
             const el = document.getElementById(`mode-${i}`);
@@ -887,7 +913,7 @@ const Utils = {
     }
 };
 
-// --- 4. GUIDE SYSTEM ---
+// --- 4. GUIDE SYSTEM (ACCORDION) ---
 const Guide = {
     target: null,
     toggle: () => {
@@ -1088,26 +1114,52 @@ const App = {
             const ball = document.getElementById('level-ball');
             const status = document.getElementById('sensor-status');
             const btn = document.getElementById('btn-confirm-setup');
+            const ring = document.getElementById('compass-ring');
+            const valDisplay = document.getElementById('compass-val');
+            const setupContainer = document.getElementById('setup-wizard');
             
-            // Check if sensor is alive (values not null/0)
+            // Check if sensor is alive
             if (alpha !== 0 || beta !== 0 || gamma !== 0) {
                 status.innerText = "Sensor: Active OK";
-                status.style.color = "#4ade80"; // Green
+                status.style.color = "#4ade80"; 
                 btn.disabled = false;
                 btn.innerText = "基準セット (SET ZERO)";
                 btn.classList.remove('bg-slate-700', 'text-slate-400');
                 btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
             }
 
+            // LEVEL LOGIC
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
-            const px = (bx / maxTilt) * 80;
-            const py = (by / maxTilt) * 80;
+            const px = (bx / maxTilt) * 60;
+            const py = (by / maxTilt) * 60;
             ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
             
-            if(Math.abs(bx)<3 && Math.abs(by)<3) document.querySelector('.level-bubble').classList.add('level-ok');
+            const isLevel = Math.abs(bx)<3 && Math.abs(by)<3;
+            if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
+
+            // COMPASS LOGIC
+            // In setup mode, we show RAW compass value
+            let heading = alpha;
+            if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
+            
+            // Rotate the ring opposite to phone rotation to simulate "Fixed North"
+            ring.style.transform = `rotate(${-heading}deg)`;
+            valDisplay.innerText = `${Math.round(heading)}°`;
+
+            // Check Alignment (North ±5 deg)
+            // 0 is North. Range: 355-360 OR 0-5
+            const isNorth = (heading > 355 || heading < 5);
+            
+            if (isNorth) {
+                setupContainer.classList.add('north-aligned');
+                valDisplay.style.color = "#4ade80"; // Green text
+            } else {
+                setupContainer.classList.remove('north-aligned');
+                valDisplay.style.color = "white";
+            }
         }
     },
 
@@ -1204,7 +1256,7 @@ const App = {
     setRank: (r,v) => { App.state.ranks[r] = v; Guide.buildList(); },
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); Utils.updateDOMText(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v28.0.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v28.2.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     
     // --- MANUAL ADJUSTMENT ---
     setupTouch: () => {
@@ -1295,7 +1347,7 @@ App.loop = () => {
     if (!isSolar && state.opacity.milky > 0) {
         ctx.globalCompositeOperation = 'lighter'; 
         state.milkyWay.forEach(p => {
-            const vec = Astro.getStarVector(p.ra, p.dec, lst);
+            const vec = Astro.getStarVector(p.ra, p.dec, state.lat, lst);
             const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
             if (pos) {
                 const size = p.size * (width/1500);
@@ -1313,7 +1365,7 @@ App.loop = () => {
     // Draw Stars
     const starPos = {};
     state.stars.forEach(s => {
-        const vec = Astro.getStarVector(s.ra, s.dec, lst);
+        const vec = Astro.getStarVector(s.ra, s.dec, state.lat, lst);
         const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
         if (p) {
             if(s.name) starPos[s.name] = p;
@@ -1361,7 +1413,7 @@ App.loop = () => {
                 }
             }
         } else {
-            const vec = Astro.getStarVector(c.centerRA, c.centerDec, lst);
+            const vec = Astro.getStarVector(c.centerRA, c.centerDec, state.lat, lst);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
             if(p) {
                 const d = Math.hypot(p.x-width/2, p.y-height/2);
@@ -1417,7 +1469,7 @@ App.loop = () => {
     // Guide Target
     if (state.mode === 'guide' && Guide.target) {
         const t = Guide.target;
-        const vec = Astro.getStarVector(t.centerRA, t.centerDec, lst);
+        const vec = Astro.getStarVector(t.centerRA, t.centerDec, state.lat, lst);
         const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
         const lockEl = document.getElementById('lock-on');
         if (p && p.x>50 && p.x<width-50 && p.y>50 && p.y<height-50) {
