@@ -489,16 +489,16 @@ const I18N = {
 // --- 0. DATA & CONSTANTS (Dictionary) ---
 const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3, STAR_GAL: 4 };
 
-// --- 修正済み CONSTELLATION_DB ---
+// --- 統合済み CONSTELLATION_DB (Base: Text 1, Content: Text 2) ---
 const CONSTELLATION_DB = [
     // --- 🦁 FAMOUS CONSTELLATIONS ---
     // --- 1. ORION (オリオン座) ---
     { 
         id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
-        desc: "【冬の王者】夜空で最も華やかで整った星座です。中央に並ぶ「三つ星」と、それを取り囲む4つの星が特徴的な「鼓（つづみ）」の形を描きます。左上の赤色超巨星「ベテルギウス」は太陽の約1000倍もの大きさがあり、いつ超新星爆発を起こしてもおかしくないと言われています。", 
-        desc_en: "[Winter King] The most spectacular constellation. The three belt stars are surrounded by four stars forming an hourglass shape. The red supergiant Betelgeuse is 1,000 times larger than the Sun.",
-        myth: "海の神ポセイドンの子で、怪力の巨人の狩人でした。月の女神アルテミスと恋に落ちましたが、兄アポロンの策略により命を落としました。死後、悲しんだ女神によって空に上げられましたが、サソリが苦手で、さそり座が昇ると西へ沈んでいきます。", 
-        myth_en: "Son of Poseidon. Accidentally killed by Artemis due to Apollo's trickery. He sets in the west whenever his enemy, the Scorpion, rises.",
+        desc: "【冬の王者】夜空で最も華やかで整った星座です。中央に並ぶ「三つ星」と、それを取り囲む4つの星が特徴的な「鼓（つづみ）」の形を描きます。左上の赤色超巨星「ベテルギウス」は太陽の約1000倍もの大きさがあり、天文学的なスケールでは寿命が尽きかけているため、いつ超新星爆発を起こしてもおかしくないと言われています。三つ星の下には、肉眼でもぼんやりと見える「オリオン大星雲（M42）」があり、そこでは今まさに新しい星が生まれています。", 
+        desc_en: "[Winter King] The most spectacular constellation. The three belt stars are surrounded by four stars forming an hourglass shape. The red supergiant Betelgeuse is 1,000 times larger than the Sun and might explode soon. Below the belt lies the Orion Nebula (M42), a stellar nursery.",
+        myth: "海の神ポセイドンの子で、怪力の巨人の狩人でした。月の女神アルテミスと恋に落ちましたが、それをよく思わなかった彼女の兄アポロンの策略により、アルテミス自身の矢で誤って射抜かれ、命を落としました。死後、悲しんだ女神によって空に上げられましたが、生前の傲慢さを神に咎められ放たれた「サソリ」が苦手で、さそり座が東から昇ると、逃げるように西へ沈んでいきます。", 
+        myth_en: "Son of Poseidon and a mighty hunter. He was accidentally killed by his love Artemis due to Apollo's trickery. He sets in the west whenever his enemy, the Scorpion, rises.",
         centerRA: 5.5, centerDec: -1.0, 
         lines: ["Betelgeuse","Alnitak", "Bellatrix","Mintaka", "Alnitak","Saiph", "Mintaka","Rigel", "Alnitak","Alnilam", "Alnilam","Mintaka", "Betelgeuse","Bellatrix", "Saiph","Rigel", "Betelgeuse","Meissa", "Bellatrix","Meissa"] 
     },
@@ -506,10 +506,10 @@ const CONSTELLATION_DB = [
     // --- 2. SCORPIUS (さそり座) ---
     { 
         id: "sco", rank: 1, name: "さそり座", en: "Scorpius", 
-        desc: "【夏のS字】南の空に大きく描かれるS字カーブが特徴です。心臓に位置する赤い1等星「アンタレス」は「火星に対抗するもの」という意味を持ちます。", 
-        desc_en: "[Summer S-Shape] A large S-curve in the south. The red star Antares means 'Rival of Mars'.",
-        myth: "傲慢な狩人オリオンを倒すために神が放った毒サソリです。オリオンはサソリを恐れて逃げ回っているため、二つの星座は決して同じ空には現れません。", 
-        myth_en: "The scorpion sent by the gods to defeat Orion. They are never seen in the sky at the same time.",
+        desc: "【夏のS字】南の空に大きく描かれるS字カーブが特徴です。心臓に位置する赤い1等星「アンタレス」は「火星（Ares）に対抗（Anti）するもの」という意味を持ち、その赤さと明るさを競っているように見えます。日本では釣り針に見立てて「魚釣り星」と呼ばれるほか、宮沢賢治の『銀河鉄道の夜』では、自分の体を燃やして夜の闇を照らす「さそりの火」として描かれています。", 
+        desc_en: "[Summer S-Shape] A large S-curve in the south. The red star Antares means 'Rival of Mars'. In 'Night on the Galactic Railroad', it appears as the 'Scorpion's Fire'.",
+        myth: "傲慢な狩人オリオンを倒すために神が放った毒サソリです。その功績で空に上げられました。オリオンはサソリを恐れて逃げ回っているため、二つの星座は決して同じ空には現れません。", 
+        myth_en: "The scorpion sent by the gods to defeat the hunter Orion. They are never seen in the sky at the same time.",
         centerRA: 16.5, centerDec: -26.0, 
         lines: ["Antares","Dschubba", "Dschubba","Graffias", "Dschubba","Pi Sco", "Antares","Wei", "Antares","Tau Sco", "Wei","Mu Sco", "Mu Sco","Zeta Sco", "Zeta Sco","Eta Sco", "Eta Sco","Sargas", "Sargas","Iota Sco", "Iota Sco","Kappa Sco", "Kappa Sco","Shaula", "Shaula","Lesath"] 
     },
@@ -517,10 +517,10 @@ const CONSTELLATION_DB = [
     // --- 3. SUMMER TRIANGLE (夏の大三角) ---
     { 
         id: "sum", rank: 1, name: "夏の大三角", en: "Summer Triangle", 
-        desc: "【夏の目印】こと座のベガ、わし座のアルタイル、はくちょう座のデネブを結ぶ巨大な三角形のアステリズムです。", 
+        desc: "【夏の目印】こと座のベガ（織姫）、わし座のアルタイル（彦星）、はくちょう座のデネブを結ぶ巨大な三角形のアステリズム（星の並び）です。天の川をまたぐように位置しており、夏の夜空を見上げる際のガイド役となります。", 
         desc_en: "[Summer Mark] A huge triangle connecting Vega, Altair, and Deneb. It spans across the Milky Way.",
-        myth: "ベガは織姫、アルタイルは彦星です。二人は恋に落ちて仕事をサボったため、天の川の両岸に引き離されましたが、七夕の夜だけ会うことを許されています。", 
-        myth_en: "Vega is the Weaver Girl and Altair is the Cowherd. Separated by the Milky Way, they meet only on July 7th.",
+        myth: "ベガは機織りの名手「織姫」、アルタイルは牛使いの「彦星」です。二人は恋に落ちて仕事をサボったため、神様の怒りに触れて天の川の両岸に引き離されました。しかし、年に一度、7月7日の夜だけカササギが橋を架けて会うことを許されています。", 
+        myth_en: "Vega is the Weaver Girl and Altair is the Cowherd. Separated by the Milky Way, they are allowed to meet only once a year on July 7th.",
         centerRA: 19.5, centerDec: 28.0, 
         lines: ["Vega","Altair", "Altair","Deneb", "Deneb","Vega"] 
     },
@@ -528,9 +528,9 @@ const CONSTELLATION_DB = [
     // --- 4. TAURUS (おうし座) ---
     { 
         id: "tau", rank: 1, name: "おうし座", en: "Taurus", 
-        desc: "【冬のV字】アルデバランを筆頭にしたV字型の顔と、美しい散開星団「プレアデス（すばる）」が特徴です。", 
+        desc: "【冬のV字】オリオン座の右上に位置し、アルデバランを筆頭にしたV字型の顔と、美しい散開星団「プレアデス（すばる）」が特徴です。プレアデス星団は肉眼でも6〜7個の星が集まっているのが見え、昔は兵士の視力検査に使われたという逸話があります。", 
         desc_en: "[Winter V] Features a V-shaped face led by Aldebaran and the beautiful Pleiades cluster (Subaru).",
-        myth: "大神ゼウスが、王女エウロペを連れ去るために化けた白い雄牛の姿です。", 
+        myth: "大神ゼウスが、フェニキアの王女エウロペに恋をし、彼女を背中に乗せて連れ去るために化けた白い雄牛の姿です。エウロペは愛らしい白い牛に心を許して背中に乗ってしまい、そのままクレタ島まで連れて行かれました。", 
         myth_en: "Zeus disguised himself as a white bull to carry away the princess Europa.",
         centerRA: 4.5, centerDec: 16.0, 
         lines: ["Aldebaran","Elnath", "Aldebaran","Zeta Tau", "Aldebaran","Ain", "Ain","Hyadum I", "Hyadum I","Delta Tau", "Delta Tau","Aldebaran", "Elnath","Zeta Tau"] 
@@ -539,10 +539,10 @@ const CONSTELLATION_DB = [
     // --- 5. GEMINI (ふたご座) ---
     { 
         id: "gem", rank: 1, name: "ふたご座", en: "Gemini", 
-        desc: "【仲良し兄弟】カストル（銀）とポルックス（金）が並んで輝いています。カストルは実は6重連星という複雑なシステムです。", 
+        desc: "【仲良し兄弟】カストル（兄・銀）とポルックス（弟・金）が並んで輝いています。肉眼では二つの星に見えますが、実はカストルは6つの星が複雑に回り合う「6重連星」という驚くべきシステムです。冬の空高くに見え、流れ星（ふたご座流星群）の放射点としても有名です。", 
         desc_en: "[Friendly Twins] Castor (Silver) and Pollux (Gold) shine side by side. Castor is actually a sextuple star system.",
-        myth: "弟ポルックスは不死身の神の子、兄カストルは人間でした。兄が死んだとき、弟は不死の命を兄に分けてほしいと願い、二人で星座となりました。", 
-        myth_en: "Pollux shared his immortality with his mortal brother Castor so they could be together forever.",
+        myth: "スパルタの王妃レダの息子たちです。弟ポルックスは不死身の神の子でしたが、兄カストルは人間でした。戦いで兄が死んだとき、弟は自分の不死の命を兄に分けてほしいとゼウスに願い、二人で星座となって空に上がり、永遠に一緒にいることになりました。", 
+        myth_en: "Pollux shared his immortality with his mortal brother Castor so they could be together in the stars forever.",
         centerRA: 7.0, centerDec: 22.0, 
         lines: ["Castor","Pollux", "Castor","Mebsuta", "Mebsuta","Tejat", "Pollux","Wasat", "Wasat","Alhena"] 
     },
@@ -550,10 +550,10 @@ const CONSTELLATION_DB = [
     // --- 6. LEO (しし座) ---
     { 
         id: "leo", rank: 1, name: "しし座", en: "Leo", 
-        desc: "【春の鎌】「？」マークを裏返したような「ししの大鎌」がライオンの頭を表しています。1等星レグルスは「小さな王様」という意味です。", 
+        desc: "【春の鎌】「？」マークを裏返したような「ししの大鎌」と呼ばれる星の並びがライオンの頭を表しています。1等星レグルスは「小さな王様」という意味で、黄道（太陽の通り道）のすぐ近くにあるため、月や惑星がよく接近します。", 
         desc_en: "[Spring Sickle] The backward '?' shape is the head. Regulus means 'Little King'.",
-        myth: "ヘラクレスに退治されたネメアの森の人食いライオンです。矢も剣も通じない硬い皮膚を持っていました。", 
-        myth_en: "The Nemean Lion with impenetrable skin, strangled by Hercules.",
+        myth: "英雄ヘラクレスの12の冒険の最初に登場する、ネメアの森の人食いライオンです。矢も剣も通じない硬い皮膚を持っていましたが、ヘラクレスに洞窟に追い詰められ、3日3晩首を締め続けられて退治されました。", 
+        myth_en: "The Nemean Lion fought by Hercules. It had impenetrable skin but was strangled by the hero.",
         centerRA: 10.5, centerDec: 15.0, 
         lines: ["Regulus","Algieba", "Algieba","Adhafera", "Adhafera","Rasalas", "Regulus","Chertan", "Chertan","Zosma", "Zosma","Denebola", "Algieba","Zosma"] 
     },
@@ -561,10 +561,10 @@ const CONSTELLATION_DB = [
     // --- 7. VIRGO (おとめ座) ---
     { 
         id: "vir", rank: 1, name: "おとめ座", en: "Virgo", 
-        desc: "【春の女神】純白に輝くスピカが目印です。「スピカ」は「麦の穂」という意味です。", 
-        desc_en: "[Spring Maiden] Marked by the white star Spica, meaning 'Ear of Wheat'.",
-        myth: "農業の女神デメテル、またはその娘ペルセポネの姿と言われます。", 
-        myth_en: "Represents Demeter or Persephone.",
+        desc: "【春の女神】純白に輝く1等星スピカが目印です。「スピカ」は「麦の穂」という意味で、春の夜空に青白く清らかに光ります。おとめ座の方向には「おとめ座銀河団」という数千個の銀河の集まりがあり、宇宙の深淵を覗ける場所でもあります。", 
+        desc_en: "[Spring Maiden] Marked by the white star Spica, meaning 'Ear of Wheat'. Home to the Virgo Cluster of galaxies.",
+        myth: "農業の女神デメテル、またはその娘ペルセポネの姿と言われます。ペルセポネが冥界の王ハデスに連れ去られたため、母デメテルが悲しんで地上は冬になりました。彼女が戻ってくる春から夏の間だけ、草木は育ちます。", 
+        myth_en: "Represents Demeter or Persephone. When she goes to the underworld, winter comes.",
         centerRA: 13.3, centerDec: -2.0, 
         lines: ["Spica","Heze", "Spica","Porrima", "Porrima","Auva", "Auva","Zavijava", "Porrima","Vindemiatrix", "Vindemiatrix","Zavijava"] 
     },
@@ -572,10 +572,10 @@ const CONSTELLATION_DB = [
     // --- 8. URSA MAJOR (おおぐま座) ---
     { 
         id: "uma", rank: 1, name: "おおぐま座", en: "Ursa Major", 
-        desc: "【北斗七星】7つの星「北斗七星」が有名です。ひしゃくの先を5倍伸ばすと北極星が見つかります。", 
-        desc_en: "[Big Dipper] Famous for the Big Dipper asterism. Used to find the North Star.",
-        myth: "女神ヘラの怒りを買い、熊に変えられたカリストの姿です。", 
-        myth_en: "Callisto, turned into a bear by Hera.",
+        desc: "【北斗七星】腰から尻尾にあたる7つの星「北斗七星」が有名です。ひしゃくの水を汲む部分の2つの星を結んで5倍伸ばすと、北極星が見つかります。柄の先から2番目の星「ミザール」には、「アルコル」という小さな星が寄り添っており、昔は視力検査に使われたと有名です。", 
+        desc_en: "[Big Dipper] Famous for the Big Dipper asterism. Used to find the North Star. Mizar and Alcor are a famous visual double.",
+        myth: "月の女神アルテミスの侍女カリストの姿です。ゼウスとの間に子をもうけたため、ゼウスの妻ヘラの怒りを買い、熊に変えられてしまいました。後に狩人となった自分の息子に射殺されそうになり、ゼウスによって慌てて空に上げられました。", 
+        myth_en: "Callisto, a nymph turned into a bear by Hera. She was placed in the sky by Zeus to save her from being hunted by her own son.",
         centerRA: 11.5, centerDec: 50.0, 
         lines: ["Dubhe","Merak", "Merak","Phecda", "Phecda","Megrez", "Megrez","Alioth", "Alioth","Mizar", "Mizar","Alkaid", "Megrez","Dubhe", "Phecda","Talitha", "Talitha","Tania Borealis", "Tania Borealis","Mu UMa"] 
     },
@@ -583,10 +583,10 @@ const CONSTELLATION_DB = [
     // --- 9. SAGITTARIUS (いて座) ---
     { 
         id: "sgr", rank: 1, name: "いて座", en: "Sagittarius", 
-        desc: "【銀河の中心】天の川が最も濃く見える方向にあります。「南斗六星」や「ティーポット」の形が特徴です。", 
-        desc_en: "[Galactic Center] Located in the densest part of the Milky Way. Features the 'Teapot' asterism.",
-        myth: "半人半馬の賢者ケイローンの姿です。毒矢に当たり、不死の命を返上して死を選びました。", 
-        myth_en: "Chiron, the wise centaur who gave up immortality.",
+        desc: "【銀河の中心】天の川が最も濃く明るく見える方向にあります。6つの星がひしゃくの形に並んだ「南斗六星」や、全体が「ティーポット」の形に見えるのが特徴です。その注ぎ口の先からは、湯気のように天の川が立ち昇っています。", 
+        desc_en: "[Galactic Center] Located in the densest part of the Milky Way. Features the 'Milk Dipper' and 'Teapot' asterisms.",
+        myth: "半人半馬のケンタウルス族の賢者ケイローンの姿です。医学や武術に優れ、ヘルクレスやアスクレピオスの先生でもありました。ヘルクレスが誤って放った毒矢に当たり、不死の命をプロメテウスに譲って死を選び、星座となりました。", 
+        myth_en: "Chiron, the wise centaur and teacher of heroes. He gave up his immortality after being accidentally wounded by Hercules.",
         centerRA: 19.0, centerDec: -25.0, 
         lines: ["Kaus Borealis","Kaus Media", "Kaus Media","Kaus Australis", "Kaus Australis","Alnasl", "Kaus Media","Alnasl", "Kaus Borealis","Phi Sgr", "Phi Sgr","Nunki", "Nunki","Tau Sgr", "Tau Sgr","Ascella", "Ascella","Phi Sgr"] 
     },
@@ -594,10 +594,10 @@ const CONSTELLATION_DB = [
     // --- 10. CANIS MAJOR (おおいぬ座) ---
     { 
         id: "cma", rank: 1, name: "おおいぬ座", en: "Canis Major", 
-        desc: "【全天一の輝き】全天で一番明るい恒星「シリウス」が輝きます。冬の大三角の底辺を構成します。", 
-        desc_en: "[Brightest Star] Home to Sirius, the brightest star in the sky.",
-        myth: "オリオンの猟犬です。", 
-        myth_en: "Orion's hunting dog.",
+        desc: "【全天一の輝き】口元で輝く1等星「シリウス」は、マイナス1.5等星という強烈な明るさで、全天で一番明るい恒星です。地球から約8.6光年と非常に近い場所にあります。冬の大三角の底辺を構成し、冬の夜空を支配する存在感があります。", 
+        desc_en: "[Brightest Star] Home to Sirius, the brightest star in the sky. Part of the Winter Triangle.",
+        myth: "オリオンが連れている猟犬の姿です。獲物であるうさぎ座を追いかけているとも、一飛びで獲物を捕らえる名犬ライラプスであるとも言われています。古代エジプトではナイル川の氾濫を知らせる重要な星として崇拝されていました。", 
+        myth_en: "Orion's hunting dog, chasing Lepus the Hare. In Egypt, Sirius predicted the Nile floods.",
         centerRA: 6.8, centerDec: -20.0, 
         lines: ["Sirius","Mirzam", "Sirius","Muliphein", "Sirius","Adhara", "Adhara","Wezen", "Wezen","Aludra", "Wezen","Furud"] 
     },
@@ -605,10 +605,10 @@ const CONSTELLATION_DB = [
     // --- 11. CANIS MINOR (こいぬ座) ---
     { 
         id: "cmi", rank: 1, name: "こいぬ座", en: "Canis Minor", 
-        desc: "【冬の大三角】1等星「プロキオン」が目立つ小さな星座です。", 
-        desc_en: "[Winter Triangle] Small constellation featuring Procyon.",
-        myth: "おおいぬ座と共にオリオンに連れられた猟犬です。", 
-        myth_en: "One of Orion's hunting dogs.",
+        desc: "【冬の大三角】1等星「プロキオン」と3等星「ゴメイサ」の2つの星が目立つ小さな星座です。プロキオンは地球から約11.5光年と、太陽系に非常に近い「お隣さん」の星でもあります。「犬の先駆け」という意味を持ち、シリウスよりも少し早く東の空から昇ってきます。", 
+        desc_en: "[Winter Triangle] Small constellation featuring Procyon. Procyon is a close neighbor, only 11.5 light-years away.",
+        myth: "おおいぬ座と共にオリオンに連れられた猟犬です。また、鹿に変えられた主人アクタイオンを噛み殺してしまった悲しい猟犬メランポスであるという説もあります。", 
+        myth_en: "One of Orion's hunting dogs. Sometimes associated with Maera or the dog of Actaeon.",
         centerRA: 7.6, centerDec: 5.0, 
         lines: ["Procyon","Gomeisa"] 
     },
@@ -616,10 +616,10 @@ const CONSTELLATION_DB = [
     // --- 12. AURIGA (ぎょしゃ座) ---
     { 
         id: "aur", rank: 1, name: "ぎょしゃ座", en: "Auriga", 
-        desc: "【将棋の駒】1等星「カペラ」を含む五角形が特徴です。カペラは太陽と似た黄色い巨星です。", 
-        desc_en: "[Charioteer] Features Capella and a pentagon shape.",
-        myth: "アテネ王エリクトニウスの姿です。戦車を発明しました。", 
-        myth_en: "Erichthonius, King of Athens, who invented the chariot.",
+        desc: "【将棋の駒】天頂付近で輝く1等星「カペラ」を含む、美しい五角形が特徴です。この五角形は将棋の駒のような形をしており、冬のダイヤモンドの一部を構成しています。カペラは黄色い巨星で、温度や色が太陽とよく似ています。", 
+        desc_en: "[Charioteer] Features the bright star Capella and a pentagon shape. Capella is a yellow giant similar to the Sun.",
+        myth: "アテネの王エリクトニウスの姿です。彼は足が不自由だったため、馬4頭が引く戦車を発明して自在に走り回りました。その功績をゼウスが称え、星座にしました。カペラは彼が抱いている可愛い子ヤギの姿です。", 
+        myth_en: "Erichthonius, King of Athens, who invented the four-horse chariot.",
         centerRA: 5.5, centerDec: 40.0, 
         lines: ["Capella","Menkalinan", "Menkalinan","Mahasim", "Mahasim","Elnath", "Elnath","Hassaleh", "Hassaleh","Capella"] 
     },
@@ -627,10 +627,10 @@ const CONSTELLATION_DB = [
     // --- 13. BOÖTES (うしかい座) ---
     { 
         id: "boo", rank: 1, name: "うしかい座", en: "Boötes", 
-        desc: "【春の大曲線】オレンジ色の1等星「アークトゥルス」が目印です。「春の大曲線」の終点にあたります。", 
-        desc_en: "[Spring Curve] Features the orange giant Arcturus.",
-        myth: "天を支える巨人アトラス、あるいは熊の番人と言われます。", 
-        myth_en: "The Herdsman or Bear Driver.",
+        desc: "【春の大曲線】オレンジ色に輝く1等星「アークトゥルス」が目印です。北斗七星の柄のカーブをそのまま伸ばして見つける「春の大曲線」の終点にあたります。日本では「麦星」と呼ばれ、麦の収穫時期に夕空高く輝くことから親しまれました。", 
+        desc_en: "[Spring Curve] Features the orange giant Arcturus. Found by following the arc of the Big Dipper's handle.",
+        myth: "天を支える巨人アトラスであるとも、農耕を人間に教えたトリプトレモスであるとも言われます。北斗七星（おおぐま座）を追い立てて、一晩中空を回らせる「熊の番人」の役割を担っています。", 
+        myth_en: "The Herdsman or Bear Driver, who chases Ursa Major around the pole.",
         centerRA: 14.5, centerDec: 30.0, 
         lines: ["Arcturus","Izar", "Izar","Nekkar", "Nekkar","Seginus", "Seginus","Muphrid", "Muphrid","Arcturus", "Nekkar","Alkalurops"] 
     },
@@ -639,10 +639,10 @@ const CONSTELLATION_DB = [
     // --- 1. CASSIOPEIA (カシオペヤ座) ---
     { 
         id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
-        desc: "【北のW字】「W」の形が特徴。北極星を探す目印です。", 
-        desc_en: "[North W] Features a distinctive 'W' shape. A key guide to finding Polaris.",
-        myth: "「娘の方が美しい」と自慢した罰で、椅子に縛られたまま空を回る王妃です。", 
-        myth_en: "The vain queen punished by rotating in the sky tied to her chair.",
+        desc: "【北のW字】5つの星がアルファベットの「W」（またはM）の形に並んでいるのが特徴です。北極星を探すための重要な目印として、北斗七星と対をなす存在です。秋の夜空高くに見え、天の川の中に位置しているため、双眼鏡で覗くと多くの微光星が見えます。", 
+        desc_en: "[North W] Features a distinctive 'W' or 'M' shape. A key guide to finding Polaris, opposite the Big Dipper.",
+        myth: "古代エチオピアの王妃です。「自分の娘アンドロメダの方が、海の妖精たちより美しい」と自慢したため、海神ポセイドンの怒りを買いました。罰として、椅子に縛り付けられたまま北の空を回り続け、一日の半分は逆さまに吊るされる姿になっています。", 
+        myth_en: "The vain queen who boasted of her daughter's beauty. Punished by rotating in the sky while tied to her chair.",
         centerRA: 1.0, centerDec: 60.0, 
         lines: ["Caph","Schedar", "Schedar","Gamma Cas", "Gamma Cas","Ruchbah", "Ruchbah","Segin"] 
     },
@@ -650,10 +650,10 @@ const CONSTELLATION_DB = [
     // --- 2. ANDROMEDA (アンドロメダ座) ---
     { 
         id: "and", rank: 2, name: "アンドロメダ座", en: "Andromeda", 
-        desc: "【銀河の窓】肉眼で見える最も遠い天体「アンドロメダ銀河（M31）」があります。", 
-        desc_en: "[Galaxy Window] Home to the Andromeda Galaxy (M31).",
-        myth: "カシオペヤの娘。生贄にされましたが、ペルセウスに救出されました。", 
-        myth_en: "The princess chained to a rock but saved by Perseus.",
+        desc: "【銀河の窓】ペガスス座の四辺形から北東に伸びる星列です。膝のあたりには、肉眼で見える最も遠い天体「アンドロメダ銀河（M31）」があります。この銀河は私たちの天の川銀河のお隣さんで、約250万光年の彼方にありますが、空の暗い場所ではぼんやりとした光の雲として見ることができます。", 
+        desc_en: "[Galaxy Window] Home to the Andromeda Galaxy (M31), the farthest object visible to the naked eye at 2.5 million light-years.",
+        myth: "カシオペヤ王妃の娘です。母の自慢のせいで生贄として海岸の岩に鎖で繋がれましたが、怪物くじらに襲われる寸前、ペガススに乗った英雄ペルセウスによって救出され、彼の妻となりました。", 
+        myth_en: "The princess chained to a rock as a sacrifice but saved by the hero Perseus.",
         centerRA: 0.7, centerDec: 38.0, 
         lines: ["Alpheratz","Mirach", "Mirach","Almach"] 
     },
@@ -661,10 +661,10 @@ const CONSTELLATION_DB = [
     // --- 3. PEGASUS (ペガスス座) ---
     { 
         id: "peg", rank: 2, name: "ペガスス座", en: "Pegasus", 
-        desc: "【秋の四辺形】大きな四角形が目印の天馬です。実は逆さまに描かれています。", 
-        desc_en: "[Autumn Square] Identified by the Great Square. A winged horse flying upside down.",
-        myth: "メドゥーサの血から生まれた天馬です。", 
-        myth_en: "The winged horse born from Medusa's blood.",
+        desc: "【秋の四辺形】秋の夜空の真上に、4つの星で作る大きな「秋の四辺形」が目印です。これは天馬の胴体を表しています。実はこの星座は「逆さま」に描かれており、四辺形から長く伸びる列が首と頭、反対側に前足があります。後ろ足はありません。", 
+        desc_en: "[Autumn Square] Identified by the Great Square of Pegasus. Depicted as a winged horse flying upside down.",
+        myth: "英雄ペルセウスがメドゥーサの首を切ったとき、その血から飛び出した翼のある天馬です。後に英雄ベレロフォンを乗せて怪物キマイラ退治に活躍しましたが、天に昇ろうとしてゼウスの怒りを買い、ベレロフォンを振り落として一人で星座になりました。", 
+        myth_en: "The winged horse born from Medusa's blood. It carried Bellerophon but later threw him off to ascend to the stars alone.",
         centerRA: 23.0, centerDec: 20.0, 
         lines: ["Markab","Scheat", "Scheat","Alpheratz", "Alpheratz","Algenib", "Algenib","Markab", "Markab","Enif"] 
     },
@@ -672,10 +672,10 @@ const CONSTELLATION_DB = [
     // --- 4. CYGNUS (はくちょう座) ---
     { 
         id: "cyg", rank: 2, name: "はくちょう座", en: "Cygnus", 
-        desc: "【北十字】天の川の上を飛ぶ十字架の形から「北十字」と呼ばれます。デネブは夏の大三角の一角です。", 
-        desc_en: "[Northern Cross] A large cross flying along the Milky Way.",
-        myth: "ゼウスがレダに会うために変身した白鳥の姿です。", 
-        myth_en: "Zeus disguised as a swan to visit Leda.",
+        desc: "【北十字】天の川の上を飛ぶ大きな十字架の形から「北十字（ノーザン・クロス）」と呼ばれます。尾羽の1等星デネブは夏の大三角の一角です。くちばしの星「アルビレオ」は、望遠鏡で見るとオレンジと青の宝石のような対比が美しい、全天で最も美しい二重星の一つです。", 
+        desc_en: "[Northern Cross] A large cross flying along the Milky Way. Albireo is a stunning gold and blue double star.",
+        myth: "大神ゼウスが、スパルタの王妃レダに恋をし、彼女に近づくために化けた白鳥の姿です。この白鳥が産んだ卵から、ふたご座のカストルとポルックス、そしてヘレネが生まれたと言われています。また、親友を失ったパエトンの嘆きの姿とも言われます。", 
+        myth_en: "Zeus disguised as a swan to visit Leda. Also associated with Phaethon's grieving friend.",
         centerRA: 20.5, centerDec: 42.0, 
         lines: ["Deneb","Sadr", "Sadr","Albireo", "Sadr","Gienah", "Sadr","Delta Cyg"] 
     },
@@ -683,10 +683,10 @@ const CONSTELLATION_DB = [
     // --- 5. URSA MINOR (こぐま座) ---
     { 
         id: "umi", rank: 2, name: "こぐま座", en: "Ursa Minor", 
-        desc: "【不動の星】柄の先に現在の北極星「ポラリス」があります。「小ひしゃく」の形をしています。", 
+        desc: "【不動の星】柄の先にあるのが現在の北極星「ポラリス」です。地球の地軸の延長線上にあるため、他の星が動いてもこの星だけはほとんど動きません。おおぐま座（北斗七星）とよく似た「小ひしゃく」の形をしていますが、ポラリス以外は暗い星が多いです。", 
         desc_en: "[The Fixed Star] Home to Polaris, the North Star. Resembles a 'Little Dipper'.",
-        myth: "カリストの息子アルカスの姿です。母と共に空に上げられました。", 
-        myth_en: "Arcas, son of Callisto. Transformed into a bear by Zeus.",
+        myth: "おおぐま座になったカリストの息子、アルカスの姿です。狩りの最中に熊（母）を射殺しそうになりましたが、ゼウスがそれを止めるために彼も熊に変え、母と共に空に上げました。長い尻尾は、ゼウスが彼らを天に放り投げた時に伸びてしまったと言われています。", 
+        myth_en: "Arcas, son of Callisto. Transformed into a bear by Zeus to prevent him from killing his mother (Ursa Major).",
         centerRA: 15.0, centerDec: 75.0, 
         lines: ["Polaris","Yildun", "Yildun","Zeta UMi", "Zeta UMi","Eta UMi", "Eta UMi","Pherkad", "Pherkad","Kochab", "Kochab","Zeta UMi"] 
     },
@@ -694,10 +694,10 @@ const CONSTELLATION_DB = [
     // --- 6. LYRA (こと座) ---
     { 
         id: "lyr", rank: 2, name: "こと座", en: "Lyra", 
-        desc: "【七夕の星】明るいベガ（織姫）と小さな平行四辺形が特徴です。", 
-        desc_en: "[The Harp] Features the bright star Vega.",
-        myth: "オルフェウスの竪琴です。", 
-        myth_en: "The lyre of Orpheus.",
+        desc: "【七夕の星】明るい0等星ベガ（織姫星）と、小さな平行四辺形が特徴です。ベガは全天で5番目に明るい星で、夏の大三角の一つです。この星座にある「環状星雲（M57）」は、星が寿命を終えた後にガスを放出してできた、ドーナツのような美しい姿をしています。", 
+        desc_en: "[The Harp] Features the bright star Vega. Contains the Ring Nebula (M57), a dying star's remnants.",
+        myth: "ギリシャ神話の音楽家オルフェウスが奏でた竪琴です。彼がこの琴を弾くと、人間だけでなく動物や草木、岩までもが聞き惚れたと言われます。愛する妻エウリュディケを冥界から連れ戻そうとした悲劇の物語で知られています。", 
+        myth_en: "The lyre of Orpheus, whose music charmed all of nature. Placed in the sky after his tragic death.",
         centerRA: 18.8, centerDec: 36.0, 
         lines: ["Vega","Sheliak", "Sheliak","Sulafat", "Sulafat","Delta Lyr", "Delta Lyr","Vega"] 
     },
@@ -705,10 +705,10 @@ const CONSTELLATION_DB = [
     // --- 7. AQUILA (わし座) ---
     { 
         id: "aql", rank: 2, name: "わし座", en: "Aquila", 
-        desc: "【飛翔する鷲】1等星アルタイル（彦星）の両脇に星が並んでいるのが特徴です。", 
-        desc_en: "[The Eagle] Features Altair. The three stars in a row are distinctive.",
-        myth: "ゼウスが変身した鷲、または雷を持つ鷲です。", 
-        myth_en: "The eagle that carries Zeus's thunderbolts.",
+        desc: "【飛翔する鷲】天の川を挟んでこと座の反対側に位置します。1等星アルタイル（彦星）を挟んで、両脇に2つの星（タラゼドとアルシャイン）が並んでいるのが特徴です。これを「イヌワシの星」や「親おい星」と呼ぶ地域もあります。", 
+        desc_en: "[The Eagle] Features Altair. Located across the Milky Way from Lyra. The three stars in a row are distinctive.",
+        myth: "大神ゼウスが変身した黒い鷲、あるいはゼウスの雷を持つ鷲の姿です。美少年ガニュメデスを見初めたゼウスが、彼を天界へ連れ去るために遣わした鷲だとも言われています。", 
+        myth_en: "The eagle that carries Zeus's thunderbolts. Also the eagle that kidnapped Ganymede.",
         centerRA: 19.8, centerDec: 3.0, 
         lines: ["Altair","Tarazed", "Altair","Alshain", "Altair","Delta Aql", "Delta Aql","Zeta Aql"] 
     },
@@ -716,10 +716,10 @@ const CONSTELLATION_DB = [
     // --- 8. PERSEUS (ペルセウス座) ---
     { 
         id: "per", rank: 2, name: "ペルセウス座", en: "Perseus", 
-        desc: "【悪魔の星】「人」のような形。変光星アルゴルは「悪魔の頭」を意味します。", 
-        desc_en: "[The Hero] Features Algol, the 'Demon Star'.",
-        myth: "メドゥーサを退治した英雄ペルセウスです。", 
-        myth_en: "The hero who slew Medusa.",
+        desc: "【悪魔の星】秋の天の川の中にあり、漢字の「人」のような形に星が並んでいます。注目すべきは「アルゴル」という星で、これは「悪魔の頭」という意味です。約2.87日ごとに明るさが変わる「食変光星」で、怪物メドゥーサの不気味に光る目を表しています。", 
+        desc_en: "[The Hero] Features Algol, the 'Demon Star', an eclipsing binary that dims every 2.87 days.",
+        myth: "怪物メドゥーサを退治し、鎖に繋がれたアンドロメダ姫を救った英雄ペルセウスの姿です。右手に剣、左手に切り落としたメドゥーサの首を持っています。その首（アルゴル）は、見たものを石に変える力を持っています。", 
+        myth_en: "The hero who slew Medusa and saved Andromeda. He holds Medusa's head, represented by the star Algol.",
         centerRA: 3.5, centerDec: 45.0, 
         lines: ["Mirfak","Gamma Per", "Mirfak","Delta Per", "Mirfak","Algol"] 
     },
@@ -727,10 +727,10 @@ const CONSTELLATION_DB = [
     // --- 9. OPHIUCHUS (へびつかい座) ---
     { 
         id: "oph", rank: 2, name: "へびつかい座", en: "Ophiuchus", 
-        desc: "【黄道13星座】巨大な五角形で、へび座を掴んでいます。黄道が通っています。", 
-        desc_en: "[Serpent Bearer] The 13th constellation of the Zodiac.",
-        myth: "名医アスクレピオスの姿です。死者を蘇らせたためゼウスに撃たれました。", 
-        myth_en: "Asclepius, the god of medicine.",
+        desc: "【黄道13星座】将棋の駒のような巨大な五角形が特徴で、両手で長い「へび座」を掴んでいます。天文学上の「黄道（太陽の通り道）」が通っているため、星占いでは13番目の星座として数えられることもあります。夏に南の空大きく広がっています。", 
+        desc_en: "[Serpent Bearer] A large constellation holding Serpens. The 13th constellation of the Zodiac.",
+        myth: "アポロンの子で、死者をも生き返らせるほどの名医アスクレピオスです。しかし、死者が減って困った冥界の王ハデスの訴えにより、ゼウスの雷に打たれて命を落としました。その功績を称えて星座になりました。", 
+        myth_en: "Asclepius, the god of medicine. He was killed by Zeus for bringing the dead back to life.",
         centerRA: 17.0, centerDec: -5.0, 
         lines: ["Rasalhague","Cebalrai", "Cebalrai","Yed Prior", "Yed Prior","Zeta Oph", "Zeta Oph","Sabik", "Sabik","Rasalhague"] 
     },
@@ -738,10 +738,10 @@ const CONSTELLATION_DB = [
     // --- 10. PISCIS AUSTRINUS (みなみのうお座) ---
     { 
         id: "psa", rank: 2, name: "みなみのうお座", en: "Piscis Austrinus", 
-        desc: "【秋のひとつ星】秋の南空で唯一の1等星「フォーマルハウト」が輝きます。", 
-        desc_en: "[Southern Fish] Features Fomalhaut.",
-        myth: "水を飲む魚の姿です。", 
-        myth_en: "A fish drinking the water poured by Aquarius.",
+        desc: "【秋のひとつ星】秋の南空で唯一の1等星「フォーマルハウト」が輝きます。みずがめ座から流れる水を受け止める魚の姿です。この星は、史上初めて「太陽系外惑星」が可視光写真で撮影された場所としても有名で、その周囲の塵のリングは映画『ロード・オブ・ザ・リング』の「サウロンの目」にも例えられます。", 
+        desc_en: "[Southern Fish] Features Fomalhaut. Known for the first visible light image of an exoplanet and its 'Eye of Sauron' dust ring.",
+        myth: "愛と美の女神アフロディーテが、怪物テュポンから逃げるために変身した魚の姿とも言われます（うお座の神話と関連）。古代文明では冬至の頃の位置を知るための重要な星でした。", 
+        myth_en: "A fish drinking the water poured by Aquarius. Sometimes associated with Aphrodite's transformation.",
         centerRA: 23.0, centerDec: -30.0, 
         lines: ["Fomalhaut"] 
     },
@@ -749,10 +749,10 @@ const CONSTELLATION_DB = [
     // --- 11. CORONA BOREALIS (かんむり座) ---
     { 
         id: "crb", rank: 2, name: "かんむり座", en: "Corona Borealis", 
-        desc: "【北の王冠】7つの星が綺麗な半円形に並んだ美しい星座です。", 
-        desc_en: "[Northern Crown] A beautiful semi-circle of stars.",
-        myth: "アリアドネの冠です。", 
-        myth_en: "The crown given to Ariadne.",
+        desc: "【北の王冠】7つの星が綺麗な半円形（Ｕ字型）に並んだ、とても美しい星座です。小ぶりですが形が整っているため、一度見つけると忘れられない魅力があります。中央で輝く2等星アルフェッカは「欠けたものの明星」という意味で、宝石のように輝いています。", 
+        desc_en: "[Northern Crown] A beautiful semi-circle of stars. The jewel in the crown is the star Alphecca.",
+        myth: "クレタ島の王女アリアドネが、酒の神ディオニュソスから贈られた7つの宝石でできた冠です。彼女が亡くなった後、ディオニュソスが空に投げて星座にしたと言われています。", 
+        myth_en: "The crown given to Ariadne by Dionysus. Placed in the sky after her death.",
         centerRA: 15.5, centerDec: 27.0, 
         lines: ["Alphecca","Nusakan"] 
     },
@@ -760,10 +760,10 @@ const CONSTELLATION_DB = [
     // --- 12. DELPHINUS (いるか座) ---
     { 
         id: "del", rank: 2, name: "いるか座", en: "Delphinus", 
-        desc: "【夏のひし形】小さなひし形と尻尾でできた、愛らしい形の星座です。", 
-        desc_en: "[The Dolphin] A small, cute diamond shape.",
-        myth: "ポセイドンの結婚を取り持ったイルカです。", 
-        myth_en: "The dolphin that helped Poseidon.",
+        desc: "【夏のひし形】夏の大三角の近くにある、小さなひし形と一本の尻尾でできた星座です。暗い星ばかりですが、密集しているため見つけやすく、その愛らしい姿から子供たちや天文ファンにとても人気があります。", 
+        desc_en: "[The Dolphin] A small, cute diamond shape with a tail near the Summer Triangle. Popular for its distinct shape.",
+        myth: "海の王ポセイドンが、海の女神アンフィトリテに求婚した際、逃げ回る彼女を見つけて説得し、結婚を取り持った賢いイルカです。その功績で空に上げられました。", 
+        myth_en: "The dolphin that helped Poseidon woo Amphitrite. Rewarded with a place in the stars.",
         centerRA: 20.7, centerDec: 15.0, 
         lines: ["Sualocin","Rotanev", "Rotanev","Gamma Del", "Gamma Del","Delta Del", "Delta Del","Sualocin"] 
     },
@@ -772,10 +772,10 @@ const CONSTELLATION_DB = [
     // --- 1. LEPUS (うさぎ座) ---
     { 
         id: "lep", rank: 3, name: "うさぎ座", en: "Lepus", 
-        desc: "【オリオンの獲物】オリオン座の足元にある星座です。", 
-        desc_en: "[The Hare] Located at Orion's feet.",
-        myth: "オリオンの獲物、あるいは多産のシンボルです。", 
-        myth_en: "Orion's prey.",
+        desc: "【オリオンの獲物】狩人オリオンの足元で、うずくまっているような形の星座です。オリオンが連れているおおいぬ座の方向から逃げるように西へ沈んでいきます。目立つ星はありませんが、α星アーネブはアラビア語でそのまま「ウサギ」を意味します。", 
+        desc_en: "[The Hare] Located at Orion's feet. Being chased by Canis Major. The star Arneb means 'Hare' in Arabic.",
+        myth: "特に大きな神話はありませんが、狩りを好んだオリオンの獲物として配置されたと言われています。また、ウサギは多産であることから、生命のシンボルとして空に上げられたという説もあります。", 
+        myth_en: "Placed at the feet of Orion the Hunter. A symbol of fertility or simply Orion's prey.",
         centerRA: 5.5, centerDec: -20.0, 
         lines: ["Arneb", "Nihal", "Nihal", "Epsilon Lep", "Epsilon Lep", "Mu Lep", "Mu Lep", "Arneb"] 
     },
@@ -783,10 +783,10 @@ const CONSTELLATION_DB = [
     // --- 2. CANCER (かに座) ---
     { 
         id: "cnc", rank: 3, name: "かに座", en: "Cancer", 
-        desc: "【プレセペ星団】目立たない星座ですが、中心に「プレセペ星団」があります。", 
-        desc_en: "[The Crab] Home to the Beehive Cluster (M44).",
-        myth: "ヘラクレスに踏み潰された巨大ガニです。", 
-        myth_en: "The giant crab crushed by Hercules.",
+        desc: "【プレセペ星団】黄道十二星座の一つですが、明るい星がなく目立ちません。しかし、中心には肉眼でもぼんやりと雲のように見える「プレセペ星団（M44）」があります。これは「飼い葉桶」という意味で、その周りの星をロバに見立てています。", 
+        desc_en: "[The Crab] Faint constellation but home to the Beehive Cluster (M44), visible to the naked eye as a fuzzy patch.",
+        myth: "英雄ヘラクレスがヒドラと戦っているとき、ヒドラに加勢しようとしてヘラクレスの足を挟んだ巨大ガニです。しかし、あっけなく踏み潰されてしまいました。女神ヘラがその勇気を称えて星座にしたと言われています。", 
+        myth_en: "The giant crab that pinched Hercules' foot while he fought the Hydra. Crushed by the hero but honored by Hera.",
         centerRA: 8.5, centerDec: 20.0, 
         lines: ["Acubens","Altarf", "Asellus Australis","Asellus Borealis", "Asellus Australis","Acubens"] 
     },
@@ -794,10 +794,10 @@ const CONSTELLATION_DB = [
     // --- 3. LIBRA (てんびん座) ---
     { 
         id: "lib", rank: 3, name: "てんびん座", en: "Libra", 
-        desc: "【正義の天秤】「く」の字を裏返したような四角形が特徴です。", 
-        desc_en: "[The Scales] Represents balance and justice.",
-        myth: "正義の女神アストライアの天秤です。", 
-        myth_en: "The scales held by Astraea.",
+        desc: "【正義の天秤】おとめ座とさそり座の間にあり、「く」の字を裏返したような四角形が特徴です。かつてはさそり座の「爪」の部分でしたが、独立して天秤座になりました。星の名前（ズベン・エス・カマリ＝北の爪）などにその名残があります。", 
+        desc_en: "[The Scales] Located between Virgo and Scorpius. Originally the claws of the Scorpion. Represents balance and justice.",
+        myth: "正義の女神アストライア（おとめ座）が持っている天秤です。人間の善悪を測る道具で、悪がはびこる地上を女神が去った後も、正義の象徴として空に残されました。", 
+        myth_en: "The scales held by Astraea (Virgo), the goddess of justice, used to weigh good and evil.",
         centerRA: 15.0, centerDec: -15.0, 
         lines: ["Zubenelgenubi","Zubeneschamali", "Zubenelgenubi","Brachium", "Zubeneschamali","Brachium"] 
     },
@@ -805,10 +805,10 @@ const CONSTELLATION_DB = [
     // --- 4. CAPRICORNUS (やぎ座) ---
     { 
         id: "cap", rank: 3, name: "やぎ座", en: "Capricornus", 
-        desc: "【海やぎ】逆三角形の形。頭がヤギ、体が魚の姿です。", 
-        desc_en: "[Sea Goat] A large inverted triangle shape.",
-        myth: "変身に失敗した牧神パンの姿です。", 
-        myth_en: "The god Pan, who panicked and transformed partially.",
+        desc: "【海やぎ】秋の南の空に浮かぶ、大きな逆三角形（パンツのような形）が目印です。上半身がヤギ、下半身が魚という不思議な姿をしています。球状星団M30などを含んでいますが、全体的に暗い星で構成されています。", 
+        desc_en: "[Sea Goat] A large inverted triangle shape. Depicted as a creature with a goat's head and a fish's tail.",
+        myth: "牧神パンの姿です。神々の宴会で怪物テュポンが現れたとき、慌てて変身して川に飛び込みましたが、パニックになりすぎて水に浸かった下半身が魚、上半身がヤギという姿になってしまいました。その姿を見たゼウスが面白がって星座にしました。", 
+        myth_en: "The god Pan, who panicked and jumped into a river to escape Typhon, transforming only his lower half into a fish.",
         centerRA: 21.0, centerDec: -20.0, 
         lines: ["Algedi","Dabih", "Dabih","Nashira", "Nashira","Deneb Algedi", "Algedi","Deneb Algedi"] 
     },
@@ -816,10 +816,10 @@ const CONSTELLATION_DB = [
     // --- 5. AQUARIUS (みずがめ座) ---
     { 
         id: "aqr", rank: 3, name: "みずがめ座", en: "Aquarius", 
-        desc: "【神の給仕】「三ツ矢」マークから水が流れる様子が描かれています。", 
-        desc_en: "[Water Bearer] Features a 'Y' shape pouring water.",
-        myth: "美少年ガニュメデスの姿です。", 
-        myth_en: "Ganymede, cupbearer to the gods.",
+        desc: "【神の給仕】秋の空に広く展開する大きな星座です。「三ツ矢」マークのような星の並び（水瓶）から、みなみのうお座に向かって水が流れ落ちる様子が描かれています。宝瓶宮（ほうへいきゅう）とも呼ばれ、幸運をもたらす水とされています。", 
+        desc_en: "[Water Bearer] A large constellation. Features a 'Y' shape (the jar) pouring water down to Piscis Austrinus.",
+        myth: "トロイアの王子ガニュメデスの姿です。あまりの美しさにゼウスが鷲（わし座）を遣わせて天界に連れ去り、神々の宴会で不老不死の酒ネクタルを注ぐ給仕係にしました。彼はその役割を永遠に担っています。", 
+        myth_en: "Ganymede, a beautiful Trojan prince kidnapped by Zeus to serve as the cupbearer to the gods.",
         centerRA: 22.0, centerDec: -10.0, 
         lines: ["Sadalmelik","Sadalsuud", "Sadalsuud","Eta Aqr", "Eta Aqr","Sadachbia", "Sadachbia","Skat"] 
     },
@@ -827,10 +827,10 @@ const CONSTELLATION_DB = [
     // --- 6. PISCES (うお座) ---
     { 
         id: "psc", rank: 3, name: "うお座", en: "Pisces", 
-        desc: "【二匹の魚】V字型に並び、二匹の魚がリボンで結ばれています。", 
-        desc_en: "[The Fishes] Two fish tied together by a ribbon.",
-        myth: "アフロディーテとエロスが逃げる際に変身した姿です。", 
-        myth_en: "Aphrodite and Eros transformed into fish.",
+        desc: "【二匹の魚】ペガスス座の四辺形の南と東を取り囲むように、V字型に並んだ星座です。二匹の魚がリボンで結ばれた姿をしています。西の魚にある「サークレット」と呼ばれる五角形の星の並びが比較的見つけやすい目印です。", 
+        desc_en: "[The Fishes] Two fish tied together by a ribbon, forming a 'V' shape around Pegasus. Includes the 'Circlet' asterism.",
+        myth: "美の女神アフロディーテとその子エロスです。怪物テュポンに襲われた際、魚に変身して川に逃げました。そのとき、はぐれないように互いの体（または尾）をリボンでしっかりと結び合いました。", 
+        myth_en: "Aphrodite and Eros, who turned into fish to escape Typhon, tying themselves together with a ribbon so they wouldn't part.",
         centerRA: 1.0, centerDec: 10.0, 
         lines: ["Alrescha","Alpherg", "Alrescha","Gamma Psc", "Gamma Psc","Omega Psc"] 
     },
@@ -838,10 +838,10 @@ const CONSTELLATION_DB = [
     // --- 7. ARIES (おひつじ座) ---
     { 
         id: "ari", rank: 3, name: "おひつじ座", en: "Aries", 
-        desc: "【黄金の羊】「へ」の字型に並んだ3つの星が目印です。", 
-        desc_en: "[The Ram] Marked by three stars forming a curve.",
-        myth: "空を飛ぶ金色の羊です。", 
-        myth_en: "The flying golden ram.",
+        desc: "【黄金の羊】「へ」の字型に並んだ3つの星が目印です。黄道十二星座の最初の星座であり、かつては春分点がこの星座にありました（現在はうお座に移動）。一番明るいハマルは2等星で、比較的見つけやすい星です。", 
+        desc_en: "[The Ram] The first sign of the Zodiac. Marked by three stars forming a curve. Hamal is the brightest star.",
+        myth: "ボイオティア王の子供、フリクソスとヘレを継母の悪巧みから救うために、大神ゼウスが遣わした空を飛ぶ金色の羊です。背中に二人を乗せて逃げましたが、妹のヘレは途中で海に落ちてしまいました。", 
+        myth_en: "The flying golden ram sent by Zeus to save Phrixus and Helle. Phrixus sacrificed it and its Golden Fleece became a treasure.",
         centerRA: 2.0, centerDec: 20.0, 
         lines: ["Hamal","Sheratan", "Sheratan","Mesarthim"] 
     },
@@ -849,10 +849,10 @@ const CONSTELLATION_DB = [
     // --- 8. CORVUS (からす座) ---
     { 
         id: "crv", rank: 3, name: "からす座", en: "Corvus", 
-        desc: "【帆かけ星】いびつな四角形が特徴です。", 
-        desc_en: "[The Crow] A distinct quadrilateral.",
-        myth: "嘘をついて真っ黒にされたカラスです。", 
-        myth_en: "Apollo's bird, turned black for lying.",
+        desc: "【帆かけ星】おとめ座のスピカの隣にある、いびつな四角形が特徴です。日本ではその形から「帆かけ星」とも呼ばれ、昔の船乗りたちが方角を知る目印にしたとも言われています。銀河の方向から外れているため、遠くの銀河を観測する窓にもなっています。", 
+        desc_en: "[The Crow] A distinct quadrilateral near Spica. Known as the 'Sail Star' in Japan.",
+        myth: "太陽神アポロンの使いの銀色のカラスでした。しかし、水汲みを頼まれた際に道草を食い、それを隠すために嘘をついたため、アポロンの怒りを買って真っ黒に焦がされ、言葉も奪われて空に張り付けられました。", 
+        myth_en: "Apollo's bird, turned black and banished to the sky for laziness and lying about fetching water.",
         centerRA: 12.5, centerDec: -20.0, 
         lines: ["Algorab","Kraz", "Kraz","Minkar", "Minkar","Gienah Corvi", "Gienah Corvi","Algorab"] 
     },
@@ -860,10 +860,10 @@ const CONSTELLATION_DB = [
     // --- 9. COMA BERENICES (かみのけ座) ---
     { 
         id: "com", rank: 3, name: "かみのけ座", en: "Coma Berenices", 
-        desc: "【王妃の髪】細かい星が散らばっている星座です。", 
-        desc_en: "[Berenice's Hair] A cluster of stars.",
-        myth: "王妃ベレニケが捧げた美しい髪の毛です。", 
-        myth_en: "Queen Berenice II's hair.",
+        desc: "【王妃の髪】しし座の尻尾のあたりに、細かい星がバラバラと散らばっている星座です。双眼鏡で見ると美しい散開星団（Mel 111）であることがわかります。また、この方向は天の川のガスが薄いため、遠くの銀河を見通せる「銀河の窓」としても知られています。", 
+        desc_en: "[Berenice's Hair] A cluster of stars. Represents the hair of Queen Berenice II. Also known as a 'Window to the Galaxy'.",
+        myth: "エジプト王妃ベレニケが、夫の戦争からの無事の帰還を願い、美の女神に捧げた美しい髪の毛です。翌日、神殿から髪が消えており、宮廷天文学者が「女神が気に入って空に飾ったのです」と王をなだめたという逸話があります。", 
+        myth_en: "Queen Berenice II sacrificed her beautiful hair for her husband's safe return. It was placed among the stars by Aphrodite.",
         centerRA: 13.0, centerDec: 25.0, 
         lines: ["Diadem","Beta Com"] 
     },
@@ -871,10 +871,10 @@ const CONSTELLATION_DB = [
     // --- 10. ERIDANUS (エリダヌス座) ---
     { 
         id: "eri", rank: 3, name: "エリダヌス座", en: "Eridanus", 
-        desc: "【天の川】オリオン座の足元から南へ長く続く川の星座です。", 
-        desc_en: "[The River] A long, winding constellation.",
-        myth: "パエトンが墜落した伝説の川です。", 
-        myth_en: "The river where Phaethon fell.",
+        desc: "【天の川】オリオン座の足元から、くねくねと蛇行しながら南の地平線彼方まで続く、全天で6番目に大きな星座です。川の果てにある1等星「アケルナル」は、日本では鹿児島以南でないと見えません。オリオン座のリゲルのすぐそばから始まります。", 
+        desc_en: "[The River] A long, winding constellation starting from Orion. Ends at the bright star Achernar (far south).",
+        myth: "太陽神ヘリオスの息子パエトンが、父の太陽の馬車を無理やり運転して暴走し、ゼウスの雷に撃たれて墜落した伝説の川です。パエトンの燃える体を受け止め、冷やしたと言われています。", 
+        myth_en: "The river where Phaethon fell after losing control of the sun chariot and being struck by Zeus's thunderbolt.",
         centerRA: 3.5, centerDec: -30.0, 
         lines: ["Cursa","Zaurak", "Zaurak","Acamar", "Acamar","Achernar"] 
     },
@@ -882,10 +882,10 @@ const CONSTELLATION_DB = [
     // --- 11. CETUS (くじら座) ---
     { 
         id: "cet", rank: 3, name: "くじら座", en: "Cetus", 
-        desc: "【海の怪物】巨大な星座です。変光星「ミラ」があります。", 
-        desc_en: "[The Sea Monster] A huge constellation featuring Mira.",
-        myth: "アンドロメダを襲った海の怪物です。", 
-        myth_en: "The sea monster sent to devour Andromeda.",
+        desc: "【海の怪物】秋から冬にかけて南の空に横たわる、全天で4番目に巨大な星座です。クジラというよりは、前足のある怪物の姿をしています。首のところにある星「ミラ」は、明るさが大きく変わることで有名な変光星で、「不思議なもの」という意味です。", 
+        desc_en: "[The Sea Monster] A huge constellation. Home to Mira, the 'Wonderful', a famous variable star. Not a gentle whale but a monster.",
+        myth: "アンドロメダ姫を襲うためにポセイドンが遣わした海の怪物ティアマト（またはケートス）です。口から潮ではなく炎を吐くとも言われます。英雄ペルセウスによって石に変えられ、退治されました。", 
+        myth_en: "The sea monster sent to devour Andromeda. Slain by Perseus using Medusa's head.",
         centerRA: 1.5, centerDec: -10.0, 
         lines: ["Menkar","Mira", "Mira","Baten Kaitos", "Baten Kaitos","Diphda"] 
     },
@@ -894,10 +894,10 @@ const CONSTELLATION_DB = [
     // --- 1. SIRIUS (シリウス) ---
     { 
         id: "sirius", rank: 4, name: "シリウス", en: "Sirius", 
-        desc: "【焼き焦がすもの】全天一明るい恒星です。", 
-        desc_en: "[The Scorcher] The brightest star in the night sky.",
-        myth: "古代エジプトでナイル川の氾濫を知らせた重要な星です。", 
-        myth_en: "In Egypt, it predicted the Nile floods.",
+        desc: "【焼き焦がすもの】おおいぬ座の口元にある全天一明るい恒星です。ギリシャ語で「焼き焦がすもの」という意味があります。真夏に太陽と同じ方向にあって見えない時期を「ドッグ・デイズ（犬の日々＝酷暑）」と呼ぶのは、この星の熱が暑さをもたらすと信じられていたためです。", 
+        desc_en: "[The Scorcher] The brightest star in the night sky. The phrase 'Dog Days of Summer' comes from the belief that Sirius added heat to the sun.",
+        myth: "映画『ハリー・ポッター』に登場する「シリウス・ブラック」の名前の由来です。彼は黒い犬に変身する能力を持っていました。古代エジプトでは「ナイルの星（ソティス）」と呼ばれ、ピラミッド建設の向きを決める基準にもなった極めて重要な星です。", 
+        myth_en: "Namesake of Sirius Black in Harry Potter, who transforms into a dog. In Egypt, it was known as Sothis and predicted the Nile floods.",
         centerRA: 6.75, centerDec: -16.7, 
         lines: [] 
     },
@@ -905,10 +905,10 @@ const CONSTELLATION_DB = [
     // --- 2. ANDROMEDA GALAXY (アンドロメダ銀河) ---
     { 
         id: "m31", rank: 4, name: "アンドロメダ銀河 (M31)", en: "Andromeda Galaxy", 
-        desc: "【お隣の巨大銀河】肉眼で見える最も遠い天体（250万光年）です。", 
-        desc_en: "[Our Neighbor] The farthest object visible to the naked eye.",
-        myth: "約40億年後に天の川銀河と衝突すると予測されています。", 
-        myth_en: "Predicted to collide with our Milky Way.",
+        desc: "【お隣の巨大銀河】私たちの天の川銀河のお隣にある、直径約22万光年の巨大な渦巻銀河です。肉眼で見ることができる「最も遠い物体（約250万光年）」です。空の暗い場所では、アンドロメダ座の腰のあたりに、ボーッとした光のシミのように見えます。", 
+        desc_en: "[Our Neighbor] A giant spiral galaxy 2.5 million light-years away. The farthest object visible to the naked eye.",
+        myth: "神話はありませんが、未来の予測があります。この銀河は猛スピードで私たちに近づいており、約40億年後には天の川銀河と正面衝突して合体し、「ミルコメダ銀河」という一つの巨大な楕円銀河になると予測されています。", 
+        myth_en: "It is predicted to collide and merge with our Milky Way in about 4 billion years, forming 'Milkomeda'.",
         centerRA: 0.7, centerDec: 41.2, 
         lines: [] 
     },
@@ -916,10 +916,10 @@ const CONSTELLATION_DB = [
     // --- 3. PLEIADES (プレアデス星団 / すばる) ---
     { 
         id: "m45", rank: 4, name: "プレアデス星団 (すばる)", en: "Pleiades (Subaru)", 
-        desc: "【星の宝石箱】おうし座の美しい散開星団です。", 
-        desc_en: "[Star Box] A beautiful open cluster in Taurus.",
-        myth: "巨人アトラスの7人の娘たちです。", 
-        myth_en: "The Seven Sisters pursued by Orion.",
+        desc: "【星の宝石箱】おうし座の肩にある美しい散開星団です。平安時代の随筆『枕草子』で清少納言が「星はすばる」と称えたことで有名です。「すばる」は「集まってひとつになる（統べる）」という意味の古い日本語です。", 
+        desc_en: "[Star Box] A beautiful open cluster in Taurus. Known as 'Subaru' in Japan, meaning 'to unite'.",
+        myth: "自動車メーカー「SUBARU」の社名とロゴマーク（六連星）の由来です。ギリシャ神話では、巨人アトラスの7人の娘たち（プレアデス7姉妹）が、狩人オリオンに追いかけられて逃げ惑い、鳩に変身して星になった姿だと言われています。", 
+        myth_en: "The emblem of the car maker SUBARU. In myth, the Seven Sisters pursued by Orion and turned into stars by Zeus.",
         centerRA: 3.8, centerDec: 24.1, 
         lines: [] 
     },
@@ -927,10 +927,10 @@ const CONSTELLATION_DB = [
     // --- 4. ORION NEBULA (オリオン大星雲) ---
     { 
         id: "m42", rank: 4, name: "オリオン大星雲 (M42)", en: "Orion Nebula", 
-        desc: "【星のゆりかご】新しい星が生まれている場所です。", 
-        desc_en: "[Stellar Nursery] Where new stars are being born.",
-        myth: "マヤ文明では「宇宙の炉」と考えられていました。", 
-        myth_en: "The Maya viewed this as the cosmic hearth.",
+        desc: "【星のゆりかご】オリオン座の三つ星の下にぶら下がっている「小三つ星」の真ん中にあります。肉眼でも少し滲んで見えます。ここは巨大なガスの塊で、中で新しい星が次々と生まれている「宇宙の工場」です。中心には「トラペジウム」という生まれたての4つの星が輝いています。", 
+        desc_en: "[Stellar Nursery] Located in Orion's sword. A massive cloud of gas where new stars are being born. Contains the Trapezium cluster.",
+        myth: "特定の神話はありませんが、マヤ文明では、この場所を「宇宙の炉（Creation Hearth）」と捉え、生命創造の炎が燃えている場所と考えていました。現代天文学でも「星が生まれる場所」なので、古代の直感は鋭かったと言えます。", 
+        myth_en: "The Maya viewed this area as the cosmic hearth of creation, which aligns with modern astronomy identifying it as a star nursery.",
         centerRA: 5.6, centerDec: -5.4, 
         lines: [] 
     },
@@ -938,10 +938,10 @@ const CONSTELLATION_DB = [
     // --- 5. POLARIS (北極星) ---
     { 
         id: "polaris", rank: 4, name: "北極星 (ポラリス)", en: "Polaris", 
-        desc: "【不動の道しるべ】真北を知るための重要な星です。", 
-        desc_en: "[North Star] Vital for navigation to find True North.",
-        myth: "北極星は歳差運動により交代していきます。", 
-        myth_en: "The title of North Star is temporary.",
+        desc: "【不動の道しるべ】こぐま座の尻尾にある2等星です。地球の自転軸（地軸）の延長線上にあるため、一晩中ほとんど動きません。そのため、古くから航海や旅の際の「真北」を知るための最も重要な星として利用されてきました。", 
+        desc_en: "[North Star] Located at the celestial pole, it appears motionless. Vital for navigation to find True North.",
+        myth: "実は北極星は交代制です。地球の首振り運動（歳差）により、紀元前3000年頃はりゅう座のトゥバンが、そして1万2000年後にはこと座のベガが北極星になります。ポラリスは「現在の」北極担当に過ぎません。", 
+        myth_en: "The title of North Star is temporary due to Earth's precession. Thuban was the North Star in 3000 BC, and Vega will be in 12,000 years.",
         centerRA: 2.5, centerDec: 89.2, 
         lines: [] 
     },
@@ -949,10 +949,10 @@ const CONSTELLATION_DB = [
     // --- 6. ARCTURUS (アークトゥルス) ---
     { 
         id: "arcturus", rank: 4, name: "アークトゥルス", en: "Arcturus", 
-        desc: "【麦星】全天で最も移動速度が速い星の一つです。", 
-        desc_en: "[Bear Guard] Known for its high proper motion.",
-        myth: "ハワイへの航海に使われた「喜びの星」です。", 
-        myth_en: "Called Hōkūleʻa in Hawaii, used for navigation.",
+        desc: "【麦星】うしかい座の1等星で、オレンジ色に明るく輝きます。日本では麦の収穫時期に頭上で輝くため「麦星」と呼ばれました。全天の1等星の中で最も移動速度（固有運動）が速い「暴走星」としても知られ、およそ5万年後には全く違う位置に移動してしまいます。", 
+        desc_en: "[Bear Guard] An orange giant in Boötes. Known for its high proper motion, speeding across the galaxy faster than other bright stars.",
+        myth: "ハワイでは「ホクレア（喜びの星）」と呼ばれます。古代ポリネシア人は、この星がハワイ諸島の真上を通ることを利用して、コンパスも地図もなしに太平洋を渡り、ハワイを発見しました。まさに「ハワイへの道しるべ」です。", 
+        myth_en: "Called Hōkūleʻa (Star of Gladness) in Hawaii. Ancient navigators used it to find the Hawaiian Islands across the Pacific.",
         centerRA: 14.3, centerDec: 19.2, 
         lines: [] 
     },
@@ -960,10 +960,10 @@ const CONSTELLATION_DB = [
     // --- 7. BETELGEUSE (ベテルギウス) ---
     { 
         id: "betelgeuse", rank: 4, name: "ベテルギウス", en: "Betelgeuse", 
-        desc: "【平家星】爆発寸前の赤色超巨星です。", 
-        desc_en: "[Red Supergiant] A massive dying star.",
-        myth: "日本では平家星と呼ばれています。", 
-        myth_en: "In Japan, it's called the 'Heike Star'.",
+        desc: "【平家星】オリオン座の左上の赤い星です。太陽系に置くと木星の軌道まで飲み込むほど巨大な「赤色超巨星」です。寿命が尽きかけており、明日爆発してもおかしくないと言われています。爆発すれば、昼間でも見えるほどの明るさになると予測されています。", 
+        desc_en: "[Red Supergiant] A massive dying star in Orion. If placed in our solar system, it would reach Jupiter. Expected to go supernova soon.",
+        myth: "日本では、この赤い星を「平家の赤旗」に見立てて「平家星」、対角線にある白いリゲルを「源氏の白旗」に見立てて「源氏星」と呼びました。空の上でも源平合戦が繰り広げられているという、ロマンあふれる和名です。", 
+        myth_en: "In Japan, it's called the 'Heike Star' (Red clan), facing off against Rigel, the 'Genji Star' (White clan), representing a historic war.",
         centerRA: 5.9, centerDec: 7.4, 
         lines: [] 
     },
@@ -971,16 +971,16 @@ const CONSTELLATION_DB = [
     // --- 8. MILKY WAY CENTER (天の川銀河中心) ---
     { 
         id: "mw_center", rank: 4, name: "天の川銀河中心", en: "Galactic Center", 
-        desc: "【ブラックホールの棲家】超大質量ブラックホールがあります。", 
-        desc_en: "[Galactic Core] Home to a supermassive black hole.",
-        myth: "インカでは暗黒星座として崇拝されました。", 
-        myth_en: "The Incas saw shapes in the dark patches.",
+        desc: "【ブラックホールの棲家】いて座の方向、天の川が最も濃く見える場所に、私たちの銀河系の中心があります。そこには太陽の400万倍の質量を持つ超大質量ブラックホール「いて座A*（エースター）」が潜んでおり、銀河全体の星々を重力で支配しています。", 
+        desc_en: "[Galactic Core] The center of our Milky Way in Sagittarius. Home to Sagittarius A*, a supermassive black hole 4 million times the mass of the Sun.",
+        myth: "東洋の七夕伝説では、天の川は恋人たち（ベガとアルタイル）を引き裂く川ですが、南米のインカ帝国では、天の川の「暗い部分（星のない部分）」を、水を飲むリャマや蛇の姿に見立てて「暗黒星座」として崇拝していました。", 
+        myth_en: "While Asia sees a river separating lovers, the Incas saw shapes in the dark patches of the Milky Way, calling them 'Dark Cloud Constellations'.",
         centerRA: 17.8, centerDec: -29.0, 
         lines: [] 
     }
 ];
 
-// --- 修正済み STARS_DATA ---
+// --- 修正済み STARS_DATA (Strictly from Text 1 to avoid Duplicates) ---
 const STARS_DATA = [
     // --- 🦁 1. ORION (オリオン座) ---
     { name: "Betelgeuse", ra: 5.919, dec: 7.407, mag: 0.45, ci: 1.85 },
@@ -1233,7 +1233,6 @@ const STARS_DATA = [
     { name: "M42 Orion Nebula", ra: 5.588, dec: -5.391, mag: 4.0, ci: 0.50 },
     { name: "Galactic Center", ra: 17.761, dec: -29.007, mag: 5.0, ci: 1.0 }
 ];
-
 // --- 1. VECTOR & QUATERNION ENGINE (v18 YXZ + Gamma Fix) ---
 const Math3D = {
     qMultiply: (a, b) => {
