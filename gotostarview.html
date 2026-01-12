@@ -1716,7 +1716,8 @@ const App = {
             }
         });
 
-        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.4)"; ctx.lineWidth = 2;
+    
+        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 2; // ★線を太く濃く変更
         ctx.beginPath();
         const visibleConsts = [];
         CONSTELLATION_DB.forEach(c => {
@@ -1724,22 +1725,9 @@ const App = {
             const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
             if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 3; }
             
-            // If it's a star/galaxy (no lines), just calculate center
-            if(c.lines.length === 0) {
-                const vec = Astro.getStarVector(c.centerRA, c.centerDec, state.lat, lst);
-                const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
-                if(p) {
-                    visibleConsts.push({c, x:p.x, y:p.y, dist: Math.hypot(p.x-width/2, p.y-height/2)});
-                    ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; // Yellow for single objects
-                    ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
-                    
-                    const tName = state.lang==='en' ? c.en : c.name;
-                    // Draw a marker for single objects
-                    ctx.fillText(tName, p.x, p.y - 10);
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
-                }
-            } else {
-                // Lines Logic
+            // ★ここから修正：線があるかないかで分岐
+            if (c.lines && c.lines.length > 0) {
+                // 線がある場合（通常の星座）
                 let cx=0, cy=0, n=0;
                 for(let i=0; i<c.lines.length; i+=2) {
                     const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
@@ -1754,16 +1742,34 @@ const App = {
                     if(c.rank === 1 || d < 200) {
                         visibleConsts.push({c, x:cx, y:cy, dist:d});
                         ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "#fff");
-                        ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
-                        
+                        ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'"; // バブル文字サイズはCSSで制御
                         const tName = state.lang==='en' ? c.en : c.name;
                         ctx.fillText(tName, cx, cy);
                     }
                 }
+            } else {
+                // ★線がない場合（Rank 4: 星・銀河など）
+                // 中心座標だけ計算して点を打つ
+                const vec = Astro.getStarVector(c.centerRA, c.centerDec, state.lat, lst);
+                const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
+                if(p) {
+                    const d = Math.hypot(p.x-width/2, p.y-height/2);
+                    if(d < 200 || isTarget) { // 画面内なら表示
+                        visibleConsts.push({c, x:p.x, y:p.y, dist:d});
+                        ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; // 黄色で強調
+                        ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
+                        const tName = state.lang==='en' ? c.en : c.name;
+                        ctx.fillText(tName, p.x, p.y - 10);
+                        ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); // マーカーを描画
+                    }
+                }
             }
-            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.4)"; ctx.lineWidth = 2; }
+            
+            // 描画設定を元に戻す
+            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.6)"; ctx.lineWidth = 2; }
         });
         ctx.stroke();
+
 
         // 5. Smart Bubble Logic
         const bubble = document.getElementById('smart-bubble');
@@ -1879,7 +1885,7 @@ const App = {
         else { btn.innerText = "🌙"; }
     },
     setOpacity: (k,v) => { App.state.opacity[k] = parseFloat(v); if(k==='bg')document.getElementById('val-bg').innerText=Math.round(v*100)+"%"; if(k==='milky')document.getElementById('val-milky').innerText=Math.round(v*100)+"%"; },
-    setRank: (r,v) => App.state.ranks[r] = v,
+    setRank: (r,v) => { App.state.ranks[r] = v; Guide.buildList(); }, // 単独更新＆リスト再構築
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { 
         App.state.lang = l; 
