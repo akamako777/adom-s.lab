@@ -1174,7 +1174,7 @@ const App = {
             }
         });
 
-        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.4)"; ctx.lineWidth = 1;
+        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.4)"; ctx.lineWidth = 2;
         ctx.beginPath();
         const visibleConsts = [];
         CONSTELLATION_DB.forEach(c => {
@@ -1219,7 +1219,7 @@ const App = {
                     }
                 }
             }
-            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.4)"; ctx.lineWidth = 1; }
+            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.4)"; ctx.lineWidth = 2; }
         });
         ctx.stroke();
 
@@ -1367,3 +1367,4 @@ window.onload = () => Gate.check();
 </script>
 </body>
 </html>
+
