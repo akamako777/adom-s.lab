@@ -1527,44 +1527,61 @@ const App = {
 
   handleOri: (e) => {
         // --- 🌊 Smoothing Factor (0.1 = Strong, 1.0 = None) ---
+        // 0.15あたりが最適です
         const k = 0.15; 
 
-        // Get raw sensor data
+        // 生データの取得
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
         let gamma = e.gamma || 0;
+        let compass = e.webkitCompassHeading || 0; // iOS用
 
-        // Initialize state if first run
+        // 初回初期化
         if (!App.state.lastOri) {
-            App.state.lastOri = { alpha, beta, gamma };
+            App.state.lastOri = { alpha, beta, gamma, compass };
         }
 
         const last = App.state.lastOri;
 
-        // Anti-Gimbal Lock Logic: Prevent spin when crossing 0/360
-        if (Math.abs(alpha - last.alpha) > 300) last.alpha = alpha;
-        if (Math.abs(beta - last.beta) > 300) last.beta = beta;
-        if (Math.abs(gamma - last.gamma) > 300) last.gamma = gamma;
+        // ★角度の「最短距離」を計算して混ぜる関数 (The Magic Function)
+        // 359度→1度の移動を「-358度」ではなく「+2度」として計算します
+        const lerpAngle = (current, previous, factor) => {
+            let diff = current - previous;
+            // 差分を -180 〜 180 の範囲に正規化
+            while (diff > 180) diff -= 360;
+            while (diff < -180) diff += 360;
+            return previous + diff * factor;
+        };
 
-        // Apply Low-Pass Filter
-        alpha = last.alpha + (alpha - last.alpha) * k;
-        beta = last.beta + (beta - last.beta) * k;
-        gamma = last.gamma + (gamma - last.gamma) * k;
+        // 各値をスムージング
+        alpha = lerpAngle(alpha, last.alpha, k);
+        beta = lerpAngle(beta, last.beta, k);
+        gamma = lerpAngle(gamma, last.gamma, k);
+        // iOSの方位磁針もスムージング対象にする
+        compass = lerpAngle(compass, last.compass, k);
 
-        // Save smoothed values for next frame
-        App.state.lastOri = { alpha, beta, gamma };
-        
-        // Update App State
-        App.state.orientation = { 
-            alpha, beta, gamma, 
-            isIOS: !!e.webkitCompassHeading, 
-            webkitCompass: e.webkitCompassHeading 
+        // 次回用に保存（計算のため0-360の範囲に収める）
+        App.state.lastOri = { 
+            alpha: (alpha + 360) % 360, 
+            beta, 
+            gamma,
+            compass: (compass + 360) % 360
         };
         
-        // Calibration Logic (Level Bubble) - Remains Unchanged
+        // アプリの状態へ反映
+        App.state.orientation = { 
+            alpha: App.state.lastOri.alpha, 
+            beta, 
+            gamma, 
+            isIOS: !!e.webkitCompassHeading, 
+            // iOSの場合は、スムージング済みのcompass値を使う
+            webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
+        };
+        
+        // Calibration Logic (以下はスムージング値を使って表示)
         if (App.state.calibMode) {
             const ball = document.getElementById('level-ball');
-            const maxTilt = 20; // degrees
+            const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
             
@@ -1573,8 +1590,10 @@ const App = {
             
             ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
             
-            let h = alpha;
-            if(e.webkitCompassHeading) h = e.webkitCompassHeading;
+            // UI表示もスムージング値で更新
+            let h = App.state.orientation.alpha;
+            if(App.state.orientation.webkitCompass != null) h = App.state.orientation.webkitCompass;
+            
             document.getElementById('calib-val').innerText = `${Math.round(h)}°`;
             
             if(Math.abs(bx)<3 && Math.abs(by)<3) {
@@ -1584,7 +1603,6 @@ const App = {
             }
         }
     },
-
  
 
     // --- CALIBRATION FUNCTIONS ---
