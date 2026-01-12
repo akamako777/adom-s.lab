@@ -1435,7 +1435,7 @@ const App = {
         skyRotation: 0, // REVERTED to 0
         mode: 'normal', viewMode: 0,
         // Updated default ranks to include STAR_GAL and MINOR
-        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: true },
+        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: false },
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
@@ -1650,28 +1650,30 @@ const App = {
         Utils.toast("Compass LOCKED to North 🔒");
     },
 
-    updateViewMatrix: () => {
+   updateViewMatrix: () => {
         const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
-        const safeAlpha = alpha !== null ? alpha : 0;
-        const deg2rad = Math.PI / 180;
-        let screenOrient = 0;
         
-        if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
-        else if (window.orientation) screenOrient = window.orientation;
+        // --- 画面の向きを取得 (ここはリアルタイムな値を使う) ---
+        let screenOrient = 0;
+        if (window.screen && window.screen.orientation) {
+            screenOrient = window.screen.orientation.angle;
+        } else if (window.orientation) {
+            screenOrient = window.orientation;
+        }
+
+        const deg2rad = Math.PI / 180;
 
         // 2. Normalize Alpha (Base Heading)
-        let a = safeAlpha;
-        if (isIOS && webkitCompass != null) a = -webkitCompass;
-        else { 
-            // 🛑 v25.1 FIX: Removed the "-270" magic number for Android.
-            // Trusts raw 'safeAlpha' (0=North on modern Chrome)
-            a = safeAlpha; 
+        let a = alpha; // スムージング済みの値
+        if (isIOS && webkitCompass != null) {
+            // iOSはコンパス値を優先
+            a = -webkitCompass;
         }
         
         // 3. Magnetic Declination Fix
         a -= 7; 
 
-        // 4. Apply Manual Offset & Sky Rotation for STAR rendering
+        // 4. Apply Manual Offset & Sky Rotation
         let starAlpha = a + App.state.manualOffset + App.state.skyRotation;
         if (App.state.reverseAlpha) starAlpha = -starAlpha;
 
@@ -1681,7 +1683,8 @@ const App = {
         const rGamma = gamma * deg2rad;
         const rOrient = screenOrient * deg2rad;
 
-        // YXZ Order
+        // YXZ Order (Device Rotation - Sensor only)
+        // センサーの回転行列だけを先に作る
         const qY = Math3D.qFromAxisAngle([0, 1, 0], rAlpha);     
         const qX = Math3D.qFromAxisAngle([1, 0, 0], rBeta);      
         const qZ = Math3D.qFromAxisAngle([0, 0, 1], -rGamma);    
@@ -1689,9 +1692,15 @@ const App = {
         let qDev = Math3D.qMultiply(qY, qX);
         qDev = Math3D.qMultiply(qDev, qZ);
 
+        // --- 修正ポイント: 画面回転の適用順序 ---
+        // カメラ座標系への変換 (-90度ピッチ)
         const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
+        
+        // 画面回転 (Z軸回転)
+        // ※ screenOrient はセンサー値とは独立して、最後に適用する
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -rOrient);
 
+        // センサー回転 × カメラ補正 × 画面回転 の順で適用
         let qFinal = Math3D.qMultiply(qDev, qCamFix);
         qFinal = Math3D.qMultiply(qFinal, qScreen);
 
@@ -1705,6 +1714,7 @@ const App = {
         document.getElementById('debug-az').innerText = Math.round(starAz);
         document.getElementById('debug-alt').innerText = Math.round(alt);
     },
+
 
     loop: () => {
         App.updateViewMatrix();
