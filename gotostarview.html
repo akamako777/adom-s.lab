@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v25.3 (Corrected Sky)</title>
+    <title>Five Islands Stargazer v25.4 (Cosmic Library)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,7 +55,7 @@
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
         
-        /* Smart Bubble */
+        /* Smart Bubble (Updated for Compact Text) */
         .info-bubble {
             position: absolute;
             transition: opacity 0.3s, transform 0.1s linear;
@@ -79,7 +79,7 @@
         #time-slider-container.active { opacity: 1; pointer-events: auto; }
         .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
 
-        /* Calibration Modal (UPDATED) */
+        /* Calibration Modal */
         #calib-modal {
             position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.95);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -129,6 +129,12 @@
         
         @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
         .swipe-hint { animation: swipe-anim 2s infinite; }
+
+        /* Guide Accordion Styles */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: sweep .3s ease-in-out; }
+        @keyframes sweep { 0% {opacity: 0; transform: translateY(-10px)} 100% {opacity: 1; transform: translateY(0)} }
     </style>
 </head>
 <body>
@@ -137,8 +143,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.3</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Corrected Sky</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v25.4</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Cosmic Library</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -161,9 +167,10 @@
             <!-- NEW: HTML Overlay for Rich Bubbles -->
             <div id="overlay-layer">
                 <div id="smart-bubble" class="info-bubble opacity-0 w-64 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 backdrop-blur-md shadow-2xl flex flex-col items-center text-center">
-                    <h3 id="bubble-title" class="text-lg font-bold text-cyan-400 mb-1 leading-tight">Title</h3>
-                    <div id="bubble-tag" class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-slate-300 mb-2">Constellation</div>
-                    <p id="bubble-desc" class="text-sm text-white font-medium leading-relaxed text-left w-full">Description here...</p>
+                    <h3 id="bubble-title" class="text-base font-bold text-cyan-400 mb-1 leading-tight">Title</h3>
+                    <div id="bubble-tag" class="text-[9px] bg-white/10 px-2 py-0.5 rounded text-slate-300 mb-2">Constellation</div>
+                    <!-- Updated font size to 11px for longer descriptions -->
+                    <p id="bubble-desc" class="text-[11px] text-white font-medium leading-relaxed text-left w-full">Description here...</p>
                     <div class="bubble-tail"></div>
                 </div>
             </div>
@@ -197,7 +204,7 @@
                     </div>
                 </button>
                 <div class="flex gap-3">
-                    <!-- Calibration Button (UPDATED) -->
+                    <!-- Calibration Button -->
                     <button onclick="App.startCalibration()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300">🎯</button>
                     
                     <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
@@ -225,7 +232,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v25.3 Corrected</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v25.4 Lib</div>
                 </div>
             </div>
 
@@ -246,7 +253,7 @@
         </div>
     </div>
 
-    <!-- 🎯 CALIBRATION MODAL (UPDATED with RESET) -->
+    <!-- 🎯 CALIBRATION MODAL -->
     <div id="calib-modal" class="interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-xl font-bold text-white mb-2">方位合わせ (Calibration)</h2>
@@ -290,11 +297,11 @@
         </div>
     </div>
 
-    <!-- 📖 GUIDE MODAL -->
+    <!-- 📖 GUIDE MODAL (UPDATED to ACCORDION) -->
     <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
         <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 class="font-bold text-white text-lg flex items-center gap-2">
-                <span class="text-2xl">📖</span> <span data-i18n="guide_title">星座図鑑</span>
+                <span class="text-2xl">📖</span> <span data-i18n="guide_title">星座詳細解説</span>
             </h2>
             <button onclick="Guide.toggle()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition text-xl">✕</button>
         </div>
@@ -306,7 +313,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">RELIABLE TOOL v25.3</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v25.4</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -322,12 +329,17 @@
                 <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
             </div>
             
-            <!-- Category Boxes -->
+            <!-- Category Boxes (UPDATED) -->
             <div class="space-y-3">
                 <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="cat_title">表示カテゴリ</p>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
                     <span class="text-sm font-bold" data-i18n="cat_famous">🦁 有名な星座 (Famous)</span>
                     <input type="checkbox" checked onchange="App.setRank(1, this.checked)" class="check-box">
+                </label>
+                <!-- NEW CATEGORY -->
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer border-l-4 border-yellow-400">
+                    <span class="text-sm font-bold" data-i18n="cat_star_gal">✨ 有名な星・銀河 (Stars & Gal)</span>
+                    <input type="checkbox" checked onchange="App.setRank(4, this.checked)" class="check-box">
                 </label>
                 <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
                     <span class="text-sm font-bold" data-i18n="cat_medium">🐻 普通の星座 (Medium)</span>
@@ -406,20 +418,23 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v25.3 (Corrected Sky)
+ * 🌌 FIVE ISLANDS STARGAZER v25.4 (Cosmic Library)
  * Changes:
- * - REVERTED Sky Rotation to 0 (Original correct logic).
- * - KEPT the 'Sky Rotate' switch in Settings but set to OFF by default.
- * - Confirmed: At 9AM, Vega IS in the East (rising with the Sun). Orion should be West/Set.
+ * - ADDED: 'Famous Stars & Galaxy' Category (Rank 4).
+ * - ADDED: Sample Data (Sirius, Andromeda Galaxy).
+ * - UPDATED: Guide Modal to Accordion UI.
+ * - UPDATED: Milky Way rendering (Cloud Effect).
+ * - UPDATED: Bubble Font Size (Smaller for long text).
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
 const I18N = {
     ja: {
-        guide_title: "星座図鑑 (理科と神話)",
+        guide_title: "星座詳細解説",
         settings_title: "設定 (Settings)",
         cat_title: "表示カテゴリ (Categories)",
         cat_famous: "🦁 有名な星座 (Famous)",
+        cat_star_gal: "✨ 有名な星・銀河 (Stars/Gal)",
         cat_medium: "🐻 普通の星座 (Medium)",
         cat_minor: "🦎 マイナー星座 (Minor)",
         opt_title: "表示オプション (Visibility)",
@@ -439,14 +454,16 @@ const I18N = {
         nav_end: "ナビを終了しました",
         constellation: "星座",
         famous_const: "有名な星座",
+        star_gal: "有名な星・銀河",
         time_travel: "時間旅行",
         time_reset: "現在時刻に戻る"
     },
     en: {
-        guide_title: "Star Guide (Science & Myth)",
+        guide_title: "Star Detailed Guide",
         settings_title: "Settings",
         cat_title: "Categories",
         cat_famous: "🦁 Famous Stars",
+        cat_star_gal: "✨ Major Stars & Galaxy",
         cat_medium: "🐻 Medium Stars",
         cat_minor: "🦎 Minor Stars",
         opt_title: "Visibility Options",
@@ -466,14 +483,16 @@ const I18N = {
         nav_end: "Navigation Ended",
         constellation: "Constellation",
         famous_const: "Famous Constellation",
+        star_gal: "Major Star/Galaxy",
         time_travel: "TIME TRAVEL",
         time_reset: "Reset Time"
     }
 };
 
-const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3 };
+const RANK = { FAMOUS: 1, MEDIUM: 2, MINOR: 3, STAR_GAL: 4 };
 
 const CONSTELLATION_DB = [
+    // --- 🦁 FAMOUS CONSTELLATIONS ---
     { 
         id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
         desc: "【冬の王者】真ん中の三つ星が特徴。左上の赤い星「ベテルギウス」は、もうすぐ爆発するかもしれない超巨大な星です。", 
@@ -537,6 +556,28 @@ const CONSTELLATION_DB = [
         centerRA: 13.3, centerDec: -2.0, 
         lines: ["Spica","Porrima", "Spica","Vindemiatrix"] 
     },
+
+    // --- ✨ NEW: FAMOUS STARS & GALAXIES (RANK 4) ---
+    {
+        id: "sirius", rank: 4, name: "シリウス (おおいぬ座)", en: "Sirius (Canis Major)",
+        desc: "【全天一明るい星】マイナス1.5等星という強烈な明るさで輝く、おおいぬ座の星。地球から8.6光年と非常に近い場所にあります。",
+        desc_en: "[Brightest Star] The brightest star in the night sky (-1.5 mag). Located only 8.6 light-years away.",
+        myth: "古代エジプトでは「ナイルの星」と呼ばれ、この星が明け方に昇る頃、ナイル川が氾濫して肥沃な土をもたらすと信じられていました。",
+        myth_en: "In ancient Egypt, it was the 'Nile Star'. Its heliacal rising predicted the annual flooding of the Nile.",
+        centerRA: 6.75, centerDec: -16.7,
+        lines: [] // No lines, just a target point
+    },
+    {
+        id: "m31", rank: 4, name: "アンドロメダ銀河 (M31)", en: "Andromeda Galaxy (M31)",
+        desc: "【肉眼で見える最も遠い物体】地球から250万光年の彼方にある巨大な渦巻銀河。空の暗い場所なら、ぼんやりとした雲のように見えます。",
+        desc_en: "[Farthest visible object] A giant spiral galaxy 2.5 million light-years away. Looks like a fuzzy patch in dark skies.",
+        myth: "私たちの天の川銀河のお隣さんです。猛スピードで近づいてきており、約40億年後には衝突して一つの巨大銀河になると予測されています。",
+        myth_en: "Our neighbor galaxy. It is approaching us and will collide with the Milky Way in about 4 billion years.",
+        centerRA: 0.7, centerDec: 41.2,
+        lines: [] // No lines
+    },
+
+    // --- 🐻 MEDIUM CONSTELLATIONS ---
     { 
         id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
         desc: "【北のW】北極星を探すための目印。季節によって「W」に見えたり「M」に見えたりします。", 
@@ -587,7 +628,7 @@ const CONSTELLATION_DB = [
 // --- VITAL DATA: STARS ---
 const STARS_DATA = [
     { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.97, ci: 0.6 },
-    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 },
+    { name: "Sirius", ra: 6.75, dec: -16.71, mag: -1.46, ci: 0.0 }, // Sirius (Added)
     { name: "Betelgeuse", ra: 5.91, dec: 7.40, mag: 0.45, ci: 1.5 },
     { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.12, ci: -0.03 },
     { name: "Vega", ra: 18.61, dec: 38.78, mag: 0.03, ci: 0.0 },
@@ -709,7 +750,6 @@ const Utils = {
         if (bv < 1.0) return {r:255, g:255, b:240}; if (bv < 1.5) return {r:255, g:220, b:180}; 
         return {r:255, g:200, b:180}; 
     },
-    // New: Helper to update all text elements
     updateDOMText: () => {
         const dict = I18N[App.state.lang];
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -724,7 +764,7 @@ const Utils = {
     }
 };
 
-// --- 4. GUIDE SYSTEM ---
+// --- 4. GUIDE SYSTEM (UPDATED to ACCORDION) ---
 const Guide = {
     target: null,
     toggle: () => {
@@ -736,27 +776,62 @@ const Guide = {
         const list = document.getElementById('guide-list');
         list.innerHTML = '';
         const dict = I18N[App.state.lang];
-        CONSTELLATION_DB.forEach(c => {
-            if (!App.state.ranks[c.rank]) return;
-            const card = document.createElement('div');
-            card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
-            
-            // Get correct text based on lang
-            const name = App.state.lang === 'en' ? c.en : c.name;
-            const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
-            const myth = App.state.lang === 'en' ? c.myth_en : c.myth;
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <div><h3 class="font-bold text-lg text-white">${name}</h3></div>
-                    <span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span>
-                </div>
-                <p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${desc}</p>
-                <div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 leading-relaxed font-normal">${myth}</div>
-                <button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>
+        
+        // Define Categories
+        const categories = [
+            { id: RANK.FAMOUS, title: dict.cat_famous, icon: '🦁', color: 'text-yellow-400' },
+            { id: RANK.STAR_GAL, title: dict.cat_star_gal, icon: '✨', color: 'text-cyan-400' }, // New Category
+            { id: RANK.MEDIUM, title: dict.cat_medium, icon: '🐻', color: 'text-blue-300' },
+            { id: RANK.MINOR, title: dict.cat_minor, icon: '🦎', color: 'text-slate-400' }
+        ];
+
+        categories.forEach(cat => {
+            // Filter constellations for this category
+            const items = CONSTELLATION_DB.filter(c => c.rank === cat.id);
+            if (items.length === 0) return;
+
+            // Create Details/Summary Structure
+            const details = document.createElement('details');
+            details.className = "group mb-4";
+            details.open = true; // Open by default
+
+            const summary = document.createElement('summary');
+            summary.className = "flex items-center gap-2 cursor-pointer bg-white/5 p-3 rounded-lg hover:bg-white/10 transition mb-2";
+            summary.innerHTML = `
+                <span class="${cat.color} text-xl">${cat.icon}</span>
+                <span class="font-bold text-white text-sm flex-1">${cat.title}</span>
+                <span class="text-xs text-slate-500 group-open:rotate-180 transition">▼</span>
             `;
-            list.appendChild(card);
+
+            const content = document.createElement('div');
+            content.className = "space-y-3 pl-2";
+
+            items.forEach(c => {
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
+                
+                // Get correct text based on lang
+                const name = App.state.lang === 'en' ? c.en : c.name;
+                const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
+                const myth = App.state.lang === 'en' ? c.myth_en : c.myth;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div><h3 class="font-bold text-lg text-white">${name}</h3></div>
+                        <span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span>
+                    </div>
+                    <p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${desc}</p>
+                    <div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 leading-relaxed font-normal">${myth}</div>
+                    <button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>
+                `;
+                content.appendChild(card);
+            });
+
+            details.appendChild(summary);
+            details.appendChild(content);
+            list.appendChild(details);
         });
+
         if (list.children.length === 0) list.innerHTML = `<p class="text-center text-slate-500 mt-10">${dict.cat_title} Check</p>`;
     },
     startNav: (id) => {
@@ -807,7 +882,8 @@ const App = {
         manualOffset: 0, reverseAlpha: false,
         skyRotation: 0, // REVERTED to 0
         mode: 'normal', viewMode: 0,
-        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false },
+        // Updated default ranks to include STAR_GAL
+        ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: false, [RANK.STAR_GAL]: true },
         isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
         showInfo: true, meteorEnabled: true, lang: 'ja',
         stars: [], milkyWay: [], meteors: [],
@@ -819,7 +895,7 @@ const App = {
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
         
-        // 1. Camera Init (AR OFF by default in v23)
+        // 1. Camera Init (AR OFF by default)
         document.getElementById('toggle-ar').checked = false;
         App.toggleAR(false);
 
@@ -843,7 +919,7 @@ const App = {
             });
         }
         
-        // --- MILKY WAY GENERATOR (Procedural Nebula) ---
+        // --- MILKY WAY GENERATOR (UPDATED for Cloud Effect) ---
         const mwPoints = [
             {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
             {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
@@ -852,7 +928,8 @@ const App = {
         
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            const steps = 150; 
+            // Increase steps for denser cloud
+            const steps = 300; 
             
             for(let j=0; j<steps; j++) {
                 const t = j/steps;
@@ -864,18 +941,20 @@ const App = {
                 const finalRA = baseRA + (Math.random() - 0.5) * 2;
                 const finalDec = baseDec + scatter;
                 
+                // Color tweaks for "Mystical" look (Cyan/Magenta hints)
                 const colorType = Math.random(); 
                 let r, g, b;
-                
-                if (colorType > 0.8) { r=200; g=180; b=220; } 
-                else if (colorType > 0.4) { r=240; g=240; b=255; } 
-                else { r=180; g=200; b=255; }
+                if (colorType > 0.8) { r=100; g=150; b=255; } // Blueish
+                else if (colorType > 0.6) { r=180; g=100; b=220; } // Purpleish
+                else { r=200; g=220; b=255; } // White-Cyan
 
                 App.state.milkyWay.push({
                     ra: finalRA, 
                     dec: finalDec, 
-                    size: Math.random()*25 + 10, 
-                    alpha: Math.random()*0.08 + 0.02, 
+                    // Giant Size for "Cloud" look
+                    size: Math.random()*60 + 60, 
+                    // Very low alpha for stacking
+                    alpha: Math.random()*0.02 + 0.01, 
                     r, g, b
                 });
             }
@@ -1051,6 +1130,7 @@ const App = {
                 const vec = Astro.getStarVector(p.ra, p.dec, state.lat, lst);
                 const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if (pos) {
+                    // UPDATED: Dynamic scaling for "Cloud" effect
                     const size = p.size * (width/1500);
                     const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
                     const a = p.alpha * state.opacity.milky;
@@ -1088,24 +1168,41 @@ const App = {
             const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
             if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 3; }
             
-            let cx=0, cy=0, n=0;
-            for(let i=0; i<c.lines.length; i+=2) {
-                const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
-                if(p1 && p2) { 
-                    ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
-                    cx+=(p1.x+p2.x)/2; cy+=(p1.y+p2.y)/2; n++;
-                }
-            }
-            if(n>0) {
-                cx/=n; cy/=n;
-                const d = Math.hypot(cx-width/2, cy-height/2);
-                if(c.rank === 1 || d < 200) {
-                    visibleConsts.push({c, x:cx, y:cy, dist:d});
-                    ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "#fff");
+            // If it's a star/galaxy (no lines), just calculate center
+            if(c.lines.length === 0) {
+                const vec = Astro.getStarVector(c.centerRA, c.centerDec, state.lat, lst);
+                const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
+                if(p) {
+                    visibleConsts.push({c, x:p.x, y:p.y, dist: Math.hypot(p.x-width/2, p.y-height/2)});
+                    ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; // Yellow for single objects
                     ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
                     
                     const tName = state.lang==='en' ? c.en : c.name;
-                    ctx.fillText(tName, cx, cy);
+                    // Draw a marker for single objects
+                    ctx.fillText(tName, p.x, p.y - 10);
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+                }
+            } else {
+                // Lines Logic
+                let cx=0, cy=0, n=0;
+                for(let i=0; i<c.lines.length; i+=2) {
+                    const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
+                    if(p1 && p2) { 
+                        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
+                        cx+=(p1.x+p2.x)/2; cy+=(p1.y+p2.y)/2; n++;
+                    }
+                }
+                if(n>0) {
+                    cx/=n; cy/=n;
+                    const d = Math.hypot(cx-width/2, cy-height/2);
+                    if(c.rank === 1 || d < 200) {
+                        visibleConsts.push({c, x:cx, y:cy, dist:d});
+                        ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "#fff");
+                        ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
+                        
+                        const tName = state.lang==='en' ? c.en : c.name;
+                        ctx.fillText(tName, cx, cy);
+                    }
                 }
             }
             if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.4)"; ctx.lineWidth = 1; }
@@ -1120,7 +1217,12 @@ const App = {
             if (target.dist < 150) {
                 document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
                 const dict = I18N[state.lang];
-                document.getElementById('bubble-tag').innerText = (target.c.rank===1 ? dict.famous_const : dict.constellation);
+                
+                let tag = dict.constellation;
+                if(target.c.rank === 1) tag = dict.famous_const;
+                if(target.c.rank === 4) tag = dict.star_gal; // New Tag
+                
+                document.getElementById('bubble-tag').innerText = tag;
                 document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.desc_en : target.c.desc;
                 
                 const bx = Math.min(Math.max(target.x, 140), width-140);
