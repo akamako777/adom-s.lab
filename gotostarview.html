@@ -1876,7 +1876,16 @@ const App = {
         requestAnimationFrame(App.loop);
     },
 
-    resize: () => { App.width = window.innerWidth; App.height = window.innerHeight; App.canvas.width = App.width; App.canvas.height = App.height; App.state.fov = (App.width>App.height)?45:60; },
+   resize: () => { 
+        App.width = window.innerWidth; 
+        App.height = window.innerHeight; 
+        App.canvas.width = App.width; 
+        App.canvas.height = App.height; 
+        // ★ 縦でも横でも「60度」に固定します
+        // これで、スマホを回しても星の大きさ（倍率）は変わりません
+        App.state.fov = 60; 
+    },
+
     toggleLocation: () => { 
         if(!App.state.useGPS) {
             navigator.geolocation.getCurrentPosition(pos => {
