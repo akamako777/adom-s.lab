@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v26.0 (Stable)</title>
+    <title>Five Islands Stargazer v26.1 (Hotfix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -149,8 +149,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v26.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Stable</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v26.1</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Hotfix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -232,7 +232,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v26.0 Stable</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v26.1 Hotfix</div>
                 </div>
             </div>
 
@@ -310,7 +310,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v26.0</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v26.1</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -416,13 +416,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v26.0 (Stable)
+ * 🌌 FIVE ISLANDS STARGAZER v26.1 (Hotfix)
  * ==========================================
  * Changelog:
- * - Crown Logic: Info bubbles now appear ABOVE the highest star of the constellation.
- * - Display Modes: Added [OFF | Name | Full] toggle in settings.
- * - Sensor Stabilization: Added dynamic lock for stationary hands to prevent jitters.
- * - Cleanup: Removed Time Travel feature for simpler UX and better performance.
+ * - REVERT: Removed "Dynamic Stabilizer" (Stillness Lock) which caused screen freeze.
+ * - Sensor Logic: Rolled back to simple smoothing (k=0.15) from v25.5.
+ * - Kept: Crown Logic, Display Modes, Time Travel Removal.
  */
 
 // --- 0. DATA & CONSTANTS (Dictionary) ---
@@ -1102,54 +1101,37 @@ const App = {
     },
 
   handleOri: (e) => {
-        // --- 🌊 Dynamic Stabilizer v26 ---
-        const k = 0.15; // Normal smoothing factor
+        // --- 🌊 Rolled Back to Simple Smoothing (v25.5 Logic) ---
+        const k = 0.15; // Proven smoothing factor
 
-        // 生データの取得
+        // Raw Sensor Data
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
         let gamma = e.gamma || 0;
         let compass = e.webkitCompassHeading || 0;
 
-        // 初回初期化
+        // Init
         if (!App.state.lastOri) {
             App.state.lastOri = { alpha, beta, gamma, compass };
         }
 
         const last = App.state.lastOri;
 
-        // 1. 静止判定ロック (Stillness Lock)
-        // 前回の値との差分絶対値の合計
-        const delta = Math.abs(alpha - last.alpha) + Math.abs(beta - last.beta) + Math.abs(gamma - last.gamma);
-        
-        // 閾値以下なら「静止」とみなして更新しない（ロック）
-        if (delta < 0.2) {
-            // Do nothing, keep last values
-            alpha = last.alpha;
-            beta = last.beta;
-            gamma = last.gamma;
-            compass = last.compass;
-        } else {
-            // 2. スパイク除去 & スムージング
-            const lerpAngle = (current, previous, factor) => {
-                let diff = current - previous;
-                // 差分を -180 〜 180 の範囲に正規化
-                while (diff > 180) diff -= 360;
-                while (diff < -180) diff += 360;
-                
-                // スパイク除去: 一瞬で30度以上飛んだら無視（前回の値を採用）
-                if (Math.abs(diff) > 30) return previous;
-                
-                return previous + diff * factor;
-            };
+        // Shortest Path Interpolation
+        const lerpAngle = (current, previous, factor) => {
+            let diff = current - previous;
+            while (diff > 180) diff -= 360;
+            while (diff < -180) diff += 360;
+            return previous + diff * factor;
+        };
 
-            alpha = lerpAngle(alpha, last.alpha, k);
-            beta = lerpAngle(beta, last.beta, k);
-            gamma = lerpAngle(gamma, last.gamma, k);
-            compass = lerpAngle(compass, last.compass, k);
-        }
+        // Just smooth everything. No locking.
+        alpha = lerpAngle(alpha, last.alpha, k);
+        beta = lerpAngle(beta, last.beta, k);
+        gamma = lerpAngle(gamma, last.gamma, k);
+        compass = lerpAngle(compass, last.compass, k);
 
-        // 次回用に保存
+        // Save State
         App.state.lastOri = { 
             alpha: (alpha + 360) % 360, 
             beta, 
@@ -1157,7 +1139,7 @@ const App = {
             compass: (compass + 360) % 360
         };
         
-        // アプリの状態へ反映
+        // App State Update
         App.state.orientation = { 
             alpha: App.state.lastOri.alpha, 
             beta, 
@@ -1166,7 +1148,7 @@ const App = {
             webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
         };
         
-        // Calibration Logic
+        // Calibration UI Logic
         if (App.state.calibMode) {
             const ball = document.getElementById('level-ball');
             const maxTilt = 20; 
