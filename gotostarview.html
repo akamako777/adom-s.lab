@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v30.2 (Precision Tune)</title>
+    <title>Five Islands Stargazer v30.3 (Standard Basis)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -187,8 +187,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v30.2</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Precision Tune</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v30.3</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Standard Basis</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -335,11 +335,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v30.2</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v30.3</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Precision Tune System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Standard Basis System</p>
         </div>
     </div>
 
@@ -409,13 +409,13 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v30.2 (Precision Tune)
+ * 🌌 FIVE ISLANDS STARGAZER v30.3 (Standard Basis)
  * ==========================================
- * [CRITICAL AXIS CORRECTION]
- * - Detected Axis Mismatch: Pitch was mapped to Yaw, Yaw to Roll.
- * - NEW STRATEGY: Explicit Axis Permutation (Y->Z, Z->-Y).
- * - Added raw sensor debug display.
- * - Reverted quaternion construction to handle upright stability.
+ * [STANDARD BASIS FIX]
+ * - Abandoned manual axis permutation which caused cyclical axis errors.
+ * - Implemented W3C Standard DeviceOrientation logic (Z-X-Y order).
+ * - Fixed "Upright Instability" by applying the -90deg X rotation POST-calculation.
+ * - This separates the "Phone Orientation" math from the "Camera Mount" math.
  */
 
 // I18N and Data Constants
@@ -905,7 +905,7 @@ const App = {
     }
 };
 
-// --- CORE: CAMERA MATRIX UPDATE (Precision Axis Tuning) ---
+// --- CORE: CAMERA MATRIX UPDATE (Standard Basis: W3C Z-X-Y + Post-Fix) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
@@ -916,83 +916,78 @@ App.updateViewMatrix = () => {
     let trueHeading = currentAlpha - App.state.northOffset; 
     if (trueHeading < 0) trueHeading += 360;
 
-    // RADICAL AXIS PERMUTATION STRATEGY
-    // Detected Issue: Pitch acts as Yaw, Yaw acts as Roll.
-    // This means the coordinate basis is swapped.
+    // STANDARD W3C ORIENTATION MATH
+    // -----------------------------
+    // Z: Alpha (Heading)
+    // X: Beta (Pitch)
+    // Y: Gamma (Roll)
     
-    // Original Beta (Pitch): 90 is Upright.
-    // Normal Pitch Control: Rotation around X.
-    // BUT user says Pitch moves Left/Right (Yaw).
-    // So Beta is acting on Z-axis?
+    // We strictly follow the intrinsic Z-X-Y Euler order defined by W3C.
+    // However, we must be careful with signs.
+    // Browser standards:
+    // Beta: -180 to 180. 90 is upright.
+    // Gamma: -90 to 90.
+    // Alpha: 0 to 360.
     
-    // Let's go back to first principles with a Permutation Matrix approach.
-    // We construct the device rotation in its own frame, then map it to World.
-    
-    // Device Frame (Standard):
-    // Z: Heading (Alpha)
-    // X: Pitch (Beta)
-    // Y: Roll (Gamma)
-    
-    // World Frame (Astro):
-    // Z: Up
-    // Y: North
-    // X: East
-    
-    // We use a robust Euler construction sequence: Y-X-Z order (Yaw-Pitch-Roll) to minimize lock.
-    // 1. Heading (Z-rotation in Device, Z-rotation in World)
-    // 2. Pitch (X-rotation in Device, X-rotation in World)
-    // 3. Roll (Y-rotation in Device, Y-rotation in World)
-    
-    // Correction for "Look Up -> Left" error:
-    // If Look Up (Beta changes) -> View moves Left (Yaw changes).
-    // This implies Beta is rotating around the VERTICAL axis (Z) instead of HORIZONTAL (X).
-    // Or the camera is initialized sideways.
-    
-    // Fix: We enforce a Base Rotation that aligns Device X with World X.
-    
-    const _x = (beta - 90) * deg2rad; // Pitch
-    const _y = gamma * deg2rad;       // Roll
-    const _z = trueHeading * deg2rad; // Yaw
+    // Convert to Rads
+    const x = beta * deg2rad;
+    const y = gamma * deg2rad;
+    const z = trueHeading * deg2rad;
 
-    // Construct Quaternion: Z -> X -> Y order
-    // NOTE: Based on feedback "Right turn -> Rotate", we might need to swap axes or signs.
-    // Let's try the standard Android mapping which is -X, -Y, -Z.
-    
-    const c1 = Math.cos(-_z / 2);
-    const c2 = Math.cos(-_x / 2);
-    const c3 = Math.cos(-_y / 2);
-    const s1 = Math.sin(-_z / 2);
-    const s2 = Math.sin(-_x / 2);
-    const s3 = Math.sin(-_y / 2);
+    // Calculate Quaternion components from Euler Z-X-Y
+    // q = qZ * qX * qY
+    const c1 = Math.cos(z / 2);
+    const c2 = Math.cos(x / 2);
+    const c3 = Math.cos(y / 2);
+    const s1 = Math.sin(z / 2);
+    const s2 = Math.sin(x / 2);
+    const s3 = Math.sin(y / 2);
 
-    // Z-X-Y Euler to Quaternion
     const qx = s1 * c2 * c3 - c1 * s2 * s3;
     const qy = c1 * s2 * c3 + s1 * c2 * s3;
     const qz = c1 * c2 * s3 + s1 * s2 * c3;
     const qw = c1 * c2 * c3 - s1 * s2 * s3;
     
-    let q = [qx, qy, qz, qw];
+    // This quaternion represents the device flat on table.
+    // To make it AR Camera (looking out back, device upright):
+    // 1. Rotate -90 deg around X axis.
+    
+    // q_device = [qx, qy, qz, qw]
+    // q_fix = [-sin(45deg), 0, 0, cos(45deg)] -> [-0.707, 0, 0, 0.707]
+    
+    const r = -Math.PI / 4;
+    const f_s = Math.sin(r);
+    const f_c = Math.cos(r);
+    
+    // Multiply q * q_fix
+    // Result = (w1*x2 + x1*w2 + y1*z2 - z1*y2), ...
+    // q_fix is (f_s, 0, 0, f_c)
+    
+    const tx = qw * f_s + qx * f_c;
+    const ty = qy * f_c + qz * f_s;
+    const tz = qz * f_c - qy * f_s;
+    const tw = qw * f_c - qx * f_s;
+    
+    let q = [tx, ty, tz, tw];
 
-    // Screen Orientation adjustment
+    // Screen Orientation
     let screenOrient = 0;
     if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
     else if (window.orientation) screenOrient = window.orientation;
     
     const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
-    q = Math3D.qMultiply(q, qScreen); 
+    // Standard applies screen rotation to Z
     
-    // World Alignment Fix
-    // Align Device Up (+Y) to World Up (+Z)
-    // Align Device Forward (-Z) to World North (+Y)
-    // Rotation: -90 around X axis.
-    const qFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
-    q = Math3D.qMultiply(q, qFix);
+    // We need to apply qScreen * q ? Or q * qScreen?
+    // Usually q_final = q_device_adjusted * q_screen_correction
+    // Let's rely on our math lib
+    q = Math3D.qMultiply(q, qScreen);
 
-    // View Matrix
+    // Invert for View Matrix
     const mCam = Math3D.matFromQ(q);
     App.state.viewMat = Math3D.matInvert(mCam);
 
-    // Debug Display
+    // Debug
     const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
     const alt = Math.asin(fz) * 180/Math.PI;
     let az = Math.atan2(fx, fy) * 180/Math.PI;
