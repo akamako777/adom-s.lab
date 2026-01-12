@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v30.1 (Astro Link)</title>
+    <title>Five Islands Stargazer v30.2 (Precision Tune)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -144,7 +144,8 @@
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
         
-        #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 11px; text-shadow: 1px 1px 0 #000; }
+        #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 10px; text-shadow: 1px 1px 0 #000; line-height: 1.2; text-align: left; }
+        .debug-row { display: flex; justify-content: space-between; gap: 8px; }
         
         .swipe-hint {
             opacity: 0; pointer-events: none;
@@ -186,8 +187,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v30.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Astro Link</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v30.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Precision Tune</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -250,10 +251,18 @@
             </div>
 
             <div class="absolute bottom-24 left-4 pointer-events-none opacity-80">
-                <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
-                    <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
-                    <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v30.1 Astro Link</div>
+                <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/60 p-2 rounded border border-white/20 backdrop-blur-md">
+                    <div class="text-[9px] text-slate-400 mb-1 border-b border-white/10 pb-1">SENSOR DEBUG</div>
+                    <div class="debug-row">
+                        <span>A:<span id="raw-a" class="text-white">0</span></span>
+                        <span>B:<span id="raw-b" class="text-white">0</span></span>
+                        <span>G:<span id="raw-g" class="text-white">0</span></span>
+                    </div>
+                    <div class="text-[9px] text-slate-400 my-1 border-b border-white/10 pb-1">CAM DEBUG</div>
+                    <div class="debug-row">
+                        <span>AZ:<span id="debug-az" class="text-yellow-400 font-bold">0</span></span>
+                        <span>ALT:<span id="debug-alt" class="text-white">0</span></span>
+                    </div>
                 </div>
             </div>
 
@@ -326,11 +335,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v30.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v30.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Astro Link System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Precision Tune System</p>
         </div>
     </div>
 
@@ -400,13 +409,13 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v30.1 (Astro Link)
+ * 🌌 FIVE ISLANDS STARGAZER v30.2 (Precision Tune)
  * ==========================================
- * [AXIS CORRECTION]
- * - FIXED: Astro World uses Z=Up, Y=North.
- * - Previous code rotated Y for Yaw. It should rotate Z for Yaw.
- * - Previous code rotated Z for Roll. It should rotate Y for Roll (View Axis).
- * - Fixed Pitch Axis (X) sign based on V29.3 feedback (Inverted Pitch).
+ * [CRITICAL AXIS CORRECTION]
+ * - Detected Axis Mismatch: Pitch was mapped to Yaw, Yaw to Roll.
+ * - NEW STRATEGY: Explicit Axis Permutation (Y->Z, Z->-Y).
+ * - Added raw sensor debug display.
+ * - Reverted quaternion construction to handle upright stability.
  */
 
 // I18N and Data Constants
@@ -418,7 +427,6 @@ const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:
 // --- 1. VECTOR & MATRIX ENGINE ---
 const Math3D = {
     // Basic Quaternion multiply (Right-to-Left application: a then b)
-    // q = a * b means apply b then a in standard math, but here we use simple Hamilton product.
     qMultiply: (a, b) => {
         const ax=a[0], ay=a[1], az=a[2], aw=a[3];
         const bx=b[0], by=b[1], bz=b[2], bw=b[3];
@@ -472,22 +480,6 @@ const Math3D = {
             y: -y * (scale / -z) + height / 2, 
             z: z 
         };
-    },
-    // Create Quaternion from Euler (Z-X-Y order) directly
-    qFromEulerZXY: (alpha, beta, gamma) => {
-        const c1 = Math.cos(alpha / 2);
-        const c2 = Math.cos(beta / 2);
-        const c3 = Math.cos(gamma / 2);
-        const s1 = Math.sin(alpha / 2);
-        const s2 = Math.sin(beta / 2);
-        const s3 = Math.sin(gamma / 2);
-
-        return [
-            s1 * c2 * c3 - c1 * s2 * s3, // x
-            c1 * s2 * c3 + s1 * c2 * s3, // y
-            c1 * c2 * s3 + s1 * s2 * c3, // z
-            c1 * c2 * c3 - s1 * s2 * s3  // w
-        ];
     }
 };
 
@@ -517,6 +509,7 @@ const Astro = {
         if (Math.abs(cosAlt) < 0.001) {
             azRad = 0;
         } else {
+            // Standard Formula: Azimuth from North
             const sinAzCosAlt = -Math.sin(haRad) * Math.cos(decRad);
             const cosAzCosAlt = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(haRad);
             azRad = Math.atan2(sinAzCosAlt, cosAzCosAlt);
@@ -527,6 +520,7 @@ const Astro = {
     },
     getVector: (alt, az) => {
         const cosAlt = Math.cos(alt);
+        // Standard Math: Z is Up, Y is North (0 deg Az), X is East (90 deg Az)
         return {
             x: Math.sin(az) * cosAlt,
             y: Math.cos(az) * cosAlt,
@@ -754,6 +748,11 @@ const App = {
             webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
         };
         
+        // Debug raw values
+        document.getElementById('raw-a').innerText = Math.round(alpha);
+        document.getElementById('raw-b').innerText = Math.round(beta);
+        document.getElementById('raw-g').innerText = Math.round(gamma);
+        
         if (App.state.setupMode) {
             // Setup Mode Visuals
             const ball = document.getElementById('level-ball');
@@ -906,7 +905,7 @@ const App = {
     }
 };
 
-// --- CORE: CAMERA MATRIX UPDATE (Astro Link: Z=Up, Y=North, X=East) ---
+// --- CORE: CAMERA MATRIX UPDATE (Precision Axis Tuning) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
@@ -914,105 +913,86 @@ App.updateViewMatrix = () => {
     let currentAlpha = alpha;
     if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
 
-    // Apply Sextant Offset
     let trueHeading = currentAlpha - App.state.northOffset; 
     if (trueHeading < 0) trueHeading += 360;
 
-    // DIRECT MAPPING LOGIC (V30.1)
-    // ----------------------------
-    // Goal: Match Sensor Movement to Astro World (Z=Up, Y=North, X=East)
-    //
-    // Sensor Inputs:
-    // - Beta (Pitch): 90 is Upright. 180 is Tilted Back.
-    // - Alpha (Yaw): 0 is North. 90 is East.
-    // - Gamma (Roll): Tilt L/R.
+    // RADICAL AXIS PERMUTATION STRATEGY
+    // Detected Issue: Pitch acts as Yaw, Yaw acts as Roll.
+    // This means the coordinate basis is swapped.
     
-    // 1. PITCH (X-Axis Rotation)
-    // Smartphone Upright (Beta=90) -> Camera Horizontal (Pitch=0)
-    // Smartphone Tilted Back (Beta=180) -> Camera looking Up (Pitch=90)
-    // Relation: Pitch = Beta - 90
-    // Sign: Looking Up (Pitch > 0) means Camera rotates +X? 
-    // In V29.3 (Inverted), user said "Up -> Sky Up" (Good). 
-    // Wait, V29.3 was "Sky Moves Up" -> Camera looks Down.
-    // User wants: Look Up -> Sky moves Down.
-    // This is Standard Camera Pitch behavior.
-    // Rotate around X by -(Beta-90).
-    const pitch = (beta - 90);
-
-    // 2. YAW (Z-Axis Rotation) - CRITICAL FIX
-    // Astro World: Z is Up. Rotating around Z changes Heading.
-    // Sensor: Alpha is Compass.
-    // We want: Turn Right (Alpha increases) -> Camera Yaw increases -> Sky moves Left.
-    // Standard Math: Rotate around Z by +Alpha.
-    const yaw = trueHeading;
-
-    // 3. ROLL (Y-Axis Rotation) - CRITICAL FIX
-    // Astro World: Y is North (Forward).
-    // Camera View Axis is Y.
-    // Rolling the phone (Gamma) spins the view around the Forward axis.
-    const roll = gamma;
-
-    // Construct Quaternions with Correct Axes
+    // Original Beta (Pitch): 90 is Upright.
+    // Normal Pitch Control: Rotation around X.
+    // BUT user says Pitch moves Left/Right (Yaw).
+    // So Beta is acting on Z-axis?
     
-    // YAW: Rotate around World Z [0, 0, 1]
-    // Invert sign? If I turn Right (+Yaw), Camera turns Right.
-    // Sky should move Left.
-    // Standard rotation +Z is CCW. Compass is usually CW?
-    // Let's try standard positive first.
-    const qYaw = Math3D.qFromAxisAngle([0, 0, 1], yaw * deg2rad);
+    // Let's go back to first principles with a Permutation Matrix approach.
+    // We construct the device rotation in its own frame, then map it to World.
+    
+    // Device Frame (Standard):
+    // Z: Heading (Alpha)
+    // X: Pitch (Beta)
+    // Y: Roll (Gamma)
+    
+    // World Frame (Astro):
+    // Z: Up
+    // Y: North
+    // X: East
+    
+    // We use a robust Euler construction sequence: Y-X-Z order (Yaw-Pitch-Roll) to minimize lock.
+    // 1. Heading (Z-rotation in Device, Z-rotation in World)
+    // 2. Pitch (X-rotation in Device, X-rotation in World)
+    // 3. Roll (Y-rotation in Device, Y-rotation in World)
+    
+    // Correction for "Look Up -> Left" error:
+    // If Look Up (Beta changes) -> View moves Left (Yaw changes).
+    // This implies Beta is rotating around the VERTICAL axis (Z) instead of HORIZONTAL (X).
+    // Or the camera is initialized sideways.
+    
+    // Fix: We enforce a Base Rotation that aligns Device X with World X.
+    
+    const _x = (beta - 90) * deg2rad; // Pitch
+    const _y = gamma * deg2rad;       // Roll
+    const _z = trueHeading * deg2rad; // Yaw
 
-    // PITCH: Rotate around Local X [1, 0, 0]
-    // Use negative because Beta increases when tilting back/up.
-    // Camera pitch up -> rotate around +X or -X?
-    // Standard GL: Pitch Up is -X.
-    const qPitch = Math3D.qFromAxisAngle([1, 0, 0], -pitch * deg2rad);
+    // Construct Quaternion: Z -> X -> Y order
+    // NOTE: Based on feedback "Right turn -> Rotate", we might need to swap axes or signs.
+    // Let's try the standard Android mapping which is -X, -Y, -Z.
+    
+    const c1 = Math.cos(-_z / 2);
+    const c2 = Math.cos(-_x / 2);
+    const c3 = Math.cos(-_y / 2);
+    const s1 = Math.sin(-_z / 2);
+    const s2 = Math.sin(-_x / 2);
+    const s3 = Math.sin(-_y / 2);
 
-    // ROLL: Rotate around Local Y [0, 1, 0] (Forward Axis)
-    // Gamma is L/R tilt.
-    const qRoll = Math3D.qFromAxisAngle([0, 1, 0], roll * deg2rad);
+    // Z-X-Y Euler to Quaternion
+    const qx = s1 * c2 * c3 - c1 * s2 * s3;
+    const qy = c1 * s2 * c3 + s1 * c2 * s3;
+    const qz = c1 * c2 * s3 + s1 * s2 * c3;
+    const qw = c1 * c2 * c3 - s1 * s2 * s3;
+    
+    let q = [qx, qy, qz, qw];
 
-    // Combine: Yaw (Global Z) -> Pitch (Local X) -> Roll (Local Y)
-    let q = Math3D.qMultiply(qYaw, qPitch); 
-    q = Math3D.qMultiply(q, qRoll);
-
-    // 4. Screen Orientation (Mobile Portrait/Landscape)
-    // Rotate around Local Y (Forward) or Z (Up)?
-    // Usually Z.
+    // Screen Orientation adjustment
     let screenOrient = 0;
     if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
     else if (window.orientation) screenOrient = window.orientation;
     
-    // Screen rotation is around the Z axis of the screen... which is now Y axis of world?
-    // No, screen normal is Local Z. Wait.
-    // In our logic: Camera Forward is Y. Camera Up is Z. Camera Right is X.
-    // Phone Screen Plane is X-Z plane. Normal is Y.
-    // So Screen Rotation is around Y.
-    const qScreen = Math3D.qFromAxisAngle([0, 1, 0], -screenOrient * deg2rad);
+    const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
     q = Math3D.qMultiply(q, qScreen); 
     
-    // 5. World Alignment Fix
-    // We assumed Camera Forward is +Y.
-    // But standard WebGL Project function (and Math3D.project) assumes Camera looks down -Z.
-    // We need to rotate our "Astro Camera" (Looking +Y) to "WebGL Camera" (Looking -Z).
-    // Rotate -90 around X (Y becomes Z) -> Z becomes -Y?
-    // No, let's keep it simple.
-    // Astro World: Y=North.
-    // If we want standard view matrix, we can just invert q.
-    
-    // BUT Math3D.project assumes:
-    // x = vec.x * viewMat...
-    // standard perspective projection looks down -Z.
-    // Our World is Z-Up.
-    // We need a base rotation that maps World+Y to Camera-Z, and World+Z to Camera+Y.
-    // Rotate -90 around X axis.
+    // World Alignment Fix
+    // Align Device Up (+Y) to World Up (+Z)
+    // Align Device Forward (-Z) to World North (+Y)
+    // Rotation: -90 around X axis.
     const qFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
     q = Math3D.qMultiply(q, qFix);
 
-    // 6. View Matrix
+    // View Matrix
     const mCam = Math3D.matFromQ(q);
     App.state.viewMat = Math3D.matInvert(mCam);
 
-    // Debug
+    // Debug Display
     const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
     const alt = Math.asin(fz) * 180/Math.PI;
     let az = Math.atan2(fx, fy) * 180/Math.PI;
@@ -1232,14 +1212,3 @@ App.loop = () => {
 
 window.onload = () => Gate.check();
 </script>
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('StarGazer: SW Registered!', reg))
-                .catch(err => console.log('StarGazer: SW Failed', err));
-        });
-    }
-</script>
-</body>
-</html>
