@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v26.1 (Hotfix)</title>
+    <title>Five Islands Stargazer v26.2 (Reset Logic)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -149,8 +149,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v26.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Hotfix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v26.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Reset Logic</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -232,7 +232,7 @@
                 <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/40 p-1 rounded">
                     <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold text-sm">0</span>°</div>
                     <div>ALT: <span id="debug-alt">0</span>°</div>
-                    <div class="text-[8px] text-slate-400 mt-1">v26.1 Hotfix</div>
+                    <div class="text-[8px] text-slate-400 mt-1">v26.2 Reset Logic</div>
                 </div>
             </div>
 
@@ -310,7 +310,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v26.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">COSMIC LIBRARY v26.2</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
@@ -416,11 +416,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v26.1 (Hotfix)
+ * 🌌 FIVE ISLANDS STARGAZER v26.2 (Reset Logic)
  * ==========================================
  * Changelog:
- * - REVERT: Removed "Dynamic Stabilizer" (Stillness Lock) which caused screen freeze.
- * - Sensor Logic: Rolled back to simple smoothing (k=0.15) from v25.5.
+ * - RESET 2.0: Reset button now clears smoothing history (`lastOri = null`)
+ * to disconnect from drifted sensor values and force a raw data resync.
  * - Kept: Crown Logic, Display Modes, Time Travel Removal.
  */
 
@@ -1188,7 +1188,8 @@ const App = {
     },
     resetOffset: () => {
         App.state.manualOffset = 0;
-        Utils.toast("Offset RESET to 0°");
+        App.state.lastOri = null; // Force re-sync with raw sensor data
+        Utils.toast("センサー連動解除 🔓 (Raw Mode)");
     },
     toggleSkyRotation: (checked) => {
         App.state.skyRotation = checked ? 180 : 0;
