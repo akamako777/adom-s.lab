@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.4</title>
+    <title>Star Compass v3.5</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -295,8 +295,8 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.4
-         * Updates: Fixed Time Travel Rotation Direction (Clockwise for Time+)
+         * 🌌 STAR COMPASS ENGINE V3.5
+         * Updates: Fixed Celestial Rotation Logic (Based on User Feedback: Reverse Direction)
          */
 
         // --- 0. Database ---
@@ -518,30 +518,20 @@
         function updateCelestialRotation(targetDate) {
             if (!celestialGroup) return;
 
-            // --- 天文学的回転ロジック解説 (Logic Note) ---
+            // --- 天文学的回転ロジック (Updated v3.5) ---
             
-            // 1. 基準日 (Base Date) との差分計算
-            // CONFIG.baseDate: 2024/1/15 20:00 (この時、冬の星座が南中する角度を0.8PIと定義)
+            // 基準日からの差分日数
             const msPerDay = 1000 * 60 * 60 * 24;
             const deltaMs = targetDate - CONFIG.baseDate;
             const deltaDays = deltaMs / msPerDay;
 
-            // 2. 回転量 (Rotation Amount) の計算
-            // 地球は「西から東」に自転しているため、天球は「東から西」に回転して見えます。
-            // Three.js の Y軸回転において、正の値(+)は「反時計回り(CCW)」です。
-            // 天球を上(北)から見たとき、東→西の回転は「時計回り(CW)」です。
-            // つまり、時間が進むと Rotation Y は「減る(マイナス方向)」べきです。
-            
-            // 回転速度:
-            // - 自転 (Daily): 1日につき 2PI (360度)
-            // - 公転 (Yearly): 1年につき 2PI 追加 (恒星日は太陽日より短い)
-            //   式: 2PI * deltaDays * (1 + 1/365.25)
+            // 回転量: 自転 + 公転
             const rotationDelta = (Math.PI * 2) * deltaDays * (1 + 1/365.25);
             
-            // 3. 適用 (Application)
-            // 時間が進む(Future) = 時計回り(CW) = ThreeJSではマイナス回転
-            // よって、BaseRotation から delta を「引く」のが正解。
-            celestialGroup.rotation.y = CONFIG.baseRotation - rotationDelta;
+            // 修正 (v3.5): ユーザーフィードバック「動きも位置も逆」に基づき符号を反転
+            // 本来はマイナス(時間が進むと回転角が減る)がセオリーだが、
+            // 現地観測の結果、プラス(回転角が増える)が正しい挙動と一致したため変更。
+            celestialGroup.rotation.y = CONFIG.baseRotation + rotationDelta;
         }
 
         // --- 3D Engine ---
