@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.5</title>
+    <title>Star Compass v3.3</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -295,8 +295,8 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.5
-         * Updates: Fixed Celestial Rotation Logic (Based on User Feedback: Reverse Direction)
+         * 🌌 STAR COMPASS ENGINE V3.3
+         * Updates: Reverted to Stable Analog Logic (No Absolute Orientation)
          */
 
         // --- 0. Database ---
@@ -518,19 +518,14 @@
         function updateCelestialRotation(targetDate) {
             if (!celestialGroup) return;
 
-            // --- 天文学的回転ロジック (Updated v3.5) ---
-            
-            // 基準日からの差分日数
+            // Calculate rotation based on targetDate
             const msPerDay = 1000 * 60 * 60 * 24;
             const deltaMs = targetDate - CONFIG.baseDate;
             const deltaDays = deltaMs / msPerDay;
 
-            // 回転量: 自転 + 公転
+            // Rotation: Daily (Earth Spin) + Yearly (Orbit)
             const rotationDelta = (Math.PI * 2) * deltaDays * (1 + 1/365.25);
             
-            // 修正 (v3.5): ユーザーフィードバック「動きも位置も逆」に基づき符号を反転
-            // 本来はマイナス(時間が進むと回転角が減る)がセオリーだが、
-            // 現地観測の結果、プラス(回転角が増える)が正しい挙動と一致したため変更。
             celestialGroup.rotation.y = CONFIG.baseRotation + rotationDelta;
         }
 
