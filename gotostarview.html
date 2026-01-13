@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v41.3 (Axis Fix)</title>
+    <title>Five Islands Stargazer v41.4 (Render Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -150,8 +150,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.3</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Axis Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.4</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Render Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -321,7 +321,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">🌌</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.3 AXIS FIX</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.4 RENDER FIX</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START
             </button>
@@ -333,11 +333,12 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v41.3 (Axis Fix)
+ * 🌌 FIVE ISLANDS STARGAZER v41.4 (Render Fix)
  * ==========================================
- * PATCH NOTES:
- * 1. Compass Value Fix: Added +90 deg offset to text display to match "North=0".
- * 2. Camera Coordinate Fix: Changed qFix to -Math.PI/2 (90 deg) to align Portrait mode correctly.
+ * CRITICAL FIXES:
+ * 1. Rendering Crash: Added clamping to Math.asin to prevent NaN (which stopped animation).
+ * 2. Axis Rotation Fix: Changed multiplication order to Z-X-Y.
+ * 3. Horizontal Horizon Fix: Added Z-rotation to qFix to handle portrait mode correctly.
  */
 
 // --- 0. DATASETS ---
@@ -690,12 +691,13 @@ const App = {
         const qX = Math3D.qFromAxisAngle([1, 0, 0], x);
         const qY = Math3D.qFromAxisAngle([0, 1, 0], y);
         
-        let q = Math3D.qMultiply(qX, qY); 
-        q = Math3D.qMultiply(q, qZ);
+        // RE-ORDER: Z -> X -> Y (Standard Euler to Quat)
+        let q = Math3D.qMultiply(qZ, qX); 
+        q = Math3D.qMultiply(q, qY);
         
         const orient = (window.screen.orientation ? window.screen.orientation.angle : 0) * deg2rad;
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -orient);
-        q = Math3D.qMultiply(qScreen, q);
+        q = Math3D.qMultiply(qScreen, q); // Correct order for intrinsic
         
         return q;
     },
@@ -704,17 +706,21 @@ const App = {
         const qSensor = App.getSensorQuaternion();
         let qAligned = Math3D.qMultiply(App.state.anchorCorrectionQ, qSensor);
         
-        // CORRECTION for Horizon/Axis Issue:
-        // Changed to -Math.PI / 2 (90 deg) to align upright phone with horizon.
-        // Previous value -Math.PI was flipping coordinate system upside down.
-        const qFix = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI / 2); 
+        // FIX 1: Rotate -90 deg X to bring Forward to Horizon (from Down)
+        const qFixX = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI / 2);
+        // FIX 2: Rotate -90 deg Z to fix "Horizontal Horizon" issue
+        const qFixZ = Math3D.qFromAxisAngle([0, 0, 1], -Math.PI / 2);
+        
+        // Apply Z then X (Local)
+        const qFix = Math3D.qMultiply(qFixZ, qFixX);
         
         qAligned = Math3D.qMultiply(qFix, qAligned);
         const mCam = Math3D.matFromQ(qAligned);
         App.state.viewMat = Math3D.matInvert(mCam);
         
         const fx = -App.state.viewMat[8], fy = -App.state.viewMat[9], fz = -App.state.viewMat[10];
-        const alt = Math.asin(fz) * 180/Math.PI;
+        // CRITICAL FIX: Clamp input to avoid NaN crash
+        const alt = Math.asin(Math.max(-1, Math.min(1, fz))) * 180/Math.PI;
         let az = Math.atan2(fx, fy) * 180/Math.PI; if(az<0) az+=360;
         document.getElementById('debug-az').innerText = Math.round(az);
         document.getElementById('debug-alt').innerText = Math.round(alt);
