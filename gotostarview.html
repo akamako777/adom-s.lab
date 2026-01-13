@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.7</title>
+    <title>Star Compass v4.1</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -15,6 +15,9 @@
             --primary-color: #aaddff;
             --accent-color: #ffd700;
             --bg-dark: #050a14;
+            --glass-bg: rgba(20, 30, 50, 0.7);
+            --glass-border: rgba(100, 200, 255, 0.3);
+            --ui-max-width: 450px; /* スマホ想定の最大幅 */
         }
 
         body { 
@@ -28,310 +31,411 @@
             -webkit-user-select: none;
         }
         
-        #canvas-container { width: 100vw; height: 100vh; display: block; }
-        
-        /* UI Components */
-        .btn-style {
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            color: #fff;
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: 700;
-            font-family: 'Zen Maru Gothic', sans-serif;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            touch-action: manipulation;
-            transition: all 0.2s;
-            cursor: pointer;
-            text-align: center;
-        }
-        .btn-style:active { transform: scale(0.95); background: rgba(255,255,255,0.3); }
-        .btn-accent {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-            color: #444; border: none;
-            box-shadow: 0 5px 15px rgba(255, 100, 100, 0.4);
-        }
-        .btn-small {
-            padding: 8px 16px; font-size: 14px; border-radius: 20px;
+        /* 3D Canvas is always full screen */
+        #canvas-container { 
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; 
+            display: block; z-index: 1;
         }
 
-        /* Overlays */
+        /* --- UI Atoms --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .btn-icon {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.1);
+            color: white; font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
+        .btn-icon.active { background: var(--accent-color); color: #000; border-color: white; }
+
+        .btn-rect {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.1);
+            color: white; font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-rect:active { background: rgba(255,255,255,0.2); }
+
+        /* --- Layout Structures (PC Fix applied here) --- */
+        
+        /* UI Container: Limits width on PC to simulate Mobile */
+        .ui-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* For PC/Tablet: Center the UI column */
+        @media (min-width: 451px) {
+            .ui-center-wrapper {
+                position: absolute; 
+                top: 0; bottom: 0;
+                left: 50%; transform: translateX(-50%);
+                width: 100%; max-width: var(--ui-max-width);
+                display: flex; flex-direction: column; justify-content: space-between;
+            }
+            /* Overlays also need centering */
+            .overlay, .modal-overlay {
+                left: 50% !important; transform: translateX(-50%) !important;
+                max-width: var(--ui-max-width);
+            }
+            .modal-sheet {
+                max-width: var(--ui-max-width);
+                margin: 0 auto;
+            }
+            /* Toast needs centering relative to UI */
+            #toast-container {
+                width: 100% !important; max-width: 400px;
+            }
+        }
+        @media (max-width: 450px) {
+            .ui-center-wrapper {
+                width: 100%; height: 100%;
+                display: flex; flex-direction: column; justify-content: space-between;
+            }
+        }
+
+        .hud-top {
+            padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto;
+        }
+        
+        /* Bottom Trinity Layout */
+        .hud-bottom {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1.5fr 0.8fr 0.8fr; /* Adjusted ratio */
+            gap: 8px;
+            align-items: end;
+        }
+
+        /* 1. Control Unit (Left) */
+        .control-unit {
+            display: flex; flex-direction: column; gap: 8px;
+            padding: 12px 10px;
+        }
+        .slider-row {
+            display: flex; align-items: center; gap: 4px;
+        }
+        .slider-label { font-size: 14px; width: 18px; text-align: center; }
+        
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none; background: transparent; flex-grow: 1; height: 20px; width: 0; /* width:0 allows flex-grow to work properly in grid */
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 18px; width: 18px;
+            border-radius: 50%; background: #fff; cursor: pointer; margin-top: -7px;
+            box-shadow: 0 0 10px rgba(0,255,255,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.3); border-radius: 2px;
+        }
+
+        .micro-btn {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .micro-btn:active { background: rgba(255,255,255,0.3); }
+
+        /* 2. Center & Right Units */
+        .center-unit, .right-unit {
+            display: flex; justify-content: center; padding-bottom: 0px;
+        }
+        
+        /* --- Modals & Popups --- */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 100; pointer-events: auto;
             transition: opacity 0.5s;
         }
-        .hidden { opacity: 0; pointer-events: none; }
 
-        /* Start Screen Animation */
-        #start-screen {
-            background: radial-gradient(circle at 50% 100%, #1a2a6c, #000), linear-gradient(to top, #000428, #004e92);
-            color: white; text-align: center;
-            overflow: hidden;
-        }
-        
-        .bg-star {
-            position: absolute; background: white; border-radius: 50%;
-            opacity: 0; animation: twinkle infinite ease-in-out;
-        }
-        @keyframes twinkle {
-            0% { opacity: 0; transform: scale(0.5); }
-            50% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0; transform: scale(0.5); }
-        }
-
-        #calibration-screen {
-            background: rgba(0, 0, 0, 0.3);
-            justify-content: space-between; padding: 40px 20px; box-sizing: border-box;
-        }
-        
-        /* Calib Controls */
-        .calib-guide {
-            background: rgba(0,0,0,0.6); padding: 20px; border-radius: 20px;
-            border: 2px solid #0ff; text-align: center; max-width: 90%;
-        }
-        .calib-controls { display: flex; gap: 20px; justify-content: center; align-items: center; margin-bottom: 20px; }
-        
-        /* Main HUD */
-        #main-hud {
+        .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex; flex-direction: column; justify-content: space-between;
-            z-index: 50;
+            background: rgba(0,0,0,0.6); z-index: 200;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
-        .hud-top { 
-            padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; 
-            pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
-        /* Digital Clock Panel */
+        .modal-sheet {
+            background: #1a2333;
+            border-top: 1px solid #0ff;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            width: 100%; box-sizing: border-box;
+            max-height: 80vh; overflow-y: auto;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            color: white;
+        }
+        .modal-overlay.active .modal-sheet { transform: translateY(0); }
+
+        /* Settings Grid */
+        .setting-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .toggle-group { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; }
+        .toggle-opt {
+            padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; color: #aaa;
+        }
+        .toggle-opt.selected { background: #334455; color: #fff; font-weight: bold; }
+
+        /* Constellation Card */
+        .constellation-card {
+            background: linear-gradient(135deg, #2a3a55, #111);
+            border-radius: 16px; padding: 16px; margin-bottom: 15px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        .tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: #444; color: #ddd; margin-right: 5px; }
+        .tag.famous { background: #ffd700; color: #000; font-weight: bold; }
+
+        /* Time Travel Popup */
+        #time-controls {
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; align-items: center;
+            opacity: 0; pointer-events: none; transition: all 0.3s;
+            width: max-content;
+        }
+        #time-controls.active { opacity: 1; pointer-events: auto; bottom: 100px; }
+
+        /* Toast */
+        #toast-container {
+            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+            z-index: 10001; pointer-events: none;
+            display: flex; flex-direction: column; gap: 10px; width: 80%;
+        }
+        .toast-msg {
+            background: rgba(0, 50, 80, 0.9); border: 1px solid #0ff;
+            color: #fff; padding: 12px 20px; border-radius: 50px;
+            text-align: center; font-size: 0.9rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            animation: toast-in 0.3s ease-out forwards;
+        }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toast-out { to { opacity: 0; transform: translateY(-20px); } }
+
+        /* Clock Panel (Top) */
         #clock-panel {
             background: rgba(0, 20, 40, 0.8);
             border: 1px solid rgba(100, 200, 255, 0.3);
-            border-radius: 10px;
-            padding: 8px 12px;
-            text-align: right;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            min-width: 100px;
+            border-radius: 12px; padding: 8px 16px; text-align: right;
         }
-        #clock-time {
-            font-size: 1.2rem; font-weight: bold; color: #fff;
-            text-shadow: 0 0 5px #0ff;
-            font-family: 'Courier New', monospace; /* Monospace for numbers */
-        }
-        #clock-mode {
-            font-size: 0.7rem; color: #aaa; margin-top: 2px;
-        }
-        .mode-live { color: #0f0; }
-        .mode-manual { color: #f0f; }
-        
-        /* HUD Bottom */
-        .hud-bottom { 
-            padding: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-end; 
-            pointer-events: auto; 
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        }
-        
-        .control-panel {
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-            background: rgba(255,255,255,0.1); padding: 10px; border-radius: 20px;
-            backdrop-filter: blur(5px);
-        }
-        .control-row { display: flex; align-items: center; gap: 10px; }
-        .control-label { font-size: 10px; color: #aaa; margin-bottom: 5px; }
-
-        .round-btn {
-            width: 44px; height: 44px; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3);
-            color: white; font-size: 18px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; backdrop-filter: blur(4px);
-        }
-        .round-btn:active { background: rgba(255,255,255,0.5); }
-
-        .zoom-container {
-            width: 120px; display: flex; align-items: center; gap: 5px;
-        }
-        input[type=range] { flex-grow: 1; -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px;
-            border-radius: 50%; background: #fff; cursor: pointer; margin-top: -6px;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: #aaa; border-radius: 2px;
-        }
-
-        /* PC Warning */
-        #pc-warning {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 100%, #1a2a6c, #000), linear-gradient(to top, #000428, #004e92);
-            z-index: 10000; color: #fff;
-            flex-direction: column; align-items: center; justify-content: center; text-align: center;
-        }
-        #pc-warning h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px #0ff; }
-        #qr-box {
-            background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 30px;
-        }
-        #qr-container img { display: block; border-radius: 5px; }
-
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <!-- PC Warning -->
-    <div id="pc-warning">
-        <h1>Star Compass 🌌</h1>
-        <p style="font-size: 1.2rem; opacity: 0.9;">スマホをかざして、星を探そう</p>
-        <div id="qr-box"><div id="qr-container"></div></div>
-        <p style="font-size: 0.9rem; opacity: 0.7;">スマホでQRコードを読み取ってね</p>
-    </div>
+    <div id="toast-container"></div>
+    <div id="dev-badge" style="display:none; position:fixed; top:10px; left:10px; background:red; color:white; padding:2px 5px; z-index:9999; font-size:10px;">Dev Mode</div>
 
-    <!-- 1. Start Screen -->
-    <div id="start-screen" class="overlay">
-        <!-- JSで星を生成 -->
+    <!-- 1. Start Screen (Centering wrapper applied via CSS) -->
+    <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        
-        <h1 style="z-index:10; text-shadow:0 0 20px #aaddff;">Star Compass 🌌<br>
-            <span style="font-size:1rem; opacity:0.9; font-weight:normal;">スマホをかざして、星を探そう</span>
-        </h1>
-        <button id="btn-start" class="btn-style btn-accent" style="margin-top:40px; font-size:1.5rem; z-index:10;">スタート！</button>
-        <p style="font-size:0.8rem; margin-top:20px; opacity:0.7; z-index:10;">
-            ※「許可」を聞かれたらOKしてね
-        </p>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 4.1<br><span style="font-size:1rem; opacity:0.8;">Orion Edition</span></h1>
+        <button id="btn-start" class="glass-panel" style="margin-top:40px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
+        <p style="margin-top:20px; opacity:0.6; font-size:0.8rem;">※コンパスの許可が必要です</p>
     </div>
 
-    <!-- 2. Calibration Screen -->
-    <div id="calibration-screen" class="overlay hidden">
-        <div class="calib-guide">
-            <p style="font-size:1.0rem; margin:0; line-height:1.6;">
-                <b>アナログ設定だよ！</b><br>
-                1. まずスマホを現実の<span style="color:#ff7777; font-weight:900;">「北」</span>に向ける<br>
-                2. 画面の<span style="color:#ff7777; font-weight:bold;">「北(N)」</span>がズレてたら<br>
-                下のボタンで合わせる<br>
-                3. 「ここが北だ！」を押す
-            </p>
-            <button id="btn-gps" class="btn-style btn-small" style="margin-top:15px; background:rgba(0,255,0,0.2); border-color:#0f0;">📍 現在地を取得</button>
-            <p id="gps-status" style="font-size:0.8rem; margin-top:5px; color:#aaa;">(初期設定: 五島列島)</p>
-        </div>
-        
-        <div style="text-align: center;">
-            <p style="font-size:0.8rem; color:#ffdddd; background:rgba(255,0,0,0.3); padding:5px; border-radius:5px; margin-bottom:15px;">
-                ※機種によって90°ズレることがあるよ。<br>
-                下のボタンで調整してね！
-            </p>
-
-            <div class="calib-controls">
-                <button id="btn-calib-minus90" class="round-btn">↶</button>
-                <span id="calib-offset-val" style="font-weight:bold; font-size:18px;">90°</span>
-                <button id="btn-calib-plus90" class="round-btn">↷</button>
+    <!-- 2. Main HUD (Wrapper added for PC centering) -->
+    <div id="main-hud" class="ui-container" style="display:none;">
+        <div class="ui-center-wrapper">
+            <div class="hud-top">
+                <button id="btn-recalib" class="glass-panel btn-rect" style="font-size:12px;">方位リセット</button>
+                <div id="clock-panel">
+                    <div id="clock-time" style="font-size:1.4rem; font-family:'Courier New'; font-weight:bold; color:white;">--:--</div>
+                    <div id="clock-status" style="font-size:0.7rem; color:#0f0;">● LIVE</div>
+                </div>
             </div>
-            <button id="btn-set-north" class="btn-style btn-accent" style="width: 200px;">ここが 北だ！</button>
+
+            <!-- Center Crosshair (Relative to Wrapper) -->
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity:0.3; pointer-events:none;">
+                <div style="width:40px; height:40px; border:1px solid #fff; border-radius:50%;"></div>
+                <div style="width:2px; height:10px; background:#fff; position:absolute; top:-5px; left:19px;"></div>
+            </div>
+
+            <!-- Time Travel Controls (Popup) -->
+            <div id="time-controls" class="glass-panel" style="padding:10px; border-radius:50px;">
+                <button id="btn-time-back" class="btn-icon">➖</button>
+                <span style="font-size:12px; color:#aaa; margin:0 5px;">15min</span>
+                <button id="btn-time-fwd" class="btn-icon">➕</button>
+                <button id="btn-time-reset" class="btn-rect" style="font-size:10px; padding:5px 10px; background:rgba(255,200,0,0.2); margin-left:5px;">今</button>
+            </div>
+
+            <!-- Bottom Trinity -->
+            <div class="hud-bottom">
+                <!-- Left: Controls -->
+                <div class="glass-panel control-unit">
+                    <!-- Zoom -->
+                    <div class="slider-row">
+                        <span class="slider-label">🔍</span>
+                        <input type="range" id="zoom-slider" min="30" max="100" value="70">
+                    </div>
+                    <!-- Heading -->
+                    <div class="slider-row">
+                        <button id="btn-adj-left" class="micro-btn">＜</button>
+                        <input type="range" id="heading-slider" min="-360" max="360" value="0">
+                        <button id="btn-adj-right" class="micro-btn">＞</button>
+                    </div>
+                    <div style="text-align:center; font-size:10px; color:#aaa;">補正: <span id="heading-val">0</span>°</div>
+                </div>
+
+                <!-- Center: Time Btn -->
+                <div class="center-unit">
+                    <button id="btn-time-toggle" class="glass-panel btn-icon" style="width:60px; height:60px; font-size:24px;">🕒</button>
+                </div>
+
+                <!-- Right: Settings Btn -->
+                <div class="right-unit">
+                    <button id="btn-settings" class="glass-panel btn-icon" style="width:60px; height:60px; font-size:24px;">⚙</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 3. Main HUD -->
-    <div id="main-hud" class="hidden">
-        <div class="hud-top">
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <button id="btn-recalib" class="btn-style btn-small">北合わせ</button>
-                <button id="btn-sync-time" class="btn-style btn-small" style="background:rgba(255,200,0,0.2); border-color:#fc0;">🕒 今に合わせる</button>
+    <!-- 3. Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-sheet">
+            <h2 style="margin-top:0;">設定 & 図鑑</h2>
+            
+            <div class="setting-row">
+                <span>星座線</span>
+                <div class="toggle-group" id="opt-lines">
+                    <div class="toggle-opt selected" data-val="all">全て</div>
+                    <div class="toggle-opt" data-val="famous">有名</div>
+                    <div class="toggle-opt" data-val="none">なし</div>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span>ラベル表示</span>
+                <div class="toggle-group" id="opt-labels">
+                    <div class="toggle-opt selected" data-val="name">名前</div>
+                    <div class="toggle-opt" data-val="none">なし</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:20px; border-top:1px solid #444; padding-top:10px;">星座図鑑</h3>
+            
+            <!-- Orion Card -->
+            <div class="constellation-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span class="tag famous">Famous</span>
+                        <strong style="font-size:1.2rem;">オリオン座</strong>
+                    </div>
+                    <button class="btn-rect" onclick="openGuide('orion')" style="background:var(--accent-color); color:#000; border:none;">解説 & ナビ</button>
+                </div>
+            </div>
+
+            <!-- Dummy Other Card -->
+            <div class="constellation-card" style="opacity:0.5;">
+                <div>
+                    <span class="tag">Coming Soon</span>
+                    <strong>おおいぬ座</strong>
+                </div>
+            </div>
+
+            <button id="btn-close-settings" class="btn-rect" style="width:100%; margin-top:20px; padding:15px; background:#444;">閉じる</button>
+        </div>
+    </div>
+
+    <!-- 4. Guide Modal (Details) -->
+    <div id="guide-modal" class="modal-overlay">
+        <div class="modal-sheet" style="background: linear-gradient(to top, #1a1a2e, #16213e);">
+            <h2 id="guide-title" style="color:var(--accent-color); font-size:2rem; margin-bottom:5px;">Title</h2>
+            <p id="guide-subtitle" style="color:#aaa; margin-top:0;">Subtitle</p>
+
+            <div style="margin: 20px 0;">
+                <button class="tab-btn selected" onclick="switchTab('science')">理科</button>
+                <button class="tab-btn" onclick="switchTab('trivia')">雑学</button>
+                <button class="tab-btn" onclick="switchTab('myth')">神話</button>
             </div>
             
-            <!-- Digital Clock Panel -->
-            <div id="clock-panel">
-                <div id="clock-time">--:--</div>
-                <div id="clock-mode"><span class="mode-live">● LIVE</span> <span id="clock-loc">Goto</span></div>
-            </div>
-        </div>
-
-        <!-- Crosshair -->
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity:0.4; pointer-events:none;">
-            <div style="width:20px; height:20px; border:2px solid #0ff; border-radius:50%;"></div>
-            <div style="position:absolute; top:-15px; left:9px; width:2px; height:50px; background:#0ff;"></div>
-            <div style="position:absolute; top:9px; left:-15px; width:50px; height:2px; background:#0ff;"></div>
-        </div>
-
-        <div class="hud-bottom">
-            <!-- Left: Heading -->
-            <div class="control-panel">
-                <div class="control-label">方位調整</div>
-                <div class="control-row">
-                    <button id="btn-minus90" class="round-btn">↶</button>
-                    <span id="offset-val" style="font-weight:bold; font-size:14px; min-width:30px; text-align:center;">90°</span>
-                    <button id="btn-plus90" class="round-btn">↷</button>
-                </div>
-            </div>
-            
-            <!-- Center: Zoom -->
-            <div class="control-panel">
-                <div class="control-label">ズーム</div>
-                <div class="zoom-container">
-                    <span style="font-size:10px;">広</span>
-                    <input type="range" id="zoom-slider" min="30" max="100" value="70">
-                    <span style="font-size:10px;">遠</span>
-                </div>
+            <div id="guide-content" style="min-height:80px; font-size:0.95rem; line-height:1.6;">
+                ...
             </div>
 
-            <!-- Right: Time Travel -->
-            <div class="control-panel">
-                <div class="control-label">時間旅行</div>
-                <div class="control-row">
-                    <button id="btn-time-back" class="round-btn" style="font-size:16px;">➖</button>
-                    <button id="btn-time-fwd" class="round-btn" style="font-size:16px;">➕</button>
-                </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button id="btn-nav-start" class="btn-rect" style="flex:1; background:var(--accent-color); color:#000;">★ ナビ開始（点滅）</button>
+                <button id="btn-guide-close" class="btn-rect" style="width:80px;">閉じる</button>
             </div>
         </div>
     </div>
+
+    <style>
+        .tab-btn { background:none; border:none; color:#666; font-weight:bold; padding:5px 10px; cursor:pointer; font-size:1rem; border-bottom:2px solid transparent; }
+        .tab-btn.selected { color:white; border-bottom-color:var(--accent-color); }
+    </style>
 
     <div id="canvas-container"></div>
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.7
-         * Updates: 180-Degree Calibration Flip (East <-> West Fix)
-         * Status: Diurnal motion logic maintained (Time+ -> West)
+         * 🌌 STAR COMPASS V4.1 (PC Layout Fix)
+         * Architecture: Single File, Procedural Assets, Mobile Optimized + PC Centering
          */
 
-        // --- 0. Database ---
+        // --- 0. Database (Expanded) ---
         const STAR_DB = {
             "polaris": { ra: 2.53, dec: 89.26, color: 0xFFFFCC, size: 1.5 },
-            "betelgeuse": { ra: 5.92, dec: 7.41, color: 0xFF8866, size: 1.2 },
-            "rigel":      { ra: 5.24, dec: -8.20, color: 0xAACCFF, size: 1.2 },
-            "bellatrix":  { ra: 5.42, dec: 6.35, color: 0xCCCCFF, size: 1.0 },
-            "mintaka":    { ra: 5.53, dec: -0.30, color: 0xCCCCFF, size: 0.9 },
-            "alnilam":    { ra: 5.60, dec: -1.20, color: 0xCCCCFF, size: 0.9 },
-            "alnitak":    { ra: 5.68, dec: -1.90, color: 0xCCCCFF, size: 0.9 },
-            "saiph":      { ra: 5.79, dec: -9.65, color: 0xCCCCFF, size: 0.9 },
+            "betelgeuse": { ra: 5.92, dec: 7.41, color: 0xFF8866, size: 1.3 }, // Red
+            "rigel":      { ra: 5.24, dec: -8.20, color: 0xAACCFF, size: 1.3 }, // Blue
+            "bellatrix":  { ra: 5.42, dec: 6.35, color: 0xCCCCFF, size: 1.1 },
+            "mintaka":    { ra: 5.53, dec: -0.30, color: 0xCCCCFF, size: 1.0 },
+            "alnilam":    { ra: 5.60, dec: -1.20, color: 0xCCCCFF, size: 1.0 }, // Center belt
+            "alnitak":    { ra: 5.68, dec: -1.90, color: 0xCCCCFF, size: 1.0 },
+            "saiph":      { ra: 5.79, dec: -9.65, color: 0xCCCCFF, size: 1.0 },
             "sirius":     { ra: 6.75, dec: -16.72, color: 0xFFFFFF, size: 1.8 },
             "mirzam":     { ra: 6.38, dec: -17.96, color: 0xCCCCFF, size: 0.9 },
             "wezen":      { ra: 7.14, dec: -26.39, color: 0xFFFFDD, size: 0.9 },
             "adhara":     { ra: 6.98, dec: -28.97, color: 0xCCCCFF, size: 1.0 },
             "procyon":    { ra: 7.65, dec: 5.21, color: 0xFFFFEE, size: 1.2 },
             "gomeisa":    { ra: 7.45, dec: 8.29, color: 0xCCCCFF, size: 0.8 },
-            "aldebaran":  { ra: 4.60, dec: 16.51, color: 0xFFDDAA, size: 1.1 },
+            "aldebaran":  { ra: 4.60, dec: 16.51, color: 0xFFDDAA, size: 1.2 },
             "elnath":     { ra: 5.43, dec: 28.61, color: 0xCCCCFF, size: 1.0 },
-            "pollux":     { ra: 7.76, dec: 28.03, color: 0xFFDDAA, size: 1.1 },
-            "castor":     { ra: 7.58, dec: 31.88, color: 0xFFFFFF, size: 1.1 },
+            "pollux":     { ra: 7.76, dec: 28.03, color: 0xFFDDAA, size: 1.2 },
+            "castor":     { ra: 7.58, dec: 31.88, color: 0xFFFFFF, size: 1.2 },
             "alhena":     { ra: 6.63, dec: 16.39, color: 0xFFFFFF, size: 1.0 },
-            "capella":    { ra: 5.28, dec: 45.99, color: 0xFFFFDD, size: 1.2 },
+            "capella":    { ra: 5.28, dec: 45.99, color: 0xFFFFDD, size: 1.3 },
             "menkalinan": { ra: 5.99, dec: 44.95, color: 0xCCCCFF, size: 0.9 }
         };
 
         const CONSTELLATION_DB = {
-            "orion": { lines: [ ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"] ] },
-            "canis_major": { lines: [ ["sirius", "mirzam"], ["sirius", "adhara"], ["wezen", "adhara"] ] },
-            "canis_minor": { lines: [ ["procyon", "gomeisa"] ] },
-            "taurus": { lines: [ ["aldebaran", "elnath"] ] },
-            "gemini": { lines: [ ["pollux", "castor"], ["alhena", "pollux"] ] },
-            "auriga": { lines: [ ["capella", "menkalinan"] ] },
+            "orion": {
+                lines: [ ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"] ],
+                jpName: "オリオン座",
+                rank: "famous",
+                navTarget: "alnilam", // Belt center
+                info: {
+                    science: "冬の代表的な星座。1等星が2つある豪華な星座です。真ん中の三ツ星が目印。赤いベテルギウスは寿命が近い「赤色超巨星」です。",
+                    trivia: "実は「ベテルギウス」はいつ爆発してもおかしくない状態です。もし爆発したら、昼間でも見えるくらい明るくなるかも！？",
+                    myth: "狩人オリオンは腕自慢でしたが、調子に乗りすぎてサソリに刺されて死んでしまいました。だからサソリ座が昇ると、逃げるように西へ沈んでいくんです。"
+                }
+            },
+            "canis_major": { lines: [ ["sirius", "mirzam"], ["sirius", "adhara"], ["wezen", "adhara"] ], rank: "normal" },
+            "canis_minor": { lines: [ ["procyon", "gomeisa"] ], rank: "normal" },
+            "taurus": { lines: [ ["aldebaran", "elnath"] ], rank: "normal" },
+            "gemini": { lines: [ ["pollux", "castor"], ["alhena", "pollux"] ], rank: "famous" },
+            "auriga": { lines: [ ["capella", "menkalinan"] ], rank: "normal" },
             "winter_triangle": { lines: [ ["betelgeuse", "sirius"], ["sirius", "procyon"], ["procyon", "betelgeuse"] ], isSpecial: true }
         };
 
@@ -344,373 +448,413 @@
             userLat: GOTO_COORDS.lat,
             userLon: GOTO_COORDS.lon,
             baseDate: new Date("2024-01-15T20:00:00+09:00"),
-            // 修正 (v3.7): 180度反転
-            // 旧: Math.PI * 0.8
-            // 新: Math.PI * 0.8 - Math.PI = -Math.PI * 0.2
-            // これにより東と西が入れ替わり、正しい位置関係になります。
-            baseRotation: -Math.PI * 0.2
+            baseRotation: -Math.PI * 0.2 // Calibration Constant
         };
 
         // --- State ---
         let state = {
             isRunning: false,
             alphaOffset: 0,
-            manualOffset: 90, 
+            manualOffset: 0, // Slider value
             raw: { alpha: 0, beta: 0, gamma: 0 },
             targetQuaternion: new THREE.Quaternion(),
-            // Time Travel State
-            simulatedDate: new Date(), // 現在の表示時刻
-            isLive: true
+            simulatedDate: new Date(),
+            isLive: true,
+            isDevMode: false,
+            // v4.0 New States
+            activeConstellation: null, // 'orion', etc.
+            settings: {
+                lines: 'all', // all, famous, none
+                labels: 'name' // name, none
+            }
         };
 
         // --- Three.js Globals ---
         let scene, camera, renderer;
-        let celestialGroup, horizonGroup;
+        let celestialGroup, constellationGroup;
+        let cstLines = {}; // Store line meshes for blinking
 
-        // --- Device Check ---
-        function checkDevice() {
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initStarBg();
+            
+            // Check PC
             const ua = navigator.userAgent.toLowerCase();
             const isMobile = /iphone|ipad|ipod|android/i.test(ua);
             if (!isMobile) {
-                document.getElementById('pc-warning').style.display = 'flex';
-                const img = document.createElement('img');
-                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}`;
-                document.getElementById('qr-container').appendChild(img);
-                return false;
+                state.isDevMode = true;
+                document.getElementById('dev-badge').style.display = 'block';
+                setupDevControls();
             }
-            return true;
-        }
 
-        // --- Initialization ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!checkDevice()) return;
-            initStarBg(); 
-
-            // Initialize simulation time to NOW
-            state.simulatedDate = new Date();
-
-            // START
-            document.getElementById('btn-start').addEventListener('click', () => {
-                if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
-                    DeviceOrientationEvent.requestPermission().then(r => {
-                        if(r==='granted') startCalib();
-                        else alert("許可がないと動かないよ😢");
-                    });
-                } else {
-                    startCalib();
+            // Bind Event Listeners
+            document.getElementById('btn-start').addEventListener('click', startApp);
+            document.getElementById('btn-recalib').addEventListener('click', resetCalibration);
+            
+            // Sliders
+            document.getElementById('zoom-slider').addEventListener('input', (e) => {
+                if (camera) {
+                    camera.fov = 120 - (e.target.value * 0.9);
+                    camera.updateProjectionMatrix();
                 }
             });
-
-            // ZOOM
-            document.getElementById('zoom-slider').addEventListener('input', (e) => {
-                if (!camera) return;
-                camera.fov = 120 - (e.target.value * 0.9);
-                camera.updateProjectionMatrix();
+            const hSlider = document.getElementById('heading-slider');
+            hSlider.addEventListener('input', (e) => updateManualOffset(parseInt(e.target.value)));
+            
+            // Micro Adjust Buttons
+            document.getElementById('btn-adj-left').addEventListener('click', () => {
+                let v = parseInt(hSlider.value) - 1;
+                if (v < -360) v = -360;
+                hSlider.value = v; updateManualOffset(v);
             });
-            
-            // TIME TRAVEL (Time Manipulation)
-            document.getElementById('btn-time-back').addEventListener('click', () => adjustTime(-15)); // -15 min
-            document.getElementById('btn-time-fwd').addEventListener('click', () => adjustTime(15)); // +15 min
-
-            // GPS
-            document.getElementById('btn-gps').addEventListener('click', getGPS);
-            
-            // TIME SYNC
-            document.getElementById('btn-sync-time').addEventListener('click', () => {
-                syncToCurrentTime(true); 
+            document.getElementById('btn-adj-right').addEventListener('click', () => {
+                let v = parseInt(hSlider.value) + 1;
+                if (v > 360) v = 360;
+                hSlider.value = v; updateManualOffset(v);
             });
-            
-            // Start clock update loop
-            setInterval(updateClockDisplay, 1000);
+
+            // Time Travel
+            document.getElementById('btn-time-toggle').addEventListener('click', () => {
+                document.getElementById('time-controls').classList.toggle('active');
+                document.querySelector('#btn-time-toggle').classList.toggle('active');
+            });
+            document.getElementById('btn-time-back').addEventListener('click', () => adjustTime(-15));
+            document.getElementById('btn-time-fwd').addEventListener('click', () => adjustTime(15));
+            document.getElementById('btn-time-reset').addEventListener('click', () => syncToCurrentTime(true));
+
+            // Settings Modal
+            document.getElementById('btn-settings').addEventListener('click', () => {
+                document.getElementById('settings-modal').classList.add('active');
+            });
+            document.getElementById('btn-close-settings').addEventListener('click', () => {
+                document.getElementById('settings-modal').classList.remove('active');
+            });
+
+            // Settings Toggles
+            setupToggle('opt-lines', (val) => { state.settings.lines = val; updateVisuals(); });
+            setupToggle('opt-labels', (val) => { state.settings.labels = val; updateVisuals(); });
+
+            // Guide Modal
+            document.getElementById('btn-guide-close').addEventListener('click', closeGuide);
+            document.getElementById('btn-nav-start').addEventListener('click', startNavigation);
+
+            // Clock Loop
+            setInterval(updateClock, 1000);
         });
 
-        function initStarBg() {
-            const container = document.getElementById('star-bg');
-            for(let i=0; i<30; i++) {
-                const div = document.createElement('div');
-                div.className = 'bg-star';
-                div.style.left = Math.random() * 100 + '%';
-                div.style.top = Math.random() * 100 + '%';
-                div.style.width = (Math.random() * 3 + 1) + 'px';
-                div.style.height = div.style.width;
-                div.style.animationDuration = (Math.random() * 2 + 1) + 's';
-                div.style.animationDelay = (Math.random() * 2) + 's';
-                container.appendChild(div);
+        // --- Core Logic ---
+
+        function startApp() {
+            if (state.isDevMode) {
+                init3D();
+                state.isRunning = true;
+                enterHUD();
+            } else if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(r => {
+                    if(r==='granted') { init3D(); window.addEventListener('deviceorientation', handleOrientation, true); state.isRunning=true; enterHUD(); }
+                    else showToast("許可がないと動作しません");
+                });
+            } else {
+                init3D(); window.addEventListener('deviceorientation', handleOrientation, true); state.isRunning=true; enterHUD();
             }
         }
 
-        function startCalib() {
-            init3D();
-            
-            // Revert to Standard Event Only
-            window.addEventListener('deviceorientation', handleOrientation, true);
-            
-            state.isRunning = true;
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('calibration-screen').classList.remove('hidden');
+        function enterHUD() {
+            document.getElementById('start-screen').style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('main-hud').style.display = 'block';
+                syncToCurrentTime(false);
+            }, 500);
         }
 
-        // --- GPS Logic ---
-        function getGPS() {
-            if (!navigator.geolocation) {
-                alert("GPSが使えないようです。");
-                return;
-            }
-            document.getElementById('gps-status').innerText = "取得中...";
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    CONFIG.userLat = pos.coords.latitude;
-                    CONFIG.userLon = pos.coords.longitude;
-                    document.getElementById('gps-status').innerText = `完了: 北緯${CONFIG.userLat.toFixed(1)}°`;
-                    document.getElementById('clock-loc').innerText = "GPS";
-                    if (celestialGroup) updateTilt();
-                },
-                (err) => {
-                    alert("GPS取得失敗: 五島列島の座標を使います。");
-                    document.getElementById('gps-status').innerText = "(初期設定: 五島列島)";
-                    CONFIG.userLat = GOTO_COORDS.lat;
-                    CONFIG.userLon = GOTO_COORDS.lon;
-                    document.getElementById('clock-loc').innerText = "Goto";
-                }
-            );
+        function updateManualOffset(val) {
+            state.manualOffset = val;
+            document.getElementById('heading-val').innerText = (val > 0 ? "+" : "") + val;
         }
 
-        // --- Time Sync & Travel Logic ---
-        
-        function updateClockDisplay() {
-            // If live, update simulatedDate to now
+        function resetCalibration() {
+            // Reset compass offset so current heading becomes "North" (0) relative to sensor
+            // This is a simplified "Re-center" logic
+            state.alphaOffset = -(state.raw.alpha + state.manualOffset);
+            showToast("方位を正面にリセットしました");
+        }
+
+        // --- Time Logic ---
+        function updateClock() {
             if (state.isLive) {
                 state.simulatedDate = new Date();
                 updateCelestialRotation(state.simulatedDate);
             }
-            
             const d = state.simulatedDate;
-            const hh = String(d.getHours()).padStart(2, '0');
-            const mm = String(d.getMinutes()).padStart(2, '0');
-            document.getElementById('clock-time').innerText = `${hh}:${mm}`;
-            
-            const modeEl = document.getElementById('clock-mode').querySelector('span:first-child');
-            if (state.isLive) {
-                modeEl.className = 'mode-live';
-                modeEl.innerText = '● LIVE';
-            } else {
-                modeEl.className = 'mode-manual';
-                // Calculate diff
-                const diffMs = d - new Date();
-                const diffMins = Math.round(diffMs / 60000);
-                const sign = diffMins >= 0 ? '+' : '';
-                modeEl.innerText = `MANUAL (${sign}${diffMins}min)`;
+            document.getElementById('clock-time').innerText = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            const st = document.getElementById('clock-status');
+            if(state.isLive) { st.innerText = "● LIVE"; st.style.color="#0f0"; }
+            else {
+                const diff = Math.round((d - new Date())/60000);
+                st.innerText = `MANUAL (${diff>0?'+':''}${diff}m)`;
+                st.style.color="#f0f";
             }
         }
 
-        function adjustTime(minutes) {
+        function adjustTime(m) {
             state.isLive = false;
-            state.simulatedDate = new Date(state.simulatedDate.getTime() + minutes * 60000);
+            state.simulatedDate = new Date(state.simulatedDate.getTime() + m*60000);
             updateCelestialRotation(state.simulatedDate);
-            updateClockDisplay(); // force update
+            updateClock();
         }
 
-        function syncToCurrentTime(showAlert = false) {
+        function syncToCurrentTime(toast) {
             state.isLive = true;
-            updateClockDisplay(); // This triggers updateCelestialRotation
-            if (showAlert) {
-                alert(`現在時刻に戻りました！`);
-            }
+            updateClock();
+            if(toast) showToast("現在時刻に戻りました");
         }
 
-        function updateCelestialRotation(targetDate) {
-            if (!celestialGroup) return;
-
-            const msPerDay = 1000 * 60 * 60 * 24;
-            const deltaMs = targetDate - CONFIG.baseDate;
-            const deltaDays = deltaMs / msPerDay;
-
-            // Rotation Logic v3.6 (Correct direction)
-            // Time Future -> Stars West -> Rotation Negative
-            // v3.6 Fix: (baseRotation - rotation) is correct for Moving West.
-            // But we changed baseRotation in v3.7 to be flipped.
-            // Does the logic change? No. Relative motion is the same.
-            
+        function updateCelestialRotation(date) {
+            if(!celestialGroup) return;
+            const msPerDay = 86400000;
+            const deltaDays = (date - CONFIG.baseDate) / msPerDay;
             const rotationDelta = (Math.PI * 2) * deltaDays * (1 + 1/365.25);
-            
             celestialGroup.rotation.y = CONFIG.baseRotation - rotationDelta;
         }
 
         // --- 3D Engine ---
-
         function init3D() {
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(CONFIG.defaultFov, window.innerWidth / window.innerHeight, 0.1, 2000);
-            scene.add(camera);
-
+            camera = new THREE.PerspectiveCamera(CONFIG.defaultFov, window.innerWidth/window.innerHeight, 0.1, 2000);
             renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            createHorizon();
-            createCelestialSphere();
-
+            createWorld();
+            
             window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.aspect = window.innerWidth/window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
-
             animate();
         }
 
-        function createHorizon() {
-            horizonGroup = new THREE.Group();
-            const grid = new THREE.PolarGridHelper(CONFIG.starDistance, 16, 8, 64, 0x004400, 0x002200);
-            horizonGroup.add(grid);
-
-            addLabel(horizonGroup, "北 (N)", 0, 20, -CONFIG.starDistance + 50, "#ff7777");
-            addLabel(horizonGroup, "南 (S)", 0, 20, CONFIG.starDistance - 50, "#55ff55");
-            addLabel(horizonGroup, "東 (E)", CONFIG.starDistance - 50, 20, 0, "#55ff55");
-            addLabel(horizonGroup, "西 (W)", -CONFIG.starDistance + 50, 20, 0, "#55ff55");
-
-            scene.add(horizonGroup);
-        }
-
-        function createCelestialSphere() {
+        function createWorld() {
             celestialGroup = new THREE.Group();
+            constellationGroup = new THREE.Group();
+            celestialGroup.add(constellationGroup);
 
+            // Stars
             const starMeshes = {};
-            for (const [id, data] of Object.entries(STAR_DB)) {
-                const r = CONFIG.starDistance;
-                const decRad = data.dec * (Math.PI / 180);
-                const raRad = (data.ra / 24) * (Math.PI * 2);
-
-                const y = r * Math.sin(decRad);
-                const x = r * Math.cos(decRad) * Math.sin(raRad);
-                const z = r * Math.cos(decRad) * Math.cos(raRad);
-
+            for(const [id, data] of Object.entries(STAR_DB)) {
+                const pos = getStarPos(data.ra, data.dec);
                 const geo = new THREE.SphereGeometry(data.size * 2, 8, 8);
                 const mat = new THREE.MeshBasicMaterial({ color: data.color });
                 const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, y, z);
-                
+                mesh.position.copy(pos);
                 celestialGroup.add(mesh);
-                starMeshes[id] = mesh.position;
+                starMeshes[id] = pos;
             }
 
+            // Lines
             const lineMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 });
-            const specialLineMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.6 });
+            const specialMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.6 });
 
-            for (const [cstId, cstData] of Object.entries(CONSTELLATION_DB)) {
-                const mat = cstData.isSpecial ? specialLineMat : lineMat;
-                cstData.lines.forEach(pair => {
-                    const p1 = starMeshes[pair[0]];
-                    const p2 = starMeshes[pair[1]];
-                    if (p1 && p2) {
-                        const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-                        celestialGroup.add(new THREE.Line(geo, mat));
+            for(const [key, data] of Object.entries(CONSTELLATION_DB)) {
+                const mat = data.isSpecial ? specialMat : lineMat.clone();
+                const points = [];
+                data.lines.forEach(pair => {
+                    if(starMeshes[pair[0]] && starMeshes[pair[1]]) {
+                        points.push(starMeshes[pair[0]]);
+                        points.push(starMeshes[pair[1]]);
                     }
                 });
+                if(points.length > 0) {
+                    const geo = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.LineSegments(geo, mat);
+                    constellationGroup.add(line);
+                    cstLines[key] = line; // Save ref for blinking
+                }
             }
 
-            updateTilt();
-            // Initial Rotation based on current time
-            updateCelestialRotation(state.simulatedDate);
+            // Horizon Grid
+            const grid = new THREE.PolarGridHelper(CONFIG.starDistance, 16, 8, 64, 0x004400, 0x002200);
+            scene.add(grid);
+            addCompassLabel("N", 0, -CONFIG.starDistance+50, "#ff7777");
+            addCompassLabel("S", 0, CONFIG.starDistance-50, "#55ff55");
+            addCompassLabel("E", CONFIG.starDistance-50, 0, "#55ff55");
+            addCompassLabel("W", -CONFIG.starDistance+50, 0, "#55ff55");
 
-            scene.add(celestialGroup);
-        }
-
-        function updateTilt() {
-            const latRad = CONFIG.userLat * (Math.PI / 180);
-            const tiltAngle = -(Math.PI / 2 - latRad);
-            celestialGroup.rotation.x = tiltAngle;
-        }
-
-        function addLabel(group, text, x, y, z, color) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = color;
-            ctx.font = 'bold 100px "Zen Maru Gothic"';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(text, 128, 128);
+            // Initial Tilt
+            const latRad = CONFIG.userLat * (Math.PI/180);
+            celestialGroup.rotation.x = -(Math.PI/2 - latRad);
             
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-            sprite.position.set(x, y, z);
-            sprite.scale.set(60, 60, 1);
-            group.add(sprite);
+            scene.add(celestialGroup);
+            updateCelestialRotation(state.simulatedDate);
         }
 
-        // --- Compass Logic v1 (Stable Analog) ---
+        function getStarPos(ra, dec) {
+            const r = CONFIG.starDistance;
+            const decRad = dec * (Math.PI/180);
+            const raRad = (ra/24) * (Math.PI*2);
+            return new THREE.Vector3(
+                r * Math.cos(decRad) * Math.sin(raRad),
+                r * Math.sin(decRad),
+                r * Math.cos(decRad) * Math.cos(raRad)
+            );
+        }
+
+        function addCompassLabel(txt, x, z, col) {
+            const cvs = document.createElement('canvas'); cvs.width=128; cvs.height=128;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle=col; ctx.font="bold 80px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(txt, 64, 64);
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cvs) }));
+            sp.position.set(x, 20, z); sp.scale.set(40,40,1);
+            scene.add(sp);
+        }
 
         function handleOrientation(e) {
-            // Reverted to simple alpha only. No absolute/compassHeading checks.
             let alpha = e.alpha || 0;
             let beta = e.beta || 0;
             let gamma = e.gamma || 0;
-
-            state.raw = { alpha, beta, gamma };
             
-            // Adjust Offset
-            const finalAlpha = state.raw.alpha + state.alphaOffset + state.manualOffset;
+            // Apply Manual Offset & Initial Calibration
+            const finalAlpha = alpha + state.alphaOffset + state.manualOffset;
             
-            const deg2rad = Math.PI / 180;
-            const eu = new THREE.Euler(
-                state.raw.beta * deg2rad,
-                finalAlpha * deg2rad,
-                -state.raw.gamma * deg2rad,
-                'YXZ'
-            );
-            
-            const q = new THREE.Quaternion().setFromEuler(eu);
-            const qFix = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
-            q.multiply(qFix);
-
+            const q = new THREE.Quaternion();
+            const eu = new THREE.Euler(beta*Math.PI/180, finalAlpha*Math.PI/180, -gamma*Math.PI/180, 'YXZ');
+            q.setFromEuler(eu);
+            q.multiply(new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)));
             state.targetQuaternion.copy(q);
+            state.raw = { alpha, beta, gamma };
         }
-
-        // --- Calibration UI Logic ---
-        function updateOffsetDisplay() {
-            const txt = state.manualOffset + "°";
-            document.getElementById('calib-offset-val').innerText = txt;
-            document.getElementById('offset-val').innerText = txt;
-        }
-
-        const adjustOffset = (amount) => {
-            state.manualOffset += amount; 
-            updateOffsetDisplay();
-        };
-
-        // Button Listeners
-        document.getElementById('btn-calib-minus90').addEventListener('click', () => adjustOffset(-15));
-        document.getElementById('btn-calib-plus90').addEventListener('click', () => adjustOffset(15));
-        document.getElementById('btn-minus90').addEventListener('click', () => adjustOffset(-15));
-        document.getElementById('btn-plus90').addEventListener('click', () => adjustOffset(15));
-
-        // SET NORTH & AUTO SYNC
-        document.getElementById('btn-set-north').addEventListener('click', () => {
-            state.alphaOffset = -(state.raw.alpha + state.manualOffset);
-            
-            document.getElementById('calibration-screen').classList.add('hidden');
-            document.getElementById('main-hud').classList.remove('hidden');
-            
-            // Auto Sync Time
-            syncToCurrentTime(false);
-        });
-
-        document.getElementById('btn-recalib').addEventListener('click', () => {
-            state.alphaOffset = -(state.raw.alpha + state.manualOffset);
-            alert("北をリセットしました（手動調整値は維持されます）");
-        });
 
         function animate() {
             requestAnimationFrame(animate);
-            if(renderer && scene && camera) {
-                if (state.isRunning) {
-                    camera.quaternion.slerp(state.targetQuaternion, 0.15);
-                }
-                renderer.render(scene, camera);
+            if(!renderer || !camera) return;
+
+            if(state.isRunning) {
+                camera.quaternion.slerp(state.targetQuaternion, 0.15);
+            }
+
+            // Blinking Logic for Active Constellation
+            if (state.activeConstellation && cstLines[state.activeConstellation]) {
+                const line = cstLines[state.activeConstellation];
+                // Sine wave breathing: 0.3 to 1.0
+                const opacity = 0.65 + 0.35 * Math.sin(Date.now() * 0.005); 
+                line.material.opacity = opacity;
+                line.material.color.setHex(0xffff00); // Highlight Yellow
+                line.material.linewidth = 3; // Note: WebGL limitation often ignores width
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Settings & Visuals ---
+        function setupToggle(id, callback) {
+            const el = document.getElementById(id);
+            const opts = el.querySelectorAll('.toggle-opt');
+            opts.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    opts.forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    callback(opt.dataset.val);
+                });
+            });
+        }
+
+        function updateVisuals() {
+            // Apply settings to 3D objects
+            for(const [key, line] of Object.entries(cstLines)) {
+                // Lines Logic
+                let visible = false;
+                const rank = CONSTELLATION_DB[key]?.rank || "normal";
+                if (state.settings.lines === 'all') visible = true;
+                else if (state.settings.lines === 'famous' && (rank==='famous' || CONSTELLATION_DB[key].isSpecial)) visible = true;
+                
+                line.visible = visible;
             }
         }
 
+        // --- Guide System ---
+        let currentGuideId = null;
+        window.openGuide = function(cstId) {
+            currentGuideId = cstId;
+            const data = CONSTELLATION_DB[cstId];
+            if(!data) return;
+
+            document.getElementById('guide-title').innerText = data.jpName;
+            document.getElementById('guide-subtitle').innerText = data.rank.toUpperCase();
+            
+            // Reset Tab
+            switchTab('science'); 
+            
+            document.getElementById('settings-modal').classList.remove('active');
+            document.getElementById('guide-modal').classList.add('active');
+        };
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            const data = CONSTELLATION_DB[currentGuideId];
+            const content = data.info[tabName] || "データがありません";
+            document.getElementById('guide-content').innerText = content;
+        };
+
+        function closeGuide() {
+            document.getElementById('guide-modal').classList.remove('active');
+        }
+
+        function startNavigation() {
+            if(!currentGuideId) return;
+            state.activeConstellation = currentGuideId;
+            closeGuide();
+            showToast(`★ ${CONSTELLATION_DB[currentGuideId].jpName} ナビゲーション開始`);
+            
+            // Reset other lines styling
+            for(const k in cstLines) {
+                if(k !== currentGuideId) {
+                    cstLines[k].material.color.setHex(0x555555);
+                    cstLines[k].material.opacity = 0.5;
+                }
+            }
+        }
+
+        // --- Utils ---
+        function showToast(msg) {
+            const c = document.getElementById('toast-container');
+            const d = document.createElement('div'); d.className='toast-msg'; d.innerText=msg;
+            c.appendChild(d);
+            setTimeout(()=>d.remove(), 3300);
+        }
+
+        function initStarBg() {
+            const c = document.getElementById('star-bg');
+            for(let i=0; i<40; i++) {
+                const s = document.createElement('div');
+                s.style.position='absolute'; s.style.background='white'; s.style.borderRadius='50%';
+                s.style.width = Math.random()*3+'px'; s.style.height=s.style.width;
+                s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%';
+                s.style.opacity=Math.random();
+                c.appendChild(s);
+            }
+        }
+
+        // Dev Mode Controls
+        function setupDevControls() {
+            let drag=false, lx=0, ly=0;
+            window.addEventListener('mousedown', e=>{drag=true; lx=e.clientX; ly=e.clientY;});
+            window.addEventListener('mouseup', ()=>drag=false);
+            window.addEventListener('mousemove', e=>{
+                if(drag) {
+                    state.raw.alpha = (state.raw.alpha - (e.clientX-lx)*0.5) % 360;
+                    state.raw.beta = Math.max(0, Math.min(90, state.raw.beta - (e.clientY-ly)*0.5));
+                    lx=e.clientX; ly=e.clientY;
+                    handleOrientation({alpha:state.raw.alpha, beta:state.raw.beta, gamma:0});
+                }
+            });
+            handleOrientation({alpha:180, beta:45, gamma:0});
+        }
     </script>
 </body>
 </html>
