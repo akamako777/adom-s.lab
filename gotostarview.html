@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v5.3</title>
+    <title>Star Compass v5.4</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -17,7 +17,7 @@
             --bg-dark: #050a14;
             --glass-bg: rgba(20, 30, 50, 0.85);
             --glass-border: rgba(100, 200, 255, 0.3);
-            --ui-max-width: 480px; /* PCでの表示幅 */
+            --ui-max-width: 480px;
         }
 
         body { 
@@ -31,14 +31,12 @@
             -webkit-user-select: none;
         }
         
-        /* 3D Canvas is always full screen & bottom layer */
         #canvas-container { 
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh; 
             display: block; z-index: 1;
-            /* Canvas自体はイベントを受け取る */
             pointer-events: auto; 
-            cursor: move; /* PCでのドラッグ可能を示唆 */
+            cursor: move;
         }
 
         /* --- UI Atoms --- */
@@ -49,7 +47,7 @@
             -webkit-backdrop-filter: blur(12px);
             border-radius: 24px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            pointer-events: auto; /* パネル自体は操作可能 */
+            pointer-events: auto;
         }
 
         .btn-icon {
@@ -76,26 +74,21 @@
         .btn-rect:active { background: rgba(255,255,255,0.2); }
 
         /* --- Layout Structures --- */
-        
-        /* UI Container */
         .ui-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* ここは透過 */
-            z-index: 50;
+            pointer-events: none; z-index: 50;
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
-        /* Center Wrapper for PC */
         .ui-center-wrapper {
             width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: space-between;
-            pointer-events: none; /* 重要：ここも透過させる！ */
+            pointer-events: none;
         }
 
         @media (min-width: 481px) {
             .ui-center-wrapper {
-                position: absolute; 
-                top: 0; bottom: 0;
+                position: absolute; top: 0; bottom: 0;
                 left: 50%; transform: translateX(-50%);
                 max-width: var(--ui-max-width);
             }
@@ -108,59 +101,34 @@
         }
 
         .hud-top {
-            padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; 
-            pointer-events: none; /* 子要素のみautoにする */
+            padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;
         }
-        
-        /* Bottom Trinity Layout */
         .hud-bottom {
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 1.5fr 0.8fr 0.8fr;
-            gap: 8px;
-            align-items: end;
-            pointer-events: none;
+            padding: 15px; display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr; gap: 8px; align-items: end; pointer-events: none;
         }
 
-        /* 1. Control Unit (Left) */
-        .control-unit {
-            display: flex; flex-direction: column; gap: 8px;
-            padding: 12px 10px;
-        }
+        .control-unit { display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; }
         .slider-row { display: flex; align-items: center; gap: 4px; }
         .slider-label { font-size: 14px; width: 18px; text-align: center; }
         
-        input[type=range] {
-            -webkit-appearance: none; background: transparent; flex-grow: 1; height: 20px; width: 0;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 18px; width: 18px;
-            border-radius: 50%; background: #fff; cursor: pointer; margin-top: -7px;
-            box-shadow: 0 0 10px rgba(0,255,255,0.5);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.3); border-radius: 2px;
-        }
+        input[type=range] { -webkit-appearance: none; background: transparent; flex-grow: 1; height: 20px; width: 0; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #fff; cursor: pointer; margin-top: -7px; box-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.3); border-radius: 2px; }
 
         .micro-btn {
             width: 28px; height: 28px; border-radius: 8px;
             background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);
             color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            pointer-events: auto;
+            flex-shrink: 0; pointer-events: auto;
         }
 
-        /* 2. Center & Right Units */
-        .center-unit, .right-unit {
-            display: flex; justify-content: center; padding-bottom: 0px;
-        }
+        .center-unit, .right-unit { display: flex; justify-content: center; padding-bottom: 0px; }
         
-        /* --- Modals & Popups --- */
+        /* --- Overlays --- */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; pointer-events: auto;
-            transition: opacity 0.5s;
+            z-index: 100; pointer-events: auto; transition: opacity 0.5s;
         }
 
         .modal-overlay {
@@ -172,49 +140,34 @@
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-sheet {
-            background: #1a2333;
-            border-top: 1px solid #0ff;
-            border-radius: 24px 24px 0 0;
-            padding: 24px;
-            width: 100%; box-sizing: border-box;
+            background: #1a2333; border-top: 1px solid #0ff; border-radius: 24px 24px 0 0;
+            padding: 24px; width: 100%; box-sizing: border-box;
             max-height: 85vh; overflow-y: auto;
             transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            color: white;
-            display: flex; flex-direction: column;
+            color: white; display: flex; flex-direction: column;
         }
         .modal-overlay.active .modal-sheet { transform: translateY(0); }
 
-        /* Settings Grid */
+        /* Settings */
         .setting-section { margin-bottom: 20px; }
         .setting-label { font-size: 0.9rem; color: #aaa; margin-bottom: 8px; display: block; }
         
         .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
         .filter-chip {
             padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,0.1); border: 1px solid #444;
-            font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
-            display: flex; align-items: center; gap: 5px;
+            font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px;
         }
-        .filter-chip.selected {
-            background: var(--accent-color); color: #000; border-color: var(--accent-color); font-weight: bold;
-        }
+        .filter-chip.selected { background: var(--accent-color); color: #000; border-color: var(--accent-color); font-weight: bold; }
 
         .toggle-group { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; width: fit-content; }
-        .toggle-opt {
-            padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; color: #aaa;
-        }
+        .toggle-opt { padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; color: #aaa; }
         .toggle-opt.selected { background: #334455; color: #fff; font-weight: bold; }
 
-        /* Tabs */
-        .tab-header {
-            display: flex; border-bottom: 1px solid #444; margin-bottom: 15px;
-        }
-        .tab-item {
-            flex: 1; text-align: center; padding: 10px 0; cursor: pointer;
-            color: #888; border-bottom: 3px solid transparent; font-size: 0.9rem;
-        }
+        /* Tabs & List */
+        .tab-header { display: flex; border-bottom: 1px solid #444; margin-bottom: 15px; }
+        .tab-item { flex: 1; text-align: center; padding: 10px 0; cursor: pointer; color: #888; border-bottom: 3px solid transparent; font-size: 0.9rem; }
         .tab-item.active { color: #fff; border-bottom-color: var(--accent-color); font-weight: bold; }
 
-        /* Constellation Card */
         .constellation-card {
             background: linear-gradient(135deg, #2a3a55, #111);
             border-radius: 16px; padding: 16px; margin-bottom: 10px;
@@ -225,16 +178,14 @@
         .card-info p { margin: 2px 0 0; font-size: 0.8rem; color: #bbb; }
         .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #444; color: #ddd; margin-right: 5px; vertical-align: middle; }
         
-        /* Time Travel Popup */
+        /* Time & Nav */
         #time-controls {
             position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 10px; align-items: center;
-            opacity: 0; pointer-events: none; transition: all 0.3s;
-            width: max-content;
+            opacity: 0; pointer-events: none; transition: all 0.3s; width: max-content;
         }
         #time-controls.active { opacity: 1; pointer-events: auto; bottom: 100px; }
 
-        /* Toast */
         #toast-container {
             position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
             z-index: 10001; pointer-events: none;
@@ -244,30 +195,20 @@
             background: rgba(0, 50, 80, 0.9); border: 1px solid #0ff;
             color: #fff; padding: 12px 20px; border-radius: 50px;
             text-align: center; font-size: 0.9rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            animation: toast-in 0.3s ease-out forwards;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: toast-in 0.3s ease-out forwards;
         }
         @keyframes toast-in { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes toast-out { to { opacity: 0; transform: translateY(-20px); } }
 
-        /* Clock Panel (Top) */
         #clock-panel {
-            background: rgba(0, 20, 40, 0.8);
-            border: 1px solid rgba(100, 200, 255, 0.3);
-            border-radius: 12px; padding: 8px 16px; text-align: right;
-            pointer-events: auto;
+            background: rgba(0, 20, 40, 0.8); border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 12px; padding: 8px 16px; text-align: right; pointer-events: auto;
         }
         
-        /* Stop Nav Button */
         #btn-stop-nav {
-            display: none;
-            background: rgba(255, 50, 50, 0.8);
-            border: 1px solid #ff9999;
-            color: white; padding: 8px 16px; border-radius: 20px;
-            font-size: 0.8rem; font-weight: bold;
-            pointer-events: auto;
-            margin-right: 10px;
-            animation: pulse-red 2s infinite;
+            display: none; background: rgba(255, 50, 50, 0.8); border: 1px solid #ff9999;
+            color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+            pointer-events: auto; margin-right: 10px; animation: pulse-red 2s infinite;
         }
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.4); }
@@ -275,13 +216,23 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
         }
 
-        /* AR Button (Dummy) */
         .btn-ar-toggle {
-            margin-left: 10px;
-            padding: 4px 12px; background: rgba(255,255,255,0.1); 
-            border: 1px solid #888; color: #888; border-radius: 8px; font-size: 12px;
-            cursor: pointer;
+            margin-left: 10px; padding: 4px 12px; background: rgba(255,255,255,0.1); 
+            border: 1px solid #888; color: #888; border-radius: 8px; font-size: 12px; cursor: pointer;
         }
+
+        /* 3D Nav Arrow */
+        #nav-arrow {
+            display: none; position: absolute; top: 50%; left: 50%;
+            width: 0; height: 0; pointer-events: none; z-index: 40;
+            /* Using a CSS triangle or SVG */
+        }
+        #nav-arrow::after {
+            content: '➤'; font-size: 40px; color: #ff0055;
+            text-shadow: 0 0 10px #ff0055;
+            display: block; transform: translate(-50%, -50%);
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -290,10 +241,13 @@
     <div id="toast-container"></div>
     <div id="dev-badge" style="display:none; position:fixed; top:10px; left:10px; background:red; color:white; padding:2px 5px; z-index:9999; font-size:10px; pointer-events:none;">Dev Mode</div>
 
+    <!-- Nav Arrow (Rotates) -->
+    <div id="nav-arrow"></div>
+
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 5.3<br><span style="font-size:1rem; opacity:0.8;">Deep Space Edition</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 5.4<br><span style="font-size:1rem; opacity:0.8;">Final Polish</span></h1>
         <button id="btn-start" class="glass-panel" style="margin-top:40px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
         <p style="margin-top:20px; opacity:0.6; font-size:0.8rem;">※コンパスの許可が必要です</p>
     </div>
@@ -339,7 +293,6 @@
                     </div>
                     <div class="slider-row">
                         <button id="btn-adj-left" class="micro-btn">＜</button>
-                        <!-- Range changed to -180 to 180 -->
                         <input type="range" id="heading-slider" min="-180" max="180" value="0" style="pointer-events:auto;">
                         <button id="btn-adj-right" class="micro-btn">＞</button>
                     </div>
@@ -364,7 +317,6 @@
         <div class="modal-sheet">
             <h2 style="margin-top:0; margin-bottom: 15px;">設定 & 図鑑</h2>
             
-            <!-- Filters -->
             <div class="setting-section">
                 <span class="setting-label">表示する星座（複数選択可）</span>
                 <div class="filter-chips" id="filter-lines">
@@ -385,14 +337,12 @@
                         <div class="toggle-opt" data-val="desc">解説付</div>
                         <div class="toggle-opt" data-val="none">なし</div>
                     </div>
-                    <!-- AR Mode Button (Dummy) -->
                     <button class="btn-ar-toggle" onclick="alert('ARモードは開発中です！')">AR [OFF]</button>
                 </div>
             </div>
 
             <h3 style="margin-top:10px; border-top:1px solid #444; padding-top:15px;">星座図鑑</h3>
             
-            <!-- Tabs -->
             <div class="tab-header">
                 <div class="tab-item active" data-tab="famous">⭐ 有名</div>
                 <div class="tab-item" data-tab="normal">🌙 普通</div>
@@ -400,10 +350,7 @@
                 <div class="tab-item" data-tab="object">🪐 その他</div>
             </div>
 
-            <!-- List Container -->
-            <div id="encyclopedia-list" style="flex-grow:1; overflow-y:auto; min-height:200px;">
-                <!-- Generated via JS -->
-            </div>
+            <div id="encyclopedia-list" style="flex-grow:1; overflow-y:auto; min-height:200px;"></div>
 
             <button id="btn-close-settings" class="btn-rect" style="width:100%; margin-top:15px; padding:15px; background:#444;">閉じる</button>
         </div>
@@ -441,9 +388,9 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V5.3 (Deep Space Edition)
+         * 🌌 STAR COMPASS V5.4 (Final Polish)
          * Architecture: Single File, Procedural Assets, Mobile Optimized
-         * New: Multi-Layer Milky Way, Stardust Particles, Twinkle Effect
+         * New: Fine-tuned Milky Way (Softer), Nav Arrow, Target Marker
          */
 
         // --- 0. Database ---
@@ -606,6 +553,7 @@
         let celestialGroup, constellationGroup, labelsGroup, milkyWayGroup, stardustGroup;
         let cstLines = {}; 
         let cstLabels = {}; 
+        let navMarker = null; // 3D ring marker
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -775,7 +723,7 @@
             stardustGroup = new THREE.Group();
             
             celestialGroup.add(milkyWayGroup); // Layer 2
-            celestialGroup.add(stardustGroup); // Layer 4 (Particles)
+            celestialGroup.add(stardustGroup); // Layer 4
             celestialGroup.add(constellationGroup); // Layer 5
             celestialGroup.add(labelsGroup); // Layer 6
 
@@ -791,17 +739,16 @@
                 starMeshes[id] = pos;
             }
 
-            // Milky Way (Procedural & Connected)
+            // Procedural Assets
             createMilkyWay();
-            // Stardust (Twinkling background)
             createStardust();
+            createNavMarker();
 
-            // Constellations (Lines & Labels)
+            // Constellations
             const lineMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 });
             const specialMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.6 });
 
             for(const [key, data] of Object.entries(CONSTELLATION_DB)) {
-                // Lines
                 const points = [];
                 let centerSum = new THREE.Vector3();
 
@@ -812,7 +759,6 @@
                     }
                 });
                 
-                // Label Center
                 let labelPos = new THREE.Vector3();
                 if(data.navTarget && starMeshes[data.navTarget]) {
                     labelPos.copy(starMeshes[data.navTarget]);
@@ -832,7 +778,6 @@
                 if(data.jpName) {
                     const offsetPos = labelPos.clone().normalize().multiplyScalar(CONFIG.starDistance * 0.95);
                     offsetPos.y += 20; 
-
                     const sprite = createTextSprite(data.jpName, data.catch);
                     sprite.position.copy(offsetPos);
                     labelsGroup.add(sprite);
@@ -840,7 +785,6 @@
                 }
             }
 
-            // Grid
             const grid = new THREE.PolarGridHelper(CONFIG.starDistance, 16, 8, 64, 0x004400, 0x002200);
             scene.add(grid);
             addCompassLabel("N", 0, -CONFIG.starDistance+50, "#ff7777");
@@ -848,7 +792,6 @@
             addCompassLabel("E", CONFIG.starDistance-50, 0, "#55ff55");
             addCompassLabel("W", -CONFIG.starDistance+50, 0, "#55ff55");
 
-            // Initial Tilt
             const latRad = CONFIG.userLat * (Math.PI/180);
             celestialGroup.rotation.x = -(Math.PI/2 - latRad);
             
@@ -857,106 +800,88 @@
             updateVisuals(); 
         }
 
+        function createNavMarker() {
+            // Create a pulsating ring for 3D marker
+            const geo = new THREE.RingGeometry(15, 18, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff0055, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            navMarker = new THREE.Mesh(geo, mat);
+            navMarker.visible = false;
+            // Billboard behavior handled in animate
+            celestialGroup.add(navMarker);
+        }
+
         function createMilkyWay() {
-            // "River" Logic: Continuous sprites along the galactic plane
-            // Galactic Equator approx: passes through Cassiopeia, Cygnus, Aquila, Sagittarius, Crux, Puppis, Monoceros, Auriga
-            
+            // Final Polish: Softer, painterly Milky Way
             const milkyWayGroupLocal = new THREE.Group();
             
-            // Texture
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createRadialGradient(32,32,0,32,32,32);
-            grad.addColorStop(0, 'rgba(255,255,255,0.1)'); 
-            grad.addColorStop(0.5, 'rgba(200,220,255,0.02)');
+            grad.addColorStop(0, 'rgba(255,255,255,0.08)'); // Lower base opacity
+            grad.addColorStop(0.5, 'rgba(200,220,255,0.01)');
             grad.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = grad;
             ctx.fillRect(0,0,64,64);
             const tex = new THREE.CanvasTexture(canvas);
-            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+            const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
 
-            // Generate "Cloud" sprites
-            const count = 1500;
+            const count = 1800; // Increased count for smoother blend
             for(let i=0; i<count; i++) {
-                // RA: 0 to 24
                 const ra = Math.random() * 24;
-                
-                // Galactic plane approximation function (Dec based on RA)
-                // Roughly: Sine wave.
-                // Peak North: RA 0h (Cassiopeia) -> Dec +60
-                // Cross Equator: RA 6h (Monoceros) -> Dec 0? No, Monoceros is near 0.
-                // Let's use a simplified curve fitting for the visible winter/summer band.
-                
-                // Winter Band (Auriga/Gemini/Monoceros/Puppis): RA 4h ~ 8h. Dec +40 to -40.
-                // Summer Band (Cygnus/Aquila/Sagittarius): RA 18h ~ 20h. Dec +40 to -40.
-                // Connection (Cassiopeia/Perseus): RA 0h ~ 3h. Dec +50 to +60.
-                
-                // Let's define a "Main Path"
-                // Dec approx = 27 + 60 * sin( (RA - 19.5) * PI / 12 ) ? Very rough.
-                
-                // Improved Procedural Generation:
-                // Just use the known bounds for visual flair
-                
                 let targetDec = 0;
-                let width = 15; // Width of the river
+                let width = 20; 
                 let density = 1;
 
                 if (ra >= 17 && ra <= 21) {
-                    // Summer Core (Dense, Brighter)
-                    targetDec = -30 + (ra-17)*20; // -30 to +50 roughly
-                    density = 2.0;
-                    width = 25;
+                    // Summer Core: Less dense than v5.3, wider for soft edges
+                    targetDec = -30 + (ra-17)*20; 
+                    density = 1.2; // Toned down from 2.0
+                    width = 40; // Wider scatter for blur effect
                 } else if (ra >= 4 && ra <= 9) {
-                    // Winter (Faint)
-                    targetDec = 40 - (ra-4)*20; // +40 to -60
-                    density = 0.8;
-                } else if (ra < 4 || ra > 21) {
-                    // Northern Connection
-                    targetDec = 60;
+                    // Winter
+                    targetDec = 40 - (ra-4)*20; 
+                    density = 0.7;
                     width = 20;
+                } else if (ra < 4 || ra > 21) {
+                    targetDec = 60;
+                    width = 25;
                 } else {
-                    continue; // Skip gaps for now or fill lightly
+                    continue; 
                 }
 
-                // Scatter around targetDec
                 const dec = targetDec + (Math.random()-0.5) * width;
-                
-                // Color variation
                 const sprite = new THREE.Sprite(mat.clone());
                 
-                // Tint: Core (Summer) is yellowish, Winter is bluish
+                // Color adjustment for painterly look
                 if (ra > 10 && ra < 22) {
-                    sprite.material.color.setHSL(0.1, 0.5, 0.8); // Yellowish
+                    sprite.material.color.setHSL(0.1, 0.4, 0.7); // Warmer but desaturated
                 } else {
-                    sprite.material.color.setHSL(0.6, 0.3, 0.9); // Blue-white
+                    sprite.material.color.setHSL(0.6, 0.2, 0.8); // Cool white
                 }
                 
-                // Opacity variation
-                sprite.material.opacity = (Math.random() * 0.2 + 0.05) * density;
+                sprite.material.opacity = (Math.random() * 0.15 + 0.05) * density; // Lower individual opacity
 
                 const pos = getStarPos(ra, dec);
-                pos.normalize().multiplyScalar(700 + Math.random()*50); // Background
-                
+                pos.normalize().multiplyScalar(700 + Math.random()*50);
                 sprite.position.copy(pos);
-                // Scale
-                const scale = 100 + Math.random() * 150;
+                
+                const scale = 120 + Math.random() * 180; // Large sprites for overlap
                 sprite.scale.set(scale, scale, 1);
                 
                 milkyWayGroup.add(sprite);
             }
             
-            // Add Dark Dust Layer (Layer 3)
-            // Just a few black sprites to create contrast
-            const dustMat = new THREE.SpriteMaterial({ map: tex, color: 0x000011, transparent: true, opacity: 0.8, blending: THREE.NormalBlending });
-            for(let i=0; i<200; i++) {
-                const ra = 17 + Math.random()*4; // Focus on Core
+            // Dust Layer (Contrast)
+            const dustMat = new THREE.SpriteMaterial({ map: tex, color: 0x000015, transparent: true, opacity: 0.6, blending: THREE.NormalBlending });
+            for(let i=0; i<250; i++) {
+                const ra = 17 + Math.random()*4; 
                 const dec = -30 + Math.random()*60;
                 const pos = getStarPos(ra, dec);
-                pos.normalize().multiplyScalar(680); // In front of MW
+                pos.normalize().multiplyScalar(680); 
                 const sp = new THREE.Sprite(dustMat);
                 sp.position.copy(pos);
-                sp.scale.set(150, 150, 1);
+                sp.scale.set(160, 160, 1);
                 milkyWayGroup.add(sp);
             }
         }
@@ -971,25 +896,16 @@
                 const r = CONFIG.starDistance + Math.random()*200;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
-                
                 const x = r * Math.sin(phi) * Math.cos(theta);
                 const y = r * Math.sin(phi) * Math.sin(theta);
                 const z = r * Math.cos(phi);
-                
                 pos.push(x, y, z);
                 sizes.push(Math.random() * 2);
             }
-            
             geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
             geo.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
             
-            const mat = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 1.5,
-                transparent: true,
-                opacity: 0.8
-            });
-            
+            const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8 });
             stardustGroup.add(new THREE.Points(geo, mat));
         }
 
@@ -997,19 +913,13 @@
             const cvs = document.createElement('canvas'); 
             cvs.width=512; cvs.height=256;
             const ctx = cvs.getContext('2d');
-            
-            ctx.fillStyle = "white";
-            ctx.font = "bold 60px 'Zen Maru Gothic', sans-serif";
-            ctx.textAlign = "center";
-            ctx.shadowColor = "black"; ctx.shadowBlur = 10; ctx.shadowOffsetX=3; ctx.shadowOffsetY=3;
+            ctx.fillStyle = "white"; ctx.font = "bold 60px 'Zen Maru Gothic', sans-serif";
+            ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowBlur = 10; ctx.shadowOffsetX=3; ctx.shadowOffsetY=3;
             ctx.fillText(name, 256, 120);
-            
             if (catchphrase) {
-                ctx.fillStyle = "#ffd700";
-                ctx.font = "40px 'Zen Maru Gothic', sans-serif";
+                ctx.fillStyle = "#ffd700"; ctx.font = "40px 'Zen Maru Gothic', sans-serif";
                 ctx.fillText(catchphrase, 256, 180);
             }
-
             const tex = new THREE.CanvasTexture(cvs);
             const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.9 });
             const sp = new THREE.Sprite(mat);
@@ -1042,7 +952,6 @@
             let alpha = (e.alpha !== undefined) ? e.alpha : 0;
             let beta = (e.beta !== undefined) ? e.beta : 0;
             let gamma = (e.gamma !== undefined) ? e.gamma : 0;
-            
             const finalAlpha = alpha + state.alphaOffset + state.manualOffset;
             const q = new THREE.Quaternion();
             const eu = new THREE.Euler(beta*Math.PI/180, finalAlpha*Math.PI/180, -gamma*Math.PI/180, 'YXZ');
@@ -1060,20 +969,75 @@
                 camera.quaternion.slerp(state.targetQuaternion, 0.15);
             }
 
-            // Twinkle effect for Stardust
+            // Twinkle
             if (stardustGroup && stardustGroup.children.length > 0) {
-                // Simple opacity flicker
-                const points = stardustGroup.children[0];
-                if (Math.random() > 0.5) {
-                    points.material.opacity = 0.6 + Math.random() * 0.4;
-                }
+                if (Math.random() > 0.5) stardustGroup.children[0].material.opacity = 0.6 + Math.random() * 0.4;
             }
 
-            if (state.activeConstellation && cstLines[state.activeConstellation]) {
-                const line = cstLines[state.activeConstellation];
-                const opacity = 0.65 + 0.35 * Math.sin(Date.now() * 0.005); 
-                line.material.opacity = opacity;
-                line.material.color.setHex(0xffff00);
+            // Nav Logic
+            const arrow = document.getElementById('nav-arrow');
+            if (state.activeConstellation) {
+                const data = CONSTELLATION_DB[state.activeConstellation];
+                const targetKey = data.navTarget || (data.lines[0] ? data.lines[0][0] : null);
+                
+                // Show lines
+                if (cstLines[state.activeConstellation]) {
+                    const line = cstLines[state.activeConstellation];
+                    line.material.opacity = 0.65 + 0.35 * Math.sin(Date.now() * 0.005);
+                    line.material.color.setHex(0xffff00);
+                }
+
+                if (targetKey) {
+                    const starPos = getStarPos(STAR_DB[targetKey].ra, STAR_DB[targetKey].dec);
+                    // Update 3D Marker
+                    if (navMarker) {
+                        navMarker.visible = true;
+                        navMarker.position.copy(starPos.clone().multiplyScalar(0.9)); // Just in front of star
+                        navMarker.lookAt(camera.position);
+                        const s = 1 + 0.3 * Math.sin(Date.now() * 0.01);
+                        navMarker.scale.set(s,s,s);
+                    }
+
+                    // 2D Arrow Logic
+                    // Project star position to NDC
+                    // We need the world position of the star relative to camera
+                    // The star is inside 'celestialGroup' which rotates.
+                    // We need absolute world pos.
+                    
+                    // Clone star pos, apply group rotation
+                    const worldPos = starPos.clone().applyMatrix4(celestialGroup.matrixWorld);
+                    
+                    // Check if in frustum
+                    const p = worldPos.clone().project(camera);
+                    
+                    // Visible if -1 < x < 1 and -1 < y < 1 and z < 1 (in front)
+                    const isVisible = (p.z < 1 && Math.abs(p.x) < 1 && Math.abs(p.y) < 1);
+                    
+                    if (isVisible) {
+                        arrow.style.display = 'none';
+                    } else {
+                        arrow.style.display = 'block';
+                        // Calculate angle to target on screen plane
+                        // If z > 1 (behind), we invert x/y to point "away"
+                        let dx = p.x;
+                        let dy = p.y;
+                        if (p.z > 1) { dx = -dx; dy = -dy; }
+                        
+                        // Calculate angle
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                        // Rotate arrow: -90 because arrow points right by default?
+                        // arrow::after content '➤' usually points right.
+                        // atan2(y,x) 0 is Right.
+                        // We want arrow to point towards the target.
+                        // CSS rotation: 0 is Right (if arrow is ->).
+                        // Let's adjust based on the character. ➤ points right.
+                        arrow.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translate(120px)`; 
+                        // translate(120px) pushes it to the edge of a virtual circle
+                    }
+                }
+            } else {
+                if(navMarker) navMarker.visible = false;
+                arrow.style.display = 'none';
             }
 
             renderer.render(scene, camera);
@@ -1121,7 +1085,6 @@
                     }
                 }
             }
-            // Milky Way & Stardust Visibility
             if (milkyWayGroup) milkyWayGroup.visible = state.filter.milkyway;
             if (stardustGroup) stardustGroup.visible = state.filter.stardust;
         }
@@ -1155,7 +1118,6 @@
 
             document.getElementById('guide-title').innerText = data.jpName;
             document.getElementById('guide-subtitle').innerText = data.catch || "";
-            // Fix: ensure tab UI update properly via DOM
             switchGuideTab('science'); 
             
             document.getElementById('settings-modal').classList.remove('active');
@@ -1196,6 +1158,8 @@
         function stopNavigation() {
             state.activeConstellation = null;
             document.getElementById('btn-stop-nav').style.display = 'none';
+            if(navMarker) navMarker.visible = false;
+            document.getElementById('nav-arrow').style.display = 'none';
             showToast("ナビゲーションを終了しました");
             
             // Restore visual state based on filters
@@ -1244,13 +1208,6 @@
             document.addEventListener('mousemove', e => {
                 if(drag) {
                     state.raw.alpha = (state.raw.alpha - (e.clientX-lx)*0.5) % 360;
-                    // UNLOCKED: Allow full 180 degree view (zenith to nadir)
-                    // state.raw.beta range: 0 (North Horizon/Up?) to 180 (South Horizon/Down?)
-                    // Logic: beta usually 0 is flat on table? No, in deviceOrientation, beta is tilt front/back.
-                    // For dev simulator:
-                    // 0 = Looking straight UP (Zenith) or Horizon depending on implementation.
-                    // Current logic: eu = new THREE.Euler(beta*Math.PI/180, ...)
-                    // Let's allow full range 0 to 180.
                     state.raw.beta = Math.max(0, Math.min(180, state.raw.beta - (e.clientY-ly)*0.5));
                     
                     lx=e.clientX; ly=e.clientY;
