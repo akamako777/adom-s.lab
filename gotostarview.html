@@ -89,9 +89,19 @@
             border: 2px solid #0ff;
             text-align: center;
             max-width: 90%;
+            margin-bottom: 20px;
         }
         .calib-step { font-size: 1.2rem; margin-bottom: 10px; line-height: 1.6; }
         .highlight { color: #ffd700; font-size: 1.4rem; font-weight: 900; }
+        
+        .calib-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .small-note { font-size: 0.9rem; color: #ddd; margin-bottom: 10px; }
 
         /* Main HUD (Stargazing) */
         #main-hud {
@@ -119,6 +129,7 @@
             font-size: 24px;
             display: flex; align-items: center; justify-content: center;
             backdrop-filter: blur(4px);
+            cursor: pointer;
         }
         .round-btn:active { background: rgba(255,255,255,0.3); }
 
@@ -157,13 +168,23 @@
             <p class="calib-step">1. スマホを<b>まわして</b><br>方位磁針(ほういじしん)で<br><span class="highlight">「北 (N)」</span>を向いてね</p>
         </div>
         
+        <!-- 手動調整エリアを追加 -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p class="small-note">方位磁針が違うな？と思ったら<br>ボタンでなおしてね</p>
+            <div class="calib-controls">
+                <button id="btn-calib-minus90" class="round-btn">↶</button>
+                <span id="calib-offset-val" style="font-weight:bold; font-size:18px;">0°</span>
+                <button id="btn-calib-plus90" class="round-btn">↷</button>
+            </div>
+        </div>
+
         <div style="text-align: center;">
             <p class="calib-step">北を向いたら...</p>
             <button id="btn-set-north" class="btn-style btn-accent" style="width: 200px;">ここが 北だ！</button>
         </div>
 
-        <div class="calib-guide" style="border-color: #aaa;">
-            <p style="font-size:0.9rem;">※画面の奥に緑の線が見えるかな？<br>あれが地平線だよ。</p>
+        <div class="calib-guide" style="border-color: #aaa; margin-top: 10px; padding: 10px;">
+            <p style="font-size:0.9rem; margin:0;">※奥に緑の線が見えるかな？<br>あれが地平線だよ。</p>
         </div>
     </div>
 
@@ -311,8 +332,8 @@
             horizonGroup.add(ring);
 
             // 2. Cardinal Labels (Using simple Sprites for robustness)
-            // North (Z-)
-            addLabel("北 (N)", 0, 20, -CONFIG.starDistance + 50, "#ff3333");
+            // North (Z-) -> 明るい赤に変更 #ff7777
+            addLabel("北 (N)", 0, 20, -CONFIG.starDistance + 50, "#ff7777");
             // South (Z+)
             addLabel("南 (S)", 0, 20, CONFIG.starDistance - 50, "#33ff33");
             // East (X+)
@@ -458,11 +479,37 @@
             state.mode = 'CALIB';
         }
 
+        // --- Manual Calibration Controls (Calibration Screen) ---
+        // メイン画面と同じmanualOffsetを操作し、表示も更新する
+        document.getElementById('btn-calib-minus90').addEventListener('click', () => {
+            state.manualOffset -= 15;
+            updateOffsetDisplays();
+        });
+        document.getElementById('btn-calib-plus90').addEventListener('click', () => {
+            state.manualOffset += 15;
+            updateOffsetDisplays();
+        });
+
         // Step 3: Set North & Go to Star Mode
         document.getElementById('btn-set-north').addEventListener('click', () => {
-            // 現在のAlphaを「0 (North)」と定義する
-            // つまり、補正値 = -現在のAlpha
-            state.alphaOffset = -state.raw.alpha;
+            // ユーザーは「手動補正」で画面の「N」を現実の北に合わせた状態でここに来る。
+            // さらに微調整で体を回し、Nを画面中央に捉えてボタンを押す。
+            
+            // 目標: 画面中央(Quaternionの基準)が北(Z-)になるようにする。
+            // つまり、finalAlpha が 0 になるように alphaOffset を逆算する。
+            // 0 = raw + alphaOffset + manualOffset
+            // alphaOffset = -(raw + manualOffset)
+            
+            state.alphaOffset = -(state.raw.alpha + state.manualOffset);
+            
+            // ※ここで手動補正(manualOffset)自体はリセットしない方が自然かも？
+            // あるいは、alphaOffsetに組み込んだので、manualOffsetは0に戻す？
+            // 混乱を避けるため、manualOffsetは「表示のみ」に残し、
+            // 今後の追加補正のために0に戻すのが数学的に綺麗だが、UI上「0°」に戻ると
+            // 「さっき合わせたのに！」と不安になるかも。
+            // V1.3では「すべてalphaOffsetに焼き付ける」方式で行く。
+            state.manualOffset = 0;
+            updateOffsetDisplays();
             
             // UI Switch
             document.getElementById('calibration-screen').classList.add('hidden');
@@ -473,24 +520,30 @@
             state.mode = 'STAR';
         });
 
-        // Other Controls
+        // Other Controls (Main HUD)
         document.getElementById('btn-recalib').addEventListener('click', () => {
-            state.alphaOffset = -state.raw.alpha;
-            state.manualOffset = 0; // Reset manual too
-            document.getElementById('offset-val').innerText = "0°";
+            // 再キャリブレーション（リセット）
+            state.alphaOffset = -(state.raw.alpha + state.manualOffset);
+            // state.manualOffset = 0; // ここでは維持する？一旦0にする？
+            // 「合わせなおす」なので、今の状態を北とする。
+            state.manualOffset = 0;
+            updateOffsetDisplays();
+            
             alert("今向いている方向を「北」にセットしたよ！");
         });
 
         document.getElementById('btn-minus90').addEventListener('click', () => {
             state.manualOffset -= 15; // Fine tune
-            updateOffsetDisplay();
+            updateOffsetDisplays();
         });
         document.getElementById('btn-plus90').addEventListener('click', () => {
             state.manualOffset += 15;
-            updateOffsetDisplay();
+            updateOffsetDisplays();
         });
 
-        function updateOffsetDisplay() {
+        function updateOffsetDisplays() {
+            // キャリブレーション画面とメイン画面両方の表示を更新
+            document.getElementById('calib-offset-val').innerText = state.manualOffset + "°";
             document.getElementById('offset-val').innerText = state.manualOffset + "°";
         }
 
