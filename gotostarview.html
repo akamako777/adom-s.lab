@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v41.4 (Render Fix)</title>
+    <title>Five Islands Stargazer v31.0 (Matrix Core)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,9 +32,10 @@
         #layers-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: 0; transition: opacity 0.8s; }
         #sky-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; }
+        
+        /* Overlay */
         #overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; overflow: hidden; }
 
-        /* UI Layer */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
         .interactive { pointer-events: auto; cursor: pointer; }
         
@@ -44,20 +45,23 @@
             transition: all 0.3s ease;
         }
 
-        /* 🌓 Modes */
+        /* Modes */
         body.mode-red #layers-container { filter: sepia(100%) hue-rotate(-50deg) saturate(300%) contrast(1.2) brightness(0.6); }
         body.mode-red #ui-layer { filter: sepia(100%) hue-rotate(-50deg) saturate(200%); }
         
         body.mode-solar { background-color: #87CEEB; color: #0f172a; }
         body.mode-solar .glass { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0,0,0,0.1); color: #0f172a; }
+        body.mode-solar h1, body.mode-solar h2, body.mode-solar h3, body.mode-solar span, body.mode-solar div { color: #0f172a; text-shadow: none !important; }
         body.mode-solar .text-cyan-400 { color: #0066cc !important; }
         body.mode-solar .text-white { color: #0f172a !important; }
-
+        
         /* Smart Bubble */
         .info-bubble {
             position: absolute;
-            transition: opacity 0.3s, transform 0.15s linear;
+            transition: opacity 0.3s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
             will-change: transform, left, top;
+            transform: translate(-50%, -100%); 
+            margin-top: -20px;
         }
         .bubble-tail {
             position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
@@ -65,19 +69,11 @@
             border-left: 8px solid transparent; border-right: 8px solid transparent;
             border-top: 8px solid rgba(15, 23, 42, 0.9);
         }
+        body.mode-solar .bubble-tail { border-top-color: rgba(255, 255, 255, 0.95); }
 
-        /* 🚪 PC GATE (Fixed Visibility & Z-Index) */
-        #star-gate {
-            position: fixed; inset: 0; z-index: 9999; /* MAX Layer */
-            background: #000; /* Solid Black */
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: flex-start;
-            overflow-y: auto; padding-top: 10vh; padding-bottom: 40px;
-        }
-
-        /* Calibration Modal */
+        /* Setup Wizard (Calibration) */
         #setup-wizard {
-            position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.9);
+            position: fixed; inset: 0; z-index: 100; background: #000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.5s, visibility 0.5s;
             opacity: 1; visibility: visible;
@@ -91,7 +87,7 @@
         }
         .compass-ring {
             position: absolute; inset: 0; border: 2px solid #475569; border-radius: 50%;
-            transition: transform 0.1s ease-out;
+            transition: transform 0.1s ease-out, border-color 0.3s;
         }
         .compass-mark {
             position: absolute; font-weight: bold; font-family: 'Share Tech Mono', monospace; font-size: 16px;
@@ -101,7 +97,7 @@
         .mark-e { right: 5px; top: 50%; transform: translateY(-50%); }
         .mark-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
         .mark-w { left: 5px; top: 50%; transform: translateY(-50%); }
-
+        
         .level-bubble {
             width: 140px; height: 140px; border: 4px solid #334155; border-radius: 50%;
             position: relative; overflow: hidden; background: #0f172a; z-index: 10;
@@ -113,15 +109,28 @@
         .level-ball {
             position: absolute; top: 50%; left: 50%; width: 30px; height: 30px;
             background: #ef4444; border-radius: 50%; opacity: 0.8;
-            transform: translate(-50%, -50%); transition: transform 0.1s linear;
+            transform: translate(-50%, -50%); transition: all 0.1s linear;
         }
+        
         .north-arrow {
             position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
             width: 0; height: 0; 
             border-left: 10px solid transparent; border-right: 10px solid transparent;
             border-bottom: 20px solid #ef4444; opacity: 0.3; transition: opacity 0.3s;
         }
-        .level-ok .level-ball { background: #22c55e; box-shadow: 0 0 15px #22c55e; }
+        
+        .north-aligned .north-arrow { opacity: 1; border-bottom-color: #22c55e; }
+        .north-aligned .compass-ring { border-color: #22c55e; border-width: 4px; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .level-ok .level-ball { background: #22c55e; }
+
+        /* PC Gate */
+        #star-gate {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: flex-start;
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            overflow-y: auto; padding-top: 10vh; padding-bottom: 40px;
+        }
 
         .hidden-force { display: none !important; }
         .check-box { appearance: none; width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.5); border-radius: 6px; background: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
@@ -134,10 +143,38 @@
             background: #22d3ee; border: 2px solid #ffffff; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
-
-        @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
-        .swipe-hint { animation: swipe-anim 2s infinite; }
         
+        #debug-hud { font-family: 'Share Tech Mono', monospace; font-size: 10px; text-shadow: 1px 1px 0 #000; line-height: 1.2; text-align: left; }
+        .debug-row { display: flex; justify-content: space-between; gap: 8px; }
+        
+        .swipe-hint {
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* Mode Switcher */
+        .mode-switch {
+            display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; p-1;
+            border: 1px solid rgba(255,255,255,0.2); overflow: hidden;
+        }
+        .mode-option {
+            flex: 1; text-align: center; font-size: 11px; padding: 8px 0;
+            color: #94a3b8; cursor: pointer; transition: all 0.2s; font-weight: bold;
+        }
+        .mode-option.active {
+            background: #22d3ee; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        #time-slider-container {
+            position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 400px; z-index: 30;
+            display: flex; flex-direction: column; items-center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #time-slider-container.active { opacity: 1; pointer-events: auto; }
+        .time-label { font-size: 12px; color: #fbbf24; text-align: center; font-weight: bold; margin-bottom: 4px; text-shadow: 0 0 5px black; }
+        
+        /* Guide Accordion */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         details[open] summary ~ * { animation: sweep .3s ease-in-out; }
@@ -146,19 +183,18 @@
 </head>
 <body>
 
-    <!-- 🚪 PC GATE (Fixed z-index to 9999) -->
+    <!-- 🚪 PC GATE -->
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.4</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Render Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v31.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Core</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed font-medium mb-8">
                 モバイルデバイス専用です。<br>QRコードをスキャンしてください。
             </p>
-            <button onclick="Gate.startUnlock()" class="px-6 py-2 rounded-full border border-white/20 text-xs text-slate-500 hover:text-white hover:border-white transition">DEBUG MODE</button>
         </div>
     </div>
 
@@ -167,7 +203,6 @@
         <div id="layers-container">
             <video id="camera-feed" autoplay playsinline muted></video>
             <canvas id="sky-canvas"></canvas>
-            
             <div id="overlay-layer">
                 <div id="smart-bubble" class="info-bubble opacity-0 w-64 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 backdrop-blur-md shadow-2xl flex flex-col items-center text-center">
                     <h3 id="bubble-title" class="text-base font-bold text-cyan-400 mb-1 leading-tight">Title</h3>
@@ -178,7 +213,6 @@
             </div>
         </div>
 
-        <!-- NAV UI -->
         <div id="nav-ui" class="absolute inset-0 pointer-events-none hidden-force z-30">
             <div id="nav-msg" class="absolute top-24 w-full text-center">
                 <div class="inline-block bg-black/60 backdrop-blur px-4 py-2 rounded-lg border border-cyan-500/50">
@@ -187,48 +221,55 @@
                 </div>
             </div>
             <div id="lock-on" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300">
-                <div class="w-24 h-24 border-2 border-green-400 rounded-full flex items-center justify-center animate-pulse">
+                <div class="w-24 h-24 border-2 border-green-400 rounded-full target-lock flex items-center justify-center">
                     <div class="w-1 h-1 bg-green-400 rounded-full"></div>
                 </div>
                 <div class="absolute top-28 w-full text-center text-green-400 font-bold text-sm tracking-widest bg-black/50 px-2 rounded font-mono">TARGET LOCKED</div>
             </div>
         </div>
 
-        <!-- UI -->
         <div id="ui-layer" class="safe-area-inset p-4">
             <div class="flex justify-between items-start interactive pt-2">
                 <button onclick="App.toggleLocation()" class="glass px-3 py-2 rounded-full flex items-center gap-2 active:scale-95 transition">
-                    <span class="text-sm">📍</span>
+                    <span id="gps-icon" class="text-sm">📍</span>
                     <div class="flex flex-col items-start">
                         <span class="text-[8px] font-bold text-cyan-400 tracking-widest uppercase">LOCATION</span>
                         <span id="loc-name" class="text-[10px] font-bold text-white leading-none">五島列島 (Fixed)</span>
                     </div>
                 </button>
                 <div class="flex gap-3">
-                    <button onclick="App.startSetup()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]">🎯</button>
+                    <button onclick="App.startSetup()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-cyan-900/50 border border-cyan-500/50 text-cyan-300">🎯</button>
                     <button onclick="Guide.toggle()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition border border-white/20 bg-cyan-900/30">📖</button>
                     <button onclick="App.toggleSettings()" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition">⚙️</button>
                     <button onclick="App.toggleViewMode()" id="btn-mode" class="glass w-10 h-10 rounded-full flex items-center justify-center text-lg active:scale-95 transition bg-indigo-900/50 border-indigo-500/30">🌙</button>
                 </div>
             </div>
 
-            <div id="swipe-hint" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-1000">
-                <div class="flex flex-col items-center">
-                    <div class="text-4xl mb-2 swipe-hint text-white">↔️</div>
-                    <div class="bg-black/60 px-3 py-1 rounded-full text-xs text-white backdrop-blur border border-white/20">Swipe to Adjust</div>
-                </div>
+            <div id="time-slider-container">
+                <div id="time-display" class="time-label">TIME TRAVEL: +0h</div>
+                <input type="range" id="time-range" min="-12" max="12" step="0.5" value="0" oninput="App.setTimeOffset(this.value)" onchange="App.resetTime(this.value)">
             </div>
 
-            <!-- Debug Info -->
-            <div class="absolute bottom-24 left-4 pointer-events-none opacity-70">
-                <div class="text-[9px] text-cyan-300 font-mono bg-black/40 p-2 rounded backdrop-blur-sm border border-white/10">
-                    <div>ANCHOR: <span id="debug-anchor" class="text-white">OFF</span></div>
-                    <div>AZ: <span id="debug-az" class="text-yellow-400 font-bold">0</span>°</div>
-                    <div>ALT: <span id="debug-alt">0</span>°</div>
+            <div class="absolute bottom-24 left-4 pointer-events-none opacity-80">
+                <div id="debug-hud" class="text-cyan-300 leading-tight bg-black/60 p-2 rounded border border-white/20 backdrop-blur-md">
+                    <div class="text-[9px] text-slate-400 mb-1 border-b border-white/10 pb-1">SENSOR DEBUG</div>
+                    <div class="debug-row">
+                        <span>A:<span id="raw-a" class="text-white">0</span></span>
+                        <span>B:<span id="raw-b" class="text-white">0</span></span>
+                        <span>G:<span id="raw-g" class="text-white">0</span></span>
+                    </div>
+                    <div class="text-[9px] text-slate-400 my-1 border-b border-white/10 pb-1">CAM DEBUG</div>
+                    <div class="debug-row">
+                        <span>AZ:<span id="debug-az" class="text-yellow-400 font-bold">0</span></span>
+                        <span>ALT:<span id="debug-alt" class="text-white">0</span></span>
+                    </div>
                 </div>
             </div>
 
             <div class="flex justify-center items-end pb-8 interactive gap-6">
+                <button onclick="App.toggleTimeSlider()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-yellow-400 text-yellow-300 shadow-lg bg-yellow-900/30">
+                    <span class="text-xl">⏳</span>
+                </button>
                 <button onclick="App.takeScreenshot()" class="glass w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 active:scale-90 transition hover:border-cyan-400 shadow-lg">
                     <span class="text-xl">📸</span>
                 </button>
@@ -239,17 +280,17 @@
         </div>
     </div>
 
-    <!-- 🪄 SETUP WIZARD (Cosmic Anchor) -->
+    <!-- 🪄 SETUP WIZARD -->
     <div id="setup-wizard" class="hidden-force interactive">
         <div class="w-full max-w-md px-6 flex flex-col items-center">
             <h2 class="text-2xl font-black text-white mb-2 tracking-tighter">ALIGNMENT</h2>
-            <p class="text-xs font-bold text-cyan-400 mb-6 tracking-widest">QUATERNION ANCHOR</p>
+            <p class="text-xs font-bold text-cyan-400 mb-6 tracking-widest">SEXTANT CALIBRATION</p>
             
             <div class="bg-slate-800/80 p-4 rounded-xl border border-white/10 mb-6 w-full">
                 <ol class="text-xs text-slate-300 space-y-3 list-decimal list-inside text-left">
                     <li><b class="text-white">スマホを水平</b>にし、泡を中心に。</li>
-                    <li><b class="text-cyan-400">「北(N)」</b>の方角を向いてください。</li>
-                    <li><b class="text-green-400">セット</b>を押すと、そこが北になります。</li>
+                    <li><b class="text-cyan-400">「N」を現実の北</b>に合わせる。</li>
+                    <li>枠が<b class="text-green-400">緑色</b>になったらセット！</li>
                 </ol>
             </div>
             
@@ -267,12 +308,12 @@
                 </div>
             </div>
             
-            <div class="flex flex-col items-center mb-6">
+            <div class="flex flex-col items-center mb-4">
                 <div id="compass-val" class="text-3xl font-mono font-bold text-white">---°</div>
                 <div id="sensor-status" class="text-[10px] font-mono text-slate-400">Waiting for Sensor...</div>
             </div>
             
-            <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-full transition-all duration-300 transform active:scale-95">
+            <button id="btn-confirm-setup" onclick="App.confirmSetup()" disabled class="px-8 py-4 rounded-full bg-slate-700 text-slate-400 font-bold shadow-lg w-3/4 transition-all duration-300 transform active:scale-95">
                 センサー準備中...
             </button>
         </div>
@@ -282,250 +323,209 @@
     <div id="guide-modal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl hidden-force interactive flex flex-col">
         <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 class="font-bold text-white text-lg flex items-center gap-2">
-                <span class="text-2xl">📖</span> <span>星座ライブラリ</span>
+                <span class="text-2xl">📖</span> <span data-i18n="guide_title">星座詳細解説</span>
             </h2>
             <button onclick="Guide.toggle()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition text-xl">✕</button>
         </div>
         <div id="guide-list" class="flex-1 overflow-y-auto p-4 space-y-4 pb-20"></div>
     </div>
 
+    <!-- START MODAL -->
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] interactive">
+        <div class="relative z-10 w-full max-w-sm px-6 text-center">
+            <div class="text-6xl mb-4 animate-bounce">✨</div>
+            <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v31.0</p>
+            <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
+                START / 出発
+            </button>
+            <p class="text-[10px] text-slate-500 mt-4">Matrix Core System</p>
+        </div>
+    </div>
+
     <!-- SETTINGS MODAL -->
     <div id="settings-modal" onclick="if(event.target === this) App.toggleSettings()" class="fixed inset-0 z-40 bg-black/80 backdrop-blur hidden-force flex items-center justify-center interactive transition-opacity duration-300 cursor-pointer">
         <div onclick="event.stopPropagation()" class="glass bg-[#0f172a]/95 w-11/12 max-w-sm rounded-2xl border border-white/10 p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[85vh] cursor-default">
             <div class="flex justify-between items-center border-b border-white/10 pb-4">
-                <h2 class="font-bold text-white text-lg">設定 (Settings)</h2>
+                <h2 class="font-bold text-white text-lg" data-i18n="settings_title">設定 (Settings)</h2>
                 <button onclick="App.toggleSettings()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/20 text-slate-300 hover:text-white transition text-xl">✕</button>
             </div>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm">🎥 ARカメラ</span>
+            <div class="space-y-3">
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="cat_title">表示カテゴリ</p>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold" data-i18n="cat_famous">🦁 有名な星座 (Famous)</span>
+                    <input type="checkbox" checked onchange="App.setRank(1, this.checked)" class="check-box">
+                </label>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer border-l-4 border-yellow-400">
+                    <span class="text-sm font-bold" data-i18n="cat_star_gal">✨ 有名な星・銀河 (Stars & Gal)</span>
+                    <input type="checkbox" checked onchange="App.setRank(4, this.checked)" class="check-box">
+                </label>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold" data-i18n="cat_medium">🐻 普通の星座 (Medium)</span>
+                    <input type="checkbox" checked onchange="App.setRank(2, this.checked)" class="check-box">
+                </label>
+                <label class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer">
+                    <span class="text-sm font-bold" data-i18n="cat_minor">🦎 マイナー星座 (Minor)</span>
+                    <input type="checkbox" checked onchange="App.setRank(3, this.checked)" class="check-box">
+                </label>
+            </div>
+            <div class="space-y-4 pt-4 border-t border-white/10">
+                <p class="text-xs text-cyan-400 font-bold uppercase tracking-wider" data-i18n="opt_title">表示オプション</p>
+                <div class="space-y-2">
+                    <span class="text-sm font-bold text-cyan-300" data-i18n="opt_info">🌟 星座の表示</span>
+                    <div class="mode-switch">
+                        <div onclick="App.setInfoMode(0)" id="mode-0" class="mode-option" data-i18n="mode_off">OFF</div>
+                        <div onclick="App.setInfoMode(1)" id="mode-1" class="mode-option" data-i18n="mode_name">Name</div>
+                        <div onclick="App.setInfoMode(2)" id="mode-2" class="mode-option active" data-i18n="mode_full">Full</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-sm" data-i18n="opt_ar">🎥 ARカメラ</span>
                     <input type="checkbox" id="toggle-ar" onchange="App.toggleAR(this.checked)" class="check-box">
                 </div>
                 <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_bg">背景の濃さ</span><span id="val-bg" class="text-cyan-400">100%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="1" oninput="App.setOpacity('bg', this.value)">
                 </div>
                 <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-bold text-slate-400"><span>天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
+                    <div class="flex justify-between text-xs font-bold text-slate-400"><span data-i18n="opt_milky">天の川 (Milky Way)</span><span id="val-milky" class="text-cyan-400">50%</span></div>
                     <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="App.setOpacity('milky', this.value)">
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <span class="text-sm" data-i18n="opt_meteor">🌠 流れ星 (Meteors)</span>
+                    <input type="checkbox" checked onchange="App.setFlag('meteorEnabled', this.checked)" class="check-box">
                 </div>
             </div>
             <div class="pt-4 border-t border-white/10">
-                <button onclick="App.startSetup()" class="w-full py-3 bg-slate-800 rounded-lg text-sm font-bold text-cyan-400 border border-cyan-500/30">🎯 強制キャリブレーション</button>
+                 <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-slate-300">🇺🇸 English Mode</span>
+                    <input type="checkbox" onchange="App.setLang(this.checked ? 'en' : 'ja')" class="check-box">
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- START MODAL -->
-    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#020617] interactive">
-        <div class="relative z-10 w-full max-w-sm px-6 text-center">
-            <div class="text-6xl mb-4 animate-bounce">🌌</div>
-            <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.4 RENDER FIX</p>
-            <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
-                START
-            </button>
-        </div>
-    </div>
-
-    <!-- TOAST -->
     <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-6 py-3 rounded-full shadow-2xl text-sm opacity-0 pointer-events-none transition-opacity z-[60] border border-cyan-500/30 font-bold text-center w-max max-w-[90%] backdrop-blur">Msg</div>
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v41.4 (Render Fix)
+ * 🌌 FIVE ISLANDS STARGAZER v31.0 (Matrix Core)
  * ==========================================
- * CRITICAL FIXES:
- * 1. Rendering Crash: Added clamping to Math.asin to prevent NaN (which stopped animation).
- * 2. Axis Rotation Fix: Changed multiplication order to Z-X-Y.
- * 3. Horizontal Horizon Fix: Added Z-rotation to qFix to handle portrait mode correctly.
+ * [MATRIX CORE UPDATE]
+ * - Replaced fragile Quaternion logic with Robust Matrix Multiplication.
+ * - Implemented proper W3C Device Orientation Order: Z -> X -> Y.
+ * - Solved "Nadir Singularity" (Gimbal Lock at feet) by full matrix composition.
+ * - Separated Screen Rotation (Landscape/Portrait) into pure Z-axis rotation.
+ * - Ensured Camera Frame (Z-forward) correctly maps to Device Frame (Y-up).
  */
 
-// --- 0. DATASETS ---
+// I18N and Data Constants
+const I18N={ja:{guide_title:"星座詳細解説",settings_title:"設定 (Settings)",cat_title:"表示カテゴリ (Categories)",cat_famous:"🦁 有名な星座 (Famous)",cat_star_gal:"✨ 有名な星・銀河 (Stars/Gal)",cat_medium:"🐻 普通の星座 (Medium)",cat_minor:"🦎 マイナー星座 (Minor)",opt_title:"表示オプション (Visibility)",opt_info:"🌟 星座の表示",mode_off:"OFF",mode_name:"名前のみ",mode_full:"解説あり",opt_info_desc:"吹き出しで解説を表示します",opt_ar:"🎥 ARカメラ",opt_bg:"背景の濃さ",opt_milky:"天の川 (Milky Way)",opt_meteor:"🌠 流れ星 (Meteors)",axis_fix:"🔄 Axis Fix (回転補正)",axis_fix_desc:"回転が逆になる場合のみON",loc_fixed:"五島列島 (Fixed)",loc_gps:"現在地 (GPS)",nav_start:"へのナビを開始 🚀",nav_end:"ナビを終了しました",constellation:"星座",famous_const:"有名な星座",star_gal:"有名な星・銀河",time_travel:"時間旅行",time_reset:"現在時刻に戻る"},en:{guide_title:"Star Detailed Guide",settings_title:"Settings",cat_title:"Categories",cat_famous:"🦁 Famous Stars",cat_star_gal:"✨ Major Stars & Galaxy",cat_medium:"🐻 Medium Stars",cat_minor:"🦎 Minor Stars",opt_title:"Visibility Options",opt_info:"🌟 Constellation Info",mode_off:"OFF",mode_name:"Name",mode_full:"Full",opt_info_desc:"Show star descriptions in AR",opt_ar:"🎥 AR Camera",opt_bg:"Background Opacity",opt_milky:"Milky Way Visibility",opt_meteor:"🌠 Meteors",axis_fix:"🔄 Axis Fix (Reverse)",axis_fix_desc:"Enable if rotation is reversed",loc_fixed:"Goto Islands (Fixed)",loc_gps:"Current loc (GPS)",nav_start:"Navigating to ",nav_end:"Navigation Ended",constellation:"Constellation",famous_const:"Famous Constellation",star_gal:"Major Star/Galaxy",time_travel:"TIME TRAVEL",time_reset:"Reset Time"}};
 const RANK={FAMOUS:1,MEDIUM:2,MINOR:3,STAR_GAL:4};
+const CONSTELLATION_DB=[{id:"ori",rank:1,name:"オリオン座",en:"Orion",desc:"【冬の王者】...",desc_en:"[Winter King]...",myth:"...",myth_en:"...",centerRA:5.5,centerDec:-1.0,lines:["Betelgeuse","Alnitak","Bellatrix","Mintaka","Alnitak","Saiph","Mintaka","Rigel","Alnitak","Alnilam","Alnilam","Mintaka","Betelgeuse","Bellatrix","Saiph","Rigel","Betelgeuse","Meissa","Bellatrix","Meissa"]},{id:"cas",rank:2,name:"カシオペヤ座",en:"Cassiopeia",desc:"【北のW字】...",desc_en:"[North W]...",myth:"...",myth_en:"...",centerRA:1.0,centerDec:60.0,lines:["Caph","Schedar","Schedar","Gamma Cas","Gamma Cas","Ruchbah","Ruchbah","Segin"]},{id:"lep",rank:3,name:"うさぎ座",en:"Lepus",desc:"【オリオンの獲物】...",desc_en:"[The Hare]...",myth:"...",myth_en:"...",centerRA:5.5,centerDec:-20.0,lines:["Arneb","Nihal","Nihal","Epsilon Lep","Epsilon Lep","Mu Lep","Mu Lep","Arneb"]},{id:"sirius",rank:4,name:"シリウス",en:"Sirius",desc:"【焼き焦がすもの】...",desc_en:"[The Scorcher]...",myth:"...",myth_en:"...",centerRA:6.75,centerDec:-16.7,lines:[]}];
+const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:"Rigel",ra:5.242,dec:-8.202,mag:0.12,ci:-0.03},{name:"Bellatrix",ra:5.418,dec:6.349,mag:1.64,ci:-0.22},{name:"Saiph",ra:5.795,dec:-9.669,mag:2.07,ci:-0.18},{name:"Alnitak",ra:5.679,dec:-1.943,mag:1.74,ci:-0.21},{name:"Alnilam",ra:5.603,dec:-1.202,mag:1.69,ci:-0.19},{name:"Mintaka",ra:5.533,dec:-0.299,mag:2.25,ci:-0.21},{name:"Meissa",ra:5.585,dec:9.934,mag:3.39,ci:-0.14},{name:"Antares",ra:16.490,dec:-26.432,mag:1.06,ci:1.83},{name:"Graffias",ra:16.088,dec:-19.805,mag:2.56,ci:-0.11},{name:"Dschubba",ra:16.005,dec:-22.622,mag:2.29,ci:-0.13},{name:"Pi Sco",ra:15.979,dec:-26.114,mag:2.89,ci:-0.21},{name:"Wei",ra:16.834,dec:-38.020,mag:2.29,ci:1.14},{name:"Mu Sco",ra:16.863,dec:-38.048,mag:3.00,ci:-0.20},{name:"Zeta Sco",ra:16.904,dec:-42.360,mag:3.62,ci:1.50},{name:"Eta Sco",ra:17.202,dec:-43.238,mag:3.32,ci:0.05},{name:"Sargas",ra:17.623,dec:-42.998,mag:1.86,ci:0.38},{name:"Iota Sco",ra:17.795,dec:-40.125,mag:2.99,ci:0.17},{name:"Kappa Sco",ra:17.703,dec:-39.029,mag:2.39,ci:-0.20},{name:"Shaula",ra:17.560,dec:-37.104,mag:1.62,ci:-0.22},{name:"Lesath",ra:17.513,dec:-37.291,mag:2.70,ci:-0.21},{name:"Vega",ra:18.615,dec:38.783,mag:0.03,ci:0.00},{name:"Altair",ra:19.846,dec:8.868,mag:0.76,ci:0.22},{name:"Deneb",ra:20.690,dec:45.280,mag:1.25,ci:0.09},{name:"Aldebaran",ra:4.598,dec:16.509,mag:0.87,ci:1.54},{name:"Elnath",ra:5.438,dec:28.607,mag:1.65,ci:-0.13},{name:"Zeta Tau",ra:5.627,dec:21.142,mag:2.97,ci:-0.22},{name:"Ain",ra:4.478,dec:19.180,mag:3.53,ci:1.02},{name:"Hyadum I",ra:4.331,dec:15.627,mag:3.65,ci:0.97},{name:"Delta Tau",ra:4.381,dec:17.542,mag:3.77,ci:0.96},{name:"Alcyone",ra:3.791,dec:24.105,mag:2.85,ci:-0.09},{name:"Pollux",ra:7.755,dec:28.026,mag:1.16,ci:1.00},{name:"Castor",ra:7.576,dec:31.888,mag:1.58,ci:0.04},{name:"Alhena",ra:6.628,dec:16.399,mag:1.93,ci:0.00},{name:"Tejat",ra:6.248,dec:22.506,mag:2.87,ci:1.56},{name:"Mebsuta",ra:6.733,dec:25.131,mag:3.06,ci:1.40},{name:"Wasat",ra:7.336,dec:21.982,mag:3.50,ci:0.16},{name:"Regulus",ra:10.139,dec:11.967,mag:1.36,ci:-0.11},{name:"Denebola",ra:11.817,dec:14.572,mag:2.14,ci:0.09},{name:"Algieba",ra:10.333,dec:19.841,mag:2.01,ci:1.15},{name:"Zosma",ra:11.236,dec:20.523,mag:2.56,ci:0.12},{name:"Adhafera",ra:10.276,dec:23.417,mag:3.43,ci:1.25},{name:"Rasalas",ra:9.764,dec:23.774,mag:2.97,ci:1.62},{name:"Chertan",ra:11.236,dec:15.428,mag:3.33,ci:0.07},{name:"Spica",ra:13.416,dec:-11.161,mag:0.98,ci:-0.23},{name:"Porrima",ra:12.693,dec:-1.450,mag:2.74,ci:0.36},{name:"Vindemiatrix",ra:13.036,dec:10.959,mag:2.85,ci:0.94},{name:"Heze",ra:13.578,dec:-0.595,mag:3.38,ci:0.16},{name:"Auva",ra:12.926,dec:3.398,mag:3.39,ci:1.38},{name:"Zavijava",ra:11.841,dec:1.765,mag:3.61,ci:0.56},{name:"Dubhe",ra:11.062,dec:61.751,mag:1.81,ci:1.07},{name:"Merak",ra:11.030,dec:56.382,mag:2.34,ci:0.04},{name:"Phecda",ra:11.897,dec:53.694,mag:2.41,ci:0.02},{name:"Megrez",ra:12.257,dec:57.032,mag:3.32,ci:0.08},{name:"Alioth",ra:12.900,dec:55.959,mag:1.76,ci:0.02},{name:"Mizar",ra:13.398,dec:54.925,mag:2.23,ci:0.06},{name:"Alkaid",ra:13.792,dec:49.313,mag:1.85,ci:-0.19},{name:"Talitha",ra:8.987,dec:48.041,mag:3.12,ci:0.20},{name:"Tania Borealis",ra:10.284,dec:42.914,mag:3.45,ci:-0.05},{name:"Mu UMa",ra:10.373,dec:41.498,mag:3.06,ci:1.45},{name:"Kaus Australis",ra:18.402,dec:-34.384,mag:1.79,ci:-0.03},{name:"Nunki",ra:18.918,dec:-26.296,mag:2.05,ci:-0.13},{name:"Ascella",ra:19.043,dec:-29.880,mag:2.60,ci:0.10},{name:"Kaus Media",ra:18.347,dec:-29.828,mag:2.72,ci:1.04},{name:"Kaus Borealis",ra:18.466,dec:-25.422,mag:2.82,ci:1.05},{name:"Alnasl",ra:18.097,dec:-30.421,mag:2.98,ci:1.03},{name:"Phi Sgr",ra:18.756,dec:-26.989,mag:3.17,ci:-0.06},{name:"Tau Sgr",ra:19.115,dec:-27.670,mag:3.32,ci:1.10},{name:"Sirius",ra:6.752,dec:-16.716,mag:-1.46,ci:0.00},{name:"Adhara",ra:6.977,dec:-28.972,mag:1.50,ci:-0.19},{name:"Wezen",ra:7.141,dec:-26.393,mag:1.83,ci:0.68},{name:"Mirzam",ra:6.378,dec:-17.955,mag:1.98,ci:-0.22},{name:"Aludra",ra:7.401,dec:-29.303,mag:2.45,ci:-0.08},{name:"Furud",ra:6.339,dec:-30.063,mag:3.02,ci:-0.18},{name:"Muliphein",ra:7.065,dec:-15.632,mag:4.11,ci:-0.14},{name:"Procyon",ra:7.655,dec:5.224,mag:0.34,ci:0.42},{name:"Gomeisa",ra:7.451,dec:8.291,mag:2.89,ci:-0.08},{name:"Capella",ra:5.278,dec:45.997,mag:0.08,ci:0.80},{name:"Menkalinan",ra:5.992,dec:44.947,mag:1.90,ci:0.07},{name:"Mahasim",ra:5.995,dec:37.212,mag:2.65,ci:-0.06},{name:"Hassaleh",ra:4.949,dec:33.166,mag:2.69,ci:1.25},{name:"Arcturus",ra:14.261,dec:19.182,mag:-0.05,ci:1.23},{name:"Izar",ra:14.751,dec:27.074,mag:2.35,ci:1.00},{name:"Muphrid",ra:13.911,dec:18.397,mag:2.68,ci:0.58},{name:"Seginus",ra:14.536,dec:38.308,mag:3.04,ci:0.16},{name:"Nekkar",ra:15.032,dec:40.391,mag:3.49,ci:0.99},{name:"Alkalurops",ra:15.407,dec:37.375,mag:4.31,ci:0.39},{name:"Schedar",ra:0.675,dec:56.537,mag:2.24,ci:1.17},{name:"Caph",ra:0.153,dec:59.150,mag:2.28,ci:0.34},{name:"Gamma Cas",ra:0.945,dec:60.717,mag:2.15,ci:-0.1},{name:"Ruchbah",ra:1.430,dec:60.235,mag:2.66,ci:0.13},{name:"Segin",ra:1.907,dec:63.670,mag:3.35,ci:0.26},{name:"Alpheratz",ra:0.139,dec:29.090,mag:2.07,ci:-0.11},{name:"Mirach",ra:1.162,dec:35.620,mag:2.07,ci:1.64},{name:"Almach",ra:2.064,dec:42.329,mag:2.10,ci:1.37},{name:"Markab",ra:23.079,dec:15.205,mag:2.49,ci:-0.04},{name:"Scheat",ra:23.062,dec:28.082,mag:2.44,ci:1.65},{name:"Algenib",ra:0.221,dec:15.183,mag:2.83,ci:-0.23},{name:"Enif",ra:21.736,dec:9.875,mag:2.38,ci:1.53},{name:"Sadr",ra:20.370,dec:40.256,mag:2.23,ci:0.67},{name:"Albireo",ra:19.512,dec:27.960,mag:3.05,ci:1.13},{name:"Gienah",ra:20.771,dec:33.959,mag:2.48,ci:1.03},{name:"Delta Cyg",ra:19.762,dec:45.130,mag:2.86,ci:-0.01},{name:"Polaris",ra:2.530,dec:89.264,mag:1.97,ci:0.63},{name:"Kochab",ra:14.845,dec:74.155,mag:2.07,ci:1.28},{name:"Pherkad",ra:15.346,dec:71.834,mag:3.00,ci:0.05},{name:"Yildun",ra:17.538,dec:86.586,mag:4.35,ci:0.01},{name:"Zeta UMi",ra:15.734,dec:77.795,mag:4.29,ci:-0.06},{name:"Eta UMi",ra:16.292,dec:75.753,mag:4.95,ci:0.40},{name:"Sheliak",ra:18.834,dec:33.362,mag:3.52,ci:0.05},{name:"Sulafat",ra:18.979,dec:32.689,mag:3.25,ci:-0.06},{name:"Delta Lyr",ra:18.900,dec:36.900,mag:4.30,ci:0.00},{name:"Tarazed",ra:19.771,dec:10.613,mag:2.72,ci:1.52},{name:"Alshain",ra:19.923,dec:6.406,mag:3.71,ci:0.86},{name:"Delta Aql",ra:19.418,dec:3.113,mag:3.36,ci:0.28},{name:"Zeta Aql",ra:19.088,dec:13.863,mag:2.99,ci:0.06},{name:"Mirfak",ra:3.405,dec:49.861,mag:1.79,ci:0.48},{name:"Algol",ra:3.136,dec:40.955,mag:2.09,ci:-0.05},{name:"Gamma Per",ra:3.078,dec:53.506,mag:2.91,ci:0.65},{name:"Delta Per",ra:3.715,dec:47.788,mag:3.01,ci:-0.13},{name:"Rasalhague",ra:17.582,dec:12.560,mag:2.08,ci:0.15},{name:"Sabik",ra:17.172,dec:-15.724,mag:2.43,ci:0.09},{name:"Zeta Oph",ra:16.619,dec:-10.567,mag:2.54,ci:-0.21},{name:"Yed Prior",ra:16.236,dec:-3.696,mag:2.73,ci:1.62},{name:"Cebalrai",ra:17.722,dec:4.567,mag:2.76,ci:1.17},{name:"Fomalhaut",ra:22.960,dec:-29.622,mag:1.17,ci:0.09},{name:"Alphecca",ra:15.578,dec:26.714,mag:2.22,ci:-0.02},{name:"Nusakan",ra:15.464,dec:29.111,mag:3.66,ci:0.41},{name:"Sualocin",ra:20.663,dec:15.912,mag:3.77,ci:-0.07},{name:"Rotanev",ra:20.627,dec:14.600,mag:3.64,ci:0.65},{name:"Gamma Del",ra:20.778,dec:16.124,mag:4.27,ci:0.45},{name:"Delta Del",ra:20.722,dec:15.057,mag:4.43,ci:0.35},{name:"Arneb",ra:5.545,dec:-17.822,mag:2.58,ci:0.21},{name:"Nihal",ra:5.470,dec:-20.760,mag:2.81,ci:0.46},{name:"Epsilon Lep",ra:5.087,dec:-22.404,mag:3.19,ci:1.43},{name:"Mu Lep",ra:5.216,dec:-16.208,mag:3.29,ci:-0.12},{name:"Acubens",ra:8.974,dec:11.857,mag:4.26,ci:0.14},{name:"Altarf",ra:8.276,dec:9.186,mag:3.53,ci:1.13},{name:"Asellus Borealis",ra:8.721,dec:21.468,mag:4.66,ci:0.08},{name:"Asellus Australis",ra:8.740,dec:18.156,mag:3.94,ci:1.00},{name:"Zubenelgenubi",ra:14.846,dec:-16.041,mag:2.75,ci:0.09},{name:"Zubeneschamali",ra:15.283,dec:-9.380,mag:2.61,ci:-0.12},{name:"Brachium",ra:15.068,dec:-25.280,mag:3.25,ci:1.58},{name:"Algedi",ra:20.293,dec:-12.540,mag:3.58,ci:0.96},{name:"Dabih",ra:20.352,dec:-14.781,mag:3.05,ci:0.82},{name:"Deneb Algedi",ra:21.785,dec:-16.128,mag:2.85,ci:0.18},{name:"Nashira",ra:21.673,dec:-16.662,mag:3.69,ci:0.07},{name:"Sadalmelik",ra:22.095,dec:-0.319,mag:2.95,ci:0.96},{name:"Sadalsuud",ra:21.526,dec:-5.571,mag:2.90,ci:0.96},{name:"Skat",ra:22.913,dec:-15.820,mag:3.27,ci:0.05},{name:"Sadachbia",ra:22.360,dec:-1.391,mag:3.86,ci:0.03},{name:"Eta Aqr",ra:22.588,dec:-0.119,mag:4.04,ci:-0.05},{name:"Alrescha",ra:2.034,dec:2.763,mag:3.82,ci:0.11},{name:"Alpherg",ra:1.524,dec:15.348,mag:3.62,ci:0.54},{name:"Gamma Psc",ra:23.283,dec:3.280,mag:3.70,ci:0.94},{name:"Omega Psc",ra:23.990,dec:6.863,mag:4.03,ci:0.49},{name:"Hamal",ra:2.118,dec:23.462,mag:2.01,ci:1.15},{name:"Sheratan",ra:1.911,dec:20.806,mag:2.64,ci:0.15},{name:"Mesarthim",ra:1.896,dec:19.288,mag:3.88,ci:0.03},{name:"Gienah Corvi",ra:12.264,dec:-17.542,mag:2.58,ci:-0.09},{name:"Kraz",ra:12.570,dec:-23.400,mag:2.65,ci:0.96},{name:"Algorab",ra:12.498,dec:-16.516,mag:2.94,ci:0.05},{name:"Minkar",ra:12.169,dec:-22.619,mag:3.02,ci:1.33},{name:"Diadem",ra:13.166,dec:17.536,mag:4.32,ci:0.57},{name:"Beta Com",ra:13.198,dec:27.884,mag:4.23,ci:0.57},{name:"Achernar",ra:1.628,dec:-57.241,mag:0.45,ci:-0.16},{name:"Cursa",ra:5.131,dec:-5.086,mag:2.78,ci:0.15},{name:"Zaurak",ra:3.973,dec:-13.509,mag:2.97,ci:1.59},{name:"Acamar",ra:2.972,dec:-40.304,mag:3.24,ci:0.13},{name:"Diphda",ra:0.726,dec:-17.986,mag:2.04,ci:1.02},{name:"Menkar",ra:3.037,dec:4.089,mag:2.54,ci:1.63},{name:"Mira",ra:2.323,dec:-2.977,mag:2.00,ci:1.53},{name:"Baten Kaitos",ra:1.733,dec:-10.334,mag:3.74,ci:1.29},{name:"M31 Andromeda Galaxy",ra:0.712,dec:41.269,mag:3.44,ci:0.80},{name:"M45 Pleiades",ra:3.783,dec:24.116,mag:1.6,ci:-0.05},{name:"M42 Orion Nebula",ra:5.588,dec:-5.391,mag:4.0,ci:0.50},{name:"Galactic Center",ra:17.761,dec:-29.007,mag:5.0,ci:1.0}];
 
-const CONSTELLATION_DB = [
-    // --- 🦁 FAMOUS ---
-    { 
-        id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
-        desc: "【冬の王者】三つ星が特徴的な星座。ベテルギウスは超新星爆発間近と言われています。", 
-        myth: "海の神ポセイドンの子。月の女神アルテミスと恋に落ちましたが、悲劇的な死を遂げました。",
-        centerRA: 5.5, centerDec: -1.0, 
-        lines: ["Betelgeuse","Alnitak","Bellatrix","Mintaka","Alnitak","Saiph","Mintaka","Rigel","Alnitak","Alnilam","Alnilam","Mintaka","Betelgeuse","Bellatrix","Saiph","Rigel","Betelgeuse","Meissa","Bellatrix","Meissa"] 
-    },
-    { 
-        id: "sco", rank: 1, name: "さそり座", en: "Scorpius", 
-        desc: "【夏のS字】南の空に大きく描かれるS字カーブ。赤い1等星アンタレスが心臓で輝きます。", 
-        myth: "オリオンを倒した猛毒のサソリ。オリオンが逃げるため、決して同じ空には現れません。",
-        centerRA: 16.5, centerDec: -26.0, 
-        lines: ["Antares","Dschubba","Dschubba","Graffias","Dschubba","Pi Sco","Antares","Wei","Antares","Tau Sco","Wei","Mu Sco","Mu Sco","Zeta Sco","Zeta Sco","Eta Sco","Eta Sco","Sargas","Sargas","Iota Sco","Iota Sco","Kappa Sco","Kappa Sco","Shaula","Shaula","Lesath"] 
-    },
-    { 
-        id: "tau", rank: 1, name: "おうし座", en: "Taurus", 
-        desc: "【冬のV字】赤いアルデバランと、美しいプレアデス星団（すばる）が特徴です。", 
-        myth: "ゼウスが王女エウロペを連れ去るために化けた白い牡牛の姿です。",
-        centerRA: 4.5, centerDec: 16.0, 
-        lines: ["Aldebaran","Elnath","Aldebaran","Zeta Tau","Aldebaran","Ain","Ain","Hyadum I","Hyadum I","Delta Tau","Delta Tau","Aldebaran","Elnath","Zeta Tau"] 
-    },
-    { 
-        id: "gem", rank: 1, name: "ふたご座", en: "Gemini", 
-        desc: "【仲良し兄弟】カストル（兄）とポルックス（弟）が並んで輝いています。", 
-        myth: "スパルタの王妃レダの息子たち。死後も離れぬよう、ゼウスが星座にしました。",
-        centerRA: 7.0, centerDec: 22.0, 
-        lines: ["Castor","Pollux","Castor","Mebsuta","Mebsuta","Tejat","Pollux","Wasat","Wasat","Alhena"] 
-    },
-    { 
-        id: "leo", rank: 1, name: "しし座", en: "Leo", 
-        desc: "【春の鎌】「？」を裏返したような頭部が特徴。1等星レグルスは「王」の意味。", 
-        myth: "ヘラクレスに退治されたネメアの森の人食いライオンです。",
-        centerRA: 10.5, centerDec: 15.0, 
-        lines: ["Regulus","Algieba","Algieba","Adhafera","Adhafera","Rasalas","Regulus","Chertan","Chertan","Zosma","Zosma","Denebola","Algieba","Zosma"] 
-    },
-    { 
-        id: "vir", rank: 1, name: "おとめ座", en: "Virgo", 
-        desc: "【春の女神】純白の1等星スピカ（麦の穂）が目印です。", 
-        myth: "正義の女神アストライア、または農業の女神デメテルと言われています。",
-        centerRA: 13.3, centerDec: -2.0, 
-        lines: ["Spica","Heze","Spica","Porrima","Porrima","Auva","Auva","Zavijava","Porrima","Vindemiatrix","Vindemiatrix","Zavijava"] 
-    },
-    { 
-        id: "uma", rank: 1, name: "おおぐま座", en: "Ursa Major", 
-        desc: "【北斗七星】ひしゃくの形をした北斗七星を含み、北極星を探す目印になります。", 
-        myth: "女神ヘラの怒りで熊に変えられたカリストの姿です。",
-        centerRA: 11.5, centerDec: 50.0, 
-        lines: ["Dubhe","Merak","Merak","Phecda","Phecda","Megrez","Megrez","Alioth","Alioth","Mizar","Mizar","Alkaid","Megrez","Dubhe","Phecda","Talitha","Talitha","Tania Borealis","Tania Borealis","Mu UMa"] 
-    },
-    { 
-        id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
-        desc: "【北のW字】北極星を探すための重要な目印。「W」または「M」の形。", 
-        myth: "娘の美しさを自慢しすぎて神の怒りを買い、椅子に縛られた王妃です。",
-        centerRA: 1.0, centerDec: 60.0, 
-        lines: ["Caph","Schedar","Schedar","Gamma Cas","Gamma Cas","Ruchbah","Ruchbah","Segin"] 
-    },
-    { 
-        id: "cyg", rank: 2, name: "はくちょう座", en: "Cygnus", 
-        desc: "【北十字】天の川の上を飛ぶ十字架の形。デネブは夏の大三角の一つ。", 
-        myth: "ゼウスがレダに近づくために変身した白鳥の姿です。",
-        centerRA: 20.5, centerDec: 42.0, 
-        lines: ["Deneb","Sadr","Sadr","Albireo","Sadr","Gienah","Sadr","Delta Cyg"] 
-    },
-    { 
-        id: "lyr", rank: 2, name: "こと座", en: "Lyra", 
-        desc: "【七夕の星】織姫星ベガが輝く小さな星座。平行四辺形が目印。", 
-        myth: "オルフェウスが奏でた竪琴。その音色は冥界の王すら涙させました。",
-        centerRA: 18.8, centerDec: 36.0, 
-        lines: ["Vega","Sheliak","Sheliak","Sulafat","Sulafat","Delta Lyr","Delta Lyr","Vega"] 
-    },
-    { 
-        id: "aql", rank: 2, name: "わし座", en: "Aquila", 
-        desc: "【彦星】アルタイル（彦星）を挟んで3つの星が並んでいます。", 
-        myth: "ゼウスの雷を持つ鷲、またはガニュメデスをさらった鷲。",
-        centerRA: 19.8, centerDec: 3.0, 
-        lines: ["Altair","Tarazed","Altair","Alshain","Altair","Delta Aql","Delta Aql","Zeta Aql"] 
-    },
-    { 
-        id: "umi", rank: 2, name: "こぐま座", en: "Ursa Minor", 
-        desc: "【北極星】現在の北極星ポラリスを含む、小さなひしゃく形。", 
-        myth: "母（おおぐま座）と共に空に上げられた息子アルカスの姿。",
-        centerRA: 15.0, centerDec: 75.0, 
-        lines: ["Polaris","Yildun","Yildun","Zeta UMi","Zeta UMi","Eta UMi","Eta UMi","Pherkad","Pherkad","Kochab","Kochab","Zeta UMi"] 
-    },
-    { 
-        id: "lep", rank: 3, name: "うさぎ座", en: "Lepus", 
-        desc: "【オリオンの獲物】オリオン座の足元にある小さな星座。", 
-        myth: "狩人オリオンの獲物として置かれたウサギ。",
-        centerRA: 5.5, centerDec: -20.0, 
-        lines: ["Arneb","Nihal","Nihal","Epsilon Lep","Epsilon Lep","Mu Lep","Mu Lep","Arneb"] 
-    },
-    { 
-        id: "cnc", rank: 3, name: "かに座", en: "Cancer", 
-        desc: "【プレセペ星団】暗い星ばかりですが、中央に星団（飼い葉桶）があります。", 
-        myth: "ヘラクレスに踏み潰された巨大ガニ。",
-        centerRA: 8.5, centerDec: 20.0, 
-        lines: ["Acubens","Altarf","Asellus Australis","Asellus Borealis","Asellus Australis","Acubens"] 
-    },
-    { 
-        id: "sirius", rank: 4, name: "シリウス", en: "Sirius", 
-        desc: "【全天一】おおいぬ座にある、夜空で最も明るい恒星。", 
-        centerRA: 6.75, centerDec: -16.7, 
-        lines: [] 
-    },
-    { 
-        id: "m45", rank: 4, name: "すばる (M45)", en: "Pleiades", 
-        desc: "【宝石箱】おうし座にある美しい散開星団。肉眼でも6個ほど見えます。", 
-        centerRA: 3.8, centerDec: 24.1, 
-        lines: [] 
-    },
-    { 
-        id: "m31", rank: 4, name: "アンドロメダ銀河", en: "M31 Galaxy", 
-        desc: "【お隣さん】肉眼で見える最も遠い天体（250万光年）。", 
-        centerRA: 0.7, centerDec: 41.2, 
-        lines: [] 
-    }
-];
-
-// --- 1. MATH ENGINE ---
+// --- 1. VECTOR & MATRIX ENGINE (REBUILT) ---
 const Math3D = {
-    qMultiply: (a, b) => {
-        const ax=a[0], ay=a[1], az=a[2], aw=a[3];
-        const bx=b[0], by=b[1], bz=b[2], bw=b[3];
-        return [
-            ax*bw + aw*bx + ay*bz - az*by,
-            ay*bw + aw*by + az*bx - ax*bz,
-            az*bw + aw*bz + ax*by - ay*bx,
-            aw*bw - ax*bx - ay*by - az*bz
-        ];
+    // 4x4 Matrix Multiplication
+    matMultiply: (a, b) => {
+        const out = new Float32Array(16);
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                let sum = 0;
+                for (let i = 0; i < 4; i++) {
+                    sum += a[r * 4 + i] * b[i * 4 + c];
+                }
+                out[r * 4 + c] = sum;
+            }
+        }
+        return out;
     },
-    qInverse: (q) => [-q[0], -q[1], -q[2], q[3]],
-    qFromAxisAngle: (axis, angle) => {
-        const half = angle / 2;
-        const s = Math.sin(half);
-        return [axis[0]*s, axis[1]*s, axis[2]*s, Math.cos(half)];
+    // Rotation Matrices
+    matRotateX: (rad) => {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return [1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1];
     },
-    matFromQ: (q) => {
-        const x=q[0], y=q[1], z=q[2], w=q[3];
-        const x2=x+x, y2=y+y, z2=z+z;
-        const xx=x*x2, xy=x*y2, xz=x*z2;
-        const yy=y*y2, yz=y*z2, zz=z*z2;
-        const wx=w*x2, wy=w*y2, wz=w*z2;
+    matRotateY: (rad) => {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return [c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1];
+    },
+    matRotateZ: (rad) => {
+        const c = Math.cos(rad), s = Math.sin(rad);
+        return [c,-s,0,0, s,c,0,0, 0,0,1,0, 0,0,0,1];
+    },
+    // Invert Matrix (Rotation/Orthonormal only for speed)
+    matInvert: (m) => {
+        // Transpose rotation part, keep 0,0,0,1
         return [
-            1-(yy+zz), xy-wz, xz+wy, 0,
-            xy+wz, 1-(xx+zz), yz-wx, 0,
-            xz-wy, yz+wx, 1-(xx+yy), 0,
+            m[0], m[4], m[8], 0,
+            m[1], m[5], m[9], 0,
+            m[2], m[6], m[10], 0,
             0, 0, 0, 1
         ];
     },
-    matInvert: (m) => [m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0, 0, 0, 0, 1],
+    // Project 3D point to Screen
     project: (vec, viewMat, width, height, fovDeg) => {
+        // M_view * vec
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
+        
+        // Z is negative forward in OpenGL convention
         if (z >= -0.1) return null;
+        
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
-        return { x: x * (scale / -z) + width / 2, y: -y * (scale / -z) + height / 2, z: z };
+        return { 
+            x: x * (scale / -z) + width / 2, 
+            y: -y * (scale / -z) + height / 2, 
+            z: z 
+        };
     }
 };
 
-// --- 2. ASTRO PHYSICS ---
+// --- 2. ASTRO PHYSICS (Sextant Logic) ---
 const Astro = {
-    getLST: (lon, date = new Date()) => {
-        const d = (date.getTime()/1000 - 946727935.816) / 86400;
-        return ((18.697374558 + 24.06570982441908 * d) % 24 + lon/15 + 24) % 24;
+    getLST: (lon, date = new Date(), offsetHours = 0) => {
+        const t = date.getTime() + offsetHours * 3600000;
+        const d = (t/1000 - 946727935.816) / 86400;
+        const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
+        const lst = (gmst + lon/15 + 24) % 24;
+        return lst;
     },
     getHorizontalCoords: (ra, dec, lat, lst) => {
         const latRad = lat * Math.PI / 180;
         const decRad = dec * Math.PI / 180;
-        const haRad = (lst - ra) * 15 * Math.PI / 180;
-        const sinAlt = Math.sin(decRad) * Math.sin(latRad) + Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
-        const altRad = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
-        const cosAz = (Math.sin(decRad) - Math.sin(altRad) * Math.sin(latRad)) / (Math.cos(altRad) * Math.cos(latRad));
-        let azRad = Math.acos(Math.min(1, Math.max(-1, cosAz)));
-        if (Math.sin(haRad) > 0) azRad = 2 * Math.PI - azRad;
+        const ha = (lst - ra);
+        const haRad = ha * 15 * Math.PI / 180;
+
+        let sinAlt = Math.sin(decRad) * Math.sin(latRad) + 
+                     Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
+        sinAlt = Math.max(-1, Math.min(1, sinAlt));
+        const altRad = Math.asin(sinAlt);
+
+        const cosAlt = Math.cos(altRad);
+        let azRad;
+        
+        if (Math.abs(cosAlt) < 0.001) {
+            azRad = 0;
+        } else {
+            // Standard Formula: Azimuth from North
+            const sinAzCosAlt = -Math.sin(haRad) * Math.cos(decRad);
+            const cosAzCosAlt = Math.sin(decRad) * Math.cos(latRad) - Math.cos(decRad) * Math.sin(latRad) * Math.cos(haRad);
+            azRad = Math.atan2(sinAzCosAlt, cosAzCosAlt);
+        }
+        
+        if (azRad < 0) azRad += Math.PI * 2;
         return { alt: altRad, az: azRad };
     },
+    // Convert Alt/Az to World Vector (Y=North, Z=Up, X=East)
     getVector: (alt, az) => {
         const cosAlt = Math.cos(alt);
-        return { x: Math.sin(az) * cosAlt, y: Math.cos(az) * cosAlt, z: Math.sin(alt) };
+        return {
+            x: Math.sin(az) * cosAlt,
+            y: Math.cos(az) * cosAlt,
+            z: Math.sin(alt)
+        };
     }
 };
 
@@ -536,81 +536,203 @@ const Utils = {
         if (bv < 0.0) return {r:180, g:200, b:255}; if (bv < 0.5) return {r:230, g:240, b:255}; 
         if (bv < 1.0) return {r:255, g:255, b:240}; if (bv < 1.5) return {r:255, g:220, b:180}; 
         return {r:255, g:200, b:180}; 
+    },
+    updateDOMText: () => {
+        const dict = I18N[App.state.lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) el.innerHTML = dict[key]; 
+        });
+        ['off', 'name', 'full'].forEach((m, i) => {
+            const el = document.getElementById(`mode-${i}`);
+            el.innerText = dict[`mode_${m}`];
+        });
+        const locKey = App.state.useGPS ? 'loc_gps' : 'loc_fixed';
+        if (App.state.useGPS) document.getElementById('loc-name').innerText = `${dict[locKey]} (${App.state.lat.toFixed(1)},${App.state.lon.toFixed(1)})`;
+        else document.getElementById('loc-name').innerText = dict[locKey];
     }
 };
 
-// --- 4. APP CORE ---
+// --- 4. GUIDE SYSTEM ---
+const Guide = {
+    target: null,
+    toggle: () => {
+        const el = document.getElementById('guide-modal');
+        const isHidden = el.classList.contains('hidden-force');
+        if (isHidden) { Guide.buildList(); el.classList.remove('hidden-force'); } else { el.classList.add('hidden-force'); }
+    },
+    buildList: () => {
+        const list = document.getElementById('guide-list');
+        list.innerHTML = '';
+        const dict = I18N[App.state.lang];
+        const categories = [
+            { id: RANK.FAMOUS, title: dict.cat_famous, icon: '🦁', color: 'text-yellow-400' },
+            { id: RANK.STAR_GAL, title: dict.cat_star_gal, icon: '✨', color: 'text-cyan-400' }, 
+            { id: RANK.MEDIUM, title: dict.cat_medium, icon: '🐻', color: 'text-blue-300' },
+            { id: RANK.MINOR, title: dict.cat_minor, icon: '🦎', color: 'text-slate-400' }
+        ];
+        categories.forEach(cat => {
+            const items = CONSTELLATION_DB.filter(c => c.rank === cat.id);
+            if (items.length === 0) return;
+            const details = document.createElement('details'); details.className = "group mb-4"; details.open = true; 
+            const summary = document.createElement('summary');
+            summary.className = "flex items-center gap-2 cursor-pointer bg-white/5 p-3 rounded-lg hover:bg-white/10 transition mb-2";
+            summary.innerHTML = `<span class="${cat.color} text-xl">${cat.icon}</span><span class="font-bold text-white text-sm flex-1">${cat.title}</span><span class="text-xs text-slate-500 group-open:rotate-180 transition">▼</span>`;
+            const content = document.createElement('div'); content.className = "space-y-3 pl-2";
+            items.forEach(c => {
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border border-white/10 bg-slate-800/80 backdrop-blur-sm`;
+                const name = App.state.lang === 'en' ? c.en : c.name;
+                const desc = App.state.lang === 'en' ? c.desc_en : c.desc;
+                const myth = App.state.lang === 'en' ? c.myth_en : c.myth;
+                card.innerHTML = `<div class="flex justify-between items-start mb-2"><div><h3 class="font-bold text-lg text-white">${name}</h3></div><span class="px-2 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded uppercase">✨ INFO</span></div><p class="text-sm text-slate-300 mb-2 font-bold leading-relaxed">${desc}</p><div class="mt-2 text-xs text-yellow-100/80 p-2 bg-yellow-900/20 rounded border border-yellow-500/10 leading-relaxed font-normal">${myth}</div><button onclick="Guide.startNav('${c.id}')" class="w-full py-2 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg">🔭 GOTO NAVI</button>`;
+                content.appendChild(card);
+            });
+            details.appendChild(summary); details.appendChild(content); list.appendChild(details);
+        });
+    },
+    startNav: (id) => {
+        const c = CONSTELLATION_DB.find(x => x.id === id); if (!c) return;
+        Guide.target = { ...c };
+        App.state.mode = 'guide';
+        document.getElementById('guide-modal').classList.add('hidden-force');
+        document.getElementById('nav-ui').classList.remove('hidden-force');
+        const tName = App.state.lang==='en' ? c.en : c.name;
+        document.getElementById('nav-target-name').innerText = tName;
+        document.getElementById('btn-cancel-nav').classList.remove('hidden-force');
+        Utils.toast(`${I18N[App.state.lang].nav_start} ${tName}`);
+    },
+    stopNav: () => {
+        Guide.target = null; App.state.mode = 'normal';
+        document.getElementById('nav-ui').classList.add('hidden-force');
+        document.getElementById('btn-cancel-nav').classList.add('hidden-force');
+        Utils.toast(I18N[App.state.lang].nav_end);
+    }
+};
+
+// --- 5. GATEKEEPER ---
+const Gate = {
+    check: () => {
+        const isMobile = ('ontouchstart' in window) && (window.innerWidth <= 1024);
+        if (isMobile) {
+            document.getElementById('app-container').classList.remove('hidden-force'); document.getElementById('start-modal').classList.remove('hidden-force');
+        } else {
+            document.getElementById('star-gate').classList.remove('hidden-force');
+            new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180});
+        }
+    },
+};
+
+// --- 6. APP CORE ---
 const App = {
     canvas: null, ctx: null, width: 0, height: 0,
     state: {
-        lat: 32.698, lon: 128.839, // Goto
+        lat: 32.698, lon: 128.839, // Goto Islands Default
         viewMat: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
-        mode: 'normal', viewMode: 0, isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
+        mode: 'normal', viewMode: 0,
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: false },
-        stars: [], milkyWay: [],
-        fov: 60,
-        lastOri: null,
-        smoothedOri: { alpha: 0, beta: 90, gamma: 0 },
-        setupMode: true,
-        anchorCorrectionQ: [0, 0, 0, 1] // Identity
+        isAR: false, useGPS: false, opacity: {bg:1, milky:0.5},
+        infoMode: 2,
+        meteorEnabled: true, lang: 'ja',
+        stars: [], milkyWay: [], meteors: [],
+        isDev: false, fov: 60, orientation: { alpha: 0, beta: 90, gamma: 0 },
+        
+        // SEXTANT STATE
+        setupMode: false,
+        northOffset: 0, 
+        timeOffset: 0
     },
 
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
-        App.startSetup(); 
         
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try { 
                 const res = await DeviceOrientationEvent.requestPermission(); 
-                if (res === 'granted') window.addEventListener('deviceorientation', App.handleOri); 
-            } catch(e){}
+                if (res === 'granted') {
+                    window.addEventListener('deviceorientation', App.handleOri); 
+                } else {
+                    alert("センサーの許可が必要です。");
+                }
+            } catch(e){ console.error(e); }
         } else { 
             window.addEventListener('deviceorientation', App.handleOri); 
         }
 
+        App.startSetup();
+
+        document.getElementById('toggle-ar').checked = false;
+        App.toggleAR(false);
+
         App.canvas = document.getElementById('sky-canvas'); App.ctx = App.canvas.getContext('2d');
         
-        STARS_DATA.forEach(s => App.state.stars.push(s));
+        // Load Star Data
+        if (typeof STARS_DATA !== 'undefined' && Array.isArray(STARS_DATA)) {
+            STARS_DATA.forEach(s => App.state.stars.push(s));
+        }
+
+        // Procedural Stars (Background)
         for(let i=0; i<800; i++) {
-            App.state.stars.push({ra: Math.random()*24, dec: Math.random()*180-90, mag: Math.random()*3+3.5, ci: Math.random()*1.5, isProc: true});
+            App.state.stars.push({
+                ra: Math.random()*24, 
+                dec: Math.random()*180-90, // Random Sky Pos
+                mag: Math.random()*3+3.5, 
+                ci: Math.random()*1.5, 
+                isProc: true
+            });
         }
         
-        const mwPoints = [{ra:0,dec:63, w:20}, {ra:6,dec:10, w:15}, {ra:12,dec:-60, w:30}, {ra:18,dec:-15, w:40}, {ra:23,dec:60, w:22}];
+        // Procedural Milky Way
+        const mwPoints = [
+            {ra:0,dec:63, w:20}, {ra:3,dec:50, w:18}, {ra:6,dec:10, w:15}, 
+            {ra:7.5,dec:-20, w:25}, {ra:12,dec:-60, w:30}, {ra:17,dec:-30, w:35}, 
+            {ra:18,dec:-15, w:40}, {ra:20,dec:40, w:25}, {ra:23,dec:60, w:22}
+        ];
+        
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
-            for(let j=0; j<400; j++) {
-                const t = j/400;
+            const steps = 400; 
+            for(let j=0; j<steps; j++) {
+                const t = j/steps;
                 const baseRA = p1.ra + (p2.ra - p1.ra)*t;
                 const baseDec = p1.dec + (p2.dec - p1.dec)*t;
-                const scatter = (Math.random() - Math.random()) * p1.w * 1.5;
+                const baseW = p1.w + (p2.w - p1.w)*t;
+                const scatter = (Math.random() - Math.random()) * baseW * 1.5;
+                const finalRA = baseRA + (Math.random() - 0.5) * 2;
+                const finalDec = baseDec + scatter;
+                const colorType = Math.random(); 
+                let r, g, b;
+                if (colorType > 0.8) { r=100; g=150; b=255; }
+                else if (colorType > 0.6) { r=180; g=100; b=220; }
+                else { r=200; g=220; b=255; }
                 App.state.milkyWay.push({
-                    ra: baseRA + (Math.random()-0.5)*2, dec: baseDec + scatter, 
-                    size: Math.random()*100+100, alpha: Math.random()*0.015+0.005,
-                    r: 200, g: 220, b: 255
+                    ra: finalRA, dec: finalDec, size: Math.random()*100 + 100, alpha: Math.random()*0.015 + 0.005, r, g, b
                 });
             }
         }
         
         try { if(navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch(e){}
+
         window.addEventListener('resize', App.resize);
         App.setupTouch(); App.resize(); App.loop();
     },
 
     handleOri: (e) => {
+        // Low pass filter
         const k = 0.15;
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
         let gamma = e.gamma || 0;
         let compass = e.webkitCompassHeading || 0;
 
-        if (!App.state.lastOri) App.state.lastOri = { alpha, beta, gamma, compass };
+        if (!App.state.lastOri) { App.state.lastOri = { alpha, beta, gamma, compass }; }
         const last = App.state.lastOri;
 
-        const lerpAngle = (c, p, f) => {
-            let d = c - p;
-            while (d > 180) d -= 360;
-            while (d < -180) d += 360;
-            return p + d * f;
+        const lerpAngle = (current, previous, factor) => {
+            let diff = current - previous;
+            while (diff > 180) diff -= 360;
+            while (diff < -180) diff += 360;
+            return previous + diff * factor;
         };
 
         alpha = lerpAngle(alpha, last.alpha, k);
@@ -619,42 +741,51 @@ const App = {
         compass = lerpAngle(compass, last.compass, k);
 
         App.state.lastOri = { alpha: (alpha+360)%360, beta, gamma, compass: (compass+360)%360 };
-        App.state.smoothedOri = { 
+        App.state.orientation = { 
             alpha: App.state.lastOri.alpha, 
             beta, gamma, 
             isIOS: !!e.webkitCompassHeading, 
-            webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null 
+            webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
         };
-
+        
+        // Debug raw values
+        document.getElementById('raw-a').innerText = Math.round(alpha);
+        document.getElementById('raw-b').innerText = Math.round(beta);
+        document.getElementById('raw-g').innerText = Math.round(gamma);
+        
         if (App.state.setupMode) {
+            // Setup Mode Visuals
             const ball = document.getElementById('level-ball');
+            const status = document.getElementById('sensor-status');
+            const btn = document.getElementById('btn-confirm-setup');
             const ring = document.getElementById('compass-ring');
+            const valDisplay = document.getElementById('compass-val');
+            
+            if (alpha !== 0 || beta !== 0 || gamma !== 0) {
+                status.innerText = "Sensor: Active OK";
+                status.style.color = "#4ade80"; 
+                btn.disabled = false;
+                btn.innerText = "基準セット (SET NORTH)";
+                btn.classList.remove('bg-slate-700', 'text-slate-400');
+                btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
+            }
+
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
-            const px = (bx / maxTilt) * 70;
-            const py = (by / maxTilt) * 70;
+            const px = (bx / maxTilt) * 60;
+            const py = (by / maxTilt) * 60;
             ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
             
             const isLevel = Math.abs(bx)<3 && Math.abs(by)<3;
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
-            // Compass Rotation Logic (Corrected -90 deg offset for visual)
-            let heading = App.state.smoothedOri.isIOS ? App.state.smoothedOri.webkitCompass : App.state.smoothedOri.alpha;
+            let heading = alpha;
+            if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
             
-            // Visual Ring Rotation
-            ring.style.transform = `rotate(${-heading - 90}deg)`;
-
-            const btn = document.getElementById('btn-confirm-setup');
-            document.getElementById('sensor-status').innerText = "Sensor Active";
-            btn.disabled = false;
-            btn.innerText = "セット (SET NORTH)";
-            btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
-            
-            // FIX: Add +90 offset to text value to match visual North
-            let displayHeading = (heading + 90) % 360;
-            document.getElementById('compass-val').innerText = `${Math.round(displayHeading)}°`;
+            ring.style.transform = `rotate(${-heading}deg)`;
+            valDisplay.innerText = `${Math.round(heading)}°`;
         }
     },
 
@@ -665,232 +796,403 @@ const App = {
     },
     
     confirmSetup: () => {
-        const qCurrent = App.getSensorQuaternion();
-        const qInv = Math3D.qInverse(qCurrent);
-        App.state.anchorCorrectionQ = qInv;
+        const { alpha, webkitCompass } = App.state.orientation;
+        let current = alpha;
+        if (webkitCompass != null) current = webkitCompass;
+        
+        App.state.northOffset = current; 
         
         App.state.setupMode = false;
+        
         document.getElementById('setup-wizard').classList.add('hidden-force');
-        document.getElementById('swipe-hint').style.opacity = 1;
-        setTimeout(() => document.getElementById('swipe-hint').style.opacity = 0, 3000);
-        Utils.toast("ANCHOR LOCKED 🔒");
-        document.getElementById('debug-anchor').innerText = "ON";
-        document.getElementById('debug-anchor').className = "text-green-400 font-bold";
+        
+        // Remove existing hint if any
+        const existing = document.getElementById("swipe-hint");
+        if(existing) existing.remove();
+
+        const hint = document.createElement('div');
+        hint.id = "swipe-hint";
+        hint.className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-2xl pointer-events-none z-50 transition-opacity duration-500 opacity-0 swipe-hint";
+        hint.innerText = "🌌 Ready";
+        document.body.appendChild(hint);
+        
+        // Force reflow
+        void hint.offsetWidth;
+        
+        // Manual JS Fade
+        hint.style.opacity = 1;
+        
+        setTimeout(() => { 
+            hint.style.opacity = 0; 
+            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 600); // Remove DOM
+        }, 1500);
+        
+        Utils.toast("基準セット完了 (Zero Locked) 🔒");
     },
 
-    getSensorQuaternion: () => {
-        const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.smoothedOri;
-        const deg2rad = Math.PI / 180;
-        let zAngle = isIOS && webkitCompass != null ? webkitCompass : alpha;
-        
-        const x = beta * deg2rad;
-        const y = gamma * deg2rad;
-        const z = zAngle * deg2rad;
-        
-        const qZ = Math3D.qFromAxisAngle([0, 0, 1], z);
-        const qX = Math3D.qFromAxisAngle([1, 0, 0], x);
-        const qY = Math3D.qFromAxisAngle([0, 1, 0], y);
-        
-        // RE-ORDER: Z -> X -> Y (Standard Euler to Quat)
-        let q = Math3D.qMultiply(qZ, qX); 
-        q = Math3D.qMultiply(q, qY);
-        
-        const orient = (window.screen.orientation ? window.screen.orientation.angle : 0) * deg2rad;
-        const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -orient);
-        q = Math3D.qMultiply(qScreen, q); // Correct order for intrinsic
-        
-        return q;
+    toggleLocation: () => { 
+        if(!App.state.useGPS) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                App.state.lat = pos.coords.latitude; App.state.lon = pos.coords.longitude;
+                App.state.useGPS = true;
+                Utils.updateDOMText(); Utils.updateDOMText(); Utils.toast(I18N[App.state.lang].loc_gps + " OK");
+            }, () => Utils.toast("GPS Error"));
+        } else {
+            App.state.lat = 32.698; App.state.lon = 128.839; App.state.useGPS = false;
+            Utils.updateDOMText(); Utils.toast(I18N[App.state.lang].loc_fixed);
+        }
+    },
+    toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
+    
+    toggleTimeSlider: () => {
+        const slider = document.getElementById('time-slider-container');
+        slider.classList.toggle('active');
+        Utils.toast(I18N[App.state.lang].time_travel);
+    },
+    setTimeOffset: (val) => {
+        App.state.timeOffset = parseFloat(val);
+        const sign = App.state.timeOffset >= 0 ? '+' : '';
+        document.getElementById('time-display').innerText = `TIME TRAVEL: ${sign}${App.state.timeOffset}h`;
+    },
+    resetTime: (val) => {
+        if(val == 0) Utils.toast(I18N[App.state.lang].time_reset);
     },
 
-    updateViewMatrix: () => {
-        const qSensor = App.getSensorQuaternion();
-        let qAligned = Math3D.qMultiply(App.state.anchorCorrectionQ, qSensor);
-        
-        // FIX 1: Rotate -90 deg X to bring Forward to Horizon (from Down)
-        const qFixX = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI / 2);
-        // FIX 2: Rotate -90 deg Z to fix "Horizontal Horizon" issue
-        const qFixZ = Math3D.qFromAxisAngle([0, 0, 1], -Math.PI / 2);
-        
-        // Apply Z then X (Local)
-        const qFix = Math3D.qMultiply(qFixZ, qFixX);
-        
-        qAligned = Math3D.qMultiply(qFix, qAligned);
-        const mCam = Math3D.matFromQ(qAligned);
-        App.state.viewMat = Math3D.matInvert(mCam);
-        
-        const fx = -App.state.viewMat[8], fy = -App.state.viewMat[9], fz = -App.state.viewMat[10];
-        // CRITICAL FIX: Clamp input to avoid NaN crash
-        const alt = Math.asin(Math.max(-1, Math.min(1, fz))) * 180/Math.PI;
-        let az = Math.atan2(fx, fy) * 180/Math.PI; if(az<0) az+=360;
-        document.getElementById('debug-az').innerText = Math.round(az);
-        document.getElementById('debug-alt').innerText = Math.round(alt);
+    setInfoMode: (mode) => {
+        App.state.infoMode = mode;
+        [0, 1, 2].forEach(m => {
+            const el = document.getElementById(`mode-${m}`);
+            if(m === mode) el.classList.add('active'); else el.classList.remove('active');
+        });
     },
 
-    loop: () => {
+    toggleAR: (v) => { 
+        App.state.isAR = v;
+        const cam = document.getElementById('camera-feed');
+        if (v) {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => { cam.srcObject = stream; cam.style.opacity = 1; })
+                    .catch(e => { console.log("Cam Error", e); Utils.toast("Cam Error"); });
+            }
+            App.setOpacity('bg', 0.0); document.querySelector('input[oninput*="bg"]').value = 0.0;
+        } else {
+            if (cam.srcObject) { cam.srcObject.getTracks().forEach(t => t.stop()); cam.srcObject = null; }
+            cam.style.opacity = 0; App.setOpacity('bg', 1); document.querySelector('input[oninput*="bg"]').value = 1;
+        }
+    },
+    toggleViewMode: () => {
+        App.state.viewMode = (App.state.viewMode + 1) % 3;
+        const body = document.body; const btn = document.getElementById('btn-mode');
+        body.classList.remove('mode-red', 'mode-solar');
+        if(App.state.viewMode === 1) { body.classList.add('mode-red'); btn.innerText = "🔴"; }
+        else if(App.state.viewMode === 2) { body.classList.add('mode-solar'); btn.innerText = "☀️"; }
+        else { btn.innerText = "🌙"; }
+    },
+    setOpacity: (k,v) => { App.state.opacity[k] = parseFloat(v); if(k==='bg')document.getElementById('val-bg').innerText=Math.round(v*100)+"%"; if(k==='milky')document.getElementById('val-milky').innerText=Math.round(v*100)+"%"; },
+    setRank: (r,v) => { App.state.ranks[r] = v; Guide.buildList(); },
+    setFlag: (k,v) => App.state[k] = v,
+    setLang: (l) => { App.state.lang = l; Guide.buildList(); Utils.updateDOMText(); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v31.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    
+    setupTouch: () => {},
+    
+    resize: () => {
+        App.width = window.innerWidth;
+        App.height = window.innerHeight;
+        App.canvas.width = App.width;
+        App.canvas.height = App.height;
+    }
+};
+
+// --- CORE: MATRIX RE-COMPOSITION (Standard Basis: W3C Z-X-Y Matrix) ---
+App.updateViewMatrix = () => {
+    const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
+    const deg2rad = Math.PI / 180;
+
+    let currentAlpha = alpha;
+    if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
+
+    let trueHeading = currentAlpha - App.state.northOffset; 
+    if (trueHeading < 0) trueHeading += 360;
+
+    // 1. DEVICE ROTATION (W3C Standard: Z -> X -> Y)
+    // -----------------------------
+    // Device Frame: 
+    // Z: Perpendicular to screen (out)
+    // X: Right
+    // Y: Top
+    
+    // Euler Angles to Matrix:
+    // Alpha (Z), Beta (X), Gamma (Y)
+    
+    const rZ = Math3D.matRotateZ(trueHeading * deg2rad);
+    const rX = Math3D.matRotateX(beta * deg2rad);
+    const rY = Math3D.matRotateY(gamma * deg2rad);
+    
+    // M_device = Rz * Rx * Ry
+    let mDevice = Math3D.matMultiply(rZ, rX);
+    mDevice = Math3D.matMultiply(mDevice, rY);
+    
+    // 2. SCREEN ORIENTATION
+    // -----------------------------
+    // Adjust for Landscape/Portrait
+    let screenOrient = 0;
+    if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
+    else if (window.orientation) screenOrient = window.orientation;
+    
+    const rScreen = Math3D.matRotateZ(-screenOrient * deg2rad);
+    
+    // Apply Screen Rotation: M_final = M_device * M_screen
+    let mFinal = Math3D.matMultiply(mDevice, rScreen);
+    
+    // 3. WORLD ALIGNMENT (Camera Correction)
+    // -----------------------------
+    // WebGL/Canvas Camera looks down -Z. Y is Up. X is Right.
+    // Device Z is "Up" (out of screen).
+    // We need to map Device Z to Camera -Z (or look direction).
+    // Actually, AR camera view:
+    // When phone is vertical (Beta=90):
+    // Device Y is up (World Z). Device -Z is forward (World Y/X plane).
+    
+    // We rotate -90 degrees around X axis to align:
+    // Device Y (Top) -> World Z (Up)
+    // Device Z (Out) -> World Y (Back) -> Wait, we want Camera to look out the back (-Z device).
+    
+    const rFix = Math3D.matRotateX(-90 * deg2rad);
+    
+    // Apply fixation: M_cam = M_final * M_fix
+    // This transforms the world to align with the camera view.
+    let mCam = Math3D.matMultiply(mFinal, rFix);
+
+    // 4. INVERT FOR VIEW MATRIX
+    // View Matrix transforms World -> Camera
+    // mCam is effectively Camera -> World (Camera Pose)
+    App.state.viewMat = Math3D.matInvert(mCam);
+
+    // Debug Display
+    // Extract Azimuth from the computed matrix for debugging stability
+    // -mCam[8] is the Z-component of the Forward vector (if Z-forward)
+    // Let's use standard trigonometric extraction
+    
+    const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
+    const alt = Math.asin(fz) * 180/Math.PI;
+    let az = Math.atan2(fx, fy) * 180/Math.PI;
+    if (az < 0) az += 360;
+    document.getElementById('debug-az').innerText = Math.round(az);
+    document.getElementById('debug-alt').innerText = Math.round(alt);
+    App.state.azimuth = az;
+};
+
+App.loop = () => {
+    try {
         App.updateViewMatrix();
         const {ctx, width, height, state} = App;
         ctx.clearRect(0,0,width,height);
         
+        // 1. Update Celestial Physics
+        const lst = Astro.getLST(state.lon, new Date(), state.timeOffset);
+        
+        // 2. Draw North Star Target (Polaris Debug)
+        const polarisHC = Astro.getHorizontalCoords(2.53, 89.26, state.lat, lst);
+        const polarisVec = Astro.getVector(polarisHC.alt, polarisHC.az);
+        const polarisPos = Math3D.project(polarisVec, state.viewMat, width, height, state.fov);
+        
+        if (polarisPos) {
+            ctx.strokeStyle = "#ff0000"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(polarisPos.x, polarisPos.y, 20, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(polarisPos.x, polarisPos.y, 10, 0, Math.PI*2); ctx.stroke();
+            ctx.fillStyle = "#ff0000"; ctx.font = "bold 12px sans-serif";
+            ctx.fillText("POLARIS (ANCHOR)", polarisPos.x + 25, polarisPos.y);
+            ctx.strokeStyle = "rgba(255, 0, 0, 0.3)"; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(polarisPos.x, polarisPos.y); ctx.lineTo(polarisPos.x, height); ctx.stroke();
+        }
+
+        // Draw Horizon Grid (Fixed in World)
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        let firstH = null;
+        for(let a=0; a<=360; a+=10) {
+            const rad = a * Math.PI/180;
+            const vec = Astro.getVector(0, rad); 
+            const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
+            if (pos) {
+                if (firstH === null) { ctx.moveTo(pos.x, pos.y); firstH = pos; }
+                else ctx.lineTo(pos.x, pos.y);
+            } else { firstH = null; }
+        }
+        ctx.stroke();
+        
+        // Draw Zenith (Alt=90)
+        const zVec = Astro.getVector(Math.PI/2, 0);
+        const zPos = Math3D.project(zVec, state.viewMat, width, height, state.fov);
+        if(zPos) {
+            ctx.fillStyle = "#0ff"; ctx.fillText("+ Z", zPos.x, zPos.y);
+        }
+        
+        // Draw North (Alt=0, Az=0)
+        const nVec = Astro.getVector(0, 0);
+        const nPos = Math3D.project(nVec, state.viewMat, width, height, state.fov);
+        if(nPos) {
+            ctx.fillStyle = "#f00"; ctx.font="bold 16px monospace"; ctx.fillText("N", nPos.x, nPos.y);
+        }
+
         const isSolar = state.viewMode === 2;
         if (state.opacity.bg > 0) {
             const alpha = state.isAR ? state.opacity.bg : 1;
             const grad = ctx.createLinearGradient(0,0,0,height);
-            grad.addColorStop(0, isSolar ? `rgba(135,206,235,${alpha})` : `rgba(2,6,23,${alpha})`);
-            grad.addColorStop(1, isSolar ? `rgba(224,247,250,${alpha})` : `rgba(15,23,42,${alpha})`);
+            if (isSolar) { grad.addColorStop(0, `rgba(135,206,235,${alpha})`); grad.addColorStop(1, `rgba(224,247,250,${alpha})`); }
+            else { grad.addColorStop(0, `rgba(2,6,23,${alpha})`); grad.addColorStop(1, `rgba(15,23,42,${alpha})`); }
             ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
         }
 
-        const lst = Astro.getLST(state.lon);
-
-        ctx.strokeStyle = "rgba(0, 255, 255, 0.2)"; ctx.lineWidth = 1; ctx.beginPath();
-        let firstH = null;
-        for(let a=0; a<=360; a+=10) {
-            const vec = Astro.getVector(0, a * Math.PI/180);
-            const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
-            if(pos){ if(firstH===null) { ctx.moveTo(pos.x,pos.y); firstH=pos; } else ctx.lineTo(pos.x,pos.y); } else firstH=null;
-        }
-        ctx.stroke();
-
+        // Milky Way
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter'; 
             state.milkyWay.forEach(p => {
-                const vec = Astro.getVector(Astro.getHorizontalCoords(p.ra, p.dec, state.lat, lst).alt, Astro.getHorizontalCoords(p.ra, p.dec, state.lat, lst).az);
+                const hc = Astro.getHorizontalCoords(p.ra, p.dec, state.lat, lst);
+                const vec = Astro.getVector(hc.alt, hc.az);
                 const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
                 if (pos) {
                     const size = p.size * (width/1500);
                     const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size);
-                    grad.addColorStop(0, `rgba(${p.r},${p.g},${p.b},${p.alpha * state.opacity.milky})`);
+                    const a = p.alpha * state.opacity.milky;
+                    grad.addColorStop(0, `rgba(${p.r},${p.g},${p.b},${a})`);
                     grad.addColorStop(1, `rgba(${p.r},${p.g},${p.b},0)`);
-                    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(pos.x, pos.y, size, 0, Math.PI*2); ctx.fill();
                 }
             });
             ctx.globalCompositeOperation = 'source-over';
         }
 
+        // Stars
         const starPos = {};
         state.stars.forEach(s => {
             const hc = Astro.getHorizontalCoords(s.ra, s.dec, state.lat, lst);
             const vec = Astro.getVector(hc.alt, hc.az);
             const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
-            if(p) {
+            if (p) {
                 if(s.name) starPos[s.name] = p;
                 let col = s.isProc ? {r:255,g:255,b:255} : Utils.bvToColor(s.ci||0.5);
                 let size = s.isProc ? Math.random()*1 : Math.max(0.8, (3.5-s.mag)*1.2);
-                if(isSolar){ size*=0.8; col={r:0,g:0,b:0}; }
-                ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${s.mag<2?1:0.6})`;
+                let alpha = (s.mag<2?1.0:0.6);
+                if (isSolar) { size*=0.8; alpha=0.7; col={r:0,g:0,b:0}; }
+                ctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${alpha})`;
                 ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
             }
         });
 
-        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 1.5;
+        // Constellations
+        ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 2;
         ctx.beginPath();
         const visibleConsts = [];
+        const isInfoOn = state.infoMode > 0;
         
         CONSTELLATION_DB.forEach(c => {
             if (!state.ranks[c.rank]) return;
             const isTarget = (state.mode === 'guide' && Guide.target && Guide.target.id === c.id);
             if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = "#4ade80"; ctx.lineWidth = 3; }
             
-            let cx=0, cy=0, n=0;
-            if(c.lines) {
+            let highestY = height;
+            let crownX = 0;
+            let hasVisibleStars = false;
+
+            if (c.lines && c.lines.length > 0) {
+                let cx=0, cy=0, n=0;
                 for(let i=0; i<c.lines.length; i+=2) {
                     const p1 = starPos[c.lines[i]]; const p2 = starPos[c.lines[i+1]];
                     if(p1 && p2) { 
                         ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
                         cx+=(p1.x+p2.x)/2; cy+=(p1.y+p2.y)/2; n++;
+                        if(p1.y < highestY) { highestY = p1.y; crownX = p1.x; }
+                        if(p2.y < highestY) { highestY = p2.y; crownX = p2.x; }
+                    }
+                }
+                if(n>0) {
+                    cx/=n; cy/=n;
+                    const d = Math.hypot(cx-width/2, cy-height/2);
+                    if(c.rank === 1 || d < 200) {
+                        visibleConsts.push({c, x:cx, y:cy, dist:d, crownX, crownY: highestY});
+                        hasVisibleStars = true;
+                    }
+                }
+            } else {
+                const hc = Astro.getHorizontalCoords(c.centerRA, c.centerDec, state.lat, lst);
+                const vec = Astro.getVector(hc.alt, hc.az);
+                const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
+                if(p) {
+                    const d = Math.hypot(p.x-width/2, p.y-height/2);
+                    if(d < 200 || isTarget) {
+                        visibleConsts.push({c, x:p.x, y:p.y, dist:d, crownX: p.x, crownY: p.y});
+                        hasVisibleStars = true;
+                        if(isInfoOn) { ctx.fillStyle = isTarget ? "#4ade80" : "#fbbf24"; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill(); }
                     }
                 }
             }
-            if(n>0) {
-                cx/=n; cy/=n;
-                const d = Math.hypot(cx-width/2, cy-height/2);
-                if(d < 250) {
-                    visibleConsts.push({c, x:cx, y:cy, dist:d});
-                    ctx.fillStyle = isTarget ? "#4ade80" : (isSolar?"#000":"rgba(255,255,255,0.7)");
+            
+            if (hasVisibleStars && isInfoOn) {
+                    ctx.fillStyle = isTarget ? "#4ade80" : (isSolar ? "#000" : "rgba(255,255,255,0.7)");
                     ctx.font = isTarget ? "bold 14px 'Zen Maru Gothic'" : "10px 'Zen Maru Gothic'";
-                    ctx.fillText(c.name, cx, cy);
-                }
+                    const tName = state.lang==='en' ? c.en : c.name;
+                    const centerConst = visibleConsts[visibleConsts.length-1];
+                    ctx.fillText(tName, centerConst.x, centerConst.y);
             }
-            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.6)"; ctx.lineWidth = 1.5; }
+            if(isTarget) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = isSolar?"rgba(0,0,0,0.3)":"rgba(34,211,238,0.6)"; ctx.lineWidth = 2; }
         });
         ctx.stroke();
 
+        // Smart Bubble
         const bubble = document.getElementById('smart-bubble');
-        if (visibleConsts.length > 0) {
+        if (state.infoMode === 2 && visibleConsts.length > 0) { 
             visibleConsts.sort((a,b) => a.dist - b.dist);
-            const t = visibleConsts[0];
-            if (t.dist < 150) {
-                document.getElementById('bubble-title').innerText = t.c.name;
-                document.getElementById('bubble-desc').innerText = t.c.desc || "";
-                bubble.style.left = t.x + 'px'; bubble.style.top = Math.max(t.y-20, 40) + 'px'; bubble.style.opacity = 1;
-            } else bubble.style.opacity = 0;
-        } else bubble.style.opacity = 0;
+            const target = visibleConsts[0];
+            const bx = Math.min(Math.max(target.crownX, 100), width-100);
+            const by = Math.max(target.crownY, 60);
+            if (target.dist < 150) {
+                document.getElementById('bubble-title').innerText = state.lang==='en' ? target.c.en : target.c.name;
+                const dict = I18N[state.lang];
+                let tag = dict.constellation;
+                if(target.c.rank === 1) tag = dict.famous_const;
+                if(target.c.rank === 4) tag = dict.star_gal; 
+                document.getElementById('bubble-tag').innerText = tag;
+                document.getElementById('bubble-desc').innerText = state.lang==='en' ? target.c.desc_en : target.c.desc;
+                bubble.style.left = bx + 'px'; bubble.style.top = by + 'px'; bubble.style.opacity = 1;
+            } else { bubble.style.opacity = 0; }
+        } else { bubble.style.opacity = 0; }
 
+        // Meteors (World Space Physics)
+        if (state.meteorEnabled && !isSolar) {
+            // Spawn in Screen Space for visual effect (Simple)
+            if (Math.random() < 0.01) state.meteors.push({x: Math.random()*width, y: Math.random()*height*0.5, vx: (Math.random()-0.5)*20, vy: Math.random()*15+5, life: 1});
+            ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
+            state.meteors = state.meteors.filter(m => {
+                ctx.globalAlpha = m.life; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*4, m.y-m.vy*4); ctx.stroke();
+                m.x+=m.vx; m.y+=m.vy; m.life-=0.04; return m.life>0;
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Guide Target Lock
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
             const hc = Astro.getHorizontalCoords(t.centerRA, t.centerDec, state.lat, lst);
-            const p = Math3D.project(Astro.getVector(hc.alt, hc.az), state.viewMat, width, height, state.fov);
+            const vec = Astro.getVector(hc.alt, hc.az);
+            const p = Math3D.project(vec, state.viewMat, width, height, state.fov);
             const lockEl = document.getElementById('lock-on');
-            if (p && p.x>0 && p.x<width && p.y>0 && p.y<height) {
+            if (p && p.x>50 && p.x<width-50 && p.y>50 && p.y<height-50) {
                 lockEl.style.opacity = 1; lockEl.style.left = p.x + 'px'; lockEl.style.top = p.y + 'px';
                 document.getElementById('nav-msg').style.transform = `translate(0,0)`;
-            } else lockEl.style.opacity = 0;
+            } else { lockEl.style.opacity = 0; }
         }
-
-        requestAnimationFrame(App.loop);
-    },
-
-    resize: () => { App.width = window.innerWidth; App.height = window.innerHeight; App.canvas.width = App.width; App.canvas.height = App.height; App.state.fov = (App.width > App.height) ? 35 : 60; },
-    toggleLocation: () => { App.state.useGPS = !App.state.useGPS; document.getElementById('loc-name').innerText = App.state.useGPS ? "現在地 (GPS)" : "五島列島 (Fixed)"; Utils.toast(App.state.useGPS ? "GPS ON" : "Loc Fixed"); },
-    toggleSettings: () => document.getElementById('settings-modal').classList.toggle('hidden-force'),
-    toggleAR: (v) => { App.state.isAR = v; const c = document.getElementById('camera-feed'); if(v) navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{c.srcObject=s;c.style.opacity=1}); else {if(c.srcObject)c.srcObject.getTracks().forEach(t=>t.stop());c.style.opacity=0;} App.setOpacity('bg', v?0:1); document.querySelector('input[oninput*="bg"]').value = v?0:1; },
-    toggleViewMode: () => { App.state.viewMode=(App.state.viewMode+1)%3; document.body.className = App.state.viewMode===1?'mode-red':(App.state.viewMode===2?'mode-solar':''); document.getElementById('btn-mode').innerText = ['🌙','🔴','☀️'][App.state.viewMode]; },
-    setOpacity: (k,v) => { App.state.opacity[k] = parseFloat(v); document.getElementById(`val-${k}`).innerText = Math.round(v*100)+"%"; },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
-    setupTouch: () => { /* Add touch controls if needed */ }
-};
-
-const Guide = {
-    target: null,
-    toggle: () => {
-        const el = document.getElementById('guide-modal');
-        if(el.classList.contains('hidden-force')) {
-            const list = document.getElementById('guide-list'); list.innerHTML = '';
-            CONSTELLATION_DB.forEach(c => {
-                const div = document.createElement('div');
-                div.className = "p-4 rounded-xl border border-white/10 bg-slate-800/80 mb-2";
-                div.innerHTML = `<h3 class="font-bold text-lg text-white">${c.name}</h3><p class="text-xs text-slate-300 mb-2">${c.desc || ""}</p><div class="text-[10px] text-yellow-100 bg-yellow-900/30 p-2 rounded">${c.myth || "No Myth Data"}</div><button onclick="Guide.startNav('${c.id}')" class="w-full py-2 bg-cyan-600 rounded text-sm font-bold mt-2">GOTO</button>`;
-                list.appendChild(div);
-            });
-            el.classList.remove('hidden-force');
-        } else el.classList.add('hidden-force');
-    },
-    startNav: (id) => { const c = CONSTELLATION_DB.find(x=>x.id===id); if(c){ Guide.target=c; App.state.mode='guide'; document.getElementById('guide-modal').classList.add('hidden-force'); document.getElementById('nav-ui').classList.remove('hidden-force'); document.getElementById('nav-target-name').innerText=c.name; document.getElementById('btn-cancel-nav').classList.remove('hidden-force'); Utils.toast("Nav Start 🚀"); } },
-    stopNav: () => { Guide.target=null; App.state.mode='normal'; document.getElementById('nav-ui').classList.add('hidden-force'); document.getElementById('btn-cancel-nav').classList.add('hidden-force'); Utils.toast("Nav End"); }
-};
-
-const Gate = {
-    check: () => { 
-        if(('ontouchstart' in window) && window.innerWidth <= 1024) { 
-            // Mobile: Show Start Modal, Hide PC Gate
-            document.getElementById('app-container').classList.remove('hidden-force'); 
-            document.getElementById('start-modal').classList.remove('hidden-force');
-            // Ensure Gate is hidden
-            document.getElementById('star-gate').classList.add('hidden-force');
-        } else { 
-            // PC: Show Gate, Hide App
-            document.getElementById('star-gate').classList.remove('hidden-force'); 
-            new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180}); 
-        } 
-    },
-    startUnlock: () => { 
-        document.getElementById('star-gate').classList.add('hidden-force'); 
-        document.getElementById('app-container').classList.remove('hidden-force'); 
-        document.getElementById('start-modal').classList.remove('hidden-force'); 
+    } catch (e) {
+        console.error(e);
     }
+    requestAnimationFrame(App.loop);
 };
 
-window.onload = Gate.check;
+window.onload = () => Gate.check();
 </script>
 </body>
 </html>
