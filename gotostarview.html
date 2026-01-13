@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.6</title>
+    <title>Star Compass v3.7</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -295,8 +295,9 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.6
-         * Updates: Fixed Celestial Rotation Logic (Correct direction: Future -> West/Negative)
+         * 🌌 STAR COMPASS ENGINE V3.7
+         * Updates: 180-Degree Calibration Flip (East <-> West Fix)
+         * Status: Diurnal motion logic maintained (Time+ -> West)
          */
 
         // --- 0. Database ---
@@ -342,9 +343,12 @@
             starDistance: 800,
             userLat: GOTO_COORDS.lat,
             userLon: GOTO_COORDS.lon,
-            // 基準日: 2024/1/15 20:00 (冬の配置基準)
             baseDate: new Date("2024-01-15T20:00:00+09:00"),
-            baseRotation: Math.PI * 0.8
+            // 修正 (v3.7): 180度反転
+            // 旧: Math.PI * 0.8
+            // 新: Math.PI * 0.8 - Math.PI = -Math.PI * 0.2
+            // これにより東と西が入れ替わり、正しい位置関係になります。
+            baseRotation: -Math.PI * 0.2
         };
 
         // --- State ---
@@ -518,29 +522,17 @@
         function updateCelestialRotation(targetDate) {
             if (!celestialGroup) return;
 
-            // --- 天文学的回転ロジック (Corrected v3.6) ---
-            
-            // 1. 基準日からの差分日数
-            // CONFIG.baseDate: 2024/1/15 20:00 (このとき冬の星が南中)
             const msPerDay = 1000 * 60 * 60 * 24;
             const deltaMs = targetDate - CONFIG.baseDate;
             const deltaDays = deltaMs / msPerDay;
 
-            // 2. 回転量の計算
-            // 地球は反時計回り(西→東)に自転 -> 星は時計回り(東→西)に移動
-            // Three.jsの+Y回転は「反時計回り(東へ)」
-            // Three.jsの-Y回転は「時計回り(西へ)」
-            
-            // つまり、時間が進む(Future) = 星は西へ = 回転角はマイナスになるべき
-            // baseRotation - rotation
+            // Rotation Logic v3.6 (Correct direction)
+            // Time Future -> Stars West -> Rotation Negative
+            // v3.6 Fix: (baseRotation - rotation) is correct for Moving West.
+            // But we changed baseRotation in v3.7 to be flipped.
+            // Does the logic change? No. Relative motion is the same.
             
             const rotationDelta = (Math.PI * 2) * deltaDays * (1 + 1/365.25);
-            
-            // 修正 (v3.6): 
-            // 16:00 (過去) の場合、deltaDaysはマイナス。rotationDeltaもマイナス。
-            // 式: base - (minus) = base + plus = 東へ戻る (正解)
-            // 22:00 (未来) の場合、deltaDaysはプラス。rotationDeltaもプラス。
-            // 式: base - (plus) = base - plus = 西へ進む (正解)
             
             celestialGroup.rotation.y = CONFIG.baseRotation - rotationDelta;
         }
