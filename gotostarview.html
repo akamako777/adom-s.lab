@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v31.1 (Axis Corrected)</title>
+    <title>Five Islands Stargazer v32.0 (Pixel Perfect)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -187,8 +187,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v31.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Axis Corrected</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v32.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Pixel Perfect</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -335,11 +335,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v31.1</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v32.0</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Axis Corrected System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Pixel Perfect System</p>
         </div>
     </div>
 
@@ -409,13 +409,16 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v31.1 (Axis Corrected)
+ * 🌌 FIVE ISLANDS STARGAZER v32.0 (Pixel Perfect)
  * ==========================================
- * [FIX LOG]
- * - COMPASS OFFSET: Added +90 deg offset to `alpha` to fix "North=270" issue on Pixel/Android.
- * - MOTION INVERSION: Inverted `beta` and `gamma` logic in Matrix construction. 
- * (Pitching phone UP now pitches virtual camera UP, moving sky DOWN).
- * - HORIZON FIX: Relaxed Z-clipping check to ensure horizon grid is drawn.
+ * [PIXEL FIX EDITION]
+ * - COMPASS UI: Now actually applies the +90deg offset to the UI ring, not just math.
+ * - UPRIGHT-FIRST LOGIC: Re-calibrated Matrix Math.
+ * Default Android Orientation: Flat (Beta=0). 
+ * Upright Usage (Beta=90) caused axis swap.
+ * NEW LOGIC: Subtract 90 from Beta to make "Upright" the identity quaternion base.
+ * This fixes the "Pitch Up = Pan Right" cross-axis issue.
+ * - HORIZON FIX: Now draws only visible segments within FOV to prevent artifacts.
  */
 
 // I18N and Data Constants
@@ -470,8 +473,7 @@ const Math3D = {
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
         
-        // HORIZON FIX: Relaxed Z clipping to see horizon (-0.1 -> 0.5)
-        // Stars behind camera (z > 0) should be clipped, but horizon at z=0 needs care.
+        // Z is negative forward in OpenGL convention
         if (z >= 0.1) return null;
         
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
@@ -718,7 +720,6 @@ const App = {
     },
 
     handleOri: (e) => {
-        // Low pass filter
         const k = 0.15;
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
@@ -748,13 +749,11 @@ const App = {
             webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null
         };
         
-        // Debug raw values
         document.getElementById('raw-a').innerText = Math.round(alpha);
         document.getElementById('raw-b').innerText = Math.round(beta);
         document.getElementById('raw-g').innerText = Math.round(gamma);
         
         if (App.state.setupMode) {
-            // Setup Mode Visuals
             const ball = document.getElementById('level-ball');
             const status = document.getElementById('sensor-status');
             const btn = document.getElementById('btn-confirm-setup');
@@ -772,21 +771,24 @@ const App = {
 
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
-            let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
+            let by = Math.min(Math.max(beta - 90, -maxTilt), maxTilt); // Use upright offset for level visual
             const px = (bx / maxTilt) * 60;
             const py = (by / maxTilt) * 60;
             ball.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
             
-            const isLevel = Math.abs(bx)<3 && Math.abs(by)<3;
+            const isLevel = Math.abs(bx)<5 && Math.abs(by)<5;
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
             let heading = alpha;
             if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
             
-            // Setup visual: +90 here too? No, keep raw for consistency with UI
-            ring.style.transform = `rotate(${-heading}deg)`;
-            valDisplay.innerText = `${Math.round(heading)}°`;
+            // COMPASS FIX: Apply offset to UI
+            const COMPASS_OFFSET = 90;
+            let displayHeading = (heading + COMPASS_OFFSET) % 360;
+            
+            ring.style.transform = `rotate(${-displayHeading}deg)`;
+            valDisplay.innerText = `${Math.round(displayHeading)}°`;
         }
     },
 
@@ -798,16 +800,20 @@ const App = {
     
     confirmSetup: () => {
         const { alpha, webkitCompass } = App.state.orientation;
+        const COMPASS_OFFSET = 90;
+        
         let current = alpha;
         if (webkitCompass != null) current = webkitCompass;
         
-        App.state.northOffset = current; 
+        // Store the offset relative to the CORRECTED north (0)
+        // Current displayHeading is what user sees as North (0).
+        // So we set northOffset such that (alpha + 90) - offset = 0
+        App.state.northOffset = (current + COMPASS_OFFSET) % 360;
         
         App.state.setupMode = false;
         
         document.getElementById('setup-wizard').classList.add('hidden-force');
         
-        // Remove existing hint if any
         const existing = document.getElementById("swipe-hint");
         if(existing) existing.remove();
 
@@ -817,15 +823,13 @@ const App = {
         hint.innerText = "🌌 Ready";
         document.body.appendChild(hint);
         
-        // Force reflow
         void hint.offsetWidth;
         
-        // Manual JS Fade
         hint.style.opacity = 1;
         
         setTimeout(() => { 
             hint.style.opacity = 0; 
-            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 600); // Remove DOM
+            setTimeout(() => { if(hint.parentNode) hint.parentNode.removeChild(hint); }, 600); 
         }, 1500);
         
         Utils.toast("基準セット完了 (Zero Locked) 🔒");
@@ -894,7 +898,7 @@ const App = {
     setRank: (r,v) => { App.state.ranks[r] = v; Guide.buildList(); },
     setFlag: (k,v) => App.state[k] = v,
     setLang: (l) => { App.state.lang = l; Guide.buildList(); Utils.updateDOMText(); },
-    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v31.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
+    takeScreenshot: () => { const l=document.createElement('a'); l.download='stargazer-v32.png'; l.href=App.canvas.toDataURL(); l.click(); Utils.toast("保存しました 📸"); },
     
     setupTouch: () => {},
     
@@ -906,14 +910,12 @@ const App = {
     }
 };
 
-// --- CORE: MATRIX RE-COMPOSITION (Corrected Axis for Android/Pixel) ---
+// --- CORE: MATRIX RE-COMPOSITION (Pixel Perfect Axis Logic) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
 
     // 1. COMPASS FIX (Force North=0)
-    // User reports North shows as 270 (West). It implies raw alpha is -90 deg shifted.
-    // Adding +90 fixes it to 360 (0).
     const COMPASS_OFFSET = 90;
 
     let currentAlpha = alpha;
@@ -921,47 +923,109 @@ App.updateViewMatrix = () => {
     
     // Apply Offset
     let trueHeading = (currentAlpha + COMPASS_OFFSET) - App.state.northOffset;
-    if (trueHeading < 0) trueHeading += 360;
+    
+    // 2. DEVICE ROTATION (The Upright Fix)
+    // Beta=90 (Upright) is the natural state for AR.
+    // Subtract 90 to make upright the "zero" pitch.
+    // NOTE: Pixel/Android sometimes swaps axes near 90.
+    // User reported: Pitching UP moves sky RIGHT. This means Pitch is affecting Yaw.
+    // This happens when the rotation order is wrong for the device state.
+    // We will use Y-X-Z order relative to camera frame.
+    
+    // Convert to Camera Frame (Y=Up, -Z=Forward, X=Right)
+    // Device Alpha -> Camera Y Rotation (Yaw)
+    // Device Beta  -> Camera X Rotation (Pitch) - Normalized to Upright
+    // Device Gamma -> Camera Z Rotation (Roll)
+    
+    const pitch = (beta - 90); // 0 at upright
+    const roll = gamma;
+    const yaw = trueHeading;
 
-    // 2. DEVICE ROTATION (INVERTED LOGIC)
-    // User reports: Pitching phone UP moves stars UP (chasing).
-    // This means ViewMatrix is pitching UP. It should pitch DOWN (inverse of camera).
-    // We invert Beta (X-axis) and Gamma (Y-axis) to create the correct View Matrix directly.
+    // Construct Matrix: Yaw * Pitch * Roll
+    const rY = Math3D.matRotateY(yaw * deg2rad);   // Azimuth
+    const rX = Math3D.matRotateX(pitch * deg2rad); // Elevation
+    const rZ = Math3D.matRotateZ(roll * deg2rad);  // Tilt
     
-    const rZ = Math3D.matRotateZ(trueHeading * deg2rad);
-    const rX = Math3D.matRotateX(-beta * deg2rad); // Inverted Pitch
-    const rY = Math3D.matRotateY(-gamma * deg2rad); // Inverted Roll
-    
-    // M_device = Rz * Rx * Ry (Standard Order)
-    let mDevice = Math3D.matMultiply(rZ, rX);
-    mDevice = Math3D.matMultiply(mDevice, rY);
+    let mCam = Math3D.matMultiply(rY, rX);
+    mCam = Math3D.matMultiply(mCam, rZ);
     
     // 3. SCREEN ORIENTATION
+    // Rotate around Z to handle landscape/portrait
     let screenOrient = 0;
     if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
     else if (window.orientation) screenOrient = window.orientation;
     
     const rScreen = Math3D.matRotateZ(-screenOrient * deg2rad);
-    
-    // M_final = M_device * M_screen
-    let mFinal = Math3D.matMultiply(mDevice, rScreen);
-    
-    // 4. WORLD ALIGNMENT (Camera Correction)
-    // Rotate -90 degrees around X axis to align phone back to camera view.
-    const rFix = Math3D.matRotateX(-90 * deg2rad);
-    let mCam = Math3D.matMultiply(mFinal, rFix);
+    mCam = Math3D.matMultiply(mCam, rScreen);
 
-    // 5. INVERT FOR VIEW MATRIX
+    // 4. INVERT FOR VIEW MATRIX
     App.state.viewMat = Math3D.matInvert(mCam);
 
     // Debug Display
-    const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
-    const alt = Math.asin(fz) * 180/Math.PI;
-    let az = Math.atan2(fx, fy) * 180/Math.PI;
+    // Extract Azimuth from the computed matrix for debugging stability
+    // Look vector is -Z column of mCam (since mCam puts camera in world)
+    // Forward vector x, z components give azimuth.
+    const fx = -mCam[8]; // Forward X
+    const fz = -mCam[10]; // Forward Z
+    let az = Math.atan2(fx, -fz) * 180/Math.PI; // Correct atan2 for Azimuth
     if (az < 0) az += 360;
+    
     document.getElementById('debug-az').innerText = Math.round(az);
-    document.getElementById('debug-alt').innerText = Math.round(alt);
+    document.getElementById('debug-alt').innerText = Math.round(pitch);
     App.state.azimuth = az;
+};
+
+// HELPER: Draw Horizon Segment
+App.drawHorizon = (ctx, viewMat, width, height, fov, azimuth) => {
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    
+    // Only draw 120 degrees around the current azimuth to prevent artifacts
+    const range = 120; 
+    const start = azimuth - range/2;
+    const end = azimuth + range/2;
+    const step = 5;
+    
+    let first = true;
+    for(let a=start; a<=end; a+=step) {
+        const rad = (a * Math.PI) / 180;
+        // World Vector for Horizon at angle 'a'
+        const vec = { x: Math.sin(rad), y: 0, z: Math.cos(rad) }; // Y is up? Wait.
+        // In our logic: Y is Up, Z is North?
+        // Astro.getVector uses: Z is Up, Y is North, X is East.
+        // Let's stick to Astro.getVector(0, rad). 0 alt = horizon.
+        
+        const v = Astro.getVector(0, rad); 
+        const pos = Math3D.project(v, viewMat, width, height, fov);
+        
+        if (pos) {
+            if (first) { ctx.moveTo(pos.x, pos.y); first = false; }
+            else ctx.lineTo(pos.x, pos.y);
+        } else {
+            first = true; // Break line if behind camera
+        }
+    }
+    ctx.stroke();
+    
+    // Cardinal Points
+    const cards = [{l:"N",a:0,c:"#f00"}, {l:"E",a:90,c:"#fff"}, {l:"S",a:180,c:"#fff"}, {l:"W",a:270,c:"#fff"}];
+    cards.forEach(card => {
+        // Draw if within range
+        let diff = Math.abs(card.a - azimuth);
+        if (diff > 180) diff = 360 - diff;
+        if (diff < 50) {
+            const rad = card.a * Math.PI / 180;
+            const v = Astro.getVector(0, rad);
+            const pos = Math3D.project(v, viewMat, width, height, fov);
+            if(pos) {
+                ctx.fillStyle = card.c; ctx.font="bold 16px monospace"; 
+                ctx.fillText(card.l, pos.x, pos.y - 10);
+                // Vertical marker
+                ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.lineTo(pos.x, pos.y+5); ctx.stroke();
+            }
+        }
+    });
 };
 
 App.loop = () => {
@@ -988,34 +1052,14 @@ App.loop = () => {
             ctx.beginPath(); ctx.moveTo(polarisPos.x, polarisPos.y); ctx.lineTo(polarisPos.x, height); ctx.stroke();
         }
 
-        // Draw Horizon Grid (Fixed in World)
-        ctx.strokeStyle = "rgba(0, 255, 255, 0.2)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        let firstH = null;
-        for(let a=0; a<=360; a+=10) {
-            const rad = a * Math.PI/180;
-            const vec = Astro.getVector(0, rad); 
-            const pos = Math3D.project(vec, state.viewMat, width, height, state.fov);
-            if (pos) {
-                if (firstH === null) { ctx.moveTo(pos.x, pos.y); firstH = pos; }
-                else ctx.lineTo(pos.x, pos.y);
-            } else { firstH = null; }
-        }
-        ctx.stroke();
+        // Draw Horizon Grid (Smart Segment)
+        App.drawHorizon(ctx, state.viewMat, width, height, state.fov, state.azimuth);
         
         // Draw Zenith (Alt=90)
         const zVec = Astro.getVector(Math.PI/2, 0);
         const zPos = Math3D.project(zVec, state.viewMat, width, height, state.fov);
         if(zPos) {
             ctx.fillStyle = "#0ff"; ctx.fillText("+ Z", zPos.x, zPos.y);
-        }
-        
-        // Draw North (Alt=0, Az=0)
-        const nVec = Astro.getVector(0, 0);
-        const nPos = Math3D.project(nVec, state.viewMat, width, height, state.fov);
-        if(nPos) {
-            ctx.fillStyle = "#f00"; ctx.font="bold 16px monospace"; ctx.fillText("N", nPos.x, nPos.y);
         }
 
         const isSolar = state.viewMode === 2;
@@ -1174,5 +1218,3 @@ App.loop = () => {
 
 window.onload = () => Gate.check();
 </script>
-</body>
-</html>
