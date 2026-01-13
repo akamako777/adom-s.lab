@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v2.0</title>
+    <title>Star Compass v2.1</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -87,54 +87,88 @@
             z-index: 50;
         }
         .hud-top { padding: 15px; display: flex; justify-content: space-between; pointer-events: auto; }
-        .hud-bottom { padding: 20px 20px 40px 20px; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; align-items: center; }
         
+        /* HUD Bottom Layout Update */
+        .hud-bottom { 
+            padding: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+            pointer-events: auto; 
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+        
+        .control-panel {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            background: rgba(255,255,255,0.1); padding: 10px; border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .control-row { display: flex; align-items: center; gap: 10px; }
+        .control-label { font-size: 10px; color: #aaa; margin-bottom: 5px; }
+
         .round-btn {
-            width: 50px; height: 50px; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.3);
-            color: white; font-size: 20px; display: flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3);
+            color: white; font-size: 18px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; backdrop-filter: blur(4px);
         }
+        .round-btn:active { background: rgba(255,255,255,0.5); }
 
-        /* Zoom Slider */
+        /* Zoom Slider Vertical? No, stick to horizontal for now but compact */
         .zoom-container {
-            width: 80%; max-width: 300px;
-            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.3);
-            display: flex; align-items: center; gap: 10px;
+            width: 120px;
+            display: flex; align-items: center; gap: 5px;
         }
-        .zoom-container span { font-size: 12px; color: #aaa; }
         input[type=range] {
             flex-grow: 1; -webkit-appearance: none; background: transparent;
         }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 20px; width: 20px;
-            border-radius: 50%; background: #fff; cursor: pointer; margin-top: -8px;
+            -webkit-appearance: none; height: 16px; width: 16px;
+            border-radius: 50%; background: #fff; cursor: pointer; margin-top: -6px;
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%; height: 4px; cursor: pointer; background: #aaa; border-radius: 2px;
         }
 
-        /* PC Warning */
+        /* PC Warning - Rich Design */
         #pc-warning {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; z-index: 10000; color: #fff;
+            background: radial-gradient(circle at 50% 100%, #1a2a6c, #000), linear-gradient(to top, #000428, #004e92);
+            z-index: 10000; color: #fff;
             flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
+        #pc-warning h1 { 
+            font-size: 3rem; margin-bottom: 10px; 
+            text-shadow: 0 0 20px #0ff;
+        }
+        #qr-box {
+            background: rgba(255,255,255,0.9); padding: 15px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 30px;
+        }
+        #qr-container img { display: block; border-radius: 5px; }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <!-- PC Warning -->
+    <!-- PC Warning (Rich) -->
     <div id="pc-warning">
-        <h1>スマホでみてね！</h1>
-        <div id="qr-container" style="background:#fff; padding:10px; margin:20px; border-radius:10px;"></div>
+        <h1>Star Compass 🌌</h1>
+        <p style="font-size: 1.2rem; opacity: 0.9;">スマホをかざして、星を探そう</p>
+        
+        <div id="qr-box">
+            <div id="qr-container"></div>
+        </div>
+        
+        <p style="font-size: 0.9rem; opacity: 0.7;">
+            お手持ちのスマートフォンで<br>QRコードを読み取ってください
+        </p>
     </div>
 
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay">
-        <h1>星空コンパス<br><span style="font-size:1rem; opacity:0.8;">v2.0 冬の星空編</span></h1>
+        <h1>星空コンパス<br><span style="font-size:1rem; opacity:0.8;">v2.1 冬の星空編</span></h1>
         <button id="btn-start" class="btn-style btn-accent" style="margin-top:30px; font-size:1.5rem;">スタート！</button>
         <p style="font-size:0.8rem; margin-top:20px; opacity:0.7;">
             ※「許可」を聞かれたらOKしてね
@@ -150,10 +184,15 @@
         </div>
         
         <div style="text-align: center;">
+            <p style="font-size:0.8rem; color:#ffdddd; background:rgba(255,0,0,0.3); padding:5px; border-radius:5px; margin-bottom:15px;">
+                ※機種によって方位磁針が90°ずれたりします。<br>
+                その場合は下のボタンで方位磁針を正しく調整してください
+            </p>
+
             <p style="font-size:0.9rem; color:#ddd;">ズレてたら調整</p>
             <div class="calib-controls">
                 <button id="btn-calib-minus90" class="round-btn">↶</button>
-                <span id="calib-offset-val" style="font-weight:bold; font-size:18px;">0°</span>
+                <span id="calib-offset-val" style="font-weight:bold; font-size:18px;">90°</span>
                 <button id="btn-calib-plus90" class="round-btn">↷</button>
             </div>
             <button id="btn-set-north" class="btn-style btn-accent" style="width: 200px;">ここが 北だ！</button>
@@ -175,21 +214,33 @@
         </div>
 
         <div class="hud-bottom">
-            <!-- Manual Offset -->
-            <div style="display:flex; gap:20px; align-items:center;">
-                <button id="btn-minus90" class="round-btn">↶</button>
-                <div style="text-align:center;">
-                    <span style="font-size:10px; display:block;">補正</span>
-                    <span id="offset-val" style="font-weight:bold;">0°</span>
+            <!-- Left: Heading -->
+            <div class="control-panel">
+                <div class="control-label">方位調整</div>
+                <div class="control-row">
+                    <button id="btn-minus90" class="round-btn">↶</button>
+                    <span id="offset-val" style="font-weight:bold; font-size:14px; min-width:30px; text-align:center;">90°</span>
+                    <button id="btn-plus90" class="round-btn">↷</button>
                 </div>
-                <button id="btn-plus90" class="round-btn">↷</button>
             </div>
             
-            <!-- Zoom Slider -->
-            <div class="zoom-container">
-                <span>広角</span>
-                <input type="range" id="zoom-slider" min="30" max="100" value="70">
-                <span>望遠</span>
+            <!-- Center: Zoom -->
+            <div class="control-panel">
+                <div class="control-label">ズーム</div>
+                <div class="zoom-container">
+                    <span style="font-size:10px;">広</span>
+                    <input type="range" id="zoom-slider" min="30" max="100" value="70">
+                    <span style="font-size:10px;">遠</span>
+                </div>
+            </div>
+
+            <!-- Right: Time Travel -->
+            <div class="control-panel">
+                <div class="control-label">時間旅行</div>
+                <div class="control-row">
+                    <button id="btn-time-back" class="round-btn">⏪</button>
+                    <button id="btn-time-fwd" class="round-btn">⏩</button>
+                </div>
             </div>
         </div>
     </div>
@@ -198,97 +249,51 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V2.0
-         * Core: Accurate Celestial Coordinates (RA/Dec)
-         * Data: Separated DB Structure
+         * 🌌 STAR COMPASS ENGINE V2.1
+         * Feature: Anti-Shake (Slerp), Default +90 Offset, Time Travel UI
          */
 
-        // --- 0. Database (The Truth) ---
-        
-        // ★ 北極星 (Polaris) 基準座標 ★
-        // RA(赤経): 2.53h (約38度)
-        // Dec(赤緯): +89.26度 (ほぼ天の北極)
-        // ※この座標は createCelestialSphere 内で使用されます
-
+        // --- 0. Database ---
         const STAR_DB = {
-            // --- 北極星 (Anchor) ---
             "polaris": { ra: 2.53, dec: 89.26, mag: 1.97, color: 0xFFFFCC, size: 1.5, name: "北極星" },
-
-            // --- オリオン座 (Orion) ---
             "betelgeuse": { ra: 5.92, dec: 7.41, mag: 0.45, color: 0xFF8866, size: 1.2, name: "ベテルギウス" },
             "rigel":      { ra: 5.24, dec: -8.20, mag: 0.12, color: 0xAACCFF, size: 1.2, name: "リゲル" },
             "bellatrix":  { ra: 5.42, dec: 6.35, mag: 1.64, color: 0xCCCCFF, size: 1.0 },
-            "mintaka":    { ra: 5.53, dec: -0.30, mag: 2.25, color: 0xCCCCFF, size: 0.9 }, // Belt 1
-            "alnilam":    { ra: 5.60, dec: -1.20, mag: 1.69, color: 0xCCCCFF, size: 0.9 }, // Belt 2
-            "alnitak":    { ra: 5.68, dec: -1.90, mag: 1.74, color: 0xCCCCFF, size: 0.9 }, // Belt 3
+            "mintaka":    { ra: 5.53, dec: -0.30, mag: 2.25, color: 0xCCCCFF, size: 0.9 },
+            "alnilam":    { ra: 5.60, dec: -1.20, mag: 1.69, color: 0xCCCCFF, size: 0.9 },
+            "alnitak":    { ra: 5.68, dec: -1.90, mag: 1.74, color: 0xCCCCFF, size: 0.9 },
             "saiph":      { ra: 5.79, dec: -9.65, mag: 2.07, color: 0xCCCCFF, size: 0.9 },
-
-            // --- おおいぬ座 (Canis Major) ---
-            "sirius":     { ra: 6.75, dec: -16.72, mag: -1.46, color: 0xFFFFFF, size: 1.8, name: "シリウス" }, // 全天一明るい
+            "sirius":     { ra: 6.75, dec: -16.72, mag: -1.46, color: 0xFFFFFF, size: 1.8, name: "シリウス" },
             "mirzam":     { ra: 6.38, dec: -17.96, mag: 1.98, color: 0xCCCCFF, size: 0.9 },
             "wezen":      { ra: 7.14, dec: -26.39, mag: 1.83, color: 0xFFFFDD, size: 0.9 },
             "adhara":     { ra: 6.98, dec: -28.97, mag: 1.50, color: 0xCCCCFF, size: 1.0 },
-
-            // --- こいぬ座 (Canis Minor) ---
             "procyon":    { ra: 7.65, dec: 5.21, mag: 0.34, color: 0xFFFFEE, size: 1.2, name: "プロキオン" },
             "gomeisa":    { ra: 7.45, dec: 8.29, mag: 2.89, color: 0xCCCCFF, size: 0.8 },
-
-            // --- おうし座 (Taurus) ---
             "aldebaran":  { ra: 4.60, dec: 16.51, mag: 0.87, color: 0xFFDDAA, size: 1.1, name: "アルデバラン" },
             "elnath":     { ra: 5.43, dec: 28.61, mag: 1.65, color: 0xCCCCFF, size: 1.0 },
-
-            // --- ふたご座 (Gemini) ---
             "pollux":     { ra: 7.76, dec: 28.03, mag: 1.14, color: 0xFFDDAA, size: 1.1, name: "ポルックス" },
             "castor":     { ra: 7.58, dec: 31.88, mag: 1.58, color: 0xFFFFFF, size: 1.1, name: "カストル" },
             "alhena":     { ra: 6.63, dec: 16.39, mag: 1.93, color: 0xFFFFFF, size: 1.0 },
-
-            // --- ぎょしゃ座 (Auriga) ---
             "capella":    { ra: 5.28, dec: 45.99, mag: 0.08, color: 0xFFFFDD, size: 1.2, name: "カペラ" },
             "menkalinan": { ra: 5.99, dec: 44.95, mag: 1.90, color: 0xCCCCFF, size: 0.9 }
         };
 
         const CONSTELLATION_DB = {
-            "orion": {
-                lines: [
-                    ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"],
-                    ["rigel", "saiph"], ["rigel", "mintaka"],
-                    ["bellatrix", "mintaka"], ["saiph", "alnitak"],
-                    ["mintaka", "alnilam"], ["alnilam", "alnitak"]
-                ]
-            },
-            "canis_major": {
-                lines: [ ["sirius", "mirzam"], ["sirius", "adhara"], ["wezen", "adhara"] ]
-            },
-            "canis_minor": {
-                lines: [ ["procyon", "gomeisa"] ]
-            },
-            "taurus": {
-                lines: [ ["aldebaran", "elnath"] ] // 簡易
-            },
-            "gemini": {
-                lines: [ ["pollux", "castor"], ["alhena", "pollux"] ] // 簡易
-            },
-            "auriga": {
-                lines: [ ["capella", "menkalinan"] ]
-            },
-            "winter_triangle": { // 冬の大三角
-                lines: [ ["betelgeuse", "sirius"], ["sirius", "procyon"], ["procyon", "betelgeuse"] ],
-                isSpecial: true
-            }
+            "orion": { lines: [ ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"] ] },
+            "canis_major": { lines: [ ["sirius", "mirzam"], ["sirius", "adhara"], ["wezen", "adhara"] ] },
+            "canis_minor": { lines: [ ["procyon", "gomeisa"] ] },
+            "taurus": { lines: [ ["aldebaran", "elnath"] ] },
+            "gemini": { lines: [ ["pollux", "castor"], ["alhena", "pollux"] ] },
+            "auriga": { lines: [ ["capella", "menkalinan"] ] },
+            "winter_triangle": { lines: [ ["betelgeuse", "sirius"], ["sirius", "procyon"], ["procyon", "betelgeuse"] ], isSpecial: true }
         };
 
         // --- Config ---
         const CONFIG = {
             defaultFov: 70,
             starDistance: 800,
-            userLat: 35.0, // 日本の標準的な緯度
-            // 冬のゴールデンタイム設定 (1月15日 20:00頃)
-            // この時刻、オリオン座(RA 5.5h)はほぼ南中(Azimuth 180)する。
-            // 恒星時(LST)は約4h〜5h。
-            // 天球の回転オフセット(度)。手動調整でオリオンを南に向ける値。
-            // RA 0h が 西(270) にあるとき、RA 6h は 南(180) にある。
-            // Three.jsの座標系で調整。
-            skyRotationOffset: Math.PI // 仮初期値
+            userLat: 35.0,
+            skyRotationOffset: Math.PI * 0.8
         };
 
         // --- State ---
@@ -296,8 +301,9 @@
             mode: 'INIT',
             isRunning: false,
             alphaOffset: 0,
-            manualOffset: 0,
-            raw: { alpha: 0, beta: 0, gamma: 0 }
+            manualOffset: 90, // Default +90 for Pixel
+            raw: { alpha: 0, beta: 0, gamma: 0 },
+            targetQuaternion: new THREE.Quaternion()
         };
 
         // --- Three.js Globals ---
@@ -330,13 +336,9 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // 1. Horizon (World Frame) - Fixed N/E/S/W
             createHorizon();
-
-            // 2. Celestial Sphere (Sky Frame) - Rotates based on time/lat
             createCelestialSphere();
 
-            // Resize
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
@@ -348,12 +350,9 @@
 
         function createHorizon() {
             horizonGroup = new THREE.Group();
-            
-            // Grid
             const grid = new THREE.PolarGridHelper(CONFIG.starDistance, 16, 8, 64, 0x004400, 0x002200);
             horizonGroup.add(grid);
 
-            // Labels
             addLabel(horizonGroup, "北 (N)", 0, 20, -CONFIG.starDistance + 50, "#ff7777");
             addLabel(horizonGroup, "南 (S)", 0, 20, CONFIG.starDistance - 50, "#55ff55");
             addLabel(horizonGroup, "東 (E)", CONFIG.starDistance - 50, 20, 0, "#55ff55");
@@ -365,50 +364,30 @@
         function createCelestialSphere() {
             celestialGroup = new THREE.Group();
 
-            // --- A. Plot Stars from STAR_DB ---
-            const starMeshes = {}; // ID -> Vector3 map for lines
-
+            const starMeshes = {};
             for (const [id, data] of Object.entries(STAR_DB)) {
-                // Convert RA/Dec to XYZ on Sphere
-                // Dec: +90 is North Celestial Pole (Y axis in Celestial Group)
-                // RA: 0h..24h around Y axis
-                
                 const r = CONFIG.starDistance;
                 const decRad = data.dec * (Math.PI / 180);
                 const raRad = (data.ra / 24) * (Math.PI * 2);
-
-                // Spherical to Cartesian (Y-up is North Pole)
-                // X = R cos(dec) sin(ra)
-                // Y = R sin(dec)
-                // Z = R cos(dec) cos(ra)
-                // ※ RAの回転方向は天球の内側から見て時計回り(東→西)になるよう調整が必要
-                // 通常: RAが増えると東へ行く
 
                 const y = r * Math.sin(decRad);
                 const x = r * Math.cos(decRad) * Math.sin(raRad);
                 const z = r * Math.cos(decRad) * Math.cos(raRad);
 
-                const geo = new THREE.SphereGeometry(data.size * 2, 8, 8); // Size adjusted to 1.0x visual feel
+                const geo = new THREE.SphereGeometry(data.size * 2, 8, 8);
                 const mat = new THREE.MeshBasicMaterial({ color: data.color });
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(x, y, z);
                 
                 celestialGroup.add(mesh);
                 starMeshes[id] = mesh.position;
-
-                // Add Name Label if exists
-                if (data.name) {
-                    // Simple sprite label could go here, omitting for clean view in Phase 1
-                }
             }
 
-            // --- B. Draw Lines from CONSTELLATION_DB ---
             const lineMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 });
             const specialLineMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.6 });
 
             for (const [cstId, cstData] of Object.entries(CONSTELLATION_DB)) {
                 const mat = cstData.isSpecial ? specialLineMat : lineMat;
-                
                 cstData.lines.forEach(pair => {
                     const p1 = starMeshes[pair[0]];
                     const p2 = starMeshes[pair[1]];
@@ -419,24 +398,10 @@
                 });
             }
 
-            // --- C. Tilt & Rotate the Universe ---
-            // 1. Tilt Axis based on Latitude
-            // 天の北極(Y)を、北(Z-)の上空(Lat度)に向ける
-            // Lat=35度なら、北の地平線から35度上。
-            // World Frameでは、北は -Z。天頂は Y。
-            // 軸を X軸周りに -(90 - Lat) 回転させる。
             const latRad = CONFIG.userLat * (Math.PI / 180);
             const tiltAngle = -(Math.PI / 2 - latRad);
-            
-            // グループ全体を傾ける
             celestialGroup.rotation.x = tiltAngle;
-
-            // 2. Rotate for "Golden Time" (Sidereal Time Adjustment)
-            // オリオン(RA 5.5h)を南(World +Z)に向けたい。
-            // Celestial Frameで RA 5.5h の星は (sin(5.5h), ..., cos(5.5h)) にある。
-            // これを回転させて合わせる。
-            // 調整値: 目視でオリオンが南に来るように設定 (Phase 1 Hack)
-            celestialGroup.rotation.y = Math.PI * 0.8; // 調整値
+            celestialGroup.rotation.y = CONFIG.skyRotationOffset;
 
             scene.add(celestialGroup);
         }
@@ -456,7 +421,7 @@
             group.add(sprite);
         }
 
-        // --- Sensor Logic (Stable v1.3) ---
+        // --- Sensor Logic with Smoothing ---
 
         function handleOrientation(e) {
             state.raw = { 
@@ -465,12 +430,9 @@
                 gamma: e.gamma || 0 
             };
             
-            if (!camera) return;
-
             // Calc Total Offset
             const finalAlpha = state.raw.alpha + state.alphaOffset + state.manualOffset;
             
-            // Euler Order YXZ
             const deg2rad = Math.PI / 180;
             const eu = new THREE.Euler(
                 state.raw.beta * deg2rad,
@@ -480,24 +442,11 @@
             );
             
             const q = new THREE.Quaternion().setFromEuler(eu);
-            // Fix Landscape/Portrait camera orientation
             const qFix = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
             q.multiply(qFix);
 
-            camera.quaternion.copy(q);
-        }
-
-        // --- Zoom Logic ---
-        function updateZoom(val) {
-            if (!camera) return;
-            // Slider value 30(Wide) to 100(Tele) -> FOV mapping
-            // Higher slider = Lower FOV (Tele)
-            // Slider 30 -> FOV 90
-            // Slider 100 -> FOV 30
-            // Mapping: fov = 115 - val * 0.85 approx
-            const fov = 120 - (val * 0.9);
-            camera.fov = fov;
-            camera.updateProjectionMatrix();
+            // Update Target (Don't set camera directly)
+            state.targetQuaternion.copy(q);
         }
 
         // --- UI Flows ---
@@ -519,7 +468,20 @@
 
             // ZOOM
             const slider = document.getElementById('zoom-slider');
-            slider.addEventListener('input', (e) => updateZoom(e.target.value));
+            slider.addEventListener('input', (e) => {
+                if (!camera) return;
+                const fov = 120 - (e.target.value * 0.9);
+                camera.fov = fov;
+                camera.updateProjectionMatrix();
+            });
+            
+            // TIME TRAVEL
+            document.getElementById('btn-time-back').addEventListener('click', () => {
+                if (celestialGroup) celestialGroup.rotation.y -= 0.1; // Rotate East
+            });
+            document.getElementById('btn-time-fwd').addEventListener('click', () => {
+                if (celestialGroup) celestialGroup.rotation.y += 0.1; // Rotate West
+            });
         });
 
         function startCalib() {
@@ -537,23 +499,23 @@
             document.getElementById('offset-val').innerText = txt;
         }
 
-        document.getElementById('btn-calib-minus90').addEventListener('click', () => {
-            state.manualOffset -= 15; updateOffsetDisplay();
-        });
-        document.getElementById('btn-calib-plus90').addEventListener('click', () => {
-            state.manualOffset += 15; updateOffsetDisplay();
-        });
-        document.getElementById('btn-minus90').addEventListener('click', () => {
-            state.manualOffset -= 15; updateOffsetDisplay();
-        });
-        document.getElementById('btn-plus90').addEventListener('click', () => {
-            state.manualOffset += 15; updateOffsetDisplay();
-        });
+        const adjustOffset = (amount) => {
+            state.manualOffset += amount; 
+            updateOffsetDisplay();
+        };
+
+        document.getElementById('btn-calib-minus90').addEventListener('click', () => adjustOffset(-15));
+        document.getElementById('btn-calib-plus90').addEventListener('click', () => adjustOffset(15));
+        document.getElementById('btn-minus90').addEventListener('click', () => adjustOffset(-15));
+        document.getElementById('btn-plus90').addEventListener('click', () => adjustOffset(15));
 
         document.getElementById('btn-set-north').addEventListener('click', () => {
-            // Set current heading as North
             state.alphaOffset = -(state.raw.alpha + state.manualOffset);
-            state.manualOffset = 0;
+            state.manualOffset = 0; // Reset manual after baking it in? 
+            // NOTE: User requested default +90. If we reset here, it might get confusing.
+            // Let's keep manualOffset active for UI consistency, or bake it.
+            // Baking logic: alphaOffset absorbs everything. manualOffset becomes 0 (UI).
+            // But if user wants to keep +90 visible... let's just bake it to be clean.
             updateOffsetDisplay();
             
             document.getElementById('calibration-screen').classList.add('hidden');
@@ -569,7 +531,13 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if(renderer && scene) renderer.render(scene, camera);
+            if(renderer && scene && camera) {
+                // Anti-Shake: Slerp towards target
+                if (state.isRunning) {
+                    camera.quaternion.slerp(state.targetQuaternion, 0.15); // Factor 0.15 = Smooth but responsive
+                }
+                renderer.render(scene, camera);
+            }
         }
 
     </script>
