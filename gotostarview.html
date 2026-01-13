@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v40.0 (Cosmic Anchor)</title>
+    <title>Five Islands Stargazer v41.0 (Restored)</title>
     
-    <!-- Tailwind CSS (CDN for standalone) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Google Fonts -->
@@ -56,7 +56,7 @@
         /* Smart Bubble */
         .info-bubble {
             position: absolute;
-            transition: opacity 0.3s, transform 0.15s linear; /* Smooth follow */
+            transition: opacity 0.3s, transform 0.15s linear;
             will-change: transform, left, top;
         }
         .bubble-tail {
@@ -64,6 +64,15 @@
             width: 0; height: 0; 
             border-left: 8px solid transparent; border-right: 8px solid transparent;
             border-top: 8px solid rgba(15, 23, 42, 0.9);
+        }
+
+        /* 🚪 PC Gate (z-index increased to cover setup wizard) */
+        #star-gate {
+            position: fixed; inset: 0; z-index: 200; /* Higher than setup-wizard(100) */
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: flex-start;
+            overflow-y: auto; padding-top: 10vh; padding-bottom: 40px;
         }
 
         /* Calibration Modal */
@@ -75,20 +84,42 @@
         }
         #setup-wizard.hidden-force { opacity: 0; visibility: hidden; pointer-events: none; }
         
-        /* Level Bubble Viz */
+        /* Compass Viz */
+        .compass-container {
+            position: relative; width: 220px; height: 220px; margin-bottom: 20px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .compass-ring {
+            position: absolute; inset: 0; border: 2px solid #475569; border-radius: 50%;
+            transition: transform 0.1s ease-out;
+        }
+        .compass-mark {
+            position: absolute; font-weight: bold; font-family: 'Share Tech Mono', monospace; font-size: 16px;
+            color: #94a3b8; width: 20px; height: 20px; text-align: center; line-height: 20px;
+        }
+        .mark-n { top: 5px; left: 50%; transform: translateX(-50%); color: #ef4444; }
+        .mark-e { right: 5px; top: 50%; transform: translateY(-50%); }
+        .mark-s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .mark-w { left: 5px; top: 50%; transform: translateY(-50%); }
+
         .level-bubble {
-            width: 160px; height: 160px; border: 4px solid #475569; border-radius: 50%;
-            position: relative; overflow: hidden; background: #0f172a; margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            width: 140px; height: 140px; border: 4px solid #334155; border-radius: 50%;
+            position: relative; overflow: hidden; background: #0f172a; z-index: 10;
         }
         .level-target {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 20px; height: 20px; border: 2px solid #22d3ee; border-radius: 50%; z-index: 10;
         }
         .level-ball {
-            position: absolute; top: 50%; left: 50%; width: 36px; height: 36px;
+            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px;
             background: #ef4444; border-radius: 50%; opacity: 0.8;
-            transform: translate(-50%, -50%); transition: transform 0.1s linear; /* Smooth visual */
+            transform: translate(-50%, -50%); transition: transform 0.1s linear;
+        }
+        .north-arrow {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-bottom: 20px solid #ef4444; opacity: 0.3; transition: opacity 0.3s;
         }
         .level-ok .level-ball { background: #22c55e; box-shadow: 0 0 15px #22c55e; }
 
@@ -104,7 +135,6 @@
         }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
 
-        /* Animations */
         @keyframes swipe-anim { 0% { opacity: 0; transform: translateX(-10px); } 50% { opacity: 1; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-10px); } }
         .swipe-hint { animation: swipe-anim 2s infinite; }
         
@@ -116,12 +146,12 @@
 </head>
 <body>
 
-    <!-- 🚪 PC GATE -->
+    <!-- 🚪 PC GATE (z-index 200 to override Setup Wizard) -->
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v40.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Cosmic Anchor</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.0</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Restored Edition</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -223,9 +253,18 @@
                 </ol>
             </div>
             
-            <div class="level-bubble">
-                <div class="level-target"></div>
-                <div id="level-ball" class="level-ball"></div>
+            <div id="compass-viz" class="compass-container">
+                <div class="north-arrow"></div>
+                <div id="compass-ring" class="compass-ring">
+                    <div class="compass-mark mark-n">N</div>
+                    <div class="compass-mark mark-e">E</div>
+                    <div class="compass-mark mark-s">S</div>
+                    <div class="compass-mark mark-w">W</div>
+                </div>
+                <div class="level-bubble">
+                    <div class="level-target"></div>
+                    <div id="level-ball" class="level-ball"></div>
+                </div>
             </div>
             
             <div class="flex flex-col items-center mb-6">
@@ -282,7 +321,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">🌌</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v40.0 COSMIC ANCHOR</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.0 RESTORED</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START
             </button>
@@ -294,24 +333,141 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v40.0 (Cosmic Anchor)
+ * 🌌 FIVE ISLANDS STARGAZER v41.0 (Restored Edition)
  * ==========================================
- * MATH CORE UPDATE:
- * - Implemented "Quaternion Anchor" strategy.
- * - Removed scalar offsets for heading.
- * - Uses "lerpAngle" for smooth butter-like tracking.
+ * FIXES:
+ * 1. PC Gate z-index fix (QR visible now).
+ * 2. Compass 90-degree offset correction.
+ * 3. Restored full constellation data (Descriptions & Myths).
  */
 
-// --- 0. DATASETS ---
+// --- 0. DATASETS (Restored Full Data) ---
 const RANK={FAMOUS:1,MEDIUM:2,MINOR:3,STAR_GAL:4};
 
-// Merged Database (Cleaned)
-const CONSTELLATION_DB=[{id:"ori",rank:1,name:"オリオン座",desc:"【冬の王者】三つ星が特徴的な星座。",centerRA:5.5,centerDec:-1.0,lines:["Betelgeuse","Alnitak","Bellatrix","Mintaka","Alnitak","Saiph","Mintaka","Rigel","Alnitak","Alnilam","Alnilam","Mintaka","Betelgeuse","Bellatrix","Saiph","Rigel","Betelgeuse","Meissa","Bellatrix","Meissa"]},{id:"sco",rank:1,name:"さそり座",desc:"【夏のS字】アンタレスが輝く。",centerRA:16.5,centerDec:-26.0,lines:["Antares","Dschubba","Dschubba","Graffias","Dschubba","Pi Sco","Antares","Wei","Antares","Tau Sco","Wei","Mu Sco","Mu Sco","Zeta Sco","Zeta Sco","Eta Sco","Eta Sco","Sargas","Sargas","Iota Sco","Iota Sco","Kappa Sco","Kappa Sco","Shaula","Shaula","Lesath"]},{id:"tau",rank:1,name:"おうし座",desc:"【冬のV字】アルデバランとすばる。",centerRA:4.5,centerDec:16.0,lines:["Aldebaran","Elnath","Aldebaran","Zeta Tau","Aldebaran","Ain","Ain","Hyadum I","Hyadum I","Delta Tau","Delta Tau","Aldebaran","Elnath","Zeta Tau"]},{id:"gem",rank:1,name:"ふたご座",desc:"【仲良し兄弟】カストルとポルックス。",centerRA:7.0,centerDec:22.0,lines:["Castor","Pollux","Castor","Mebsuta","Mebsuta","Tejat","Pollux","Wasat","Wasat","Alhena"]},{id:"leo",rank:1,name:"しし座",desc:"【春の鎌】レグルスが輝く。",centerRA:10.5,centerDec:15.0,lines:["Regulus","Algieba","Algieba","Adhafera","Adhafera","Rasalas","Regulus","Chertan","Chertan","Zosma","Zosma","Denebola","Algieba","Zosma"]},{id:"vir",rank:1,name:"おとめ座",desc:"【春の女神】スピカが輝く。",centerRA:13.3,centerDec:-2.0,lines:["Spica","Heze","Spica","Porrima","Porrima","Auva","Auva","Zavijava","Porrima","Vindemiatrix","Vindemiatrix","Zavijava"]},{id:"uma",rank:1,name:"おおぐま座",desc:"【北斗七星】北極星を見つける鍵。",centerRA:11.5,centerDec:50.0,lines:["Dubhe","Merak","Merak","Phecda","Phecda","Megrez","Megrez","Alioth","Alioth","Mizar","Mizar","Alkaid","Megrez","Dubhe","Phecda","Talitha","Talitha","Tania Borealis","Tania Borealis","Mu UMa"]},{id:"cas",rank:2,name:"カシオペヤ座",desc:"【北のW字】北極星を探す目印。",centerRA:1.0,centerDec:60.0,lines:["Caph","Schedar","Schedar","Gamma Cas","Gamma Cas","Ruchbah","Ruchbah","Segin"]},{id:"cyg",rank:2,name:"はくちょう座",desc:"【北十字】デネブを含む十字架。",centerRA:20.5,centerDec:42.0,lines:["Deneb","Sadr","Sadr","Albireo","Sadr","Gienah","Sadr","Delta Cyg"]},{id:"lyr",rank:2,name:"こと座",desc:"【七夕の星】ベガが輝く。",centerRA:18.8,centerDec:36.0,lines:["Vega","Sheliak","Sheliak","Sulafat","Sulafat","Delta Lyr","Delta Lyr","Vega"]},{id:"aql",rank:2,name:"わし座",desc:"【彦星】アルタイルが輝く。",centerRA:19.8,centerDec:3.0,lines:["Altair","Tarazed","Altair","Alshain","Altair","Delta Aql","Delta Aql","Zeta Aql"]},{id:"umi",rank:2,name:"こぐま座",desc:"【北極星】ポラリスがある。",centerRA:15.0,centerDec:75.0,lines:["Polaris","Yildun","Yildun","Zeta UMi","Zeta UMi","Eta UMi","Eta UMi","Pherkad","Pherkad","Kochab","Kochab","Zeta UMi"]},{id:"lep",rank:3,name:"うさぎ座",desc:"【オリオンの獲物】。",centerRA:5.5,centerDec:-20.0,lines:["Arneb","Nihal","Nihal","Epsilon Lep","Epsilon Lep","Mu Lep","Mu Lep","Arneb"]},{id:"cnc",rank:3,name:"かに座",desc:"【プレセペ星団】。",centerRA:8.5,centerDec:20.0,lines:["Acubens","Altarf","Asellus Australis","Asellus Borealis","Asellus Australis","Acubens"]},{id:"sirius",rank:4,name:"シリウス",desc:"【全天一】おおいぬ座。",centerRA:6.75,centerDec:-16.7,lines:[]},{id:"m45",rank:4,name:"すばる (M45)",desc:"【プレアデス星団】おうし座。",centerRA:3.8,centerDec:24.1,lines:[]}];
+const CONSTELLATION_DB = [
+    // --- 🦁 FAMOUS ---
+    { 
+        id: "ori", rank: 1, name: "オリオン座", en: "Orion", 
+        desc: "【冬の王者】三つ星が特徴的な星座。ベテルギウスは超新星爆発間近と言われています。", 
+        myth: "海の神ポセイドンの子。月の女神アルテミスと恋に落ちましたが、悲劇的な死を遂げました。",
+        centerRA: 5.5, centerDec: -1.0, 
+        lines: ["Betelgeuse","Alnitak","Bellatrix","Mintaka","Alnitak","Saiph","Mintaka","Rigel","Alnitak","Alnilam","Alnilam","Mintaka","Betelgeuse","Bellatrix","Saiph","Rigel","Betelgeuse","Meissa","Bellatrix","Meissa"] 
+    },
+    { 
+        id: "sco", rank: 1, name: "さそり座", en: "Scorpius", 
+        desc: "【夏のS字】南の空に大きく描かれるS字カーブ。赤い1等星アンタレスが心臓で輝きます。", 
+        myth: "オリオンを倒した猛毒のサソリ。オリオンが逃げるため、決して同じ空には現れません。",
+        centerRA: 16.5, centerDec: -26.0, 
+        lines: ["Antares","Dschubba","Dschubba","Graffias","Dschubba","Pi Sco","Antares","Wei","Antares","Tau Sco","Wei","Mu Sco","Mu Sco","Zeta Sco","Zeta Sco","Eta Sco","Eta Sco","Sargas","Sargas","Iota Sco","Iota Sco","Kappa Sco","Kappa Sco","Shaula","Shaula","Lesath"] 
+    },
+    { 
+        id: "tau", rank: 1, name: "おうし座", en: "Taurus", 
+        desc: "【冬のV字】赤いアルデバランと、美しいプレアデス星団（すばる）が特徴です。", 
+        myth: "ゼウスが王女エウロペを連れ去るために化けた白い牡牛の姿です。",
+        centerRA: 4.5, centerDec: 16.0, 
+        lines: ["Aldebaran","Elnath","Aldebaran","Zeta Tau","Aldebaran","Ain","Ain","Hyadum I","Hyadum I","Delta Tau","Delta Tau","Aldebaran","Elnath","Zeta Tau"] 
+    },
+    { 
+        id: "gem", rank: 1, name: "ふたご座", en: "Gemini", 
+        desc: "【仲良し兄弟】カストル（兄）とポルックス（弟）が並んで輝いています。", 
+        myth: "スパルタの王妃レダの息子たち。死後も離れぬよう、ゼウスが星座にしました。",
+        centerRA: 7.0, centerDec: 22.0, 
+        lines: ["Castor","Pollux","Castor","Mebsuta","Mebsuta","Tejat","Pollux","Wasat","Wasat","Alhena"] 
+    },
+    { 
+        id: "leo", rank: 1, name: "しし座", en: "Leo", 
+        desc: "【春の鎌】「？」を裏返したような頭部が特徴。1等星レグルスは「王」の意味。", 
+        myth: "ヘラクレスに退治されたネメアの森の人食いライオンです。",
+        centerRA: 10.5, centerDec: 15.0, 
+        lines: ["Regulus","Algieba","Algieba","Adhafera","Adhafera","Rasalas","Regulus","Chertan","Chertan","Zosma","Zosma","Denebola","Algieba","Zosma"] 
+    },
+    { 
+        id: "vir", rank: 1, name: "おとめ座", en: "Virgo", 
+        desc: "【春の女神】純白の1等星スピカ（麦の穂）が目印です。", 
+        myth: "正義の女神アストライア、または農業の女神デメテルと言われています。",
+        centerRA: 13.3, centerDec: -2.0, 
+        lines: ["Spica","Heze","Spica","Porrima","Porrima","Auva","Auva","Zavijava","Porrima","Vindemiatrix","Vindemiatrix","Zavijava"] 
+    },
+    { 
+        id: "uma", rank: 1, name: "おおぐま座", en: "Ursa Major", 
+        desc: "【北斗七星】ひしゃくの形をした北斗七星を含み、北極星を探す目印になります。", 
+        myth: "女神ヘラの怒りで熊に変えられたカリストの姿です。",
+        centerRA: 11.5, centerDec: 50.0, 
+        lines: ["Dubhe","Merak","Merak","Phecda","Phecda","Megrez","Megrez","Alioth","Alioth","Mizar","Mizar","Alkaid","Megrez","Dubhe","Phecda","Talitha","Talitha","Tania Borealis","Tania Borealis","Mu UMa"] 
+    },
+    { 
+        id: "cas", rank: 2, name: "カシオペヤ座", en: "Cassiopeia", 
+        desc: "【北のW字】北極星を探すための重要な目印。「W」または「M」の形。", 
+        myth: "娘の美しさを自慢しすぎて神の怒りを買い、椅子に縛られた王妃です。",
+        centerRA: 1.0, centerDec: 60.0, 
+        lines: ["Caph","Schedar","Schedar","Gamma Cas","Gamma Cas","Ruchbah","Ruchbah","Segin"] 
+    },
+    { 
+        id: "cyg", rank: 2, name: "はくちょう座", en: "Cygnus", 
+        desc: "【北十字】天の川の上を飛ぶ十字架の形。デネブは夏の大三角の一つ。", 
+        myth: "ゼウスがレダに近づくために変身した白鳥の姿です。",
+        centerRA: 20.5, centerDec: 42.0, 
+        lines: ["Deneb","Sadr","Sadr","Albireo","Sadr","Gienah","Sadr","Delta Cyg"] 
+    },
+    { 
+        id: "lyr", rank: 2, name: "こと座", en: "Lyra", 
+        desc: "【七夕の星】織姫星ベガが輝く小さな星座。平行四辺形が目印。", 
+        myth: "オルフェウスが奏でた竪琴。その音色は冥界の王すら涙させました。",
+        centerRA: 18.8, centerDec: 36.0, 
+        lines: ["Vega","Sheliak","Sheliak","Sulafat","Sulafat","Delta Lyr","Delta Lyr","Vega"] 
+    },
+    { 
+        id: "aql", rank: 2, name: "わし座", en: "Aquila", 
+        desc: "【彦星】アルタイル（彦星）を挟んで3つの星が並んでいます。", 
+        myth: "ゼウスの雷を持つ鷲、またはガニュメデスをさらった鷲。",
+        centerRA: 19.8, centerDec: 3.0, 
+        lines: ["Altair","Tarazed","Altair","Alshain","Altair","Delta Aql","Delta Aql","Zeta Aql"] 
+    },
+    { 
+        id: "umi", rank: 2, name: "こぐま座", en: "Ursa Minor", 
+        desc: "【北極星】現在の北極星ポラリスを含む、小さなひしゃく形。", 
+        myth: "母（おおぐま座）と共に空に上げられた息子アルカスの姿。",
+        centerRA: 15.0, centerDec: 75.0, 
+        lines: ["Polaris","Yildun","Yildun","Zeta UMi","Zeta UMi","Eta UMi","Eta UMi","Pherkad","Pherkad","Kochab","Kochab","Zeta UMi"] 
+    },
+    { 
+        id: "lep", rank: 3, name: "うさぎ座", en: "Lepus", 
+        desc: "【オリオンの獲物】オリオン座の足元にある小さな星座。", 
+        myth: "狩人オリオンの獲物として置かれたウサギ。",
+        centerRA: 5.5, centerDec: -20.0, 
+        lines: ["Arneb","Nihal","Nihal","Epsilon Lep","Epsilon Lep","Mu Lep","Mu Lep","Arneb"] 
+    },
+    { 
+        id: "cnc", rank: 3, name: "かに座", en: "Cancer", 
+        desc: "【プレセペ星団】暗い星ばかりですが、中央に星団（飼い葉桶）があります。", 
+        myth: "ヘラクレスに踏み潰された巨大ガニ。",
+        centerRA: 8.5, centerDec: 20.0, 
+        lines: ["Acubens","Altarf","Asellus Australis","Asellus Borealis","Asellus Australis","Acubens"] 
+    },
+    { 
+        id: "sirius", rank: 4, name: "シリウス", en: "Sirius", 
+        desc: "【全天一】おおいぬ座にある、夜空で最も明るい恒星。", 
+        centerRA: 6.75, centerDec: -16.7, 
+        lines: [] 
+    },
+    { 
+        id: "m45", rank: 4, name: "すばる (M45)", en: "Pleiades", 
+        desc: "【宝石箱】おうし座にある美しい散開星団。肉眼でも6個ほど見えます。", 
+        centerRA: 3.8, centerDec: 24.1, 
+        lines: [] 
+    },
+    { 
+        id: "m31", rank: 4, name: "アンドロメダ銀河", en: "M31 Galaxy", 
+        desc: "【お隣さん】肉眼で見える最も遠い天体（250万光年）。", 
+        centerRA: 0.7, centerDec: 41.2, 
+        lines: [] 
+    }
+];
+
 const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:"Rigel",ra:5.242,dec:-8.202,mag:0.12,ci:-0.03},{name:"Bellatrix",ra:5.418,dec:6.349,mag:1.64,ci:-0.22},{name:"Saiph",ra:5.795,dec:-9.669,mag:2.07,ci:-0.18},{name:"Alnitak",ra:5.679,dec:-1.943,mag:1.74,ci:-0.21},{name:"Alnilam",ra:5.603,dec:-1.202,mag:1.69,ci:-0.19},{name:"Mintaka",ra:5.533,dec:-0.299,mag:2.25,ci:-0.21},{name:"Meissa",ra:5.585,dec:9.934,mag:3.39,ci:-0.14},{name:"Antares",ra:16.490,dec:-26.432,mag:1.06,ci:1.83},{name:"Graffias",ra:16.088,dec:-19.805,mag:2.56,ci:-0.11},{name:"Dschubba",ra:16.005,dec:-22.622,mag:2.29,ci:-0.13},{name:"Pi Sco",ra:15.979,dec:-26.114,mag:2.89,ci:-0.21},{name:"Wei",ra:16.834,dec:-38.020,mag:2.29,ci:1.14},{name:"Mu Sco",ra:16.863,dec:-38.048,mag:3.00,ci:-0.20},{name:"Zeta Sco",ra:16.904,dec:-42.360,mag:3.62,ci:1.50},{name:"Eta Sco",ra:17.202,dec:-43.238,mag:3.32,ci:0.05},{name:"Sargas",ra:17.623,dec:-42.998,mag:1.86,ci:0.38},{name:"Iota Sco",ra:17.795,dec:-40.125,mag:2.99,ci:0.17},{name:"Kappa Sco",ra:17.703,dec:-39.029,mag:2.39,ci:-0.20},{name:"Shaula",ra:17.560,dec:-37.104,mag:1.62,ci:-0.22},{name:"Lesath",ra:17.513,dec:-37.291,mag:2.70,ci:-0.21},{name:"Vega",ra:18.615,dec:38.783,mag:0.03,ci:0.00},{name:"Altair",ra:19.846,dec:8.868,mag:0.76,ci:0.22},{name:"Deneb",ra:20.690,dec:45.280,mag:1.25,ci:0.09},{name:"Aldebaran",ra:4.598,dec:16.509,mag:0.87,ci:1.54},{name:"Elnath",ra:5.438,dec:28.607,mag:1.65,ci:-0.13},{name:"Zeta Tau",ra:5.627,dec:21.142,mag:2.97,ci:-0.22},{name:"Ain",ra:4.478,dec:19.180,mag:3.53,ci:1.02},{name:"Hyadum I",ra:4.331,dec:15.627,mag:3.65,ci:0.97},{name:"Delta Tau",ra:4.381,dec:17.542,mag:3.77,ci:0.96},{name:"Alcyone",ra:3.791,dec:24.105,mag:2.85,ci:-0.09},{name:"Pollux",ra:7.755,dec:28.026,mag:1.16,ci:1.00},{name:"Castor",ra:7.576,dec:31.888,mag:1.58,ci:0.04},{name:"Alhena",ra:6.628,dec:16.399,mag:1.93,ci:0.00},{name:"Tejat",ra:6.248,dec:22.506,mag:2.87,ci:1.56},{name:"Mebsuta",ra:6.733,dec:25.131,mag:3.06,ci:1.40},{name:"Wasat",ra:7.336,dec:21.982,mag:3.50,ci:0.16},{name:"Regulus",ra:10.139,dec:11.967,mag:1.36,ci:-0.11},{name:"Denebola",ra:11.817,dec:14.572,mag:2.14,ci:0.09},{name:"Algieba",ra:10.333,dec:19.841,mag:2.01,ci:1.15},{name:"Zosma",ra:11.236,dec:20.523,mag:2.56,ci:0.12},{name:"Adhafera",ra:10.276,dec:23.417,mag:3.43,ci:1.25},{name:"Rasalas",ra:9.764,dec:23.774,mag:2.97,ci:1.62},{name:"Chertan",ra:11.236,dec:15.428,mag:3.33,ci:0.07},{name:"Spica",ra:13.416,dec:-11.161,mag:0.98,ci:-0.23},{name:"Porrima",ra:12.693,dec:-1.450,mag:2.74,ci:0.36},{name:"Vindemiatrix",ra:13.036,dec:10.959,mag:2.85,ci:0.94},{name:"Heze",ra:13.578,dec:-0.595,mag:3.38,ci:0.16},{name:"Auva",ra:12.926,dec:3.398,mag:3.39,ci:1.38},{name:"Zavijava",ra:11.841,dec:1.765,mag:3.61,ci:0.56},{name:"Dubhe",ra:11.062,dec:61.751,mag:1.81,ci:1.07},{name:"Merak",ra:11.030,dec:56.382,mag:2.34,ci:0.04},{name:"Phecda",ra:11.897,dec:53.694,mag:2.41,ci:0.02},{name:"Megrez",ra:12.257,dec:57.032,mag:3.32,ci:0.08},{name:"Alioth",ra:12.900,dec:55.959,mag:1.76,ci:0.02},{name:"Mizar",ra:13.398,dec:54.925,mag:2.23,ci:0.06},{name:"Alkaid",ra:13.792,dec:49.313,mag:1.85,ci:-0.19},{name:"Talitha",ra:8.987,dec:48.041,mag:3.12,ci:0.20},{name:"Tania Borealis",ra:10.284,dec:42.914,mag:3.45,ci:-0.05},{name:"Mu UMa",ra:10.373,dec:41.498,mag:3.06,ci:1.45},{name:"Polaris",ra:2.530,dec:89.264,mag:1.97,ci:0.63},{name:"Kochab",ra:14.845,dec:74.155,mag:2.07,ci:1.28},{name:"Pherkad",ra:15.346,dec:71.834,mag:3.00,ci:0.05},{name:"Yildun",ra:17.538,dec:86.586,mag:4.35,ci:0.01},{name:"Zeta UMi",ra:15.734,dec:77.795,mag:4.29,ci:-0.06},{name:"Eta UMi",ra:16.292,dec:75.753,mag:4.95,ci:0.40},{name:"Schedar",ra:0.675,dec:56.537,mag:2.24,ci:1.17},{name:"Caph",ra:0.153,dec:59.150,mag:2.28,ci:0.34},{name:"Gamma Cas",ra:0.945,dec:60.717,mag:2.15,ci:-0.1},{name:"Ruchbah",ra:1.430,dec:60.235,mag:2.66,ci:0.13},{name:"Segin",ra:1.907,dec:63.670,mag:3.35,ci:0.26},{name:"Arneb",ra:5.545,dec:-17.822,mag:2.58,ci:0.21},{name:"Nihal",ra:5.470,dec:-20.760,mag:2.81,ci:0.46},{name:"Epsilon Lep",ra:5.087,dec:-22.404,mag:3.19,ci:1.43},{name:"Mu Lep",ra:5.216,dec:-16.208,mag:3.29,ci:-0.12},{name:"Acubens",ra:8.974,dec:11.857,mag:4.26,ci:0.14},{name:"Altarf",ra:8.276,dec:9.186,mag:3.53,ci:1.13},{name:"Asellus Borealis",ra:8.721,dec:21.468,mag:4.66,ci:0.08},{name:"Asellus Australis",ra:8.740,dec:18.156,mag:3.94,ci:1.00},{name:"Sirius",ra:6.752,dec:-16.716,mag:-1.46,ci:0.00},{name:"M45 Pleiades",ra:3.783,dec:24.116,mag:1.6,ci:-0.05}];
 
-// --- 1. ENHANCED MATH ENGINE (Quaternion Power) ---
+// --- 1. MATH ENGINE ---
 const Math3D = {
-    // Multiply Quaternions (a * b)
     qMultiply: (a, b) => {
         const ax=a[0], ay=a[1], az=a[2], aw=a[3];
         const bx=b[0], by=b[1], bz=b[2], bw=b[3];
@@ -322,28 +478,12 @@ const Math3D = {
             aw*bw - ax*bx - ay*by - az*bz
         ];
     },
-    // Inverse (Conjugate for unit quat)
-    qInverse: (q) => {
-        return [-q[0], -q[1], -q[2], q[3]];
-    },
-    // Axis Angle to Quaternion
+    qInverse: (q) => [-q[0], -q[1], -q[2], q[3]],
     qFromAxisAngle: (axis, angle) => {
         const half = angle / 2;
         const s = Math.sin(half);
         return [axis[0]*s, axis[1]*s, axis[2]*s, Math.cos(half)];
     },
-    // Create Quaternion from standard Z-X-Y Euler (in Rads)
-    qFromZXY: (x, y, z) => {
-        const c1 = Math.cos(z/2), c2 = Math.cos(x/2), c3 = Math.cos(y/2);
-        const s1 = Math.sin(z/2), s2 = Math.sin(x/2), s3 = Math.sin(y/2);
-        return [
-            s1*c2*c3 - c1*s2*s3,
-            c1*s2*c3 + s1*c2*s3,
-            c1*c2*s3 + s1*s2*c3,
-            c1*c2*c3 - s1*s2*s3
-        ];
-    },
-    // Matrix from Quaternion
     matFromQ: (q) => {
         const x=q[0], y=q[1], z=q[2], w=q[3];
         const x2=x+x, y2=y+y, z2=z+z;
@@ -357,22 +497,14 @@ const Math3D = {
             0, 0, 0, 1
         ];
     },
-    // Invert Matrix (Rotation only)
-    matInvert: (m) => {
-        return [m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0, 0, 0, 0, 1];
-    },
-    // Project 3D point to Screen
+    matInvert: (m) => [m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0, 0, 0, 0, 1],
     project: (vec, viewMat, width, height, fovDeg) => {
         const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
         if (z >= -0.1) return null;
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
-        return { 
-            x: x * (scale / -z) + width / 2, 
-            y: -y * (scale / -z) + height / 2, 
-            z: z 
-        };
+        return { x: x * (scale / -z) + width / 2, y: -y * (scale / -z) + height / 2, z: z };
     }
 };
 
@@ -395,7 +527,6 @@ const Astro = {
     },
     getVector: (alt, az) => {
         const cosAlt = Math.cos(alt);
-        // Z is Up, Y is North, X is East (Right Hand Rule logic for world space)
         return { x: Math.sin(az) * cosAlt, y: Math.cos(az) * cosAlt, z: Math.sin(alt) };
     }
 };
@@ -420,21 +551,16 @@ const App = {
         ranks: { [RANK.FAMOUS]: true, [RANK.MEDIUM]: true, [RANK.MINOR]: true, [RANK.STAR_GAL]: false },
         stars: [], milkyWay: [],
         fov: 60,
-        
-        // SENSOR STATE
         lastOri: null,
         smoothedOri: { alpha: 0, beta: 90, gamma: 0 },
-        
-        // ANCHOR STATE
         setupMode: true,
         anchorCorrectionQ: [0, 0, 0, 1] // Identity
     },
 
     init: async () => {
         document.getElementById('start-modal').classList.add('hidden-force');
-        App.startSetup(); // Start in setup mode
+        App.startSetup(); 
         
-        // DeviceOrientation Permission
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             try { 
                 const res = await DeviceOrientationEvent.requestPermission(); 
@@ -446,13 +572,11 @@ const App = {
 
         App.canvas = document.getElementById('sky-canvas'); App.ctx = App.canvas.getContext('2d');
         
-        // Load Stars
         STARS_DATA.forEach(s => App.state.stars.push(s));
         for(let i=0; i<800; i++) {
             App.state.stars.push({ra: Math.random()*24, dec: Math.random()*180-90, mag: Math.random()*3+3.5, ci: Math.random()*1.5, isProc: true});
         }
         
-        // Load Gaussian Milky Way (Rich Visuals from sensagatigau.html)
         const mwPoints = [{ra:0,dec:63, w:20}, {ra:6,dec:10, w:15}, {ra:12,dec:-60, w:30}, {ra:18,dec:-15, w:40}, {ra:23,dec:60, w:22}];
         for(let i=0; i<mwPoints.length-1; i++) {
             const p1 = mwPoints[i]; const p2 = mwPoints[i+1];
@@ -474,9 +598,8 @@ const App = {
         App.setupTouch(); App.resize(); App.loop();
     },
 
-    // 🌟 SENSOR SMOOTHING LOGIC (From sensagatigau.html)
     handleOri: (e) => {
-        const k = 0.15; // Butter factor
+        const k = 0.15;
         let alpha = e.alpha || 0;
         let beta = e.beta || 0;
         let gamma = e.gamma || 0;
@@ -505,9 +628,9 @@ const App = {
             webkitCompass: e.webkitCompassHeading ? App.state.lastOri.compass : null 
         };
 
-        // Calibration UI Update
         if (App.state.setupMode) {
             const ball = document.getElementById('level-ball');
+            const ring = document.getElementById('compass-ring');
             const maxTilt = 20; 
             let bx = Math.min(Math.max(gamma, -maxTilt), maxTilt);
             let by = Math.min(Math.max(beta, -maxTilt), maxTilt);
@@ -519,17 +642,21 @@ const App = {
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
+            // Compass Rotation Logic (Corrected)
+            let heading = App.state.smoothedOri.isIOS ? App.state.smoothedOri.webkitCompass : App.state.smoothedOri.alpha;
+            // The ring should rotate opposite to heading to keep 'N' pointing North on screen
+            ring.style.transform = `rotate(${-heading}deg)`;
+
             const btn = document.getElementById('btn-confirm-setup');
             document.getElementById('sensor-status').innerText = "Sensor Active";
             btn.disabled = false;
             btn.innerText = "セット (SET NORTH)";
             btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
             
-            document.getElementById('compass-val').innerText = `${Math.round(App.state.smoothedOri.isIOS ? App.state.smoothedOri.webkitCompass : App.state.smoothedOri.alpha)}°`;
+            document.getElementById('compass-val').innerText = `${Math.round(heading)}°`;
         }
     },
 
-    // 🌟 SETUP: THE ANCHOR
     startSetup: () => {
         App.state.setupMode = true;
         document.getElementById('setup-wizard').classList.remove('hidden-force');
@@ -537,28 +664,7 @@ const App = {
     },
     
     confirmSetup: () => {
-        // Capture Current Quaternion
         const qCurrent = App.getSensorQuaternion();
-        
-        // Define Target: We assume user is looking at NORTH HORIZON.
-        // In our coordinate system (Y=North, Z=Up), looking North means View Vector is (0,1,0).
-        // The default camera (Identity) looks down -Z? 
-        // Let's standardise: Identity View Matrix looks at -Z.
-        // We want world Z to be Up, Y to be North.
-        // If we look North Horizon, the camera frame is...
-        
-        // SIMPLIFIED ANCHOR LOGIC:
-        // We want the current sensor state (qCurrent) to map to "North Horizon".
-        // Let's define "North Horizon" orientation as qTarget.
-        // If phone is upright, looking North:
-        // qTarget should produce a view matrix looking North.
-        
-        // Instead of complex math, let's just say:
-        // qCorrection * qCurrent = qIdentity (or qNorth).
-        // Let's store qCorrection = qCurrent.inverse().
-        // Then applying qCorrection aligns the current view to Identity.
-        // We then rotate Identity to face North if needed.
-        
         const qInv = Math3D.qInverse(qCurrent);
         App.state.anchorCorrectionQ = qInv;
         
@@ -571,75 +677,37 @@ const App = {
         document.getElementById('debug-anchor').className = "text-green-400 font-bold";
     },
 
-    // 🌟 CORE MATH: QUATERNION PIPE
     getSensorQuaternion: () => {
         const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.smoothedOri;
         const deg2rad = Math.PI / 180;
+        let zAngle = isIOS && webkitCompass != null ? webkitCompass : alpha;
         
-        // 1. Base Euler (Z-X-Y)
-        // Note: We use W3C order Z -> X -> Y
-        // But we want to construct it carefully.
-        
-        // Handle Compass
-        let zAngle = alpha;
-        if(isIOS && webkitCompass != null) zAngle = webkitCompass;
-        
-        // Convert to Radians
         const x = beta * deg2rad;
         const y = gamma * deg2rad;
         const z = zAngle * deg2rad;
         
-        // Create Rotation Quaternion
         const qZ = Math3D.qFromAxisAngle([0, 0, 1], z);
         const qX = Math3D.qFromAxisAngle([1, 0, 0], x);
         const qY = Math3D.qFromAxisAngle([0, 1, 0], y);
         
-        // Combine Z -> X -> Y
-        let q = Math3D.qMultiply(qX, qY); // X then Y? 
-        // W3C says: Rotate Z, then X, then Y.
-        // q = qY * qX * qZ (Standard multiplication order is reverse of operation)
+        let q = Math3D.qMultiply(qX, qY); 
         q = Math3D.qMultiply(q, qZ);
         
-        // 2. Adjust for Screen Orientation (Landscape/Portrait)
         const orient = (window.screen.orientation ? window.screen.orientation.angle : 0) * deg2rad;
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -orient);
-        q = Math3D.qMultiply(qScreen, q); // Screen rotation happens last (visually) or first (physically)?
-        // Usually qFinal = qDevice * qScreenCorrection.
+        q = Math3D.qMultiply(qScreen, q);
         
         return q;
     },
 
     updateViewMatrix: () => {
-        // 1. Get Smoothed Sensor Quaternion
         const qSensor = App.getSensorQuaternion();
-        
-        // 2. Apply Anchor Correction
-        // qAligned = qAnchor * qSensor
-        // This makes the calibrated position = Identity (0,0,0)
         let qAligned = Math3D.qMultiply(App.state.anchorCorrectionQ, qSensor);
-        
-        // 3. Map Identity to World "North Horizon"
-        // At Identity (Phone Upright), we want to look at North.
-        // Let's assume standard Identity looks -Z (down?).
-        // If we calibrated upright, we want that to be North (Y+).
-        
-        // Let's simply apply a fixed rotation to align Identity to "Looking North".
-        // If we calibrated facing North, qAligned is Identity.
-        // We want the View Matrix to look North.
-        // Standard View Matrix looking North (Y+) with Z+ up.
-        // This usually requires rotating the camera frame.
-        
-        // Fix: Rotate -90 X to bring camera up from down-looking?
-        // Let's assume the user calibrated Upright.
         const qFix = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI/2); 
         qAligned = Math3D.qMultiply(qFix, qAligned);
-        
-        // 4. Invert to get View Matrix
-        // ViewMatrix is inverse of Camera Rotation
         const mCam = Math3D.matFromQ(qAligned);
         App.state.viewMat = Math3D.matInvert(mCam);
         
-        // Debug
         const fx = -App.state.viewMat[8], fy = -App.state.viewMat[9], fz = -App.state.viewMat[10];
         const alt = Math.asin(fz) * 180/Math.PI;
         let az = Math.atan2(fx, fy) * 180/Math.PI; if(az<0) az+=360;
@@ -663,7 +731,6 @@ const App = {
 
         const lst = Astro.getLST(state.lon);
 
-        // Draw Horizon Grid (Fixed Reference)
         ctx.strokeStyle = "rgba(0, 255, 255, 0.2)"; ctx.lineWidth = 1; ctx.beginPath();
         let firstH = null;
         for(let a=0; a<=360; a+=10) {
@@ -673,7 +740,6 @@ const App = {
         }
         ctx.stroke();
 
-        // Milky Way (Cloud Style)
         if (!isSolar && state.opacity.milky > 0) {
             ctx.globalCompositeOperation = 'lighter'; 
             state.milkyWay.forEach(p => {
@@ -690,7 +756,6 @@ const App = {
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        // Stars & Constellations
         const starPos = {};
         state.stars.forEach(s => {
             const hc = Astro.getHorizontalCoords(s.ra, s.dec, state.lat, lst);
@@ -706,7 +771,6 @@ const App = {
             }
         });
 
-        // Constellations
         ctx.strokeStyle = isSolar ? "rgba(0,0,0,0.3)" : "rgba(34,211,238,0.6)"; ctx.lineWidth = 1.5;
         ctx.beginPath();
         const visibleConsts = [];
@@ -740,19 +804,17 @@ const App = {
         });
         ctx.stroke();
 
-        // Bubble
         const bubble = document.getElementById('smart-bubble');
         if (visibleConsts.length > 0) {
             visibleConsts.sort((a,b) => a.dist - b.dist);
             const t = visibleConsts[0];
             if (t.dist < 150) {
                 document.getElementById('bubble-title').innerText = t.c.name;
-                document.getElementById('bubble-desc').innerText = t.c.desc;
+                document.getElementById('bubble-desc').innerText = t.c.desc || "";
                 bubble.style.left = t.x + 'px'; bubble.style.top = Math.max(t.y-20, 40) + 'px'; bubble.style.opacity = 1;
             } else bubble.style.opacity = 0;
         } else bubble.style.opacity = 0;
 
-        // Target Lock
         if (state.mode === 'guide' && Guide.target) {
             const t = Guide.target;
             const hc = Astro.getHorizontalCoords(t.centerRA, t.centerDec, state.lat, lst);
@@ -777,7 +839,6 @@ const App = {
     setupTouch: () => { /* Add touch controls if needed */ }
 };
 
-// Guide System
 const Guide = {
     target: null,
     toggle: () => {
@@ -787,7 +848,7 @@ const Guide = {
             CONSTELLATION_DB.forEach(c => {
                 const div = document.createElement('div');
                 div.className = "p-4 rounded-xl border border-white/10 bg-slate-800/80 mb-2";
-                div.innerHTML = `<h3 class="font-bold text-lg text-white">${c.name}</h3><p class="text-xs text-slate-300 mb-2">${c.desc}</p><button onclick="Guide.startNav('${c.id}')" class="w-full py-2 bg-cyan-600 rounded text-sm font-bold">GOTO</button>`;
+                div.innerHTML = `<h3 class="font-bold text-lg text-white">${c.name}</h3><p class="text-xs text-slate-300 mb-2">${c.desc || ""}</p><div class="text-[10px] text-yellow-100 bg-yellow-900/30 p-2 rounded">${c.myth || "No Myth Data"}</div><button onclick="Guide.startNav('${c.id}')" class="w-full py-2 bg-cyan-600 rounded text-sm font-bold mt-2">GOTO</button>`;
                 list.appendChild(div);
             });
             el.classList.remove('hidden-force');
@@ -798,8 +859,24 @@ const Guide = {
 };
 
 const Gate = {
-    check: () => { if(('ontouchstart' in window) && window.innerWidth <= 1024) { document.getElementById('app-container').classList.remove('hidden-force'); document.getElementById('start-modal').classList.remove('hidden-force'); } else { document.getElementById('star-gate').classList.remove('hidden-force'); new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180}); } },
-    startUnlock: () => { document.getElementById('star-gate').classList.add('hidden-force'); document.getElementById('app-container').classList.remove('hidden-force'); document.getElementById('start-modal').classList.remove('hidden-force'); }
+    check: () => { 
+        if(('ontouchstart' in window) && window.innerWidth <= 1024) { 
+            // Mobile: Show Start Modal, Hide PC Gate
+            document.getElementById('app-container').classList.remove('hidden-force'); 
+            document.getElementById('start-modal').classList.remove('hidden-force');
+            // Ensure Gate is hidden
+            document.getElementById('star-gate').classList.add('hidden-force');
+        } else { 
+            // PC: Show Gate, Hide App
+            document.getElementById('star-gate').classList.remove('hidden-force'); 
+            new QRious({element:document.getElementById('qr-canvas'),value:window.location.href,size:180}); 
+        } 
+    },
+    startUnlock: () => { 
+        document.getElementById('star-gate').classList.add('hidden-force'); 
+        document.getElementById('app-container').classList.remove('hidden-force'); 
+        document.getElementById('start-modal').classList.remove('hidden-force'); 
+    }
 };
 
 window.onload = Gate.check;
