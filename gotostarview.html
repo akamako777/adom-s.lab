@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v31.0 (Matrix Core)</title>
+    <title>Five Islands Stargazer v31.1 (Axis Corrected)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -187,8 +187,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v31.0</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Matrix Core</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v31.1</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Axis Corrected</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -335,11 +335,11 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">✨</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v31.0</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">AURORA SEXTANT v31.1</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START / 出発
             </button>
-            <p class="text-[10px] text-slate-500 mt-4">Matrix Core System</p>
+            <p class="text-[10px] text-slate-500 mt-4">Axis Corrected System</p>
         </div>
     </div>
 
@@ -409,14 +409,13 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v31.0 (Matrix Core)
+ * 🌌 FIVE ISLANDS STARGAZER v31.1 (Axis Corrected)
  * ==========================================
- * [MATRIX CORE UPDATE]
- * - Replaced fragile Quaternion logic with Robust Matrix Multiplication.
- * - Implemented proper W3C Device Orientation Order: Z -> X -> Y.
- * - Solved "Nadir Singularity" (Gimbal Lock at feet) by full matrix composition.
- * - Separated Screen Rotation (Landscape/Portrait) into pure Z-axis rotation.
- * - Ensured Camera Frame (Z-forward) correctly maps to Device Frame (Y-up).
+ * [FIX LOG]
+ * - COMPASS OFFSET: Added +90 deg offset to `alpha` to fix "North=270" issue on Pixel/Android.
+ * - MOTION INVERSION: Inverted `beta` and `gamma` logic in Matrix construction. 
+ * (Pitching phone UP now pitches virtual camera UP, moving sky DOWN).
+ * - HORIZON FIX: Relaxed Z-clipping check to ensure horizon grid is drawn.
  */
 
 // I18N and Data Constants
@@ -471,8 +470,9 @@ const Math3D = {
         const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
         const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
         
-        // Z is negative forward in OpenGL convention
-        if (z >= -0.1) return null;
+        // HORIZON FIX: Relaxed Z clipping to see horizon (-0.1 -> 0.5)
+        // Stars behind camera (z > 0) should be clipped, but horizon at z=0 needs care.
+        if (z >= 0.1) return null;
         
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
         return { 
@@ -784,6 +784,7 @@ const App = {
             let heading = alpha;
             if(App.state.orientation.webkitCompass != null) heading = App.state.orientation.webkitCompass;
             
+            // Setup visual: +90 here too? No, keep raw for consistency with UI
             ring.style.transform = `rotate(${-heading}deg)`;
             valDisplay.innerText = `${Math.round(heading)}°`;
         }
@@ -905,76 +906,55 @@ const App = {
     }
 };
 
-// --- CORE: MATRIX RE-COMPOSITION (Standard Basis: W3C Z-X-Y Matrix) ---
+// --- CORE: MATRIX RE-COMPOSITION (Corrected Axis for Android/Pixel) ---
 App.updateViewMatrix = () => {
     const { alpha, beta, gamma, isIOS, webkitCompass } = App.state.orientation;
     const deg2rad = Math.PI / 180;
 
+    // 1. COMPASS FIX (Force North=0)
+    // User reports North shows as 270 (West). It implies raw alpha is -90 deg shifted.
+    // Adding +90 fixes it to 360 (0).
+    const COMPASS_OFFSET = 90;
+
     let currentAlpha = alpha;
     if (isIOS && webkitCompass != null) currentAlpha = webkitCompass; 
-
-    let trueHeading = currentAlpha - App.state.northOffset; 
+    
+    // Apply Offset
+    let trueHeading = (currentAlpha + COMPASS_OFFSET) - App.state.northOffset;
     if (trueHeading < 0) trueHeading += 360;
 
-    // 1. DEVICE ROTATION (W3C Standard: Z -> X -> Y)
-    // -----------------------------
-    // Device Frame: 
-    // Z: Perpendicular to screen (out)
-    // X: Right
-    // Y: Top
-    
-    // Euler Angles to Matrix:
-    // Alpha (Z), Beta (X), Gamma (Y)
+    // 2. DEVICE ROTATION (INVERTED LOGIC)
+    // User reports: Pitching phone UP moves stars UP (chasing).
+    // This means ViewMatrix is pitching UP. It should pitch DOWN (inverse of camera).
+    // We invert Beta (X-axis) and Gamma (Y-axis) to create the correct View Matrix directly.
     
     const rZ = Math3D.matRotateZ(trueHeading * deg2rad);
-    const rX = Math3D.matRotateX(beta * deg2rad);
-    const rY = Math3D.matRotateY(gamma * deg2rad);
+    const rX = Math3D.matRotateX(-beta * deg2rad); // Inverted Pitch
+    const rY = Math3D.matRotateY(-gamma * deg2rad); // Inverted Roll
     
-    // M_device = Rz * Rx * Ry
+    // M_device = Rz * Rx * Ry (Standard Order)
     let mDevice = Math3D.matMultiply(rZ, rX);
     mDevice = Math3D.matMultiply(mDevice, rY);
     
-    // 2. SCREEN ORIENTATION
-    // -----------------------------
-    // Adjust for Landscape/Portrait
+    // 3. SCREEN ORIENTATION
     let screenOrient = 0;
     if (window.screen && window.screen.orientation) screenOrient = window.screen.orientation.angle;
     else if (window.orientation) screenOrient = window.orientation;
     
     const rScreen = Math3D.matRotateZ(-screenOrient * deg2rad);
     
-    // Apply Screen Rotation: M_final = M_device * M_screen
+    // M_final = M_device * M_screen
     let mFinal = Math3D.matMultiply(mDevice, rScreen);
     
-    // 3. WORLD ALIGNMENT (Camera Correction)
-    // -----------------------------
-    // WebGL/Canvas Camera looks down -Z. Y is Up. X is Right.
-    // Device Z is "Up" (out of screen).
-    // We need to map Device Z to Camera -Z (or look direction).
-    // Actually, AR camera view:
-    // When phone is vertical (Beta=90):
-    // Device Y is up (World Z). Device -Z is forward (World Y/X plane).
-    
-    // We rotate -90 degrees around X axis to align:
-    // Device Y (Top) -> World Z (Up)
-    // Device Z (Out) -> World Y (Back) -> Wait, we want Camera to look out the back (-Z device).
-    
+    // 4. WORLD ALIGNMENT (Camera Correction)
+    // Rotate -90 degrees around X axis to align phone back to camera view.
     const rFix = Math3D.matRotateX(-90 * deg2rad);
-    
-    // Apply fixation: M_cam = M_final * M_fix
-    // This transforms the world to align with the camera view.
     let mCam = Math3D.matMultiply(mFinal, rFix);
 
-    // 4. INVERT FOR VIEW MATRIX
-    // View Matrix transforms World -> Camera
-    // mCam is effectively Camera -> World (Camera Pose)
+    // 5. INVERT FOR VIEW MATRIX
     App.state.viewMat = Math3D.matInvert(mCam);
 
     // Debug Display
-    // Extract Azimuth from the computed matrix for debugging stability
-    // -mCam[8] is the Z-component of the Forward vector (if Z-forward)
-    // Let's use standard trigonometric extraction
-    
     const fx = -mCam[8]; const fy = -mCam[9]; const fz = -mCam[10];
     const alt = Math.asin(fz) * 180/Math.PI;
     let az = Math.atan2(fx, fy) * 180/Math.PI;
