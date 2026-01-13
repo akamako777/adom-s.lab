@@ -3,212 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass Proto v1.1</title>
+    <title>Star Compass Proto v1.3</title>
+    
+    <!-- Google Fonts: Zen Maru Gothic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Consolas, monospace; color: #0f0; touch-action: none; }
+        :root {
+            --primary-color: #aaddff;
+            --accent-color: #ffd700;
+            --bg-dark: #050a14;
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: var(--bg-dark); 
+            font-family: 'Zen Maru Gothic', sans-serif;
+            color: var(--primary-color); 
+            touch-action: none; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
         #canvas-container { width: 100vw; height: 100vh; display: block; }
         
-        /* UI Overlay */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
-        .hud-row { padding: 10px; display: flex; justify-content: space-between; pointer-events: auto; }
-        
-        /* Buttons */
-        button {
-            background: rgba(0, 20, 0, 0.7);
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 10px 15px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 4px;
-            backdrop-filter: blur(4px);
+        /* 共通ボタンデザイン */
+        .btn-style {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             touch-action: manipulation;
-        }
-        button:active { background: #0f0; color: #000; }
-        
-        /* Specific Controls */
-        #debug-info { font-size: 10px; background: rgba(0,0,0,0.5); padding: 5px; max-width: 50%; }
-        #start-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            z-index: 999; pointer-events: auto;
-        }
-        #start-btn { font-size: 24px; padding: 20px 40px; border: 2px solid #0f0; }
-        
-        .control-group { display: flex; gap: 10px; align-items: center; }
-        .big-btn { width: 60px; height: 60px; font-size: 20px; border-radius: 50%; }
-
-        /* PC Warning Screen */
-        #pc-warning {
-            display: none; /* Hidden by default */
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 10000;
-            color: #0f0;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.2s;
+            cursor: pointer;
             text-align: center;
-            padding: 20px;
         }
-        #pc-warning h1 { font-size: 2em; margin-bottom: 20px; border-bottom: 2px solid #0f0; padding-bottom: 10px; }
-        #qr-container { margin: 30px; padding: 10px; background: #fff; border-radius: 8px; }
-        #qr-container img { display: block; width: 200px; height: 200px; }
-        .pc-message { max-width: 600px; line-height: 1.6; font-size: 1.2em; color: #aaa; }
+        .btn-style:active { 
+            background: rgba(255, 255, 255, 0.4); 
+            transform: scale(0.95);
+        }
+        .btn-accent {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            color: #444;
+            border: none;
+            box-shadow: 0 5px 15px rgba(255, 100, 100, 0.4);
+        }
 
+        /* UI Layers */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; pointer-events: auto;
+            transition: opacity 0.5s;
+        }
+        .hidden { opacity: 0; pointer-events: none; }
+
+        /* Start Screen */
+        #start-screen {
+            background: radial-gradient(circle at 50% 100%, #1a2a6c, #000), linear-gradient(to top, #000428, #004e92);
+            color: white;
+            text-align: center;
+        }
+        #start-screen h1 { font-size: 3rem; text-shadow: 0 0 20px #0ff; margin-bottom: 10px; }
+
+        /* Calibration Screen */
+        #calibration-screen {
+            background: rgba(0, 0, 0, 0.6); /* 半透明で向こうのグリッドを見せる */
+            justify-content: space-between;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        .calib-guide {
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #0ff;
+            text-align: center;
+            max-width: 90%;
+        }
+        .calib-step { font-size: 1.2rem; margin-bottom: 10px; line-height: 1.6; }
+        .highlight { color: #ffd700; font-size: 1.4rem; font-weight: 900; }
+
+        /* Main HUD (Stargazing) */
+        #main-hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            z-index: 50;
+        }
+        .hud-top { padding: 15px; display: flex; justify-content: space-between; pointer-events: auto; }
+        .hud-bottom { padding: 20px; display: flex; justify-content: center; gap: 20px; pointer-events: auto; align-items: flex-end; }
+        
+        .sensor-monitor {
+            font-size: 10px; color: rgba(255,255,255,0.5); 
+            background: rgba(0,0,0,0.3); padding: 5px; border-radius: 5px;
+            text-align: right;
+        }
+        
+        /* Round Buttons for Main HUD */
+        .round-btn {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .round-btn:active { background: rgba(255,255,255,0.3); }
+
+        /* PC Warning */
+        #pc-warning {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 10000; color: #fff;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
     </style>
-    <!-- Three.js from CDN -->
+    <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <!-- PC Warning Screen -->
+    <!-- PC Warning -->
     <div id="pc-warning">
-        <h1>MOBILE DEVICE REQUIRED</h1>
-        <div class="pc-message">
-            このアプリケーションは、ジャイロセンサーを搭載した<br>
-            スマートフォンまたはタブレット専用です。<br><br>
-            お手持ちのデバイスで以下のQRコードを読み取り、<br>
-            アクセスしてください。
-        </div>
-        <div id="qr-container">
-            <!-- QR Code injected by JS -->
-        </div>
-        <div style="font-size: 0.8em; color: #555;">Star Compass Engine v1.1</div>
+        <h1>スマホでみてね！</h1>
+        <p>このアプリはスマホのセンサーをつかうよ。</p>
+        <div id="qr-container" style="background:#fff; padding:10px; margin:20px; border-radius:10px;"></div>
     </div>
 
-    <!-- Start Overlay for iOS Permissions -->
-    <div id="start-overlay">
-        <h1 style="color:#0f0; text-shadow:0 0 10px #0f0;">STAR COMPASS v1</h1>
-        <p style="color:#aaa; text-align:center; padding:0 20px;">
-            1. Stand facing NORTH.<br>
-            2. Hold device vertically.<br>
-            3. Tap Start.
+    <!-- 1. Start Screen -->
+    <div id="start-screen" class="overlay">
+        <h1>星空コンパス</h1>
+        <p style="font-size:1.2rem;">じゅんびは いいかな？</p>
+        <button id="btn-start" class="btn-style btn-accent" style="margin-top:30px; font-size:1.5rem;">スタート！</button>
+        <p style="font-size:0.8rem; margin-top:20px; opacity:0.7;">
+            ※「許可(Allow)」と聞かれたら<br>「許可」をおしてね
         </p>
-        <button id="start-btn">START SYSTEM</button>
     </div>
 
-    <!-- 3D Canvas -->
-    <div id="canvas-container"></div>
-
-    <!-- HUD -->
-    <div id="ui-layer">
-        <!-- Top Row: Info -->
-        <div class="hud-row">
-            <div id="debug-info">Initializing...</div>
-            <button id="btn-calibrate">SET NORTH (0°)</button>
+    <!-- 2. Calibration Screen -->
+    <div id="calibration-screen" class="overlay hidden">
+        <div class="calib-guide">
+            <p class="calib-step">1. スマホを<b>まわして</b><br>方位磁針(ほういじしん)で<br><span class="highlight">「北 (N)」</span>を向いてね</p>
+        </div>
+        
+        <div style="text-align: center;">
+            <p class="calib-step">北を向いたら...</p>
+            <button id="btn-set-north" class="btn-style btn-accent" style="width: 200px;">ここが 北だ！</button>
         </div>
 
-        <!-- Center: Crosshair (Visual only) -->
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:20px; height:20px; border:1px solid rgba(0,255,0,0.5); border-radius:50%; pointer-events:none;"></div>
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:2px; height:10px; background:rgba(0,255,0,0.5); pointer-events:none;"></div>
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:10px; height:2px; background:rgba(0,255,0,0.5); pointer-events:none;"></div>
+        <div class="calib-guide" style="border-color: #aaa;">
+            <p style="font-size:0.9rem;">※画面の奥に緑の線が見えるかな？<br>あれが地平線だよ。</p>
+        </div>
+    </div>
 
-        <!-- Bottom Row: Manual Controls -->
-        <div class="hud-row" style="justify-content: center; gap: 20px; padding-bottom: 30px;">
-            <button class="big-btn" id="btn-minus90">↶</button>
-            <div style="display:flex; flex-direction:column; align-items:center; color:#0f0; font-size:10px;">
-                <span>MANUAL</span>
-                <span>OFFSET</span>
-                <span id="offset-display">0°</span>
+    <!-- 3. Main HUD (Star View) -->
+    <div id="main-hud" class="hidden">
+        <div class="hud-top">
+            <button id="btn-recalib" class="btn-style" style="font-size:0.9rem; padding:10px 15px;">北を合わせなおす</button>
+            <div id="sensor-monitor" class="sensor-monitor">Sensor: ---</div>
+        </div>
+
+        <!-- Center Crosshair -->
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity:0.5;">
+            <div style="width:20px; height:20px; border:2px solid #0ff; border-radius:50%;"></div>
+            <div style="position:absolute; top:10px; left:-10px; width:40px; height:1px; background:#0ff;"></div>
+            <div style="position:absolute; top:-10px; left:10px; width:1px; height:40px; background:#0ff;"></div>
+        </div>
+
+        <div class="hud-bottom">
+            <button id="btn-minus90" class="round-btn">↶</button>
+            <div style="text-align:center; color:white; text-shadow:0 0 5px black;">
+                <div style="font-size:10px;">ズレたら調整</div>
+                <div id="offset-val" style="font-size:16px; font-weight:bold;">0°</div>
             </div>
-            <button class="big-btn" id="btn-plus90">↷</button>
+            <button id="btn-plus90" class="round-btn">↷</button>
         </div>
     </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container"></div>
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V1.1
-         * Feature: Mobile Detection & QR Landing Page
+         * 🌌 STAR COMPASS ENGINE V1.3
+         * Focus: Setup Flow for Kids & Better Visibility
          */
 
-        // --- Device Detection Logic ---
-        function checkDevice() {
+        // --- Utils: Device Check ---
+        function isMobile() {
             const ua = navigator.userAgent.toLowerCase();
-            const isMobile = /iphone|ipad|ipod|android|blackberry|windows phone/i.test(ua);
-            
-            // If not mobile, show Warning and generate QR
-            if (!isMobile) {
-                const warningEl = document.getElementById('pc-warning');
-                const overlayEl = document.getElementById('start-overlay');
-                const uiEl = document.getElementById('ui-layer');
-                const canvasEl = document.getElementById('canvas-container');
-
-                warningEl.style.display = 'flex';
-                overlayEl.style.display = 'none';
-                uiEl.style.display = 'none';
-                canvasEl.style.display = 'none';
-
-                // Generate QR Code for current URL
-                const currentUrl = encodeURIComponent(window.location.href);
-                const qrContainer = document.getElementById('qr-container');
-                // Using a reliable public QR API
-                const qrImg = document.createElement('img');
-                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentUrl}`;
-                qrImg.alt = "Scan to open on mobile";
-                qrContainer.appendChild(qrImg);
-
-                return false; // Stop initialization
-            }
-            return true; // Continue
+            return /iphone|ipad|ipod|android/i.test(ua);
         }
 
-        // --- Configuration ---
+        if (!isMobile()) {
+            document.getElementById('pc-warning').style.display = 'flex';
+            document.getElementById('start-screen').style.display = 'none';
+            // QR Gen
+            const qrImg = document.createElement('img');
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href)}`;
+            document.getElementById('qr-container').appendChild(qrImg);
+        }
+
+        // --- Config ---
         const CONFIG = {
-            fov: 75,
-            defaultLat: 35.6895, // Tokyo (Fallback)
-            starScale: 1.0,
-            gridRadius: 200,
-            starDistance: 500
+            fov: 70, // Slightly wider
+            defaultLat: 35.6895, 
+            starDistance: 600,
+            starScale: 2.5 // Bigger stars!
         };
 
         // --- State ---
         let state = {
+            isRunning: false,
+            mode: 'INIT', // INIT -> CALIB -> STAR
             alphaOffset: 0,
             manualOffset: 0,
-            currentAlpha: 0,
-            currentBeta: 0,
-            currentGamma: 0,
-            isRunning: false
+            raw: { alpha: 0, beta: 0, gamma: 0 }
         };
 
-        // --- Three.js Globals ---
+        // --- Three.js ---
         let scene, camera, renderer;
         let starGroup, horizonGroup;
-        
-        // --- Star Data ---
+
+        // --- Star Data (Winter Focused) ---
+        // 南の空にオリオン座を強制配置するため、座標系を調整済み
         const STARS = [
-            { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.97, color: 0xFFFFCC, size: 2.0 },
-            { name: "Betelgeuse", ra: 5.92, dec: 7.41, mag: 0.45, color: 0xFFAA88, size: 1.8 },
-            { name: "Rigel", ra: 5.24, dec: -8.2, mag: 0.12, color: 0xAACCFF, size: 1.8 },
-            { name: "Bellatrix", ra: 5.42, dec: 6.35, mag: 1.64, color: 0xCCCCFF, size: 1.2 },
-            { name: "Mintaka", ra: 5.53, dec: -0.3, mag: 2.25, color: 0xCCCCFF, size: 1.0 },
-            { name: "Alnilam", ra: 5.60, dec: -1.2, mag: 1.69, color: 0xCCCCFF, size: 1.1 },
-            { name: "Alnitak", ra: 5.68, dec: -1.9, mag: 1.74, color: 0xCCCCFF, size: 1.1 },
-            { name: "Saiph", ra: 5.79, dec: -9.6, mag: 2.07, color: 0xCCCCFF, size: 1.0 },
-            { name: "Sirius", ra: 6.75, dec: -16.7, mag: -1.46, color: 0xFFFFFF, size: 2.5 },
-            { name: "Mirzam", ra: 6.38, dec: -17.9, mag: 1.98, color: 0xCCCCFF, size: 1.0 },
-            { name: "Aldebaran", ra: 4.60, dec: 16.5, mag: 0.87, color: 0xFFDDAA, size: 1.6 },
-            { name: "Elnath", ra: 5.43, dec: 28.6, mag: 1.65, color: 0xCCCCFF, size: 1.2 },
-            { name: "Pollux", ra: 7.76, dec: 28.0, mag: 1.14, color: 0xFFDDAA, size: 1.5 },
-            { name: "Castor", ra: 7.58, dec: 31.9, mag: 1.58, color: 0xFFFFFF, size: 1.4 },
-            { name: "Alhena", ra: 6.63, dec: 16.4, mag: 1.93, color: 0xFFFFFF, size: 1.1 },
-            { name: "Procyon", ra: 7.65, dec: 5.21, mag: 0.34, color: 0xFFFFEE, size: 1.6 },
-            { name: "Capella", ra: 5.28, dec: 46.0, mag: 0.08, color: 0xFFFFDD, size: 1.7 },
-            { name: "Schedar", ra: 0.67, dec: 56.5, mag: 2.2, color: 0xFFAAAA, size: 1.0 },
-            { name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, color: 0xFFFFFF, size: 1.2 }
+            // 北極星 (Polaris) - 北(Z-)の空高く
+            { name: "北極星", ra: 0, dec: 89, color: 0xFFFFDD, size: 2.5 },
+            
+            // オリオン (Orion) - 南(Z+)の空
+            // RA 5-6h -> 本来ならRAで配置するが、V1.3では視認性重視で
+            // 「南を向いたら見える」位置に相対配置する。
+            // Z+方向(South)を中心に配置
+            
+            // Betelgeuse (Top Left)
+            { name: "ベテルギウス", x: 20, y: 40, z: 100, color: 0xFF8866, size: 3.0 },
+            // Rigel (Bottom Right)
+            { name: "リゲル", x: -20, y: 10, z: 100, color: 0x88AAFF, size: 3.0 },
+            // Belt (Three Stars)
+            { name: "三つ星1", x: -5, y: 28, z: 100, color: 0xCCDDFF, size: 2.0 },
+            { name: "三つ星2", x: 0, y: 27, z: 100, color: 0xCCDDFF, size: 2.0 },
+            { name: "三つ星3", x: 5, y: 26, z: 100, color: 0xCCDDFF, size: 2.0 },
+            
+            // Sirius (Canis Major) - Below Orion, Left
+            { name: "シリウス", x: 40, y: -10, z: 100, color: 0xFFFFFF, size: 4.0 }, // Biggest!
+            
+            // Procyon (Canis Minor) - Top Left of Sirius
+            { name: "プロキオン", x: 50, y: 30, z: 90, color: 0xFFFFEE, size: 2.5 },
+
+            // Aldebaran (Taurus) - Right of Orion
+            { name: "アルデバラン", x: -50, y: 35, z: 80, color: 0xFFAA55, size: 2.5 }
         ];
 
-        const CONSTELLATION_LINES = [
-            ["Betelgeuse", "Bellatrix"], ["Betelgeuse", "Alnitak"], ["Rigel", "Saiph"], 
-            ["Rigel", "Mintaka"], ["Bellatrix", "Mintaka"], ["Saiph", "Alnitak"],
-            ["Mintaka", "Alnilam"], ["Alnilam", "Alnitak"],
-            ["Sirius", "Mirzam"], ["Aldebaran", "Elnath"], ["Pollux", "Castor"]
+        const LINES = [
+            // Orion Box
+            [0, 2], [0, 4], [2, 3], [1, 3], [1, 5], [4, 5],
+            // Sirius connection
+            [1, 5] // Loose connection
         ];
 
-        // --- Initialization ---
-        function init() {
+        // --- App Logic ---
+
+        function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(CONFIG.fov, window.innerWidth / window.innerHeight, 0.1, 2000);
             scene.add(camera);
@@ -218,214 +285,223 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
+            // Objects
+            createGrid(); // Horizon (Always visible)
+            createStars(); // Stars (Hidden initially)
 
-            createGrid();
-            createStars();
+            // Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
             
-            window.addEventListener('resize', onResize);
+            // Loop
             animate();
         }
 
-        // --- 3D Object Creation ---
-        
         function createGrid() {
             horizonGroup = new THREE.Group();
-            const geometry = new THREE.RingGeometry(CONFIG.gridRadius - 0.5, CONFIG.gridRadius, 64);
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
-            const ring = new THREE.Mesh(geometry, material);
-            ring.rotation.x = -Math.PI / 2;
+            
+            // 1. Horizon Ring
+            const ringGeo = new THREE.RingGeometry(CONFIG.starDistance - 10, CONFIG.starDistance, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent:true, opacity:0.6 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2; // Flat
             horizonGroup.add(ring);
 
-            addTextSprite("N", 0, 0, -CONFIG.gridRadius, 0xff0000);
-            addTextSprite("S", 0, 0, CONFIG.gridRadius, 0x00ff00);
-            addTextSprite("E", CONFIG.gridRadius, 0, 0, 0x00ff00);
-            addTextSprite("W", -CONFIG.gridRadius, 0, 0, 0x00ff00);
-            
-            const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, CONFIG.gridRadius, 0)];
-            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x003300 });
-            horizonGroup.add(new THREE.Line(lineGeo, lineMat));
+            // 2. Cardinal Labels (Using simple Sprites for robustness)
+            // North (Z-)
+            addLabel("北 (N)", 0, 20, -CONFIG.starDistance + 50, "#ff3333");
+            // South (Z+)
+            addLabel("南 (S)", 0, 20, CONFIG.starDistance - 50, "#33ff33");
+            // East (X+)
+            addLabel("東 (E)", CONFIG.starDistance - 50, 20, 0, "#33ff33");
+            // West (X-)
+            addLabel("西 (W)", -CONFIG.starDistance + 50, 20, 0, "#33ff33");
+
+            // 3. Grid Lines
+            const gridHelper = new THREE.PolarGridHelper(CONFIG.starDistance, 16, 8, 64, 0x004400, 0x004400);
+            horizonGroup.add(gridHelper);
 
             scene.add(horizonGroup);
         }
 
-        function addTextSprite(message, x, y, z, color) {
+        function addLabel(text, x, y, z, colorStr) {
             const canvas = document.createElement('canvas');
-            const size = 64;
+            const size = 256;
             canvas.width = size;
             canvas.height = size;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
-            ctx.font = 'bold 48px Arial';
+            ctx.fillStyle = colorStr;
+            ctx.font = 'bold 100px "Zen Maru Gothic", Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(message, size/2, size/2);
+            ctx.fillText(text, size/2, size/2);
             
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMat = new THREE.SpriteMaterial({ map: texture });
-            const sprite = new THREE.Sprite(spriteMat);
-            sprite.position.set(x, y + 10, z);
-            sprite.scale.set(20, 20, 1);
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: tex });
+            const sprite = new THREE.Sprite(mat);
+            sprite.position.set(x, y, z);
+            sprite.scale.set(60, 60, 1);
             horizonGroup.add(sprite);
         }
 
         function createStars() {
             starGroup = new THREE.Group();
-            const starMap = {};
-
-            STARS.forEach(star => {
-                const raRad = (star.ra / 24) * Math.PI * 2;
-                const decRad = (star.dec / 180) * Math.PI;
-                const r = CONFIG.starDistance;
-                const x = r * Math.cos(decRad) * Math.cos(raRad);
-                const z = r * Math.cos(decRad) * Math.sin(raRad);
-                const y = r * Math.sin(decRad);
-                
-                const geometry = new THREE.SphereGeometry(star.size, 8, 8);
-                const material = new THREE.MeshBasicMaterial({ color: star.color });
-                const mesh = new THREE.Mesh(geometry, material);
-                
-                mesh.position.set(x, y, z);
-                starGroup.add(mesh);
-                starMap[star.name] = mesh.position;
-            });
-
-            const material = new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 });
-            CONSTELLATION_LINES.forEach(pair => {
-                if (starMap[pair[0]] && starMap[pair[1]]) {
-                    const points = [starMap[pair[0]], starMap[pair[1]]];
-                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const line = new THREE.Line(geometry, material);
-                    starGroup.add(line);
+            
+            // Manual Placement for Prototype Clarity
+            // We map the array directly to 3D positions relative to South
+            STARS.forEach((star, idx) => {
+                let pos;
+                if (star.name === "北極星") {
+                    // North, Up by Latitude (approx 35deg)
+                    // Z- is North
+                    const r = CONFIG.starDistance;
+                    const latRad = 35 * (Math.PI/180);
+                    pos = new THREE.Vector3(0, r * Math.sin(latRad), -r * Math.cos(latRad));
+                } else {
+                    // Use defined x,y,z relative to South (Z+)
+                    // Scale them out to sphere surface
+                    const v = new THREE.Vector3(star.x, star.y + 20, star.z); // Lift up a bit
+                    v.normalize().multiplyScalar(CONFIG.starDistance);
+                    pos = v;
                 }
+
+                const geo = new THREE.SphereGeometry(star.size * CONFIG.starScale, 8, 8);
+                const mat = new THREE.MeshBasicMaterial({ color: star.color });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(pos);
+                starGroup.add(mesh);
+
+                // Save pos for lines
+                star.vec = pos;
             });
 
+            // Lines
+            /* Simple lines for Orion (indices in STARS array manual map) */
+            // Skip line drawing logic for now to ensure dots are visible first
+            // Just drawing dots is safer for v1.3 "Is it working?" check
+
+            starGroup.visible = false; // Initially Hidden!
             scene.add(starGroup);
         }
 
-        function updateStarRotation() {
-            const tilt = -(90 - CONFIG.defaultLat) * (Math.PI / 180);
-            starGroup.rotation.x = tilt; 
-            starGroup.rotation.y = Math.PI; 
-        }
+        // --- Sensor Handling ---
+        function handleOrientation(e) {
+            state.raw = { 
+                alpha: e.alpha || 0, 
+                beta: e.beta || 0, 
+                gamma: e.gamma || 0 
+            };
 
-        // --- Sensor Logic ---
+            // Debug Monitor
+            const mon = document.getElementById('sensor-monitor');
+            if (mon) {
+                mon.innerText = `A:${Math.round(state.raw.alpha)} B:${Math.round(state.raw.beta)}`;
+            }
 
-        function handleOrientation(event) {
-            state.currentAlpha = event.alpha ? event.alpha : 0;
-            state.currentBeta = event.beta ? event.beta : 0;
-            state.currentGamma = event.gamma ? event.gamma : 0;
-            updateCamera();
-            updateDebug();
-        }
+            if (!camera) return;
 
-        function updateCamera() {
-            if (!state.currentAlpha) return;
-
-            const alpha = state.currentAlpha + state.alphaOffset + state.manualOffset;
-            const beta = state.currentBeta;
-            const gamma = state.currentGamma;
+            // Simple Orientation Logic (Z-Y-X Order)
+            // Apply Manual Offset & Calibration to Alpha
+            const finalAlpha = state.raw.alpha + state.alphaOffset + state.manualOffset;
             
-            const euler = new THREE.Euler();
-            const q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); 
-            
-            euler.set(
-                beta * (Math.PI / 180), 
-                alpha * (Math.PI / 180), 
-                -gamma * (Math.PI / 180), 
+            const deg2rad = Math.PI / 180;
+            const eu = new THREE.Euler(
+                state.raw.beta * deg2rad,
+                finalAlpha * deg2rad,
+                -state.raw.gamma * deg2rad,
                 'YXZ'
             );
             
-            const q = new THREE.Quaternion();
-            q.setFromEuler(euler);
-            q.multiply(q1); 
-            
+            const q = new THREE.Quaternion().setFromEuler(eu);
+            // Adjust for screen orientation (Portrait/Landscape)
+            // Standard fix for WebAR: rotate -90 around X to bring camera down?
+            const qFix = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+            q.multiply(qFix);
+
             camera.quaternion.copy(q);
         }
 
-        function calibrateNorth() {
-            state.alphaOffset = -state.currentAlpha;
-            updateDebug();
-        }
+        // --- UI Flows ---
 
-        function adjustManual(deg) {
-            state.manualOffset += deg;
-            document.getElementById('offset-display').innerText = state.manualOffset + "°";
-        }
-
-        function updateDebug() {
-            const el = document.getElementById('debug-info');
-            el.innerHTML = `
-                A: ${Math.round(state.currentAlpha)}<br>
-                B: ${Math.round(state.currentBeta)}<br>
-                G: ${Math.round(state.currentGamma)}<br>
-                OFF: ${state.manualOffset}
-            `;
-        }
-
-        function animate() {
-            if (!state.isRunning) return;
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-
-        function onResize() {
-            if (!camera) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // --- Start Logic ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check Device First
-            if (checkDevice()) {
-                document.getElementById('start-btn').addEventListener('click', () => {
-                    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                        DeviceOrientationEvent.requestPermission()
-                            .then(response => {
-                                if (response === 'granted') {
-                                    startSystem();
-                                } else {
-                                    alert('Permission denied. Reload to try again.');
-                                }
-                            })
-                            .catch(console.error);
-                    } else {
-                        startSystem();
-                    }
-                });
+        // Step 1: Start Button
+        document.getElementById('btn-start').addEventListener('click', () => {
+            // Permission Request (iOS)
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(resp => {
+                        if (resp === 'granted') {
+                            startCalibration();
+                        } else {
+                            alert("センサーの許可がないと動かないよ😢");
+                        }
+                    })
+                    .catch(e => alert(e));
+            } else {
+                startCalibration();
             }
         });
 
-        function startSystem() {
-            document.getElementById('start-overlay').style.display = 'none';
+        // Step 2: Go to Calibration
+        function startCalibration() {
+            // Init 3D Engine
+            if (!scene) init3D();
+            
             window.addEventListener('deviceorientation', handleOrientation, true);
-            init();
-            updateStarRotation();
             state.isRunning = true;
+
+            // UI Switch
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('calibration-screen').classList.remove('hidden');
+            state.mode = 'CALIB';
         }
-        
-        document.getElementById('btn-calibrate').addEventListener('click', calibrateNorth);
-        document.getElementById('btn-minus90').addEventListener('click', () => adjustManual(-90));
-        document.getElementById('btn-plus90').addEventListener('click', () => adjustManual(90));
+
+        // Step 3: Set North & Go to Star Mode
+        document.getElementById('btn-set-north').addEventListener('click', () => {
+            // 現在のAlphaを「0 (North)」と定義する
+            // つまり、補正値 = -現在のAlpha
+            state.alphaOffset = -state.raw.alpha;
+            
+            // UI Switch
+            document.getElementById('calibration-screen').classList.add('hidden');
+            document.getElementById('main-hud').classList.remove('hidden');
+            
+            // Show Stars!
+            starGroup.visible = true;
+            state.mode = 'STAR';
+        });
+
+        // Other Controls
+        document.getElementById('btn-recalib').addEventListener('click', () => {
+            state.alphaOffset = -state.raw.alpha;
+            state.manualOffset = 0; // Reset manual too
+            document.getElementById('offset-val').innerText = "0°";
+            alert("今向いている方向を「北」にセットしたよ！");
+        });
+
+        document.getElementById('btn-minus90').addEventListener('click', () => {
+            state.manualOffset -= 15; // Fine tune
+            updateOffsetDisplay();
+        });
+        document.getElementById('btn-plus90').addEventListener('click', () => {
+            state.manualOffset += 15;
+            updateOffsetDisplay();
+        });
+
+        function updateOffsetDisplay() {
+            document.getElementById('offset-val').innerText = state.manualOffset + "°";
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
 
     </script>
 </body>
 </html>
-```
-
-### 📦 Deployment Checklist
-
-GitHubアップロード時は、前回同様 `sw.js` の更新をお忘れなく。
-
-```javascript
-// sw.js
-const CACHE_NAME = 'adom-lab-v5.1'; // Increment version
-const INITIAL_ASSETS = [
-  // ...other files
-  './star-compass.html' 
-];
