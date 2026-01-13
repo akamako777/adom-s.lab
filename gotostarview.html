@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v41.2 (Compass Fix)</title>
+    <title>Five Islands Stargazer v41.3 (Axis Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -66,7 +66,7 @@
             border-top: 8px solid rgba(15, 23, 42, 0.9);
         }
 
-        /* 🚪 PC Gate (Fixed Visibility & Z-Index) */
+        /* 🚪 PC GATE (Fixed Visibility & Z-Index) */
         #star-gate {
             position: fixed; inset: 0; z-index: 9999; /* MAX Layer */
             background: #000; /* Solid Black */
@@ -150,8 +150,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.2</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Compass Fix</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.3</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Axis Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -321,7 +321,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">🌌</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.2 COMPASS FIX</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.3 AXIS FIX</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START
             </button>
@@ -333,12 +333,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v41.2 (Compass Fix)
+ * 🌌 FIVE ISLANDS STARGAZER v41.3 (Axis Fix)
  * ==========================================
  * PATCH NOTES:
- * 1. PC Gate z-index increased to 9999 + solid background (Fixes overlap).
- * 2. Compass visual rotation fixed (-90 deg offset).
- * 3. Camera Pitch fixed (Added 180 deg to qFix to align Flat=Zenith).
+ * 1. Compass Value Fix: Added +90 deg offset to text display to match "North=0".
+ * 2. Camera Coordinate Fix: Changed qFix to -Math.PI/2 (90 deg) to align Portrait mode correctly.
  */
 
 // --- 0. DATASETS ---
@@ -463,8 +462,6 @@ const CONSTELLATION_DB = [
         lines: [] 
     }
 ];
-
-const STARS_DATA=[{name:"Betelgeuse",ra:5.919,dec:7.407,mag:0.45,ci:1.85},{name:"Rigel",ra:5.242,dec:-8.202,mag:0.12,ci:-0.03},{name:"Bellatrix",ra:5.418,dec:6.349,mag:1.64,ci:-0.22},{name:"Saiph",ra:5.795,dec:-9.669,mag:2.07,ci:-0.18},{name:"Alnitak",ra:5.679,dec:-1.943,mag:1.74,ci:-0.21},{name:"Alnilam",ra:5.603,dec:-1.202,mag:1.69,ci:-0.19},{name:"Mintaka",ra:5.533,dec:-0.299,mag:2.25,ci:-0.21},{name:"Meissa",ra:5.585,dec:9.934,mag:3.39,ci:-0.14},{name:"Antares",ra:16.490,dec:-26.432,mag:1.06,ci:1.83},{name:"Graffias",ra:16.088,dec:-19.805,mag:2.56,ci:-0.11},{name:"Dschubba",ra:16.005,dec:-22.622,mag:2.29,ci:-0.13},{name:"Pi Sco",ra:15.979,dec:-26.114,mag:2.89,ci:-0.21},{name:"Wei",ra:16.834,dec:-38.020,mag:2.29,ci:1.14},{name:"Mu Sco",ra:16.863,dec:-38.048,mag:3.00,ci:-0.20},{name:"Zeta Sco",ra:16.904,dec:-42.360,mag:3.62,ci:1.50},{name:"Eta Sco",ra:17.202,dec:-43.238,mag:3.32,ci:0.05},{name:"Sargas",ra:17.623,dec:-42.998,mag:1.86,ci:0.38},{name:"Iota Sco",ra:17.795,dec:-40.125,mag:2.99,ci:0.17},{name:"Kappa Sco",ra:17.703,dec:-39.029,mag:2.39,ci:-0.20},{name:"Shaula",ra:17.560,dec:-37.104,mag:1.62,ci:-0.22},{name:"Lesath",ra:17.513,dec:-37.291,mag:2.70,ci:-0.21},{name:"Vega",ra:18.615,dec:38.783,mag:0.03,ci:0.00},{name:"Altair",ra:19.846,dec:8.868,mag:0.76,ci:0.22},{name:"Deneb",ra:20.690,dec:45.280,mag:1.25,ci:0.09},{name:"Aldebaran",ra:4.598,dec:16.509,mag:0.87,ci:1.54},{name:"Elnath",ra:5.438,dec:28.607,mag:1.65,ci:-0.13},{name:"Zeta Tau",ra:5.627,dec:21.142,mag:2.97,ci:-0.22},{name:"Ain",ra:4.478,dec:19.180,mag:3.53,ci:1.02},{name:"Hyadum I",ra:4.331,dec:15.627,mag:3.65,ci:0.97},{name:"Delta Tau",ra:4.381,dec:17.542,mag:3.77,ci:0.96},{name:"Alcyone",ra:3.791,dec:24.105,mag:2.85,ci:-0.09},{name:"Pollux",ra:7.755,dec:28.026,mag:1.16,ci:1.00},{name:"Castor",ra:7.576,dec:31.888,mag:1.58,ci:0.04},{name:"Alhena",ra:6.628,dec:16.399,mag:1.93,ci:0.00},{name:"Tejat",ra:6.248,dec:22.506,mag:2.87,ci:1.56},{name:"Mebsuta",ra:6.733,dec:25.131,mag:3.06,ci:1.40},{name:"Wasat",ra:7.336,dec:21.982,mag:3.50,ci:0.16},{name:"Regulus",ra:10.139,dec:11.967,mag:1.36,ci:-0.11},{name:"Denebola",ra:11.817,dec:14.572,mag:2.14,ci:0.09},{name:"Algieba",ra:10.333,dec:19.841,mag:2.01,ci:1.15},{name:"Zosma",ra:11.236,dec:20.523,mag:2.56,ci:0.12},{name:"Adhafera",ra:10.276,dec:23.417,mag:3.43,ci:1.25},{name:"Rasalas",ra:9.764,dec:23.774,mag:2.97,ci:1.62},{name:"Chertan",ra:11.236,dec:15.428,mag:3.33,ci:0.07},{name:"Spica",ra:13.416,dec:-11.161,mag:0.98,ci:-0.23},{name:"Porrima",ra:12.693,dec:-1.450,mag:2.74,ci:0.36},{name:"Vindemiatrix",ra:13.036,dec:10.959,mag:2.85,ci:0.94},{name:"Heze",ra:13.578,dec:-0.595,mag:3.38,ci:0.16},{name:"Auva",ra:12.926,dec:3.398,mag:3.39,ci:1.38},{name:"Zavijava",ra:11.841,dec:1.765,mag:3.61,ci:0.56},{name:"Dubhe",ra:11.062,dec:61.751,mag:1.81,ci:1.07},{name:"Merak",ra:11.030,dec:56.382,mag:2.34,ci:0.04},{name:"Phecda",ra:11.897,dec:53.694,mag:2.41,ci:0.02},{name:"Megrez",ra:12.257,dec:57.032,mag:3.32,ci:0.08},{name:"Alioth",ra:12.900,dec:55.959,mag:1.76,ci:0.02},{name:"Mizar",ra:13.398,dec:54.925,mag:2.23,ci:0.06},{name:"Alkaid",ra:13.792,dec:49.313,mag:1.85,ci:-0.19},{name:"Talitha",ra:8.987,dec:48.041,mag:3.12,ci:0.20},{name:"Tania Borealis",ra:10.284,dec:42.914,mag:3.45,ci:-0.05},{name:"Mu UMa",ra:10.373,dec:41.498,mag:3.06,ci:1.45},{name:"Polaris",ra:2.530,dec:89.264,mag:1.97,ci:0.63},{name:"Kochab",ra:14.845,dec:74.155,mag:2.07,ci:1.28},{name:"Pherkad",ra:15.346,dec:71.834,mag:3.00,ci:0.05},{name:"Yildun",ra:17.538,dec:86.586,mag:4.35,ci:0.01},{name:"Zeta UMi",ra:15.734,dec:77.795,mag:4.29,ci:-0.06},{name:"Eta UMi",ra:16.292,dec:75.753,mag:4.95,ci:0.40},{name:"Schedar",ra:0.675,dec:56.537,mag:2.24,ci:1.17},{name:"Caph",ra:0.153,dec:59.150,mag:2.28,ci:0.34},{name:"Gamma Cas",ra:0.945,dec:60.717,mag:2.15,ci:-0.1},{name:"Ruchbah",ra:1.430,dec:60.235,mag:2.66,ci:0.13},{name:"Segin",ra:1.907,dec:63.670,mag:3.35,ci:0.26},{name:"Arneb",ra:5.545,dec:-17.822,mag:2.58,ci:0.21},{name:"Nihal",ra:5.470,dec:-20.760,mag:2.81,ci:0.46},{name:"Epsilon Lep",ra:5.087,dec:-22.404,mag:3.19,ci:1.43},{name:"Mu Lep",ra:5.216,dec:-16.208,mag:3.29,ci:-0.12},{name:"Acubens",ra:8.974,dec:11.857,mag:4.26,ci:0.14},{name:"Altarf",ra:8.276,dec:9.186,mag:3.53,ci:1.13},{name:"Asellus Borealis",ra:8.721,dec:21.468,mag:4.66,ci:0.08},{name:"Asellus Australis",ra:8.740,dec:18.156,mag:3.94,ci:1.00},{name:"Sirius",ra:6.752,dec:-16.716,mag:-1.46,ci:0.00},{name:"M45 Pleiades",ra:3.783,dec:24.116,mag:1.6,ci:-0.05}];
 
 // --- 1. MATH ENGINE ---
 const Math3D = {
@@ -642,10 +639,10 @@ const App = {
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
-            // Compass Rotation Logic (Corrected -90 deg offset)
+            // Compass Rotation Logic (Corrected -90 deg offset for visual)
             let heading = App.state.smoothedOri.isIOS ? App.state.smoothedOri.webkitCompass : App.state.smoothedOri.alpha;
-            // The ring should rotate opposite to heading to keep 'N' pointing North on screen
-            // Added -90 because user reported 180 deg reversal with +90.
+            
+            // Visual Ring Rotation
             ring.style.transform = `rotate(${-heading - 90}deg)`;
 
             const btn = document.getElementById('btn-confirm-setup');
@@ -654,7 +651,9 @@ const App = {
             btn.innerText = "セット (SET NORTH)";
             btn.classList.add('bg-gradient-to-r', 'from-cyan-600', 'to-blue-600', 'text-white');
             
-            document.getElementById('compass-val').innerText = `${Math.round(heading)}°`;
+            // FIX: Add +90 offset to text value to match visual North
+            let displayHeading = (heading + 90) % 360;
+            document.getElementById('compass-val').innerText = `${Math.round(displayHeading)}°`;
         }
     },
 
@@ -705,10 +704,10 @@ const App = {
         const qSensor = App.getSensorQuaternion();
         let qAligned = Math3D.qMultiply(App.state.anchorCorrectionQ, qSensor);
         
-        // CORRECTION for Horizon Line Issue:
-        // Default (0) was looking at Horizon (so Flat phone = Horizon).
-        // Added 180 deg Pitch rotation (-Math.PI) to make Flat phone look at Zenith (Sky).
-        const qFix = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI); 
+        // CORRECTION for Horizon/Axis Issue:
+        // Changed to -Math.PI / 2 (90 deg) to align upright phone with horizon.
+        // Previous value -Math.PI was flipping coordinate system upside down.
+        const qFix = Math3D.qFromAxisAngle([1, 0, 0], -Math.PI / 2); 
         
         qAligned = Math3D.qMultiply(qFix, qAligned);
         const mCam = Math3D.matFromQ(qAligned);
