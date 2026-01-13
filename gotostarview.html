@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.2</title>
+    <title>Star Compass v3.3</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -211,10 +211,14 @@
     <!-- 2. Calibration Screen -->
     <div id="calibration-screen" class="overlay hidden">
         <div class="calib-guide">
-            <p style="font-size:1.1rem; margin:0;">
-                スマホを回して<br><span style="color:#ff7777; font-weight:900;">「北 (N)」</span>を向いてね
+            <p style="font-size:1.0rem; margin:0; line-height:1.6;">
+                <b>アナログ設定だよ！</b><br>
+                1. まずスマホを現実の<span style="color:#ff7777; font-weight:900;">「北」</span>に向ける<br>
+                2. 画面の<span style="color:#ff7777; font-weight:bold;">「北(N)」</span>がズレてたら<br>
+                下のボタンで合わせる<br>
+                3. 「ここが北だ！」を押す
             </p>
-            <button id="btn-gps" class="btn-style btn-small" style="margin-top:10px; background:rgba(0,255,0,0.2); border-color:#0f0;">📍 現在地を取得</button>
+            <button id="btn-gps" class="btn-style btn-small" style="margin-top:15px; background:rgba(0,255,0,0.2); border-color:#0f0;">📍 現在地を取得</button>
             <p id="gps-status" style="font-size:0.8rem; margin-top:5px; color:#aaa;">(初期設定: 五島列島)</p>
         </div>
         
@@ -291,8 +295,8 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.2
-         * Updates: Absolute Orientation (Compass Logic v2), Time Travel Simulation
+         * 🌌 STAR COMPASS ENGINE V3.3
+         * Updates: Reverted to Stable Analog Logic (No Absolute Orientation)
          */
 
         // --- 0. Database ---
@@ -435,15 +439,8 @@
         function startCalib() {
             init3D();
             
-            // Standard Event
+            // Revert to Standard Event Only
             window.addEventListener('deviceorientation', handleOrientation, true);
-            // Absolute Event (Android)
-            if ('ondeviceorientationabsolute' in window) {
-                window.addEventListener('deviceorientationabsolute', (e) => {
-                    e.isAbsolute = true;
-                    handleOrientation(e);
-                }, true);
-            }
             
             state.isRunning = true;
             document.getElementById('start-screen').classList.add('hidden');
@@ -634,46 +631,17 @@
             group.add(sprite);
         }
 
-        // --- Compass Logic v2 (Absolute) ---
+        // --- Compass Logic v1 (Stable Analog) ---
 
         function handleOrientation(e) {
+            // Reverted to simple alpha only. No absolute/compassHeading checks.
             let alpha = e.alpha || 0;
             let beta = e.beta || 0;
             let gamma = e.gamma || 0;
 
-            // iOS Webkit Compass
-            if (e.webkitCompassHeading) {
-                // webkitCompassHeading is deviation from North (0) clockwise.
-                // alpha in Three.js/Euler is Z-rotation counter-clockwise.
-                // We need to invert it.
-                // Also, it usually aligns North to Device Top correctly.
-                
-                // e.alpha in iOS is relative to launch. compassHeading is absolute.
-                // We map compassHeading to an alpha-like value for our equation.
-                alpha = e.webkitCompassHeading; 
-                // Note: The standard Euler conversion usually expects alpha as CCW.
-                // iOS heading is CW. 
-                // However, standard formula often handles typical Android alpha (CCW).
-                // Let's use standard logic but prioritize absolute if available.
-            }
-            // Android Absolute
-            else if (e.isAbsolute && e.alpha !== null) {
-                // Absolute alpha (Android): 0=North, Increases CCW? 
-                // Spec says: 0=North, East=270 (so CCW).
-                alpha = e.alpha;
-            }
-
             state.raw = { alpha, beta, gamma };
             
             // Adjust Offset
-            // Note: If using absolute compass, manualOffset might need to be 0 or 90 depending on device axis.
-            // We keep manualOffset active so user can fix it if logic fails.
-            
-            // For iOS webkitCompassHeading, we might need to negate it for the Euler formula 
-            // if the formula expects CCW alpha.
-            // But let's stick to the V1 logic + manual offset wrapper.
-            // The manual offset can correct the CW/CCW mismatch visually.
-            
             const finalAlpha = state.raw.alpha + state.alphaOffset + state.manualOffset;
             
             const deg2rad = Math.PI / 180;
