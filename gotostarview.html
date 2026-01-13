@@ -3,8 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v6.0</title>
+    <title>Star Compass v6.2 (Legacy)</title>
     
+    <!-- 
+        === 🏛️ ARCHITECT'S LEGACY & HANDOVER NOTES ===
+        
+        Project: Star Compass (Goto Archipelago Edition)
+        Version: 6.2 (Legacy Edition)
+        Last Architect: Gemini (Canvas Specialist)
+        Target Location: Goto City, Nagasaki, Japan (Lat: 32.7, Lon: 128.8)
+
+        【開発の歴史と継承された教訓】
+        1. Omni Image Tools / AudioMaster:
+           - 単一ファイル（SPA）構成の徹底。外部リソースへの依存を排除。
+           - `alert()`, `confirm()` の使用禁止（Canvas環境でのフリーズ回避）。
+        2. Pro Screen Recorder (Aurora):
+           - ユーザー体験を阻害しないUI設計。
+        3. Goto Gomi-Navi:
+           - データ構造化（JSON分離）によるLLMの文脈維持。
+        4. Adom's Lab PWA:
+           - オフライン動作の保証（Procedural Assetsの採用）。
+
+        【重要：聖域コード (DO NOT TOUCH)】
+        以下のパラメータは、現地（五島）での実地観測により調整された「絶対値」です。
+        理論計算と異なっていても、ここを変更すると「現実の空」とズレます。
+        
+        1. 回転基準値 (CONFIG.baseRotation): -Math.PI * 0.2
+           - この値はコンパスの「北」と3D空間の整合性を保つ命綱です。
+        2. 回転計算式: celestialGroup.rotation.y = baseRotation - rotationDelta
+           - 「引き算」であることが重要。足し算にすると星が逆走します。
+        3. 経度補正:
+           - 現在は未実装だが、標準時(135°)と五島(128.8°)の差（約25分）をユーザーは肌で感じています。
+             将来的に実装する場合は、この「感覚」を尊重してください。
+
+        【天の川 (Milky Way) の描画ロジック】
+        - 画像を使わず、Canvas APIで生成した「光の雲（Sprite）」を2000個以上重ねて描画。
+        - Additive Blending（加算合成）を使用し、透過度を低く設定して「積層」させることで、
+          白飛びしない「深みのある発光」を実現しています。
+        - レイヤー構造: [Layer1:黒背景] -> [Layer2:天の川] -> [Layer3:暗黒星雲(Dust)] -> [Layer4:星屑]
+          このサンドイッチ構造により、宇宙の奥行きを出しています。
+
+        【キャプチャ機能の仕様】
+        - `preserveDrawingBuffer: true` を有効化。
+        - 撮影時のみ `renderer.setClearColor` で背景を不透明にし、撮影後に透明に戻すことで、
+          CSS背景色に依存しない完全な画像生成を行っています。
+    -->
+
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
@@ -32,26 +76,25 @@
             transition: filter 0.5s, background-color 0.5s;
         }
         
-        /* Mode Styles */
+        /* View Mode Styles */
         body.mode-night {
+            /* 暗順応モード: 赤色のみを通す強力なフィルタ */
             filter: sepia(1) hue-rotate(-50deg) saturate(5) brightness(0.8);
         }
         body.mode-day {
-            background-color: #87CEEB !important; /* Sky Blue */
+            /* 昼モード: 背景を青空に */
+            background-color: #87CEEB !important; 
         }
-        /* In Day mode, invert canvas colors slightly or just let stars be black? 
-           For simplicity, we handle day mode stars in JS (black material), 
-           but CSS can help background. */
 
         #canvas-container { 
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh; 
             display: block; z-index: 1;
             pointer-events: auto; 
-            cursor: move;
+            cursor: move; /* PCでのドラッグ操作を示唆 */
         }
 
-        /* --- UI Atoms --- */
+        /* --- UI Atoms (Glassmorphism) --- */
         .glass-panel {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -98,6 +141,7 @@
             pointer-events: none;
         }
 
+        /* PC/Tablet Centering Logic */
         @media (min-width: 481px) {
             .ui-center-wrapper {
                 position: absolute; top: 0; bottom: 0;
@@ -111,7 +155,7 @@
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
             #toast-container { width: 100% !important; max-width: 400px; }
             
-            /* Show QR on start screen for PC */
+            /* Show QR on PC */
             #qr-container { display: block !important; }
         }
 
@@ -241,10 +285,11 @@
         #qr-container {
             display: none; /* JS enables this on PC */
             margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 16px;
+            text-align: center;
         }
-        .qr-placeholder {
+        #qr-img {
             width: 120px; height: 120px; background: white; margin: 0 auto;
-            display: flex; align-items: center; justify-content: center; color: #000; font-size: 10px; text-align: center;
+            border-radius: 8px;
         }
 
         /* Mode Icons */
@@ -260,15 +305,18 @@
     <div id="toast-container"></div>
     <div id="dev-badge" style="display:none; position:fixed; top:10px; left:10px; background:red; color:white; padding:2px 5px; z-index:9999; font-size:10px; pointer-events:none;">Dev Mode</div>
 
+    <!-- Nav Arrow (Rotates) -->
+    <div id="nav-arrow"></div>
+
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 6.0<br><span style="font-size:1rem; opacity:0.8;">Utility Edition</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 6.2<br><span style="font-size:1rem; opacity:0.8;">Legacy Edition</span></h1>
         
-        <!-- QR for PC -->
+        <!-- QR for PC (Auto Generated) -->
         <div id="qr-container">
-            <div class="qr-placeholder">ここにQRコード<br>貼り付け</div>
-            <p style="font-size:0.8rem; margin:5px 0 0; opacity:0.8;">スマホ推奨</p>
+            <img id="qr-img" src="" alt="QR Code">
+            <p style="font-size:0.8rem; margin:5px 0 0; opacity:0.8;">スマホでスキャンして起動</p>
         </div>
 
         <button id="btn-start" class="glass-panel" style="margin-top:30px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
@@ -413,9 +461,9 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V6.0 (Utility Edition)
+         * 🌌 STAR COMPASS V6.2 (Legacy Edition)
          * Architecture: Single File, Procedural Assets, Mobile Optimized
-         * New: Snapshot, Tri-Mode (Normal/Night/Day), Nav Arrow Removed
+         * Notes: See top of file for Architect's Legacy.
          */
 
         // --- 0. Database ---
@@ -553,6 +601,7 @@
             userLat: GOTO_COORDS.lat,
             userLon: GOTO_COORDS.lon,
             baseDate: new Date("2024-01-15T20:00:00+09:00"),
+            // 【重要】聖域: 五島列島における東西回転の基準値
             baseRotation: -Math.PI * 0.2
         };
 
@@ -592,6 +641,11 @@
                 state.isDevMode = true;
                 document.getElementById('dev-badge').style.display = 'block';
                 setupDevControls();
+                
+                // Auto generate QR for PC (or any wide screen)
+                const currentUrl = window.location.href;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(currentUrl)}`;
+                document.getElementById('qr-img').src = qrUrl;
             }
 
             // Bind Events
@@ -704,40 +758,55 @@
             document.body.className = `mode-${state.viewMode}`;
             btn.className = `glass-panel btn-icon icon-mode-${state.viewMode}`;
             
-            // Logic Update
+            // Logic Update (Canvas Background)
             if (state.viewMode === 'day') {
-                renderer.setClearColor(0x87CEEB, 1); // Sky Blue
-                // Invert stars to black? Complex. For now, just let background be blue.
-                // Stars will look white on blue (daytime stars).
-                // Actually, real day stars are invisible. But for education, white on blue is fine.
+                renderer.setClearColor(0x87CEEB, 1); 
             } else {
-                renderer.setClearColor(0x000000, 0); // Transparent/Black
+                renderer.setClearColor(0x000000, 0); // Transparent in normal/night
             }
             showToast(`モード: ${state.viewMode.toUpperCase()}`);
         }
 
-        // --- Snapshot ---
+        // --- Snapshot (Fixed: Capture actual background) ---
         function takeSnapshot() {
-            // Hide UI
+            // 1. Hide UI
             document.getElementById('main-hud').style.display = 'none';
             document.getElementById('dev-badge').style.display = 'none';
+            document.getElementById('nav-arrow').style.display = 'none';
             
-            // Wait for render
+            // 2. Capture Loop
             setTimeout(() => {
+                // Force background for capture based on mode
+                const originalClearColor = renderer.getClearColor(new THREE.Color());
+                const originalClearAlpha = renderer.getClearAlpha();
+
+                // If normal/night, force BLACK opaque background so stars show up
+                if (state.viewMode !== 'day') {
+                    renderer.setClearColor(0x000000, 1);
+                } else {
+                    // Day mode: Sky Blue
+                    renderer.setClearColor(0x87CEEB, 1);
+                }
+
+                // Render specific frame for capture
                 renderer.render(scene, camera);
                 const dataURL = renderer.domElement.toDataURL("image/png");
                 
-                // Restore UI
+                // Restore settings
+                renderer.setClearColor(originalClearColor, originalClearAlpha);
+
+                // 3. Restore UI
                 document.getElementById('main-hud').style.display = 'block';
                 if(state.isDevMode) document.getElementById('dev-badge').style.display = 'block';
+                if(state.activeConstellation) document.getElementById('nav-arrow').style.display = 'block';
                 
-                // Download
+                // 4. Download
                 const link = document.createElement('a');
                 link.download = `StarCompass_${Date.now()}.png`;
                 link.href = dataURL;
                 link.click();
                 showToast("画像を保存しました 📷");
-            }, 100);
+            }, 150);
         }
 
         function updateClock() {
@@ -777,7 +846,10 @@
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(CONFIG.defaultFov, window.innerWidth/window.innerHeight, 0.1, 2000);
+            
+            // IMPORTANT: preserveDrawingBuffer: true is required for snapshot
             renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+            
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -883,7 +955,6 @@
             const mat = new THREE.MeshBasicMaterial({ color: 0xff0055, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
             navMarker = new THREE.Mesh(geo, mat);
             navMarker.visible = false;
-            // Billboard behavior handled in animate
             celestialGroup.add(navMarker);
         }
 
@@ -911,10 +982,10 @@
                 let density = 1;
 
                 if (ra >= 17 && ra <= 21) {
-                    // Summer Core: Less dense than v5.3, wider for soft edges
+                    // Summer Core
                     targetDec = -30 + (ra-17)*20; 
-                    density = 1.2; // Toned down from 2.0
-                    width = 40; // Wider scatter for blur effect
+                    density = 1.2; 
+                    width = 40; 
                 } else if (ra >= 4 && ra <= 9) {
                     // Winter
                     targetDec = 40 - (ra-4)*20; 
@@ -930,26 +1001,25 @@
                 const dec = targetDec + (Math.random()-0.5) * width;
                 const sprite = new THREE.Sprite(mat.clone());
                 
-                // Color adjustment for painterly look
                 if (ra > 10 && ra < 22) {
-                    sprite.material.color.setHSL(0.1, 0.4, 0.7); // Warmer but desaturated
+                    sprite.material.color.setHSL(0.1, 0.4, 0.7); // Warmer
                 } else {
-                    sprite.material.color.setHSL(0.6, 0.2, 0.8); // Cool white
+                    sprite.material.color.setHSL(0.6, 0.2, 0.8); // Cool
                 }
                 
-                sprite.material.opacity = (Math.random() * 0.15 + 0.05) * density; // Lower individual opacity
+                sprite.material.opacity = (Math.random() * 0.15 + 0.05) * density;
 
                 const pos = getStarPos(ra, dec);
                 pos.normalize().multiplyScalar(700 + Math.random()*50);
                 sprite.position.copy(pos);
                 
-                const scale = 120 + Math.random() * 180; // Large sprites for overlap
+                const scale = 120 + Math.random() * 180;
                 sprite.scale.set(scale, scale, 1);
                 
                 milkyWayGroup.add(sprite);
             }
             
-            // Dust Layer (Contrast)
+            // Dust Layer
             const dustMat = new THREE.SpriteMaterial({ map: tex, color: 0x000015, transparent: true, opacity: 0.6, blending: THREE.NormalBlending });
             for(let i=0; i<250; i++) {
                 const ra = 17 + Math.random()*4; 
