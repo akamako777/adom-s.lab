@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v5.4</title>
+    <title>Star Compass v6.0</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -29,8 +29,20 @@
             touch-action: none; 
             user-select: none;
             -webkit-user-select: none;
+            transition: filter 0.5s, background-color 0.5s;
         }
         
+        /* Mode Styles */
+        body.mode-night {
+            filter: sepia(1) hue-rotate(-50deg) saturate(5) brightness(0.8);
+        }
+        body.mode-day {
+            background-color: #87CEEB !important; /* Sky Blue */
+        }
+        /* In Day mode, invert canvas colors slightly or just let stars be black? 
+           For simplicity, we handle day mode stars in JS (black material), 
+           but CSS can help background. */
+
         #canvas-container { 
             position: fixed; top: 0; left: 0;
             width: 100vw; height: 100vh; 
@@ -98,6 +110,9 @@
             }
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
             #toast-container { width: 100% !important; max-width: 400px; }
+            
+            /* Show QR on start screen for PC */
+            #qr-container { display: block !important; }
         }
 
         .hud-top {
@@ -122,7 +137,8 @@
             flex-shrink: 0; pointer-events: auto;
         }
 
-        .center-unit, .right-unit { display: flex; justify-content: center; padding-bottom: 0px; }
+        .center-unit { display: flex; justify-content: center; padding-bottom: 0px; }
+        .right-unit { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 0px; }
         
         /* --- Overlays --- */
         .overlay {
@@ -221,17 +237,20 @@
             border: 1px solid #888; color: #888; border-radius: 8px; font-size: 12px; cursor: pointer;
         }
 
-        /* 3D Nav Arrow */
-        #nav-arrow {
-            display: none; position: absolute; top: 50%; left: 50%;
-            width: 0; height: 0; pointer-events: none; z-index: 40;
-            /* Using a CSS triangle or SVG */
+        /* QR Code Placeholder */
+        #qr-container {
+            display: none; /* JS enables this on PC */
+            margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 16px;
         }
-        #nav-arrow::after {
-            content: '➤'; font-size: 40px; color: #ff0055;
-            text-shadow: 0 0 10px #ff0055;
-            display: block; transform: translate(-50%, -50%);
+        .qr-placeholder {
+            width: 120px; height: 120px; background: white; margin: 0 auto;
+            display: flex; align-items: center; justify-content: center; color: #000; font-size: 10px; text-align: center;
         }
+
+        /* Mode Icons */
+        .icon-mode-normal::before { content: '🌗'; }
+        .icon-mode-night::before { content: '🔴'; }
+        .icon-mode-day::before { content: '☀️'; }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -241,14 +260,18 @@
     <div id="toast-container"></div>
     <div id="dev-badge" style="display:none; position:fixed; top:10px; left:10px; background:red; color:white; padding:2px 5px; z-index:9999; font-size:10px; pointer-events:none;">Dev Mode</div>
 
-    <!-- Nav Arrow (Rotates) -->
-    <div id="nav-arrow"></div>
-
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 5.4<br><span style="font-size:1rem; opacity:0.8;">Final Polish</span></h1>
-        <button id="btn-start" class="glass-panel" style="margin-top:40px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 6.0<br><span style="font-size:1rem; opacity:0.8;">Utility Edition</span></h1>
+        
+        <!-- QR for PC -->
+        <div id="qr-container">
+            <div class="qr-placeholder">ここにQRコード<br>貼り付け</div>
+            <p style="font-size:0.8rem; margin:5px 0 0; opacity:0.8;">スマホ推奨</p>
+        </div>
+
+        <button id="btn-start" class="glass-panel" style="margin-top:30px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
         <p style="margin-top:20px; opacity:0.6; font-size:0.8rem;">※コンパスの許可が必要です</p>
     </div>
 
@@ -304,9 +327,11 @@
                     <button id="btn-time-toggle" class="glass-panel btn-icon" style="width:60px; height:60px; font-size:24px;">🕒</button>
                 </div>
 
-                <!-- Right: Settings Btn -->
+                <!-- Right: Utility Stack -->
                 <div class="right-unit">
-                    <button id="btn-settings" class="glass-panel btn-icon" style="width:60px; height:60px; font-size:24px;">⚙</button>
+                    <button id="btn-snapshot" class="glass-panel btn-icon" style="width:50px; height:50px; font-size:20px;" title="撮影">📷</button>
+                    <button id="btn-mode" class="glass-panel btn-icon icon-mode-normal" style="width:50px; height:50px; font-size:20px;" title="モード切替"></button>
+                    <button id="btn-settings" class="glass-panel btn-icon" style="width:60px; height:60px; font-size:24px;" title="設定">⚙</button>
                 </div>
             </div>
         </div>
@@ -388,9 +413,9 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V5.4 (Final Polish)
+         * 🌌 STAR COMPASS V6.0 (Utility Edition)
          * Architecture: Single File, Procedural Assets, Mobile Optimized
-         * New: Fine-tuned Milky Way (Softer), Nav Arrow, Target Marker
+         * New: Snapshot, Tri-Mode (Normal/Night/Day), Nav Arrow Removed
          */
 
         // --- 0. Database ---
@@ -545,7 +570,8 @@
             // Settings
             filter: { famous:true, normal:true, minor:false, object:true, milkyway:true, stardust:true },
             labels: 'name', // name, desc, none
-            activeTab: 'famous' // for encyclopedia
+            activeTab: 'famous',
+            viewMode: 'normal' // normal, night, day
         };
 
         // --- Three.js Globals ---
@@ -553,7 +579,7 @@
         let celestialGroup, constellationGroup, labelsGroup, milkyWayGroup, stardustGroup;
         let cstLines = {}; 
         let cstLabels = {}; 
-        let navMarker = null; // 3D ring marker
+        let navMarker = null;
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -573,6 +599,10 @@
             document.getElementById('btn-recalib').addEventListener('click', resetCalibration);
             document.getElementById('btn-stop-nav').addEventListener('click', stopNavigation);
             
+            // Mode & Snapshot
+            document.getElementById('btn-mode').addEventListener('click', toggleViewMode);
+            document.getElementById('btn-snapshot').addEventListener('click', takeSnapshot);
+
             // Slider & Buttons
             document.getElementById('zoom-slider').addEventListener('input', (e) => {
                 if(camera) { camera.fov = 120 - (e.target.value * 0.9); camera.updateProjectionMatrix(); }
@@ -663,6 +693,53 @@
             showToast("方位を正面にリセットしました");
         }
 
+        // --- View Modes ---
+        function toggleViewMode() {
+            const btn = document.getElementById('btn-mode');
+            const modes = ['normal', 'night', 'day'];
+            const nextIdx = (modes.indexOf(state.viewMode) + 1) % modes.length;
+            state.viewMode = modes[nextIdx];
+            
+            // UI Update
+            document.body.className = `mode-${state.viewMode}`;
+            btn.className = `glass-panel btn-icon icon-mode-${state.viewMode}`;
+            
+            // Logic Update
+            if (state.viewMode === 'day') {
+                renderer.setClearColor(0x87CEEB, 1); // Sky Blue
+                // Invert stars to black? Complex. For now, just let background be blue.
+                // Stars will look white on blue (daytime stars).
+                // Actually, real day stars are invisible. But for education, white on blue is fine.
+            } else {
+                renderer.setClearColor(0x000000, 0); // Transparent/Black
+            }
+            showToast(`モード: ${state.viewMode.toUpperCase()}`);
+        }
+
+        // --- Snapshot ---
+        function takeSnapshot() {
+            // Hide UI
+            document.getElementById('main-hud').style.display = 'none';
+            document.getElementById('dev-badge').style.display = 'none';
+            
+            // Wait for render
+            setTimeout(() => {
+                renderer.render(scene, camera);
+                const dataURL = renderer.domElement.toDataURL("image/png");
+                
+                // Restore UI
+                document.getElementById('main-hud').style.display = 'block';
+                if(state.isDevMode) document.getElementById('dev-badge').style.display = 'block';
+                
+                // Download
+                const link = document.createElement('a');
+                link.download = `StarCompass_${Date.now()}.png`;
+                link.href = dataURL;
+                link.click();
+                showToast("画像を保存しました 📷");
+            }, 100);
+        }
+
         function updateClock() {
             if (state.isLive) { state.simulatedDate = new Date(); updateCelestialRotation(state.simulatedDate); }
             const d = state.simulatedDate;
@@ -700,7 +777,7 @@
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(CONFIG.defaultFov, window.innerWidth/window.innerHeight, 0.1, 2000);
-            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -975,7 +1052,6 @@
             }
 
             // Nav Logic
-            const arrow = document.getElementById('nav-arrow');
             if (state.activeConstellation) {
                 const data = CONSTELLATION_DB[state.activeConstellation];
                 const targetKey = data.navTarget || (data.lines[0] ? data.lines[0][0] : null);
@@ -997,47 +1073,9 @@
                         const s = 1 + 0.3 * Math.sin(Date.now() * 0.01);
                         navMarker.scale.set(s,s,s);
                     }
-
-                    // 2D Arrow Logic
-                    // Project star position to NDC
-                    // We need the world position of the star relative to camera
-                    // The star is inside 'celestialGroup' which rotates.
-                    // We need absolute world pos.
-                    
-                    // Clone star pos, apply group rotation
-                    const worldPos = starPos.clone().applyMatrix4(celestialGroup.matrixWorld);
-                    
-                    // Check if in frustum
-                    const p = worldPos.clone().project(camera);
-                    
-                    // Visible if -1 < x < 1 and -1 < y < 1 and z < 1 (in front)
-                    const isVisible = (p.z < 1 && Math.abs(p.x) < 1 && Math.abs(p.y) < 1);
-                    
-                    if (isVisible) {
-                        arrow.style.display = 'none';
-                    } else {
-                        arrow.style.display = 'block';
-                        // Calculate angle to target on screen plane
-                        // If z > 1 (behind), we invert x/y to point "away"
-                        let dx = p.x;
-                        let dy = p.y;
-                        if (p.z > 1) { dx = -dx; dy = -dy; }
-                        
-                        // Calculate angle
-                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-                        // Rotate arrow: -90 because arrow points right by default?
-                        // arrow::after content '➤' usually points right.
-                        // atan2(y,x) 0 is Right.
-                        // We want arrow to point towards the target.
-                        // CSS rotation: 0 is Right (if arrow is ->).
-                        // Let's adjust based on the character. ➤ points right.
-                        arrow.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translate(120px)`; 
-                        // translate(120px) pushes it to the edge of a virtual circle
-                    }
                 }
             } else {
                 if(navMarker) navMarker.visible = false;
-                arrow.style.display = 'none';
             }
 
             renderer.render(scene, camera);
@@ -1159,7 +1197,6 @@
             state.activeConstellation = null;
             document.getElementById('btn-stop-nav').style.display = 'none';
             if(navMarker) navMarker.visible = false;
-            document.getElementById('nav-arrow').style.display = 'none';
             showToast("ナビゲーションを終了しました");
             
             // Restore visual state based on filters
