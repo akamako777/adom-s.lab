@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v3.1</title>
+    <title>Star Compass v3.2</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -84,7 +84,6 @@
         }
 
         #calibration-screen {
-            /* 修正①: 透明度を0.7から0.3に下げて、奥のキャンバスを見やすくする */
             background: rgba(0, 0, 0, 0.3);
             justify-content: space-between; padding: 40px 20px; box-sizing: border-box;
         }
@@ -107,6 +106,28 @@
             padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; 
             pointer-events: auto;
         }
+
+        /* Digital Clock Panel */
+        #clock-panel {
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 10px;
+            padding: 8px 12px;
+            text-align: right;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            min-width: 100px;
+        }
+        #clock-time {
+            font-size: 1.2rem; font-weight: bold; color: #fff;
+            text-shadow: 0 0 5px #0ff;
+            font-family: 'Courier New', monospace; /* Monospace for numbers */
+        }
+        #clock-mode {
+            font-size: 0.7rem; color: #aaa; margin-top: 2px;
+        }
+        .mode-live { color: #0f0; }
+        .mode-manual { color: #f0f; }
         
         /* HUD Bottom */
         .hud-bottom { 
@@ -219,8 +240,11 @@
                 <button id="btn-recalib" class="btn-style btn-small">北合わせ</button>
                 <button id="btn-sync-time" class="btn-style btn-small" style="background:rgba(255,200,0,0.2); border-color:#fc0;">🕒 今に合わせる</button>
             </div>
-            <div id="time-display" style="font-size:12px; opacity:0.7; text-align:right;">
-                Time: 20:00 (Fixed)<br>Loc: Goto
+            
+            <!-- Digital Clock Panel -->
+            <div id="clock-panel">
+                <div id="clock-time">--:--</div>
+                <div id="clock-mode"><span class="mode-live">● LIVE</span> <span id="clock-loc">Goto</span></div>
             </div>
         </div>
 
@@ -256,7 +280,6 @@
             <div class="control-panel">
                 <div class="control-label">時間旅行</div>
                 <div class="control-row">
-                    <!-- 修正②: アイコンを ➖ ➕ に変更 -->
                     <button id="btn-time-back" class="round-btn" style="font-size:16px;">➖</button>
                     <button id="btn-time-fwd" class="round-btn" style="font-size:16px;">➕</button>
                 </div>
@@ -268,8 +291,8 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS ENGINE V3.1
-         * Updates: Brighter Calibration, Inverted Time Travel, Auto-Sync
+         * 🌌 STAR COMPASS ENGINE V3.2
+         * Updates: Absolute Orientation (Compass Logic v2), Time Travel Simulation
          */
 
         // --- 0. Database ---
@@ -315,6 +338,7 @@
             starDistance: 800,
             userLat: GOTO_COORDS.lat,
             userLon: GOTO_COORDS.lon,
+            // 基準日: 2024/1/15 20:00 (冬の配置基準)
             baseDate: new Date("2024-01-15T20:00:00+09:00"),
             baseRotation: Math.PI * 0.8
         };
@@ -325,7 +349,10 @@
             alphaOffset: 0,
             manualOffset: 90, 
             raw: { alpha: 0, beta: 0, gamma: 0 },
-            targetQuaternion: new THREE.Quaternion()
+            targetQuaternion: new THREE.Quaternion(),
+            // Time Travel State
+            simulatedDate: new Date(), // 現在の表示時刻
+            isLive: true
         };
 
         // --- Three.js Globals ---
@@ -352,6 +379,9 @@
             if (!checkDevice()) return;
             initStarBg(); 
 
+            // Initialize simulation time to NOW
+            state.simulatedDate = new Date();
+
             // START
             document.getElementById('btn-start').addEventListener('click', () => {
                 if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -371,22 +401,20 @@
                 camera.updateProjectionMatrix();
             });
             
-            // TIME TRAVEL (Manual)
-            // 修正②: ロジック反転。左(Back)でプラス、右(Fwd)でマイナス（ユーザーの体感に合わせる）
-            document.getElementById('btn-time-back').addEventListener('click', () => {
-                if (celestialGroup) celestialGroup.rotation.y += 0.1; // Reverse logic based on user feedback
-            });
-            document.getElementById('btn-time-fwd').addEventListener('click', () => {
-                if (celestialGroup) celestialGroup.rotation.y -= 0.1; // Reverse logic
-            });
+            // TIME TRAVEL (Time Manipulation)
+            document.getElementById('btn-time-back').addEventListener('click', () => adjustTime(-15)); // -15 min
+            document.getElementById('btn-time-fwd').addEventListener('click', () => adjustTime(15)); // +15 min
 
             // GPS
             document.getElementById('btn-gps').addEventListener('click', getGPS);
             
             // TIME SYNC
             document.getElementById('btn-sync-time').addEventListener('click', () => {
-                syncToCurrentTime(true); // Explicit click shows alert
+                syncToCurrentTime(true); 
             });
+            
+            // Start clock update loop
+            setInterval(updateClockDisplay, 1000);
         });
 
         function initStarBg() {
@@ -406,7 +434,17 @@
 
         function startCalib() {
             init3D();
+            
+            // Standard Event
             window.addEventListener('deviceorientation', handleOrientation, true);
+            // Absolute Event (Android)
+            if ('ondeviceorientationabsolute' in window) {
+                window.addEventListener('deviceorientationabsolute', (e) => {
+                    e.isAbsolute = true;
+                    handleOrientation(e);
+                }, true);
+            }
+            
             state.isRunning = true;
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('calibration-screen').classList.remove('hidden');
@@ -424,43 +462,74 @@
                     CONFIG.userLat = pos.coords.latitude;
                     CONFIG.userLon = pos.coords.longitude;
                     document.getElementById('gps-status').innerText = `完了: 北緯${CONFIG.userLat.toFixed(1)}°`;
-                    
+                    document.getElementById('clock-loc').innerText = "GPS";
                     if (celestialGroup) updateTilt();
-                    
-                    document.getElementById('time-display').innerText = `Loc: GPS (${CONFIG.userLat.toFixed(1)})`;
                 },
                 (err) => {
                     alert("GPS取得失敗: 五島列島の座標を使います。");
                     document.getElementById('gps-status').innerText = "(初期設定: 五島列島)";
                     CONFIG.userLat = GOTO_COORDS.lat;
                     CONFIG.userLon = GOTO_COORDS.lon;
+                    document.getElementById('clock-loc').innerText = "Goto";
                 }
             );
         }
 
-        // --- Time Sync Logic ---
-        function syncToCurrentTime(showAlert = false) {
-            const now = new Date();
+        // --- Time Sync & Travel Logic ---
+        
+        function updateClockDisplay() {
+            // If live, update simulatedDate to now
+            if (state.isLive) {
+                state.simulatedDate = new Date();
+                updateCelestialRotation(state.simulatedDate);
+            }
             
-            // 1. Calculate days since Base Date
+            const d = state.simulatedDate;
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            document.getElementById('clock-time').innerText = `${hh}:${mm}`;
+            
+            const modeEl = document.getElementById('clock-mode').querySelector('span:first-child');
+            if (state.isLive) {
+                modeEl.className = 'mode-live';
+                modeEl.innerText = '● LIVE';
+            } else {
+                modeEl.className = 'mode-manual';
+                // Calculate diff
+                const diffMs = d - new Date();
+                const diffMins = Math.round(diffMs / 60000);
+                const sign = diffMins >= 0 ? '+' : '';
+                modeEl.innerText = `MANUAL (${sign}${diffMins}min)`;
+            }
+        }
+
+        function adjustTime(minutes) {
+            state.isLive = false;
+            state.simulatedDate = new Date(state.simulatedDate.getTime() + minutes * 60000);
+            updateCelestialRotation(state.simulatedDate);
+            updateClockDisplay(); // force update
+        }
+
+        function syncToCurrentTime(showAlert = false) {
+            state.isLive = true;
+            updateClockDisplay(); // This triggers updateCelestialRotation
+            if (showAlert) {
+                alert(`現在時刻に戻りました！`);
+            }
+        }
+
+        function updateCelestialRotation(targetDate) {
+            if (!celestialGroup) return;
+
+            // Calculate rotation based on targetDate
             const msPerDay = 1000 * 60 * 60 * 24;
-            const deltaMs = now - CONFIG.baseDate;
+            const deltaMs = targetDate - CONFIG.baseDate;
             const deltaDays = deltaMs / msPerDay;
 
-            // 2. Rotation Calculation
+            // Rotation: Daily (Earth Spin) + Yearly (Orbit)
             const rotationDelta = (Math.PI * 2) * deltaDays * (1 + 1/365.25);
             
-            // 3. Apply
-            if (celestialGroup) {
-                celestialGroup.rotation.y = CONFIG.baseRotation + rotationDelta;
-            }
-            
-            const timeStr = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('time-display').innerHTML = `Time: ${timeStr} (Live)<br>Loc: ${CONFIG.userLat === GOTO_COORDS.lat ? 'Goto' : 'GPS'}`;
-            
-            if (showAlert) {
-                alert(`星空を現在時刻 (${timeStr}) に合わせました！`);
-            }
+            celestialGroup.rotation.y = CONFIG.baseRotation + rotationDelta;
         }
 
         // --- 3D Engine ---
@@ -538,7 +607,8 @@
             }
 
             updateTilt();
-            celestialGroup.rotation.y = CONFIG.baseRotation;
+            // Initial Rotation based on current time
+            updateCelestialRotation(state.simulatedDate);
 
             scene.add(celestialGroup);
         }
@@ -564,14 +634,45 @@
             group.add(sprite);
         }
 
-        // --- Compass Logic (Fixed) ---
+        // --- Compass Logic v2 (Absolute) ---
 
         function handleOrientation(e) {
-            state.raw = { 
-                alpha: e.alpha || 0, 
-                beta: e.beta || 0, 
-                gamma: e.gamma || 0 
-            };
+            let alpha = e.alpha || 0;
+            let beta = e.beta || 0;
+            let gamma = e.gamma || 0;
+
+            // iOS Webkit Compass
+            if (e.webkitCompassHeading) {
+                // webkitCompassHeading is deviation from North (0) clockwise.
+                // alpha in Three.js/Euler is Z-rotation counter-clockwise.
+                // We need to invert it.
+                // Also, it usually aligns North to Device Top correctly.
+                
+                // e.alpha in iOS is relative to launch. compassHeading is absolute.
+                // We map compassHeading to an alpha-like value for our equation.
+                alpha = e.webkitCompassHeading; 
+                // Note: The standard Euler conversion usually expects alpha as CCW.
+                // iOS heading is CW. 
+                // However, standard formula often handles typical Android alpha (CCW).
+                // Let's use standard logic but prioritize absolute if available.
+            }
+            // Android Absolute
+            else if (e.isAbsolute && e.alpha !== null) {
+                // Absolute alpha (Android): 0=North, Increases CCW? 
+                // Spec says: 0=North, East=270 (so CCW).
+                alpha = e.alpha;
+            }
+
+            state.raw = { alpha, beta, gamma };
+            
+            // Adjust Offset
+            // Note: If using absolute compass, manualOffset might need to be 0 or 90 depending on device axis.
+            // We keep manualOffset active so user can fix it if logic fails.
+            
+            // For iOS webkitCompassHeading, we might need to negate it for the Euler formula 
+            // if the formula expects CCW alpha.
+            // But let's stick to the V1 logic + manual offset wrapper.
+            // The manual offset can correct the CW/CCW mismatch visually.
             
             const finalAlpha = state.raw.alpha + state.alphaOffset + state.manualOffset;
             
@@ -608,14 +709,14 @@
         document.getElementById('btn-minus90').addEventListener('click', () => adjustOffset(-15));
         document.getElementById('btn-plus90').addEventListener('click', () => adjustOffset(15));
 
-        // ★★★ FIX: SET NORTH & AUTO SYNC ★★★
+        // SET NORTH & AUTO SYNC
         document.getElementById('btn-set-north').addEventListener('click', () => {
             state.alphaOffset = -(state.raw.alpha + state.manualOffset);
             
             document.getElementById('calibration-screen').classList.add('hidden');
             document.getElementById('main-hud').classList.remove('hidden');
             
-            // 修正③: 北セット時に自動で時刻合わせを実行（アラートなしで自然に）
+            // Auto Sync Time
             syncToCurrentTime(false);
         });
 
