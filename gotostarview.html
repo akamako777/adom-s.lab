@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v5.1</title>
+    <title>Star Compass v5.2</title>
     
     <!-- Google Fonts: Zen Maru Gothic -->
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -293,7 +293,7 @@
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 5.1<br><span style="font-size:1rem; opacity:0.8;">Milky Way Edition</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 5.2<br><span style="font-size:1rem; opacity:0.8;">Milky Way Realism</span></h1>
         <button id="btn-start" class="glass-panel" style="margin-top:40px; padding:15px 40px; font-size:1.5rem; color:white; border-color:#ffd700;">Start</button>
         <p style="margin-top:20px; opacity:0.6; font-size:0.8rem;">※コンパスの許可が必要です</p>
     </div>
@@ -372,7 +372,8 @@
                     <div class="filter-chip selected" data-val="normal">普通</div>
                     <div class="filter-chip" data-val="minor">マイナー</div>
                     <div class="filter-chip selected" data-val="object">星/銀河</div>
-                    <div class="filter-chip selected" data-val="milkyway" style="border-color:#aaddff; background:rgba(100,150,255,0.2);">🌌 天の川</div>
+                    <!-- Fixed style to match standard toggle behavior -->
+                    <div class="filter-chip selected" data-val="milkyway">🌌 天の川</div>
                 </div>
             </div>
 
@@ -440,9 +441,9 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V5.1 (Milky Way Edition)
-         * Architecture: Single File, Procedural Assets, Mobile Optimized + PC Fix
-         * New: Milky Way Particles, Nav Stop Button, Fixes
+         * 🌌 STAR COMPASS V5.2 (Milky Way Realism)
+         * Architecture: Single File, Procedural Assets, Mobile Optimized
+         * New: Foggy Milky Way Particles, Unlocked PC View
          */
 
         // --- 0. Database ---
@@ -853,55 +854,75 @@
         }
 
         function createMilkyWay() {
-            // Generate procedural particles for winter Milky Way (Monoceros to Auriga/Cassiopeia)
-            // Approx RA: 6h ± 2h, spanning Dec widely
-            const particleCount = 2000;
+            // Enhanced Milky Way with soft "cloud" sprites
+            const particleCount = 2500;
             const geo = new THREE.BufferGeometry();
             const posArray = [];
+            const sizesArray = [];
 
+            // Create soft glow texture on canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32,32,0,32,32,32);
+            // Soft white/blueish for winter, yellowish for summer center
+            grad.addColorStop(0, 'rgba(255,255,255,0.15)'); // Very faint core
+            grad.addColorStop(0.4, 'rgba(230,240,255,0.05)'); 
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,64,64);
+            const tex = new THREE.CanvasTexture(canvas);
+
+            // Generate particles
             for(let i=0; i<particleCount; i++) {
-                // Focus around RA 5h-8h (Winter band)
-                let ra = 5 + Math.random() * 3; // 5 to 8
-                // Widen Dec from -50 to +80
-                let dec = -50 + Math.random() * 130; 
+                // Two main bands: Winter (Monoceros/Gemini/Auriga) and Summer (Scorpius/Sagittarius/Cygnus)
                 
-                // Add jitter
-                ra += (Math.random()-0.5) * 1.5;
+                let ra, dec, width;
+                const r = Math.random();
+
+                if (r > 0.4) {
+                    // Winter Band (Focus: RA 5h-8h, Dec -30 to +60)
+                    // Main flow around RA 6.5h
+                    ra = 6.5 + (Math.random()-0.5) * 2.5; 
+                    dec = -30 + Math.random() * 90;
+                    width = 200 + Math.random() * 300; // Size of puff
+                } else {
+                    // Core/Summer Band (Focus: RA 17h-20h, Dec -40 to +40)
+                    // Denser, brighter
+                    ra = 18.0 + (Math.random()-0.5) * 3.0;
+                    dec = -50 + Math.random() * 100;
+                    width = 250 + Math.random() * 350;
+                }
+
+                // Add organic scatter
+                ra += (Math.random()-0.5) * 0.5;
                 
-                // Convert to pos
+                // Convert
                 const pos = getStarPos(ra, dec);
-                // Randomize radius slightly for depth
-                const dist = 750 + Math.random()*100;
+                const dist = 750 + Math.random() * 100; // Background layer
                 pos.normalize().multiplyScalar(dist);
                 
                 posArray.push(pos.x, pos.y, pos.z);
+                sizesArray.push(width);
             }
             
             geo.setAttribute('position', new THREE.Float32BufferAttribute(posArray, 3));
+            // We can't easily vary size per particle in basic PointsMaterial without custom shader or Attribute
+            // For simplicity and performance in Canvas, we use a uniform large size which creates overlap.
+            // To make it look "cloudy", we rely on high transparency and overlapping.
             
-            // Create a soft glowing material
-            const canvas = document.createElement('canvas');
-            canvas.width=32; canvas.height=32;
-            const ctx = canvas.getContext('2d');
-            const grad = ctx.createRadialGradient(16,16,0,16,16,16);
-            grad.addColorStop(0, 'rgba(200,220,255,1)');
-            grad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0,0,32,32);
-            
-            const tex = new THREE.CanvasTexture(canvas);
             const mat = new THREE.PointsMaterial({
-                color: 0x88aaff,
-                size: 20,
+                color: 0xffffff,
+                size: 250, // Large puffs
                 map: tex,
                 transparent: true,
-                opacity: 0.3,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
+                opacity: 0.1, // Very transparent
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
             });
             
-            const points = new THREE.Points(geo, mat);
-            milkyWayGroup.add(points);
+            const clouds = new THREE.Points(geo, mat);
+            milkyWayGroup.add(clouds);
         }
 
         function createTextSprite(name, catchphrase) {
@@ -1147,7 +1168,15 @@
             document.addEventListener('mousemove', e => {
                 if(drag) {
                     state.raw.alpha = (state.raw.alpha - (e.clientX-lx)*0.5) % 360;
-                    state.raw.beta = Math.max(0, Math.min(90, state.raw.beta - (e.clientY-ly)*0.5));
+                    // UNLOCKED: Allow full 180 degree view (zenith to nadir)
+                    // state.raw.beta range: 0 (North Horizon/Up?) to 180 (South Horizon/Down?)
+                    // Logic: beta usually 0 is flat on table? No, in deviceOrientation, beta is tilt front/back.
+                    // For dev simulator:
+                    // 0 = Looking straight UP (Zenith) or Horizon depending on implementation.
+                    // Current logic: eu = new THREE.Euler(beta*Math.PI/180, ...)
+                    // Let's allow full range 0 to 180.
+                    state.raw.beta = Math.max(0, Math.min(180, state.raw.beta - (e.clientY-ly)*0.5));
+                    
                     lx=e.clientX; ly=e.clientY;
                     handleOrientation({alpha:state.raw.alpha, beta:state.raw.beta, gamma:0});
                 }
