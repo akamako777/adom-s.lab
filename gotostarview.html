@@ -535,10 +535,16 @@ const Math3D = {
         };
     },
     project: (vec, viewMat, width, height, fovDeg) => {
+        // ★ COORDINATE FIX: World(Z-up) to GL(Y-up, -Z forward)
+        // World: X=East, Y=North, Z=Up
+        // GL:    X=Right, Y=Up, -Z=Forward
+        // Map:   World.X -> GL.X, World.Z -> GL.Y, World.Y -> GL.-Z (North is forward/into screen)
+        const v = { x: vec.x, y: vec.z, z: -vec.y };
+
         // Apply View Matrix
-        const x = vec.x*viewMat[0] + vec.y*viewMat[4] + vec.z*viewMat[8];
-        const y = vec.x*viewMat[1] + vec.y*viewMat[5] + vec.z*viewMat[9];
-        const z = vec.x*viewMat[2] + vec.y*viewMat[6] + vec.z*viewMat[10];
+        const x = v.x*viewMat[0] + v.y*viewMat[4] + v.z*viewMat[8];
+        const y = v.x*viewMat[1] + v.y*viewMat[5] + v.z*viewMat[9];
+        const z = v.x*viewMat[2] + v.y*viewMat[6] + v.z*viewMat[10];
         
         if (z >= -0.1) return null; // Clipping
         const scale = (height / 2) / Math.tan(fovDeg * Math.PI / 360);
@@ -750,40 +756,49 @@ const App = {
         App.state.lastOri = { ...App.state.orientation };
     },
 
-    // --- PURE CAMERA MATRIX (NO OFFSET HERE) ---
+    // --- PURE CAMERA MATRIX (FIXED AXIS) ---
     updateViewMatrix: () => {
         const { alpha, beta, gamma, isIOS, compass } = App.state.orientation;
         const deg2rad = Math.PI / 180;
         
-        // Base Heading
+        // ★ FIX: Axis Mapping and Rotation Direction
+        // Standard Web API:
+        // Alpha: Z-axis rotation (0=North, 90=West? East? -> Browser dependent but often CCW from North)
+        // Beta: X-axis rotation (Front-to-Back tilt)
+        // Gamma: Y-axis rotation (Left-to-Right tilt)
+        
+        // Our Goal:
+        // Beta=90 (Upright) -> Look at Horizon (North, Y-axis in World) -> Camera Forward (-Z in GL)
+        // Beta=0 (Flat/Up) -> Look at Zenith (Up, Z-axis in World) -> Camera Up (Y in GL)
+
+        // 1. Get Heading
+        // For iOS: compass is 0=N, 90=E (CW). We need -compass to make it CCW.
+        // For Android: alpha is usually 0=N, 90=E (CCW?).
+        // Empirical Fix: Reverse alpha to match World Rotation logic.
         let a = isIOS && compass != null ? -compass : alpha;
-        a -= 7; // Magnetic Declination
-
-        // Device Attitude (Pure)
-        const qY = Math3D.qFromAxisAngle([0, 1, 0], a * deg2rad);
-        const qX = Math3D.qFromAxisAngle([1, 0, 0], beta * deg2rad);
-        const qZ = Math3D.qFromAxisAngle([0, 0, 1], -gamma * deg2rad);
         
-        let qDev = Math3D.qMultiply(qY, qX);
-        qDev = Math3D.qMultiply(qDev, qZ);
+        // 2. Build Rotation Quaternions (Standard Order: Z -> X -> Y)
+        const qAlpha = Math3D.qFromAxisAngle([0, 0, 1], a * deg2rad); // Z-axis (Heading)
+        const qBeta = Math3D.qFromAxisAngle([1, 0, 0], beta * deg2rad); // X-axis (Pitch)
+        const qGamma = Math3D.qFromAxisAngle([0, 1, 0], gamma * deg2rad); // Y-axis (Roll)
 
-        // Frame Conversion
-        const qCamFix = Math3D.qFromAxisAngle([1, 0, 0], -90 * deg2rad);
-        
-        // Screen Orientation
+        // Combined Rotation (Device Attitude)
+        // Order matters: Apply Z (heading), then X (tilt), then Y (roll)
+        let qDev = Math3D.qMultiply(qAlpha, qBeta);
+        qDev = Math3D.qMultiply(qDev, qGamma);
+
+        // 3. Screen Orientation Fix (Landscape/Portrait)
         let screenOrient = window.screen?.orientation?.angle || window.orientation || 0;
         const qScreen = Math3D.qFromAxisAngle([0, 0, 1], -screenOrient * deg2rad);
+        qDev = Math3D.qMultiply(qDev, qScreen);
 
-        let qFinal = Math3D.qMultiply(qDev, qCamFix);
-        qFinal = Math3D.qMultiply(qFinal, qScreen);
+        // 4. Final View Matrix
+        App.state.viewMat = Math3D.matFromQ(qDev);
 
-        App.state.viewMat = Math3D.matFromQ(qFinal);
-
-        // Debug Display (Apply Offset to show 'corrected' heading)
+        // Debug Display
         const starFwdZ = -App.state.viewMat[10];
         const alt = Math.asin(starFwdZ) * 180/Math.PI; 
         document.getElementById('debug-alt').innerText = Math.round(alt);
-        // Azimuth display logic is complex due to world rotation, omitted for simplicity
     },
 
     loop: () => {
