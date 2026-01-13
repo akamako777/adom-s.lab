@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <title>Five Islands Stargazer v41.1 (Fixes)</title>
+    <title>Five Islands Stargazer v41.2 (Compass Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -150,8 +150,8 @@
     <div id="star-gate" class="hidden-force">
         <div class="relative z-10 flex flex-col items-center max-w-md text-center p-4">
             <div class="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">🌌</div>
-            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.1</span></h1>
-            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Fix Edition</p>
+            <h1 class="text-4xl font-black text-white mb-2 tracking-tight">Five Islands<br><span class="text-cyan-400">Stargazer v41.2</span></h1>
+            <p class="text-slate-400 text-sm font-bold tracking-[0.2em] mb-8 uppercase">Compass Fix</p>
             <div class="bg-white p-3 rounded-2xl shadow-2xl mb-6 transform transition hover:scale-105 duration-500">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -321,7 +321,7 @@
         <div class="relative z-10 w-full max-w-sm px-6 text-center">
             <div class="text-6xl mb-4 animate-bounce">🌌</div>
             <h1 class="text-3xl font-black text-white mb-2">Five Islands<br><span class="text-cyan-400 font-light">Stargazer</span></h1>
-            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.1 FIX EDITION</p>
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-8">v41.2 COMPASS FIX</p>
             <button onclick="App.init()" class="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition hover:shadow-cyan-500/30">
                 START
             </button>
@@ -333,11 +333,11 @@
 
 <script>
 /**
- * 🌌 FIVE ISLANDS STARGAZER v41.1 (Fix Edition)
+ * 🌌 FIVE ISLANDS STARGAZER v41.2 (Compass Fix)
  * ==========================================
  * PATCH NOTES:
  * 1. PC Gate z-index increased to 9999 + solid background (Fixes overlap).
- * 2. Compass visual rotation fixed (+90 deg offset).
+ * 2. Compass visual rotation fixed (-90 deg offset).
  * 3. Camera Pitch fixed (Added 180 deg to qFix to align Flat=Zenith).
  */
 
@@ -642,11 +642,11 @@ const App = {
             if(isLevel) document.querySelector('.level-bubble').classList.add('level-ok');
             else document.querySelector('.level-bubble').classList.remove('level-ok');
 
-            // Compass Rotation Logic (Corrected +90 deg offset)
+            // Compass Rotation Logic (Corrected -90 deg offset)
             let heading = App.state.smoothedOri.isIOS ? App.state.smoothedOri.webkitCompass : App.state.smoothedOri.alpha;
             // The ring should rotate opposite to heading to keep 'N' pointing North on screen
-            // Added +90 because user reported 90 deg West shift.
-            ring.style.transform = `rotate(${-heading + 90}deg)`;
+            // Added -90 because user reported 180 deg reversal with +90.
+            ring.style.transform = `rotate(${-heading - 90}deg)`;
 
             const btn = document.getElementById('btn-confirm-setup');
             document.getElementById('sensor-status').innerText = "Sensor Active";
