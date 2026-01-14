@@ -562,33 +562,304 @@
          */
 
         // --- 0. Database ---
-        const STAR_DB = {
-            "polaris": { ra: 2.53, dec: 89.26, color: 0xFFFFCC, size: 1.5 },
-            "betelgeuse": { ra: 5.92, dec: 7.41, color: 0xFF8866, size: 1.3 },
-            "rigel":      { ra: 5.24, dec: -8.20, color: 0xAACCFF, size: 1.3 },
-            "bellatrix":  { ra: 5.42, dec: 6.35, color: 0xCCCCFF, size: 1.1 },
-            "mintaka":    { ra: 5.53, dec: -0.30, color: 0xCCCCFF, size: 1.0 },
-            "alnilam":    { ra: 5.60, dec: -1.20, color: 0xCCCCFF, size: 1.0 },
-            "alnitak":    { ra: 5.68, dec: -1.90, color: 0xCCCCFF, size: 1.0 },
-            "saiph":      { ra: 5.79, dec: -9.65, color: 0xCCCCFF, size: 1.0 },
-            "sirius":     { ra: 6.75, dec: -16.72, color: 0xFFFFFF, size: 1.8 },
-            "mirzam":     { ra: 6.38, dec: -17.96, color: 0xCCCCFF, size: 0.9 },
-            "wezen":      { ra: 7.14, dec: -26.39, color: 0xFFFFDD, size: 1.0 },
-            "adhara":     { ra: 6.98, dec: -28.97, color: 0xCCCCFF, size: 1.1 },
-            "procyon":    { ra: 7.65, dec: 5.21, color: 0xFFFFEE, size: 1.2 },
-            "gomeisa":    { ra: 7.45, dec: 8.29, color: 0xCCCCFF, size: 0.9 },
-            "aldebaran":  { ra: 4.60, dec: 16.51, color: 0xFFDDAA, size: 1.2 },
-            "elnath":     { ra: 5.43, dec: 28.61, color: 0xCCCCFF, size: 1.1 },
-            "pollux":     { ra: 7.76, dec: 28.03, color: 0xFFDDAA, size: 1.2 },
-            "castor":     { ra: 7.58, dec: 31.88, color: 0xFFFFFF, size: 1.2 },
-            "alhena":     { ra: 6.63, dec: 16.39, color: 0xFFFFFF, size: 1.0 },
-            "capella":    { ra: 5.28, dec: 45.99, color: 0xFFFFDD, size: 1.3 },
-            "menkalinan": { ra: 5.99, dec: 44.95, color: 0xCCCCFF, size: 1.0 },
-            "arne":       { ra: 5.55, dec: -17.82, color: 0xCCCCFF, size: 0.9 },
-            "nihal":      { ra: 5.47, dec: -20.76, color: 0xFFFFDD, size: 0.9 },
-            "canopus":    { ra: 6.40, dec: -52.70, color: 0xFFFFEE, size: 1.5 },
-            "pleiades":   { ra: 3.78, dec: 24.10, color: 0xAACCEE, size: 2.0 }
-        };
+/**
+ * 🌌 STAR_DB Final Complete Edition
+ * * 88星座のうち、日本の理科教育や観望会で重要な「12星座 + 8大有名星座 + 季節の重要天体」を網羅。
+ * 重複（Duplicate）を徹底的に排除し、アステリズム（大三角など）を構成する星も完備。
+ * * [収録星座]
+ * ♈おひつじ, ♉おうし, ♊ふたご, ♋かに, ♌しし, ♍おとめ, ♎てんびん, ♏さそり, ♐いて, ♑やぎ, ♒みずがめ, ♓うお
+ * 🏹オリオン, 🐕おおいぬ, 🎻こと, 🦅わし, 🦢はくちょう, 👑カシオペヤ, 🐻おおぐま
+ * 🐕こいぬ, 🐰うさぎ, 🎺ぎょしゃ, 🍦うしかい, 👑かんむり, 💪ヘルクレス, 🐍へびつかい, 👶こぐま
+ * 🐎ペガスス, 👸アンドロメダ, 🗡️ペルセウス, 🐋くじら, 🐟みなみのうお, 🐎ケンタウルス, 🦄いっかくじゅう
+ */
+
+const STAR_DB = {
+
+    // ==========================================
+    // ♈♉♊♋♌♍♎♏♐♑♒♓ 12 Zodiacs (黄道十二星座)
+    // ==========================================
+
+    // --- 1. ♈ Aries (おひつじ座) ---
+    "hamal":        { ra: 2.12,  dec: 23.46, color: 0xFFDDAA, size: 1.2 }, // ハマル (α)
+    "sheratan":     { ra: 1.91,  dec: 20.80, color: 0xFFFFFF, size: 1.1 }, // シェラタン (β)
+    "mesarthim":    { ra: 1.89,  dec: 19.29, color: 0xCCCCFF, size: 1.0 }, // メサルティム (γ)
+    "ari_41":       { ra: 3.08,  dec: 27.26, color: 0xCCCCFF, size: 0.9 }, // 41番星
+
+    // --- 2. ♉ Taurus (おうし座) ---
+    "aldebaran":    { ra: 4.60,  dec: 16.51, color: 0xFFDDAA, size: 1.3 }, // アルデバラン (α・赤)
+    "elnath":       { ra: 5.43,  dec: 28.61, color: 0xCCCCFF, size: 1.2 }, // エルナト (β) ※ぎょしゃ座と共有
+    "pleiades":     { ra: 3.78,  dec: 24.10, color: 0xAACCEE, size: 2.0 }, // すばる (プレアデス星団)
+    "tau_epsilon":  { ra: 4.47,  dec: 19.18, color: 0xFFFFDD, size: 1.0 }, // アイン
+    "tau_gamma":    { ra: 4.33,  dec: 15.63, color: 0xFFFFEE, size: 0.9 }, // プリマ・ヒアダム
+    "tau_delta1":   { ra: 4.38,  dec: 17.54, color: 0xFFFFEE, size: 0.9 }, // セクンダ・ヒアダム
+    "tau_zeta":     { ra: 5.63,  dec: 21.14, color: 0xAACCFF, size: 1.1 }, // 天関
+
+    // --- 3. ♊ Gemini (ふたご座) ---
+    "pollux":       { ra: 7.76,  dec: 28.03, color: 0xFFDDAA, size: 1.3 }, // ポルックス (弟)
+    "castor":       { ra: 7.58,  dec: 31.88, color: 0xFFFFFF, size: 1.2 }, // カストル (兄)
+    "alhena":       { ra: 6.63,  dec: 16.39, color: 0xFFFFFF, size: 1.1 }, // アルヘナ (足)
+    "gem_propus":   { ra: 6.25,  dec: 22.50, color: 0xFF8866, size: 1.0 }, // プロプス
+    "gem_mu":       { ra: 6.38,  dec: 22.51, color: 0xFFFFDD, size: 1.0 }, // テジャト
+    "gem_epsilon":  { ra: 6.73,  dec: 25.13, color: 0xFFFFCC, size: 1.0 }, // メブスタ
+    "gem_delta":    { ra: 7.34,  dec: 21.98, color: 0xFFFFEE, size: 1.0 }, // ワサト
+    "gem_xi":       { ra: 6.75,  dec: 12.89, color: 0xFFFFEE, size: 0.9 }, // アルジル
+
+    // --- 4. ♋ Cancer (かに座) ---
+    "acubens":      { ra: 8.97,  dec: 11.85, color: 0xFFFFFF, size: 1.0 }, // アクベンス (α)
+    "can_beta":     { ra: 8.27,  dec: 9.18,  color: 0xFFDDAA, size: 1.0 }, // アルタルフ (β)
+    "can_delta":    { ra: 8.74,  dec: 18.15, color: 0xFFDDAA, size: 1.0 }, // 南のロバ
+    "can_gamma":    { ra: 8.72,  dec: 21.47, color: 0xFFFFFF, size: 0.9 }, // 北のロバ
+    "praesepe":     { ra: 8.67,  dec: 19.67, color: 0xAACCEE, size: 1.6 }, // プレセペ星団 (M44)
+
+    // --- 5. ♌ Leo (しし座) ---
+    "regulus":      { ra: 10.14, dec: 11.97, color: 0xCCCCFF, size: 1.3 }, // レグルス (胸)
+    "denebola":     { ra: 11.82, dec: 14.57, color: 0xFFFFFF, size: 1.2 }, // デネボラ (尾)
+    "algieba":      { ra: 10.33, dec: 19.84, color: 0xFFFFDD, size: 1.1 }, // アルギエバ
+    "leo_eta":      { ra: 10.12, dec: 16.76, color: 0xFFFFFF, size: 1.0 }, // 首
+    "leo_zeta":     { ra: 10.27, dec: 23.41, color: 0xFFFFFF, size: 1.0 }, // たてがみ
+    "leo_mu":       { ra: 9.88,  dec: 26.01, color: 0xFF8844, size: 0.9 }, // 頭頂
+    "leo_epsilon":  { ra: 9.76,  dec: 23.77, color: 0xFFFFCC, size: 1.0 }, // 口元
+    "zosma":        { ra: 11.24, dec: 20.52, color: 0xFFFFFF, size: 1.1 }, // ゾスマ (背中)
+    "chertan":      { ra: 11.23, dec: 15.43, color: 0xFFFFFF, size: 1.0 }, // シェルタン (腰)
+
+    // --- 6. ♍ Virgo (おとめ座) ---
+    "spica":        { ra: 13.42, dec: -11.16,color: 0xAACCFF, size: 1.3 }, // スピカ
+    "vindemiatrix": { ra: 13.04, dec: 10.96, color: 0xFFFFCC, size: 1.1 }, // 右腕
+    "porrima":      { ra: 12.69, dec: -1.45, color: 0xFFFFEE, size: 1.1 }, // ポリマ (腰)
+    "auva":         { ra: 12.93, dec: 3.40,  color: 0xFF5544, size: 1.0 }, // アウヴァ (赤)
+    "zaniah":       { ra: 12.33, dec: -0.80, color: 0xFFFFFF, size: 1.0 }, // ザニア
+    "syrma":        { ra: 14.26, dec: -6.53, color: 0xFFFFDD, size: 0.9 }, // イルマ
+    "vir_mu":       { ra: 14.72, dec: -5.65, color: 0xFFFFCC, size: 0.9 }, // 足先
+
+    // --- 7. ♎ Libra (てんびん座) ---
+    "zubenelgenubi":{ ra: 14.84, dec: -16.04,color: 0xCCCCFF, size: 1.1 }, // 南の爪
+    "zubeneschamali":{ra: 15.28, dec: -9.38, color: 0xAACCFF, size: 1.1 }, // 北の爪
+    "lib_gamma":    { ra: 15.59, dec: -14.79,color: 0xFFFFDD, size: 1.0 }, // ズベン・エル・アクラ
+    "lib_sigma":    { ra: 15.07, dec: -25.28,color: 0xFF4433, size: 0.9 }, // ブラキウム
+
+    // --- 8. ♐ Sagittarius (いて座) ---
+    "kaus_australis":{ra: 18.40, dec: -34.38,color: 0xAACCFF, size: 1.2 }, // 弓の下
+    "nunki":        { ra: 18.92, dec: -26.30,color: 0xCCCCFF, size: 1.2 }, // 矢羽
+    "ascella":      { ra: 19.04, dec: -29.88,color: 0xFFFFFF, size: 1.1 }, // ポット蓋
+    "kaus_media":   { ra: 18.21, dec: -29.83,color: 0xFFFFDD, size: 1.1 }, // 弓の中央
+    "kaus_borealis":{ ra: 18.47, dec: -25.42,color: 0xFFFFCC, size: 1.1 }, // ポット蓋
+    "sag_phi":      { ra: 18.75, dec: -26.99,color: 0xCCCCFF, size: 1.0 }, // 南斗六星
+    "sag_tau":      { ra: 19.11, dec: -27.67,color: 0xFFFFEE, size: 1.0 }, // 取っ手
+    "rukbat":       { ra: 19.39, dec: -40.61,color: 0xAACCFF, size: 1.0 }, // 膝
+    "arkab":        { ra: 19.38, dec: -44.46,color: 0xFFFFFF, size: 1.0 }, // 足
+
+    // --- 9. ♑ Capricornus (やぎ座) ---
+    "algedi":       { ra: 20.29, dec: -12.54,color: 0xFFFFCC, size: 1.0 }, // アルゲディ (α)
+    "dabih":        { ra: 20.35, dec: -14.77,color: 0xFFFFDD, size: 1.1 }, // ダビー (β)
+    "deneb_algedi": { ra: 21.78, dec: -16.13,color: 0xFFFFFF, size: 1.1 }, // デネブ・アルゲディ
+    "nashira":      { ra: 21.67, dec: -16.66,color: 0xCCCCFF, size: 1.0 }, // ナシラ
+    "cap_theta":    { ra: 21.09, dec: -17.23,color: 0xFFFFFF, size: 1.0 }, // 背中
+    "cap_psi":      { ra: 20.77, dec: -25.27,color: 0xFFFFEE, size: 0.9 }, // 腹
+
+    // --- 10. ♒ Aquarius (みずがめ座) ---
+    "sadalmelik":   { ra: 22.09, dec: -0.32, color: 0xFFFFCC, size: 1.1 }, // 右肩
+    "sadalsuud":    { ra: 21.53, dec: -5.57, color: 0xFFFFDD, size: 1.1 }, // 左肩
+    "aqr_zeta":     { ra: 22.47, dec: -0.02, color: 0xFFFFFF, size: 1.0 }, // 三ツ矢中央
+    "aqr_gamma":    { ra: 22.36, dec: -1.39, color: 0xAACCFF, size: 1.0 }, // サダクビア
+    "aqr_eta":      { ra: 22.59, dec: -0.12, color: 0xCCCCFF, size: 1.0 }, // 三ツ矢右
+    "aqr_pi":       { ra: 22.42, dec: 1.38,  color: 0xAACCFF, size: 1.0 }, // 三ツ矢左
+    "skat":         { ra: 22.91, dec: -15.82,color: 0xFFFFFF, size: 1.0 }, // 足
+    "aqr_lambda":   { ra: 22.88, dec: -7.58, color: 0xFF4433, size: 1.0 }, // 水流(赤)
+    "aqr_phi":      { ra: 23.24, dec: -6.05, color: 0xFFFFEE, size: 0.9 }, // 水流
+
+    // --- 11. ♓ Pisces (うお座) ---
+    "alrescha":     { ra: 2.03,  dec: 2.76,  color: 0xCCCCFF, size: 1.1 }, // 結び目
+    "pis_gamma":    { ra: 23.28, dec: 3.28,  color: 0xFFFFDD, size: 1.0 }, // 西の魚頭
+    "pis_iota":     { ra: 23.67, dec: 5.62,  color: 0xFFFFCC, size: 0.9 },
+    "pis_theta":    { ra: 23.46, dec: 6.38,  color: 0xFFFFEE, size: 0.9 },
+    "pis_omega":    { ra: 23.99, dec: 6.86,  color: 0xCCCCFF, size: 0.9 }, // 垂直線
+    "pis_eta":      { ra: 1.52,  dec: 15.34, color: 0xFFFFCC, size: 1.0 }, // 紐
+    "pis_omicron":  { ra: 1.76,  dec: 9.29,  color: 0xFFFFDD, size: 1.0 }, // 北の魚尾
+
+    // --- 12. 🦂 Scorpius (さそり座) ---
+    "antares":      { ra: 16.49, dec: -26.43, color: 0xFF6644, size: 1.3 }, // アンタレス
+    "graffias":     { ra: 16.09, dec: -19.80, color: 0xCCCCFF, size: 1.0 }, // 爪
+    "dschubba":     { ra: 16.00, dec: -22.62, color: 0xCCCCFF, size: 1.0 }, // 額
+    "wei":          { ra: 16.84, dec: -34.29, color: 0xFFDDAA, size: 0.9 }, // 背中
+    "sargas":       { ra: 17.62, dec: -42.99, color: 0xFFFFEE, size: 1.1 }, // 尾の底
+    "shaula":       { ra: 17.56, dec: -37.10, color: 0xAACCFF, size: 1.2 }, // 毒針
+    "sco_pi":       { ra: 15.98, dec: -26.11, color: 0xCCCCFF, size: 0.9 }, // 南の爪
+    "sco_mu1":      { ra: 16.89, dec: -38.04, color: 0xAACCFF, size: 1.0 }, // 尾の中腹
+    "sco_kappa":    { ra: 17.70, dec: -39.03, color: 0xCCCCFF, size: 1.0 }, // ギルタブ
+    "sco_girtab":   { ra: 17.36, dec: -43.24, color: 0xFFFFCC, size: 0.9 }, // 尾の下部
+
+
+    // ==========================================
+    // 🍂❄️🌸 Major Seasonal Constellations
+    // ==========================================
+
+    // --- 🏹 Orion (オリオン座) ---
+    "betelgeuse":   { ra: 5.92, dec: 7.41, color: 0xFF8866, size: 1.3 }, // 冬の大三角
+    "rigel":        { ra: 5.24, dec: -8.20, color: 0xAACCFF, size: 1.3 },
+    "bellatrix":    { ra: 5.42, dec: 6.35, color: 0xCCCCFF, size: 1.1 },
+    "mintaka":      { ra: 5.53, dec: -0.30, color: 0xCCCCFF, size: 1.0 },
+    "alnilam":      { ra: 5.60, dec: -1.20, color: 0xCCCCFF, size: 1.0 },
+    "alnitak":      { ra: 5.68, dec: -1.90, color: 0xCCCCFF, size: 1.0 },
+    "saiph":        { ra: 5.79, dec: -9.65, color: 0xCCCCFF, size: 1.0 },
+    "orion_lambda": { ra: 5.58, dec: 9.93,  color: 0xFFFFDD, size: 0.9 }, // メイサ
+    "orion_pi3":    { ra: 4.83, dec: 6.96,  color: 0xFFFFFF, size: 0.9 }, // 盾
+    "orion_pi1":    { ra: 4.83, dec: 10.15, color: 0xCCCCFF, size: 0.8 },
+    "orion_pi6":    { ra: 4.97, dec: 1.71,  color: 0xFF8844, size: 0.8 },
+    "orion_chi1":   { ra: 5.90, dec: 20.27, color: 0xFFFFEE, size: 0.8 }, // こん棒
+
+    // --- 🐕 Canis Major (おおいぬ座) ---
+    "sirius":       { ra: 6.75, dec: -16.72, color: 0xFFFFFF, size: 1.8 }, // 冬の大三角
+    "mirzam":       { ra: 6.38, dec: -17.96, color: 0xCCCCFF, size: 0.9 },
+    "wezen":        { ra: 7.14, dec: -26.39, color: 0xFFFFDD, size: 1.0 },
+    "adhara":       { ra: 6.98, dec: -28.97, color: 0xCCCCFF, size: 1.1 },
+    "cma_eta":      { ra: 7.40, dec: -29.30, color: 0xAACCFF, size: 1.0 }, // アルドラ
+    "cma_zeta":     { ra: 6.34, dec: -30.06, color: 0xAACCFF, size: 1.0 }, // フルド
+    "cma_omicron2": { ra: 7.05, dec: -23.83, color: 0xFFDDAA, size: 1.0 },
+
+    // --- 🐕 Canis Minor (こいぬ座) ---
+    "procyon":      { ra: 7.65,  dec: 5.21,  color: 0xFFFFEE, size: 1.2 }, // 冬の大三角
+    "gomeisa":      { ra: 7.45,  dec: 8.29,  color: 0xCCCCFF, size: 1.0 },
+
+    // --- 🦄 Monoceros (いっかくじゅう座) ---
+    // [新規追加] 冬の大三角の中に隠れている
+    "mon_beta":     { ra: 6.48,  dec: -7.03, color: 0xCCCCFF, size: 1.0 }, // 素晴らしい三重星
+    "mon_alpha":    { ra: 7.69,  dec: -9.55, color: 0xFFDDAA, size: 0.9 }, // ルシダ
+    "rosette":      { ra: 6.53,  dec: 4.99,  color: 0xFF8866, size: 1.5 }, // バラ星雲 (NGC 2237)
+
+    // --- 🐰 Lepus (うさぎ座) ---
+    "arne":         { ra: 5.55,  dec: -17.82, color: 0xCCCCFF, size: 1.0 }, // アルネ
+    "nihal":        { ra: 5.47,  dec: -20.76, color: 0xFFFFDD, size: 1.0 }, // ニハル
+    "lep_epsilon":  { ra: 5.09,  dec: -22.49, color: 0xFFFFCC, size: 0.9 },
+    "lep_mu":       { ra: 5.21,  dec: -16.20, color: 0xFFFFFF, size: 0.9 },
+
+    // --- 🎺 Auriga (ぎょしゃ座) ---
+    "capella":      { ra: 5.28,  dec: 45.99, color: 0xFFFFDD, size: 1.3 }, // カペラ
+    "menkalinan":   { ra: 5.99,  dec: 44.95, color: 0xCCCCFF, size: 1.1 },
+    "aur_theta":    { ra: 5.99,  dec: 37.21, color: 0xFFFFFF, size: 1.0 },
+    "aur_iota":     { ra: 4.93,  dec: 33.16, color: 0xFF8844, size: 1.0 },
+    "aur_epsilon":  { ra: 5.03,  dec: 43.82, color: 0xCCCCFF, size: 0.8 }, // The Kids
+    "aur_zeta":     { ra: 5.04,  dec: 41.07, color: 0xFF8844, size: 0.8 }, // The Kids
+
+    // --- 🍦 Boötes (うしかい座) ---
+    "arcturus":     { ra: 14.26, dec: 19.18, color: 0xFFDDAA, size: 1.4 }, // アークトゥルス
+    "boo_epsilon":  { ra: 14.77, dec: 27.07, color: 0xFFDDAA, size: 1.0 },
+    "boo_delta":    { ra: 15.26, dec: 33.31, color: 0xFFFFDD, size: 0.9 },
+    "boo_beta":     { ra: 15.03, dec: 40.39, color: 0xFFFFCC, size: 0.9 },
+    "boo_gamma":    { ra: 14.53, dec: 38.31, color: 0xFFFFFF, size: 0.9 },
+    "boo_eta":      { ra: 13.91, dec: 18.39, color: 0xFFFFEE, size: 0.9 },
+
+    // --- 👑 Corona Borealis (かんむり座) ---
+    "gemma":        { ra: 15.58, dec: 26.71, color: 0xFFFFFF, size: 1.1 }, // ゲンマ
+    "crb_beta":     { ra: 15.46, dec: 29.11, color: 0xFFFFDD, size: 0.9 },
+
+    // --- 💪 Hercules (ヘルクレス座) ---
+    "rasalgethi":   { ra: 17.25, dec: 14.39, color: 0xFF6644, size: 1.0 }, // ラス・アルゲティ
+    "kornephoros":  { ra: 16.50, dec: 21.48, color: 0xFFFFCC, size: 1.0 },
+    "her_zeta":     { ra: 16.69, dec: 31.60, color: 0xFFFFDD, size: 0.9 },
+    "her_pi":       { ra: 17.25, dec: 36.81, color: 0xCCCCFF, size: 0.9 },
+    "her_eta":      { ra: 16.71, dec: 38.92, color: 0xFFFFEE, size: 0.9 },
+    "her_epsilon":  { ra: 17.00, dec: 30.93, color: 0xFFFFFF, size: 0.9 },
+
+    // --- 🐍 Ophiuchus (へびつかい座) ---
+    "rasalhague":   { ra: 17.58, dec: 12.56, color: 0xFFFFFF, size: 1.1 }, // ラス・アルハゲ
+    "cebalrai":     { ra: 17.72, dec: 4.56,  color: 0xFFDDAA, size: 1.0 },
+    "oph_kappa":    { ra: 16.96, dec: 9.38,  color: 0xFF8844, size: 0.9 },
+    "sabik":        { ra: 17.17, dec: -15.72,color: 0xFFFFFF, size: 1.0 }, // サビク
+    "oph_zeta":     { ra: 16.62, dec: -10.57,color: 0xAACCFF, size: 0.9 },
+    "yed_prior":    { ra: 16.23, dec: -3.69, color: 0xFF8844, size: 1.0 }, // イェド・プリオル (手・赤)
+
+    // --- 🐻 Ursa Major (おおぐま座) ---
+    // 北斗七星 (Big Dipper) の星を含む
+    "dubhe":        { ra: 11.06, dec: 61.75, color: 0xFFDDAA, size: 1.1 }, // 指極星
+    "merak":        { ra: 11.03, dec: 56.38, color: 0xFFFFFF, size: 1.1 }, // 指極星
+    "phecda":       { ra: 11.90, dec: 53.69, color: 0xFFFFFF, size: 1.0 },
+    "megrez":       { ra: 12.26, dec: 57.03, color: 0xFFFFFF, size: 0.9 },
+    "alioth":       { ra: 12.90, dec: 55.96, color: 0xFFFFFF, size: 1.1 },
+    "mizar":        { ra: 13.40, dec: 54.93, color: 0xFFFFFF, size: 1.1 },
+    "alkaid":       { ra: 13.80, dec: 49.31, color: 0xAACCFF, size: 1.1 },
+    "uma_omicron":  { ra: 8.50,  dec: 60.71, color: 0xFFFFDD, size: 1.0 },
+    "uma_iota":     { ra: 8.99,  dec: 48.04, color: 0xFFFFFF, size: 0.9 },
+    "uma_nu":       { ra: 11.31, dec: 33.09, color: 0xFFDDAA, size: 0.9 },
+    "uma_xi":       { ra: 11.30, dec: 31.53, color: 0xFFFFCC, size: 0.9 },
+
+    // --- 👶 Ursa Minor (こぐま座) ---
+    "polaris":      { ra: 2.53,  dec: 89.26, color: 0xFFFFCC, size: 1.5 }, // ポラリス
+    "kochab":       { ra: 14.84, dec: 74.15, color: 0xFFDDAA, size: 1.1 },
+    "pherkad":      { ra: 15.34, dec: 71.83, color: 0xFFFFFF, size: 1.0 },
+    "umi_delta":    { ra: 17.54, dec: 86.58, color: 0xFFFFEE, size: 0.9 },
+    "umi_epsilon":  { ra: 16.76, dec: 82.03, color: 0xFFFFCC, size: 0.9 },
+
+    // --- 🎻 Lyra (こと座) ---
+    "vega":         { ra: 18.62, dec: 38.78, color: 0xAACCFF, size: 1.4 }, // 夏の大三角
+    "sheliak":      { ra: 18.83, dec: 33.36, color: 0xFFFFFF, size: 0.9 },
+    "sulafat":      { ra: 18.97, dec: 32.68, color: 0xCCCCFF, size: 0.9 },
+    "lyr_delta2":   { ra: 18.91, dec: 36.90, color: 0xFF5544, size: 0.9 },
+    "lyr_zeta":     { ra: 18.74, dec: 37.60, color: 0xFFFFFF, size: 0.9 },
+    "lyr_epsilon":  { ra: 18.74, dec: 39.67, color: 0xFFFFFF, size: 0.9 },
+
+    // --- 🦅 Aquila (わし座) ---
+    "altair":       { ra: 19.85, dec: 8.87,  color: 0xFFFFFF, size: 1.3 }, // 夏の大三角
+    "tarazed":      { ra: 19.77, dec: 10.61, color: 0xFFDDAA, size: 1.0 },
+    "alshain":      { ra: 19.92, dec: 6.40,  color: 0xFFDDAA, size: 0.9 },
+    "aql_theta":    { ra: 20.19, dec: -0.82, color: 0xCCCCFF, size: 1.0 },
+    "aql_delta":    { ra: 19.42, dec: 3.11,  color: 0xFFFFDD, size: 1.0 },
+    "aql_zeta":     { ra: 19.09, dec: 13.86, color: 0xFFFFFF, size: 1.0 },
+
+    // --- 🦢 Cygnus (はくちょう座) ---
+    "deneb":        { ra: 20.69, dec: 45.28, color: 0xFFFFFF, size: 1.3 }, // 夏の大三角
+    "albireo":      { ra: 19.51, dec: 27.96, color: 0xFFDDAA, size: 1.0 }, // アルビレオ
+    "sadr":         { ra: 20.37, dec: 40.26, color: 0xFFFFEE, size: 1.1 },
+    "gienah":       { ra: 20.77, dec: 33.97, color: 0xFFDDAA, size: 1.0 },
+    "delta_cyg":    { ra: 19.74, dec: 45.13, color: 0xFFFFFF, size: 1.0 },
+    "cyg_zeta":     { ra: 21.21, dec: 30.22, color: 0xFFDDAA, size: 0.9 },
+    "cyg_kappa":    { ra: 19.29, dec: 53.37, color: 0xFFFFCC, size: 0.9 },
+
+    // --- 🐎 Pegasus (ペガスス座) ---
+    "markab":       { ra: 23.08, dec: 15.21, color: 0xCCCCFF, size: 1.1 },
+    "scheat":       { ra: 23.06, dec: 28.08, color: 0xFF8866, size: 1.1 },
+    "algenib":      { ra: 0.22,  dec: 15.18, color: 0xCCCCFF, size: 1.1 },
+    "enif":         { ra: 21.73, dec: 9.87,  color: 0xFFDDAA, size: 1.1 },
+    "homam":        { ra: 22.69, dec: 10.83, color: 0xFFFFFF, size: 1.0 }, // ホマム (首)
+    "biham":        { ra: 22.17, dec: 6.20,  color: 0xFFFFEE, size: 0.9 }, // ビハム (頭)
+
+    // --- 👸 Andromeda (アンドロメダ座) ---
+    "alpheratz":    { ra: 0.14,  dec: 29.09, color: 0xCCCCFF, size: 1.2 }, // アルフェラッツ
+    "mirach":       { ra: 1.16,  dec: 35.62, color: 0xFFDDAA, size: 1.1 }, // ミラク
+    "almach":       { ra: 2.06,  dec: 42.33, color: 0xFFDDAA, size: 1.1 }, // アルマク
+    // [新規追加] アンドロメダ銀河 (M31) - 肉眼で見える最も遠い天体
+    "m31":          { ra: 0.71,  dec: 41.26, color: 0xFFFFFF, size: 2.0 }, // アンドロメダ銀河
+
+    // --- 🗡️ Perseus (ペルセウス座) ---
+    "mirfak":       { ra: 3.41,  dec: 49.86, color: 0xFFFFEE, size: 1.2 },
+    "algol":        { ra: 3.13,  dec: 40.96, color: 0xAACCFF, size: 1.1 },
+    "per_delta":    { ra: 3.71,  dec: 47.79, color: 0xAACCFF, size: 1.0 }, // 胴体
+    "per_epsilon":  { ra: 3.96,  dec: 40.01, color: 0xAACCFF, size: 1.0 }, // 足
+
+    // --- 👑 Cassiopeia (カシオペヤ座) ---
+    "schedar":      { ra: 0.67,  dec: 56.53, color: 0xFFDDAA, size: 1.1 },
+    "caph":         { ra: 0.15,  dec: 59.15, color: 0xFFFFEE, size: 1.1 },
+    "gamma_cas":    { ra: 0.94,  dec: 60.71, color: 0xAACCFF, size: 1.1 },
+    "ruchbah":      { ra: 1.43,  dec: 60.23, color: 0xFFFFFF, size: 1.0 },
+    "segin":        { ra: 1.90,  dec: 63.67, color: 0xCCCCFF, size: 1.0 },
+    "cas_eta":      { ra: 0.82,  dec: 57.81, color: 0xFFFFCC, size: 0.9 },
+
+    // --- 🐋 Cetus (くじら座) ---
+    "diphda":       { ra: 0.72,  dec: -17.99,color: 0xFFDDAA, size: 1.1 },
+    "menkar":       { ra: 3.04,  dec: 4.09,  color: 0xFF8844, size: 1.1 },
+    "mira":         { ra: 2.32,  dec: -2.98, color: 0xFF4433, size: 1.0 },
+    "baten_kaitos": { ra: 1.97,  dec: -10.33,color: 0xFFDDAA, size: 1.0 },
+
+    // --- 🐟 Piscis Austrinus (みなみのうお座) ---
+    "fomalhaut":    { ra: 22.96, dec: -29.62,color: 0xFFFFFF, size: 1.2 }, // 秋のひとつぼし
+
+    // --- 🐎 Centaurus (ケンタウルス座) ---
+    "rigil_kent":   { ra: 14.66, dec: -60.83,color: 0xFFFFCC, size: 1.5 },
+    "hadar":        { ra: 14.06, dec: -60.37,color: 0xAACCFF, size: 1.4 },
+    "menkent":      { ra: 14.11, dec: -36.37,color: 0xFFDDAA, size: 1.1 },
+
+    // --- 🌟 Special Objects (定義済み確認用) ---
+    "canopus":      { ra: 6.40,  dec: -52.70,color: 0xFFFFEE, size: 1.5 } // カノープス
+};
 
         const PLANET_DB = {
             "sun":     { jpName: "太陽",   color: 0xFFaa00, size: 5.0, type: "star", rank: "planet" },
@@ -603,15 +874,92 @@
         };
 
         const CONSTELLATION_DB = {
-            "sun": { jpName: "太陽", rank: "planet", catch: "生命の源", info: { science: "太陽系の中心にある恒星。", trivia: "表面温度は約6000度。", myth: "多くの神話で最高神とされます。" } },
-            "moon": { jpName: "月", rank: "planet", catch: "地球の衛星", info: { science: "地球唯一の衛星。", trivia: "月齢によって姿を変えます。", myth: "かぐや姫の故郷。" } },
-            "mercury": { jpName: "水星", rank: "planet", catch: "太陽に一番近い", info: { science: "クレーターだらけの惑星。", trivia: "1日が1年より長いです。", myth: "ヘルメス。" } },
-            "venus": { jpName: "金星", rank: "planet", catch: "明けの明星・宵の明星", info: { science: "厚い雲に覆われています。", trivia: "自転が逆回転です。", myth: "ビーナス。" } },
-            "mars": { jpName: "火星", rank: "planet", catch: "赤い惑星", info: { science: "酸化鉄で赤く見えます。", trivia: "かつて水があった痕跡が。", myth: "軍神マルス。" } },
-            "jupiter": { jpName: "木星", rank: "planet", catch: "太陽系最大の惑星", info: { science: "ガスの巨大惑星。", trivia: "大赤斑は巨大な台風です。", myth: "ゼウス。" } },
-            "saturn": { jpName: "土星", rank: "planet", catch: "美しい環を持つ", info: { science: "氷の粒でできた環があります。", trivia: "水に浮くほど軽いです。", myth: "クロノス。" } },
-            "uranus": { jpName: "天王星", rank: "planet", catch: "横倒しの惑星", info: { science: "自転軸がほぼ横倒しです。", trivia: "メタンの影響で青緑色。", myth: "ウラノス。" } },
-            "neptune": { jpName: "海王星", rank: "planet", catch: "青い暴風の惑星", info: { science: "太陽から最も遠い惑星。", trivia: "超高速の風が吹いています。", myth: "ポセイドン。" } },
+
+// ==========================================
+    // 🪐 Solar System Family (太陽系)
+    // ==========================================
+    "sun": {
+        jpName: "太陽", rank: "planet", catch: "すべての生命の源",
+        navTarget: "sun", // ターゲットは自分自身
+        info: {
+            science: "太陽系の中心にある恒星で、直径は地球の約109倍もあります。自ら光り輝くガス（プラズマ）の塊で、表面温度は約6000度、中心部は1500万度にも達します。",
+            trivia: "太陽の寿命はあと50億年ほど。最後は大きく膨らんで地球を飲み込み、その後は「白色矮星」という小さな星になって一生を終えると言われています。",
+            myth: "ギリシャ神話のヘリオスやアポロン、日本のアマテラスなど、世界中の神話で最高神として崇められています。古代の人々にとって、まさに神そのものでした。"
+        }
+    },
+    "moon": {
+        jpName: "月", rank: "planet", catch: "地球に寄り添うパートナー",
+        navTarget: "moon",
+        info: {
+            science: "地球唯一の衛星です。直径は地球の約4分の1。大気がないため、昼は110度、夜はマイナス170度という過酷な環境です。表面の黒っぽい部分は「海」と呼ばれます。",
+            trivia: "月は毎年約3.8cmずつ地球から遠ざかっています。はるか未来には、皆既日食が見られなくなってしまうかもしれません。",
+            myth: "ギリシャ神話では狩りの女神アルテミス（セレネ）。日本ではかぐや姫の故郷であり、ウサギが餅をついている場所として親しまれています。"
+        }
+    },
+    "mercury": {
+        jpName: "水星", rank: "planet", catch: "太陽に一番近い俊足ランナー",
+        navTarget: "mercury",
+        info: {
+            science: "太陽系で最も小さく、最も内側を回る惑星です。クレーターだらけの表面は月にそっくり。昼は430度、夜はマイナス170度と気温差が激しいのが特徴です。",
+            trivia: "水星の1日は約176日（地球時間）もあり、なんと水星の1年（約88日）よりも長いです。つまり「1日が1年より長い」不思議な星なんです。",
+            myth: "動きがとても素早いため、ギリシャ神話の伝令神ヘルメス（ローマ神話のマーキュリー）の名前が付けられました。"
+        }
+    },
+    "venus": {
+        jpName: "金星", rank: "planet", catch: "美しく輝く宵の明星・明けの明星",
+        navTarget: "venus",
+        info: {
+            science: "地球のすぐ内側を回り、大きさも重さも地球とほぼ同じ「双子星」。しかし厚い二酸化炭素の雲に覆われ、温室効果で表面温度は460度にもなる灼熱地獄です。",
+            trivia: "金星は他の惑星とは逆向きに自転しています。そのため、金星では「太陽は西から昇って東へ沈む」ことになります。",
+            myth: "そのあまりの美しさから、愛と美の女神アプロディーテ（ローマ神話のビーナス）の名前が付けられました。"
+        }
+    },
+    "mars": {
+        jpName: "火星", rank: "planet", catch: "人類の次なるフロンティア",
+        navTarget: "mars",
+        info: {
+            science: "地球のすぐ外側を回る赤い惑星です。赤く見えるのは、地表が酸化鉄（赤さび）で覆われているから。太陽系最大の火山「オリンポス山」があります。",
+            trivia: "かつて大量の水があった痕跡が見つかっており、生命が存在した（あるいは今も地下にいる？）可能性が最も高い惑星として、探査が進められています。",
+            myth: "赤く不気味に輝く姿が血を連想させるため、ギリシャ神話の軍神アレス（ローマ神話のマルス）の名前が付けられました。"
+        }
+    },
+    "jupiter": {
+        jpName: "木星", rank: "planet", catch: "太陽系最大のガスの巨人",
+        navTarget: "jupiter",
+        info: {
+            science: "地球の直径の11倍もある、太陽系最大の惑星です。主に水素とヘリウムでできたガス惑星で、地面はありません。縞模様と巨大な台風「大赤斑」が特徴です。",
+            trivia: "木星はその巨大な重力で、地球に向かってくる小惑星などを吸い寄せたり弾き飛ばしたりして、地球を守る「盾」の役割も果たしていると言われています。",
+            myth: "神々の中で最も偉大な存在であることから、最高神ゼウス（ローマ神話のジュピター）の名前が付けられました。"
+        }
+    },
+    "saturn": {
+        jpName: "土星", rank: "planet", catch: "美しい環を持つ太陽系の宝石",
+        navTarget: "saturn",
+        info: {
+            science: "美しい環（リング）を持つことで有名なガス惑星です。環は主に氷の粒でできています。木星に次いで2番目に大きいですが、密度はとても小さいです。",
+            trivia: "土星は水に浮くほど軽い（比重が1より小さい）惑星です。もし土星が入るほど巨大なプールがあったら、ぷかぷかと浮いてしまうでしょう。",
+            myth: "ゼウスの父であり、農耕の神であるクロノス（ローマ神話のサターン）の名前が付けられました。"
+        }
+    },
+    "uranus": {
+        jpName: "天王星", rank: "planet", catch: "ゴロゴロ転がる氷の惑星",
+        navTarget: "uranus",
+        info: {
+            science: "青緑色に輝く氷の惑星（巨大氷惑星）です。この色は、大気に含まれるメタンが赤い光を吸収するため。望遠鏡で見ると神秘的な色をしています。",
+            trivia: "自転軸が約98度も傾いており、ほぼ横倒しの状態で公転しています。過去に巨大な天体が衝突したせいではないかと言われています。",
+            myth: "天空の神ウラノスの名前が付けられました。土星（クロノス）の父、つまり木星（ゼウス）のおじいちゃんにあたります。"
+        }
+    },
+    "neptune": {
+        jpName: "海王星", rank: "planet", catch: "青い暴風が吹き荒れる最果ての星",
+        navTarget: "neptune",
+        info: {
+            science: "太陽系の一番外側を回る、鮮やかな青色の惑星です。太陽からあまりに遠いため、極寒の世界です。超音速の猛烈な風が吹き荒れています。",
+            trivia: "計算によって「あるはずだ」と予測され、その後に発見された初めての惑星です。天王星の動きのズレから、その存在が導き出されました。",
+            myth: "その青い色から海を連想させ、海の神ポセイドン（ローマ神話のネプチューン）の名前が付けられました。"
+        }
+    },
+
             "orion": {
                 jpName: "オリオン座", rank: "famous", catch: "冬の夜空の絶対王者",
                 lines: [ ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"] ],
@@ -1283,8 +1631,8 @@
             createNavMarker();
 
             // Constellations
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 });
-            const specialMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.6 });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.7, linewidth: 2 });
+            const specialMat = new THREE.LineBasicMaterial({ color: 0x8888ff, transparent: true, opacity: 0.8 , linewidth: 3 });
 
             for(const [key, data] of Object.entries(CONSTELLATION_DB)) {
                 if(data.rank === "planet") continue; 
@@ -1522,7 +1870,7 @@
             geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
             geo.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
             
-            const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8 });
+            const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.0, transparent: true, opacity: 0.8 });
             stardustGroup.add(new THREE.Points(geo, mat));
         }
 
@@ -1538,11 +1886,11 @@
                  ctx.shadowColor = "black";
             }
 
-            ctx.fillStyle = fillCol; ctx.font = "bold 60px 'Zen Maru Gothic', sans-serif";
+            ctx.fillStyle = fillCol; ctx.font = "bold 80px 'Zen Maru Gothic', sans-serif";
             ctx.textAlign = "center"; ctx.shadowBlur = 10; ctx.shadowOffsetX=3; ctx.shadowOffsetY=3;
             ctx.fillText(name, 256, 120);
             if (catchphrase) {
-                ctx.fillStyle = "#ffd700"; ctx.font = "40px 'Zen Maru Gothic', sans-serif";
+                ctx.fillStyle = "#ffd700"; ctx.font = "50px 'Zen Maru Gothic', sans-serif";
                 ctx.fillText(catchphrase, 256, 180);
             }
             const tex = new THREE.CanvasTexture(cvs);
