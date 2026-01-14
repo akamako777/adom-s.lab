@@ -22,6 +22,10 @@
         3. Shooting Star Engine:
            - `ShootingStar` クラスにより、ランダムな流星をプロシージャル生成。
            - 「癒やし」をテーマに、青い軌跡が尾を引いて消える演出を追加。
+        
+        【Bug Fix - The Last Patch】
+        - Nightモード切り替え時、オーバーレイが操作をブロックする問題を修正。
+          CSSクラスだけでなく、JSから直接 `style.display` を制御することで動作を安定化。
 
         これにて、Star Compassの開発は完了です。
         五島の星空が、あなたの手のひらで永遠に輝き続けますように。
@@ -64,7 +68,8 @@
             opacity: 0; transition: opacity 0.5s;
             display: none;
         }
-        body.mode-night #night-overlay { display: block; opacity: 1; }
+        /* body.mode-night #night-overlay { display: block; opacity: 1; }  <- JS制御に変更 */
+        body.mode-night #night-overlay { opacity: 1; } 
         body.mode-night { background-color: #000 !important; }
         body.mode-day { background-color: #87CEEB !important; }
 
@@ -918,11 +923,18 @@
             document.body.className = `mode-${state.viewMode}`;
             btn.className = `glass-panel btn-icon icon-mode-${state.viewMode}`;
             
+            // Fix for Night Mode overlay interaction issue
+            const nightOverlay = document.getElementById('night-overlay');
+            if (state.viewMode === 'night') {
+                nightOverlay.style.display = 'block'; // Force block
+            } else {
+                nightOverlay.style.display = ''; // Clear inline style (revert to CSS)
+            }
+
             if (state.viewMode === 'day') {
                 renderer.setClearColor(0x87CEEB, 1); 
             } else {
                 renderer.setClearColor(0x000000, 0); // Transparent usually, but handled by body bg
-                // Wait, if not AR, renderer should be transparent so Body color shows
                 renderer.setClearAlpha(0);
             }
             showToast(`モード: ${state.viewMode.toUpperCase()}`);
@@ -1044,6 +1056,7 @@
                 document.getElementById('main-hud').style.display = 'block';
                 if(state.isDevMode) document.getElementById('dev-badge').style.display = 'block';
                 if(state.activeConstellation) document.getElementById('nav-arrow').style.display = 'block';
+                // Fix restore night mode overlay
                 if(state.viewMode === 'night') document.getElementById('night-overlay').style.display = 'block';
                 
                 const link = document.createElement('a');
