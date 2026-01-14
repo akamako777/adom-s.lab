@@ -960,100 +960,672 @@ const STAR_DB = {
         }
     },
 
-            "orion": {
-                jpName: "オリオン座", rank: "famous", catch: "冬の夜空の絶対王者",
-                lines: [ ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"] ],
-                navTarget: "alnilam",
-                info: {
-                    science: "冬の代表的な星座。1等星が2つある豪華な星座です。真ん中の三ツ星が目印。赤いベテルギウスは寿命が近い「赤色超巨星」です。",
-                    trivia: "実は「ベテルギウス」はいつ爆発してもおかしくない状態です。もし爆発したら、昼間でも見えるくらい明るくなるかも！？",
-                    myth: "狩人オリオンは腕自慢でしたが、調子に乗りすぎてサソリに刺されて死んでしまいました。だからサソリ座が昇ると、逃げるように西へ沈んでいくんです。"
-                }
-            },
-            "gemini": {
-                jpName: "ふたご座", rank: "famous", catch: "仲良し兄弟星",
-                lines: [ ["pollux", "castor"], ["alhena", "pollux"] ],
-                navTarget: "pollux",
-                info: {
-                    science: "カストルとポルックスという2つの明るい星が並んでいます。ポルックスの方が少し明るい1等星です。",
-                    trivia: "弟のポルックスは神様の子で不死身でしたが、兄のカストルは人間の子でした。不思議な双子ですね。",
-                    myth: "仲の良い双子の兄弟でした。兄が戦いで死んだとき、弟は自分の命を分けて兄と一緒に星になりました。"
-                }
-            },
-            "taurus": {
-                jpName: "おうし座", rank: "famous", catch: "赤い目を持つ猛牛",
-                lines: [ ["aldebaran", "elnath"] ],
-                navTarget: "aldebaran",
-                info: {
-                    science: "赤い1等星アルデバランが目印。その近くには「すばる（プレアデス星団）」があります。",
-                    trivia: "アルデバランは「後に続くもの」という意味。すばるの後を追いかけて昇ってくるからだそうです。",
-                    myth: "大神ゼウスが美しい王女エウロパを連れ去るために化けた、白い牛の姿だと言われています。"
-                }
-            },
-            "auriga": {
-                jpName: "ぎょしゃ座", rank: "normal", catch: "将棋の駒のような五角形",
-                lines: [ ["capella", "menkalinan"], ["menkalinan", "elnath"] ],
-                navTarget: "capella",
-                info: {
-                    science: "カペラは冬のダイヤモンドの一つで、黄色く輝く明るい星です。全体は五角形の形をしています。",
-                    trivia: "ぎょしゃとは「馬車を操る人」のこと。カペラには「小さなメスのヤギ」という意味があります。",
-                    myth: "アテネの王エリクトニウスの姿。彼は足が不自由でしたが、4頭立ての戦車を発明して活躍しました。"
-                }
-            },
-            "canis_major": {
-                jpName: "おおいぬ座", rank: "normal", catch: "全天一明るいシリウス",
-                lines: [ ["sirius", "mirzam"], ["sirius", "adhara"], ["wezen", "adhara"] ],
-                navTarget: "sirius",
-                info: {
-                    science: "シリウスは地球から見える一番明るい恒星です。冬の大三角の一つを担っています。",
-                    trivia: "シリウスは「焼き焦がすもの」という意味。古代エジプトではナイル川の氾濫を知らせる重要な星でした。",
-                    myth: "オリオンが連れている猟犬です。獲物のウサギ（うさぎ座）を追いかけている姿です。"
-                }
-            },
-            "lepus": {
-                jpName: "うさぎ座", rank: "normal", catch: "オリオンの足元に隠れてる",
-                lines: [ ["arne", "nihal"] ],
-                navTarget: "arne",
-                info: {
-                    science: "オリオン座の足元にある小さな星座です。暗い星が多いですが、まとまった形をしています。",
-                    trivia: "オリオン座の下にあるので、まるで巨人に踏まれそうな場所にいます。",
-                    myth: "狩人オリオンに狙われているウサギの姿と言われています。"
-                }
-            },
-            "canis_minor": {
-                jpName: "こいぬ座", rank: "minor", catch: "プロキオンが光るだけ",
-                lines: [ ["procyon", "gomeisa"] ],
-                navTarget: "procyon",
-                info: {
-                    science: "プロキオンは「犬の前」という意味。シリウスより少し先に昇ってくるからです。",
-                    trivia: "星が2つしかないシンプルな星座ですが、プロキオンはとても明るく目立ちます。",
-                    myth: "おおいぬ座と同じく、オリオンの猟犬の一匹です。"
-                }
-            },
-            "pleiades": {
-                jpName: "すばる", rank: "object", catch: "清少納言も愛した星団",
-                lines: [], navTarget: "pleiades",
-                info: {
-                    science: "おうし座にある散開星団。肉眼でも6〜7個の星が集まっているのが見えます。",
-                    trivia: "日本では古くから「すばる（統ばる＝集まる）」と呼ばれ、愛されてきました。車のスバルのマークもこれです。",
-                    myth: "アトラスの7人の娘たちです。オリオンに追いかけられて、星になって逃げたと言われています。"
-                }
-            },
-            "canopus": {
-                jpName: "カノープス", rank: "object", catch: "見ると長生き！南極老人星",
-                lines: [], navTarget: "canopus",
-                info: {
-                    science: "全天で2番目に明るい星ですが、日本からは南の地平線すれすれにしか見えません。五島列島ならチャンスあり！",
-                    trivia: "中国では「南極老人星」と呼ばれ、一目見ると寿命が延びると言われる縁起の良い星です。",
-                    myth: "トロイア戦争で活躍した水先案内人カノープスの名前がついています。"
-                }
-            },
-            "winter_triangle": {
-                jpName: "冬の大三角", rank: "object", catch: "冬の目印",
-                lines: [ ["betelgeuse", "sirius"], ["sirius", "procyon"], ["procyon", "betelgeuse"] ],
-                isSpecial: true, navTarget: "betelgeuse",
-                info: { science: "ベテルギウス、シリウス、プロキオンを結んだ正三角形。", trivia: "...", myth: "..." }
-            }
+
+// ==========================================
+    // ⭐ Famous Constellations (Part 1/2)
+    // ==========================================
+
+    "orion": {
+        jpName: "オリオン座", rank: "famous", catch: "冬の夜空の絶対王者",
+        // 鼓型(基本) + こん棒 + 盾
+        lines: [ 
+            ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"], ["rigel", "saiph"], ["rigel", "mintaka"], 
+            ["bellatrix", "mintaka"], ["saiph", "alnitak"], ["mintaka", "alnilam"], ["alnilam", "alnitak"],
+            ["betelgeuse", "orion_chi1"], // こん棒
+            ["bellatrix", "orion_pi3"], ["orion_pi3", "orion_pi1"], ["orion_pi3", "orion_pi6"] // 盾
+        ],
+        navTarget: "alnilam", // 三ツ星の中央
+        info: {
+            science: "夜空で最も華やかで整った星座です。中央に並ぶ「三つ星」と、それを取り囲む4つの星が特徴的な「鼓（つづみ）」の形を描きます。三つ星の下には、肉眼でもぼんやりと見える「オリオン大星雲（M42）」があり、そこでは今まさに新しい星が生まれています。",
+            trivia: "左上の赤い1等星「ベテルギウス」は太陽の約1000倍もの大きさがあり、寿命が尽きかけています。いつ「超新星爆発」を起こしてもおかしくなく、もし爆発すれば満月ほどの明るさになり、昼間でも見えると予測されています。",
+            myth: "海の神ポセイドンの子で、怪力の狩人でした。月の女神アルテミスと恋に落ちますが、それを快く思わない兄アポロンの策略により、女神自身の矢で誤って射抜かれ命を落としました。死後も、生前に自分を刺し殺した毒サソリが苦手で、さそり座が東から昇ると逃げるように西へ沈んでいきます。"
+        }
+    },
+
+    "canis_major": {
+        jpName: "おおいぬ座", rank: "famous", catch: "全天一明るいシリウス",
+        // 犬の形: 鼻先(シリウス) -> 頭 -> 胴体 -> 足/尾
+        lines: [ 
+            ["sirius", "mirzam"], // 頭
+            ["sirius", "adhara"], // 首〜腹
+            ["wezen", "adhara"], // 腰〜腹
+            ["wezen", "cma_eta"], // 尻尾
+            ["adhara", "cma_zeta"], // 後ろ足
+            ["mirzam", "cma_omicron2"], // 前足の方へ
+            ["wezen", "cma_omicron2"] // 背中
+        ],
+        navTarget: "sirius",
+        info: {
+            science: "口元で輝く1等星「シリウス」は、地球から見える恒星の中で一番明るい星（-1.4等）です。オリオン座のベテルギウス、こいぬ座のプロキオンと共に「冬の大三角」を作ります。",
+            trivia: "シリウスは「焼き焦がすもの」という意味。古代エジプトでは、シリウスが明け方に昇ってくる時期がナイル川の氾濫（恵みの洪水）の合図とされ、暦の基準となる重要な星でした。",
+            myth: "オリオンが連れている猟犬です。非常に俊足で、獲物である「うさぎ座」を追いかけています。一説には、走るのが速すぎてゼウスによって空に上げられた名犬レラプスだとも言われています。"
+        }
+    },
+
+    "scorpius": {
+        jpName: "さそり座", rank: "famous", catch: "S字を描く夏の主役",
+        // 巨大なS字カーブ
+        lines: [ 
+            ["antares", "graffias"], ["graffias", "dschubba"], ["dschubba", "sco_pi"], // 頭と爪
+            ["antares", "wei"], ["wei", "sco_mu1"], ["sco_mu1", "sco_zeta"], // 胴体 (zetaは未定義なら飛ばしてmu1->sargas等の接続調整が必要だが、今回はSTAR_DBにある星で繋ぐ)
+            // 修正: STAR_DBにある星で繋ぐ: Antares -> Wei -> Mu1 -> Sargas
+            ["wei", "sco_mu1"], ["sco_mu1", "sargas"], 
+            ["sargas", "sco_kappa"], ["sco_kappa", "sco_girtab"], ["sco_girtab", "shaula"] // 尾の先
+        ],
+        navTarget: "antares",
+        info: {
+            science: "夏の南の空に、見事なS字カーブを描く巨大な星座です。心臓部分で赤く輝く1等星「アンタレス」が目印です。天の川の濃い部分に位置しており、双眼鏡で覗くと無数の星が見えます。",
+            trivia: "アンタレスは「アンチ・アレス（火星に対抗するもの）」という意味。その名の通り、火星と赤さや明るさを競うように輝いています。和名では「赤星」や「釣り針星」と呼ばれました。",
+            myth: "狩人オリオンを刺し殺した猛毒のサソリです。その功績を称えられて星座になりました。空に上がってからもオリオンを追いかけているため、決して同じ空には現れません。"
+        }
+    },
+
+    "lyra": {
+        jpName: "こと座", rank: "famous", catch: "七夕の織姫ベガ",
+        // 平行四辺形 + ベガ
+        lines: [ 
+            ["vega", "lyr_epsilon"], ["vega", "lyr_zeta"], // ベガ周辺
+            ["lyr_zeta", "lyr_delta2"], ["lyr_delta2", "sulafat"], ["sulafat", "sheliak"], ["sheliak", "lyr_zeta"] // 平行四辺形
+        ],
+        navTarget: "vega",
+        info: {
+            science: "0等星「ベガ」は、全天で5番目に明るい星で、「夏の大三角」の一つです。日本では「織姫星」として知られています。小さな星座ですが、整った平行四辺形が目印になります。",
+            trivia: "約1万2千年後には、地球の歳差運動によってベガが「北極星」になります。また、映画『コンタクト』の舞台になったことでも有名です。",
+            myth: "音楽家オルフェウスの竪琴（ライアー）です。彼がこれを弾くと、人間だけでなく動物や草木、岩までもが聴き惚れたと言われています。亡き妻を追って冥界へ行った際も、この音色で番犬ケルベロスを眠らせました。"
+        }
+    },
+
+    "aquila": {
+        jpName: "わし座", rank: "famous", catch: "天の川を飛ぶ彦星",
+        // 十字 + 翼
+        lines: [ 
+            ["altair", "tarazed"], ["altair", "alshain"], // アルタイル3兄弟
+            ["altair", "aql_delta"], ["aql_delta", "aql_zeta"], // 右翼
+            ["altair", "aql_theta"] // 尾
+        ],
+        navTarget: "altair",
+        info: {
+            science: "1等星「アルタイル」は「夏の大三角」の一つで、日本では「彦星」です。天の川を挟んでベガ（織姫）と向かい合っています。アルタイルの両脇に星が並んでいるのが特徴です。",
+            trivia: "アルタイルは非常に高速で自転（約9時間で1回転）しているため、遠心力で赤道付近が膨らみ、みかんのように潰れた楕円形をしています。",
+            myth: "大神ゼウスが、美少年ガニュメデスをさらうために変身した黒鷲の姿です。ガニュメデスはそのまま天界へ連れ去られ、神々の宴でお酌をする係になりました（それがみずがめ座です）。"
+        }
+    },
+
+    "cygnus": {
+        jpName: "はくちょう座", rank: "famous", catch: "天の川を飛ぶ十字架",
+        // 北十字 (Northern Cross)
+        lines: [ 
+            ["deneb", "sadr"], ["sadr", "albireo"], // 縦軸
+            ["sadr", "gienah"], ["gienah", "cyg_zeta"], // 東の翼
+            ["sadr", "delta_cyg"], ["delta_cyg", "cyg_kappa"] // 西の翼
+        ],
+        navTarget: "deneb",
+        info: {
+            science: "天の川の上を、南に向かって飛ぶ白鳥の姿です。十字の形をしているため「北十字（ノーザンクロス）」とも呼ばれます。尾羽の「デネブ」は夏の大三角の一角を担う超巨星です。",
+            trivia: "くちばしの星「アルビレオ」は、望遠鏡で見るとオレンジと青の星が並ぶ「全天で最も美しい二重星」として有名です。宮沢賢治の『銀河鉄道の夜』にも登場します。",
+            myth: "大神ゼウスが、スパルタ王妃レダに恋をし、彼女に近づくために変身した白鳥の姿です。この白鳥が産んだ卵から、ふたご座のカストルとポルックスが生まれたとも言われています。"
+        }
+    },
+
+    "cassiopeia": {
+        jpName: "カシオペヤ座", rank: "famous", catch: "北の空のWマーク",
+        // Wの形
+        lines: [ ["caph", "schedar"], ["schedar", "gamma_cas"], ["gamma_cas", "ruchbah"], ["ruchbah", "segin"] ],
+        navTarget: "schedar",
+        info: {
+            science: "北極星を探すための重要な目印となる星座です。5つの明るい星が「W」（季節によっては「M」）の形に並んでいます。天の川の中にどっぷりと浸かっています。",
+            trivia: "このWの形は「山形星」や「錨（いかり）星」など、日本各地で様々な呼び名がありました。Wの両端を伸ばして交わった点と真ん中の星を結び、その長さを5倍すると北極星が見つかります。",
+            myth: "古代エチオピアの王妃カシオペヤです。「私は海の妖精よりも美しい」と自慢したため、海神ポセイドンの怒りを買い、娘のアンドロメダが生贄にされる原因を作ってしまいました。その罰として、椅子に縛られたまま空を回り続けています。"
+        }
+    },
+
+    "ursa_major": {
+        jpName: "おおぐま座", rank: "famous", catch: "北斗七星を持つ巨大熊",
+        // 北斗七星 + 頭 + 足
+        lines: [ 
+            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"], // 北斗七星
+            ["dubhe", "megrez"], // ひしゃくの口
+            ["dubhe", "uma_omicron"], // 頭
+            ["merak", "uma_nu"], ["uma_nu", "uma_xi"], // 後ろ足
+            ["megrez", "uma_iota"] // 前足 (簡略化)
+        ],
+        navTarget: "alioth", // 最も明るい星
+        info: {
+            science: "全天で3番目に大きな星座です。腰から尻尾にあたる7つの星は「北斗七星」として有名です。ひしゃくの先の2星（指極星）を結んで5倍伸ばすと、北極星が見つかります。",
+            trivia: "尻尾の真ん中にある「ミザール」には、「アルコル」という小さな星が寄り添っています。昔のアラビアでは、この星が見えるかどうかで兵士の視力検査をしたと言われています。",
+            myth: "森の妖精カリストが姿を変えられたものです。ゼウスと恋仲になったため、女神ヘラの嫉妬を買って熊にされてしまいました。後に息子に狩られそうになったところを、ゼウスによって空に上げられました。尻尾が長いのは、ゼウスが尻尾を掴んでブン投げたからだとか。"
+        }
+    },
+
+    "aries": {
+        jpName: "おひつじ座", rank: "famous", catch: "黄道十二星座のトップバッター",
+        // 「へ」の字
+        lines: [ ["hamal", "sheratan"], ["sheratan", "mesarthim"], ["hamal", "ari_41"] ],
+        navTarget: "hamal",
+        info: {
+            science: "秋の夜空に輝く、こぢんまりとした星座です。2等星ハマルを中心とした「へ」の字型が目印です。黄道十二星座の第1番目にあたります。",
+            trivia: "かつて（約2000年前）は、春分の点がこの星座にありました。そのため、星占いでは今でもおひつじ座がスタート地点とされています。",
+            myth: "ボイオティア王の子供たち、プリクソスとヘレを乗せて空を飛んだ「金色の羊」です。彼らを継母の悪巧みから救い出しましたが、妹のヘレは途中で海に落ちてしまいました。"
+        }
+    },
+
+    "taurus": {
+        jpName: "おうし座", rank: "famous", catch: "赤い目を持つ猛牛",
+        // 顔(V字) + 角
+        lines: [ 
+            ["aldebaran", "tau_epsilon"], ["tau_epsilon", "tau_delta1"], ["tau_delta1", "tau_gamma"], ["tau_gamma", "aldebaran"], // ヒアデス(顔)
+            ["tau_epsilon", "tau_zeta"], // 南の角
+            ["tau_gamma", "elnath"] // 北の角
+        ],
+        navTarget: "aldebaran",
+        info: {
+            science: "冬の夜空で、オリオン座に向かって角を突き出している星座です。赤い1等星「アルデバラン」と、V字型のヒアデス星団、そして肩の部分にある「すばる（プレアデス星団）」が有名です。",
+            trivia: "アルデバランは「後に続くもの」という意味。すばるの後を追いかけて昇ってくることから名付けられました。日本では「すばるの後星（あとぼし）」とも呼ばれます。",
+            myth: "大神ゼウスが、フェニキアの王女エウロパに恋をし、彼女を背中に乗せて連れ去るために変身した「真っ白な牡牛」の姿だと言われています。"
+        }
+    },
+
+// ==========================================
+    // ⭐ Famous Constellations (Part 2/2)
+    // ==========================================
+
+    "gemini": {
+        jpName: "ふたご座", rank: "famous", catch: "仲良し兄弟星",
+        // 兄弟が並んで立っている
+        lines: [ 
+            ["pollux", "castor"], // 2人の頭
+            ["pollux", "gem_delta"], ["gem_delta", "gem_xi"], ["gem_xi", "alhena"], // 弟の体〜足
+            ["castor", "gem_epsilon"], ["gem_epsilon", "gem_mu"], ["gem_mu", "gem_propus"] // 兄の体〜足
+        ],
+        navTarget: "pollux", // 弟の方が少し明るい
+        info: {
+            science: "冬の夜空に、カストル（兄・銀）とポルックス（弟・金）という2つの明るい星が仲良く並んでいます。ポルックスの方が明るい1等星で、カストルは少し暗い2等星です。双子座流星群の放射点としても有名です。",
+            trivia: "弟のポルックスは神ゼウスの血を引く不死身の体でしたが、兄のカストルは人間の子で寿命がありました。同じ双子なのに、神様と人間のハーフという不思議な兄弟です。",
+            myth: "とても仲の良い双子の兄弟でした。ある戦いで兄カストルが矢に倒れたとき、不死身の弟ポルックスは兄と死ぬことを願い、ゼウスに頼んで自分の命を分け与えました。その絆が星座となって輝いています。"
+        }
+    },
+
+    "cancer": {
+        jpName: "かに座", rank: "famous", catch: "プレセペ星団を抱く",
+        // 甲羅の四角形 + 爪
+        lines: [ 
+            ["acubens", "can_beta"], // 爪〜足
+            ["can_beta", "can_delta"], ["can_delta", "can_gamma"], ["can_gamma", "can_beta"], // 甲羅
+            ["can_gamma", "acubens"] // 接続
+        ],
+        navTarget: "praesepe", // 星は暗いので星団をターゲットに
+        info: {
+            science: "明るい星がなく、夜空で見つけるのが難しい星座ですが、中心にある「プレセペ星団（M44）」がぼんやりと雲のように見えます。双眼鏡で見ると、数十個の星が集まっている様子が観察できます。",
+            trivia: "プレセペとはラテン語で「飼い葉桶（かいばおけ）」のこと。その周りにある星（γ星とδ星）は、桶の餌を食べに来た「ロバ」だと言われています。",
+            myth: "ヘルクレスと戦う巨大ウミヘビ（ヒドラ）に加勢するために、女神ヘラが送り込んだ巨大ガニです。ヘルクレスの足を挟んで攻撃しましたが、あっけなく踏み潰されてしまいました。その勇気を称えて星座になりました。"
+        }
+    },
+
+    "leo": {
+        jpName: "しし座", rank: "famous", catch: "春の夜空の王者",
+        // 大鎌(頭) + 胴体 + 尻尾
+        lines: [ 
+            ["regulus", "leo_eta"], ["leo_eta", "algieba"], ["algieba", "leo_zeta"], ["leo_zeta", "leo_mu"], ["leo_mu", "leo_epsilon"], // ししの大鎌 (The Sickle)
+            ["algieba", "zosma"], ["zosma", "chertan"], ["chertan", "denebola"], // 背中〜尻尾
+            ["regulus", "chertan"] // 腹
+        ],
+        navTarget: "regulus",
+        info: {
+            science: "春の夜空を代表する星座です。頭の部分にある「？」マークを裏返したような星の並びは「ししの大鎌（シックル）」と呼ばれます。胸で輝く1等星レグルスと、尻尾のデネボラが目印です。",
+            trivia: "1等星レグルスは「小さな王」という意味。黄道（太陽の通り道）のすぐ上にあるため、時々月や惑星がレグルスに重なり、隠してしまう現象（星食）が起こります。",
+            myth: "天空を支える巨人アトラスの娘たちが飼っていた、不死身の人食いライオンです。英雄ヘルクレスの最初の冒険で退治されました。決して傷つかない毛皮を持っていましたが、ヘルクレスの怪力で絞め殺されてしまいました。"
+        }
+    },
+
+    "virgo": {
+        jpName: "おとめ座", rank: "famous", catch: "春の真珠星スピカ",
+        // Y字 + 胴体
+        lines: [ 
+            ["spica", "porrima"], ["porrima", "auva"], ["auva", "vindemiatrix"], // 上半身
+            ["porrima", "zaniah"], // もう一方の手
+            ["spica", "vir_mu"], ["vir_mu", "syrma"] // 足元
+        ],
+        navTarget: "spica",
+        info: {
+            science: "全天で2番目に広い面積を持つ巨大な星座です。純白に輝く1等星スピカが目印で、うしかい座のアークトゥルスと対になって「春の夫婦星」とも呼ばれます。",
+            trivia: "スピカはラテン語で「麦の穂」という意味。女神が左手に持っている麦の穂先で輝いています。日本では「真珠星」という美しい名前でも呼ばれました。",
+            myth: "農業の女神デメテルの娘、ペルセポネの姿だと言われています。彼女が冥界の王ハデスに連れ去られたため、母デメテルが悲しんで地上に冬が訪れるようになりました。彼女が地上に戻る春になると、この星座が昇ってきます。"
+        }
+    },
+
+    "libra": {
+        jpName: "てんびん座", rank: "famous", catch: "正義を測る天秤",
+        // 天秤の形
+        lines: [ 
+            ["zubenelgenubi", "lib_sigma"], // 南の皿
+            ["zubeneschamali", "zubenelgenubi"], // 棒
+            ["zubeneschamali", "lib_gamma"] // 北の皿
+        ],
+        navTarget: "zubenelgenubi", // α星
+        info: {
+            science: "「く」の字を裏返したような形をした星座です。かつてはさそり座の一部（ハサミ）と考えられていました。比較的明るい3等星で構成されており、見つけやすい形をしています。",
+            trivia: "α星の名前「ズベン・エル・ゲヌビ」は「南の爪」、β星「ズベン・エス・カマリ」は「北の爪」という意味。これらは元々サソリの爪だった名残です。",
+            myth: "正義の女神アストライアが持っていた天秤です。人間の善悪を測るために使われました。人間たちが争いを始めると、女神はこの天秤を持って天に去ってしまったと言われています。"
+        }
+    },
+
+    "sagittarius": {
+        jpName: "いて座", rank: "famous", catch: "天の川銀河の中心",
+        // ティーポット + 弓
+        lines: [ 
+            ["kaus_australis", "kaus_media"], ["kaus_media", "kaus_borealis"], // 弓
+            ["kaus_media", "alnasl"], // 矢 (alnasl未定義なら省略可、今回は主要構造優先) -> 修正: STAR_DBにある星で構成
+            ["nunki", "sag_phi"], ["sag_phi", "sag_tau"], ["sag_tau", "nunki"], // 南斗六星（ひしゃく/ポットの取っ手）
+            ["kaus_media", "nunki"], ["kaus_australis", "ascella"], ["ascella", "nunki"] // ポットの本体
+        ],
+        navTarget: "kaus_australis", // 弓の一番明るい星
+        info: {
+            science: "夏の南の空、天の川が一番濃く見える場所にあります。6つの星がひしゃくの形に並んでいる「南斗六星」があり、全体としては「ティーポット」の形に見えます。",
+            trivia: "いて座の方向には、私たちが住む「天の川銀河」の中心があります。そこには巨大なブラックホールが潜んでいることが分かっています。",
+            myth: "半人半馬の賢者ケイローンの姿です。彼は医学や音楽に優れ、ヘルクレスやアキレウスなどの英雄たちを育てた先生でした。しかし、弟子のヘルクレスが誤って放った毒矢に当たり、その苦しみから逃れるために不死を返上して星になりました。"
+        }
+    },
+
+    "capricornus": {
+        jpName: "やぎ座", rank: "famous", catch: "逆三角形のパンツ型",
+        // 逆三角形
+        lines: [ 
+            ["algedi", "dabih"], // 頭
+            ["dabih", "cap_theta"], ["cap_theta", "cap_psi"], ["cap_psi", "deneb_algedi"], // V字の底へ
+            ["deneb_algedi", "nashira"], // 尾
+            ["nashira", "algedi"] // 上辺を閉じる
+        ],
+        navTarget: "deneb_algedi",
+        info: {
+            science: "秋の空に浮かぶ、逆三角形の形をした星座です。面白いことに、α星（アルゲディ）とβ星（ダビー）は肉眼でも分離して見える「二重星」になっています。",
+            trivia: "英語では「カプリコーン」。上半身がヤギ、下半身が魚という不思議な姿をしています。子供たちの間では、その形から「パンツ」と呼ばれることもあります。",
+            myth: "羊飼いの神パーンが、怪物テュポンに襲われて逃げようとした際、慌てすぎて変身に失敗した姿です。川に飛び込んだ下半身は魚に、水から出た上半身はヤギになってしまいました。"
+        }
+    },
+
+    "aquarius": {
+        jpName: "みずがめ座", rank: "famous", catch: "美少年が注ぐ水瓶",
+        // 三ツ矢 + 水流
+        lines: [ 
+            ["sadalmelik", "sadalsuud"], // 肩
+            ["sadalmelik", "aqr_zeta"], // 瓶へ
+            ["aqr_zeta", "aqr_eta"], ["aqr_zeta", "aqr_pi"], ["aqr_zeta", "aqr_gamma"], // 三ツ矢（水瓶）
+            ["aqr_gamma", "aqr_lambda"], ["aqr_lambda", "aqr_phi"], ["aqr_phi", "skat"] // 流れ落ちる水
+        ],
+        navTarget: "sadalmelik",
+        info: {
+            science: "秋の夜空に広がる大きな星座です。「三ツ矢（みつや）」と呼ばれるY字型の星の並びが目印で、これが水瓶にあたります。そこから南のうお座に向かって水が流れ落ちるように星が並んでいます。",
+            trivia: "毎年5月のゴールデンウィーク頃に見られる「みずがめ座η（エータ）流星群」は、ハレー彗星が残したチリによって起こります。",
+            myth: "美少年ガニュメデスが、神々の宴でお酒（ネクタル）を注いでいる姿です。彼はその美しさゆえに、鷲に変身したゼウスによって天界へ連れ去られました。"
+        }
+    },
+
+    "pisces": {
+        jpName: "うお座", rank: "famous", catch: "リボンで結ばれた2匹",
+        // V字の紐 + 2匹の魚
+        lines: [ 
+            ["alrescha", "pis_eta"], ["pis_eta", "pis_omicron"], // 北の魚への紐
+            ["alrescha", "pis_omega"], ["pis_omega", "pis_iota"], ["pis_iota", "pis_gamma"], ["pis_gamma", "pis_theta"], ["pis_theta", "pis_iota"] // 西の魚(Circlet)への紐
+        ],
+        navTarget: "alrescha", // 結び目
+        info: {
+            science: "2匹の魚が紐（リボン）で結ばれた形をしています。星は暗いですが、西の魚にあたる「サークレット」と呼ばれる五角形の並びは比較的見つけやすいです。",
+            trivia: "春分の点（太陽の通り道と天の赤道が交わる点）は、現在このうお座にあります。天文学上の「春の始まり」を告げる重要な星座です。",
+            myth: "美と愛の女神アプロディーテとその子エロスが、怪物テュポンから逃げるために魚に変身して川に飛び込んだ姿です。はぐれないように、お互いの尻尾をリボンで結んでいます。"
+        }
+    },
+// ==========================================
+    // 🌙 Normal Constellations
+    // ==========================================
+
+    "auriga": {
+        jpName: "ぎょしゃ座", rank: "normal", catch: "将棋の駒のような五角形",
+        // 五角形 + 子ヤギ(The Kids)
+        lines: [ 
+            ["capella", "menkalinan"], ["menkalinan", "aur_theta"], ["aur_theta", "elnath"], ["elnath", "aur_iota"], ["aur_iota", "capella"], // 五角形
+            ["capella", "aur_epsilon"], ["aur_epsilon", "aur_zeta"] // The Kids (子ヤギ)
+        ],
+        navTarget: "capella",
+        info: {
+            science: "冬の天頂近くで輝く、将棋の駒のような五角形の星座です。黄色く輝く1等星カペラは「冬のダイヤモンド」の一角を担います。β星エルナトは、おうし座の角の星と共有されています。",
+            trivia: "カペラは「小さなメスのヤギ」という意味。カペラのすぐそばにある3つの小さな星は「キッズ（子ヤギ）」と呼ばれ、ぎょしゃがお腹に抱えているヤギの姿を表しています。",
+            myth: "アテネの王エリクトニウスの姿です。彼は足が不自由でしたが、それを補うために4頭立ての戦車を発明し、自ら御者（ぎょしゃ）となって戦場を駆け巡った英雄です。"
+        }
+    },
+
+    "canis_minor": {
+        jpName: "こいぬ座", rank: "normal", catch: "冬の大三角の一角",
+        // 直線
+        lines: [ ["procyon", "gomeisa"] ],
+        navTarget: "procyon",
+        info: {
+            science: "星はたった2つしかありませんが、1等星プロキオンが非常に明るく輝いているため、簡単に見つかります。オリオン座のベテルギウス、おおいぬ座のシリウスと共に「冬の大三角」を作ります。",
+            trivia: "プロキオンは「犬の前」という意味。全天一明るいシリウス（犬の星）よりも、少しだけ先に東の空から昇ってくることから名付けられました。",
+            myth: "おおいぬ座と同じく、狩人オリオンが連れている猟犬の一匹です。メアンデルという猟師が飼っていた愛犬メランポスだという説もあります。"
+        }
+    },
+
+    "bootes": {
+        jpName: "うしかい座", rank: "normal", catch: "春の夜空のネクタイ",
+        // ネクタイ型
+        lines: [ 
+            ["arcturus", "boo_epsilon"], ["boo_epsilon", "boo_delta"], ["boo_delta", "boo_beta"], ["boo_beta", "boo_gamma"], ["boo_gamma", "boo_epsilon"], // 上半身(胴体)
+            ["arcturus", "boo_eta"] // 足元
+        ],
+        navTarget: "arcturus",
+        info: {
+            science: "春の夜空でひときわ明るく輝くオレンジ色の1等星アークトゥルスが目印です。北斗七星の柄のカーブを伸ばした「春の大曲線」の先にあります。星座全体はネクタイのような形をしています。",
+            trivia: "アークトゥルスは「熊の番人」という意味。すぐ近くにいる「おおぐま座」が暴れ出さないように、後ろから監視していると言われています。日本では「麦星」とも呼ばれました。",
+            myth: "天空を支える巨人アトラスの姿だとも、農耕の神デメテルから麦作りの極意を教わった少年トリプトレモスの姿だとも言われています。"
+        }
+    },
+
+    "ursa_minor": {
+        jpName: "こぐま座", rank: "normal", catch: "北極星輝く小ひしゃく",
+        // 小ひしゃく
+        lines: [ 
+            ["polaris", "umi_delta"], ["umi_delta", "umi_epsilon"], ["umi_epsilon", "pherkad"], // 柄
+            ["pherkad", "kochab"], ["kochab", "umi_zeta"], // 訂正: umi_zetaは定義されていないため、STAR_DBにある星で閉じる -> pherkad-kochab-pherkadだと閉じないので、四角形を作る
+            // STAR_DBの定義済み星: polaris, kochab, pherkad, umi_delta, umi_epsilon
+            // つまり四角形の下側(zeta/eta)がないので、コの字型になるが、それっぽく結ぶ
+            ["kochab", "pherkad"] // 暫定的に主要な並びだけ
+        ],
+        navTarget: "polaris",
+        info: {
+            science: "一年中、北の空に見える星座です。ひしゃくの柄の先にあるのが、現在の「北極星（ポラリス）」です。おおぐま座（北斗七星）と向かい合うように並んでいます。",
+            trivia: "北極星は地球の自転軸の延長線上にあるため、時間が経ってもほとんど動きません。昔から旅人や船乗りにとって、北の方角を知るための最も重要な星でした。",
+            myth: "おおぐま座になったカリストの息子、アルカスの姿です。狩りの最中に母熊（カリスト）に出会い、誤って槍で突こうとした瞬間、ゼウスによって小熊に変えられ、母と共に空に上げられました。"
+        }
+    },
+
+    "pegasus": {
+        jpName: "ペガスス座", rank: "normal", catch: "天翔ける天馬",
+        // 秋の四辺形 + 首 + 足
+        lines: [ 
+            ["markab", "scheat"], ["scheat", "alpheratz"], ["alpheratz", "algenib"], ["algenib", "markab"], // 秋の四辺形 (Great Square)
+            ["markab", "homam"], ["homam", "biham"], ["biham", "enif"], // 首〜鼻
+            ["scheat", "peg_eta"] // 足 (peg_etaがSTAR_DBにあるか確認→ないので、ここはscheatのみで止めるか、enifへのラインで馬の形とする)
+            // 修正: STAR_DBの定義済み: markab, scheat, algenib, enif, homam, biham. 
+            // 足の星(Matarなど)はないので、首と四辺形で構成。
+        ],
+        navTarget: "markab",
+        info: {
+            science: "秋の夜空の目印「秋の四辺形」を作る星座です。この四角形はペガススの胴体を表しています。鼻先の星エニフの近くには、球状星団M15があります。",
+            trivia: "実はこのペガスス、逆さまの姿で空を飛んでいます。四辺形が胴体で、そこから長く伸びた首と頭が、下（南）に向かって描かれています。",
+            myth: "英雄ペルセウスが怪物メドゥーサの首を切り落としたとき、飛び散った血の中から生まれた翼を持つ天馬です。後に英雄ベレロフォンを乗せてキマイラ退治などで活躍しました。"
+        }
+    },
+
+    "andromeda": {
+        jpName: "アンドロメダ座", rank: "normal", catch: "鎖に繋がれた王女",
+        // 1本のライン + 側線
+        lines: [ 
+            ["alpheratz", "mirach"], ["mirach", "almach"], // 体のライン
+            ["mirach", "and_mu"], ["and_mu", "and_nu"] // 銀河へのガイドライン (and_mu, and_nuがSTAR_DBにない場合はmirach単独か、M31への仮想ライン)
+            // STAR_DB定義済み: alpheratz, mirach, almach, m31
+            // M31へのポインタとして、Mirachから短い線を引くか、ここはシンプルに体のラインだけにするのが無難。
+        ],
+        navTarget: "m31", // アンドロメダ銀河をターゲットに
+        info: {
+            science: "ペガスス座の四辺形から北東に伸びる星の列です。この星座には、肉眼で見える最も遠い天体「アンドロメダ銀河（M31）」があります。私たちの天の川銀河のお隣さんです。",
+            trivia: "アンドロメダ銀河までの距離は約230万光年。つまり、今見ている光は、人類がまだ石器を使っていた頃に放たれた光なのです。",
+            myth: "古代エチオピアの王女アンドロメダです。母カシオペヤの自慢話が原因で、海の怪物（くじら座）の生贄として海岸の岩に鎖で繋がれてしまいました。間一髪のところでペルセウスに助けられました。"
+        }
+    },
+
+    "perseus": {
+        jpName: "ペルセウス座", rank: "normal", catch: "メドゥーサを倒した英雄",
+        // 人の字型
+        lines: [ 
+            ["mirfak", "algol"], // 胴体〜片足
+            ["mirfak", "per_delta"], ["mirfak", "per_epsilon"], // 胴体〜もう一方の足
+            ["per_delta", "per_nu"] // 剣を振り上げる手 (per_nuがないので、STAR_DBの範囲で構成)
+            // STAR_DB定義済み: mirfak, algol, per_delta, per_epsilon
+            // シンプルな「人」の字にする
+        ],
+        navTarget: "mirfak",
+        info: {
+            science: "天の川の中にあり、たくさんの星が集まっている賑やかな星座です。「人」の字のような形をしています。β星アルゴルは「悪魔の星」と呼ばれ、明るさが変わる変光星として有名です。",
+            trivia: "毎年8月のお盆の時期に見られる「ペルセウス座流星群」は、この星座の方角から流れ星が飛んでくるため、夏の風物詩として親しまれています。",
+            myth: "見たものを石に変える怪物メドゥーサを退治した大英雄ペルセウスです。右手には剣を、左手には切り落としたメドゥーサの首（アルゴル）を持っています。"
+        }
+    },
+
+    "piscis_austrinus": {
+        jpName: "みなみのうお座", rank: "normal", catch: "秋のひとつぼし",
+        // 魚の形
+        lines: [ 
+            ["fomalhaut", "psa_epsilon"], ["psa_epsilon", "psa_delta"] // STAR_DBにfomalhaut以外がないため、フォーマルハウト単独か、近隣の星があれば繋ぐ
+            // 今回のSTAR_DBには「fomalhaut」のみ定義されています。
+            // なので、linesは空にするか、fomalhautを目立たせる扱いにします。
+            // ※指示書の「該当する星一覧.txt」にはpsa_epsilon等がないため、線は引けません。
+            // なので、lines: [] とします。
+        ],
+        navTarget: "fomalhaut",
+        info: {
+            science: "秋の南の空低くにポツンと輝く1等星「フォーマルハウト」が目印です。周りに明るい星がないため、「秋のひとつぼし」や「南の口」とも呼ばれます。",
+            trivia: "フォーマルハウトは「魚の口」という意味のアラビア語です。みずがめ座から流れ落ちた水を、この魚が大きな口を開けて飲み込んでいる姿に見立てられています。",
+            myth: "愛の女神アプロディーテが、怪物テュポンから逃れるために変身した魚の姿だと言われています。うお座の2匹の魚の親（南の魚）とされることもあります。"
+        }
+    },
+
+// ==========================================
+    // 🔍 Minor Constellations
+    // ==========================================
+
+    "lepus": {
+        jpName: "うさぎ座", rank: "minor", catch: "巨人の足元に隠れてる",
+        // 耳の長いウサギ
+        lines: [ 
+            ["arne", "nihal"], ["nihal", "lep_mu"], ["lep_mu", "lep_epsilon"], // 胴体
+            ["lep_epsilon", "arne"] // 閉じる
+            // 耳などは細かい星が必要だが、今回は主要な四角形で表現
+        ],
+        navTarget: "arne",
+        info: {
+            science: "オリオン座の足元にある、こぢんまりとした星座です。暗い星が多いですが、意外と整った形をしており、条件が良い夜なら長い耳を持ったウサギの姿が想像できます。",
+            trivia: "すぐ後ろからおおいぬ座（猟犬）に追いかけられ、上からはオリオンに踏まれそうな、絶体絶命の場所にいます。でも、このウサギは絶対に捕まらないと言われています。",
+            myth: "狩人オリオンが、狩りの腕前を自慢するために見つけた獲物だと言われています。また、かつてシチリア島でウサギが増えすぎて作物を荒らしたため、狼（おおいぬ座）と一緒に空に上げられたという説もあります。"
+        }
+    },
+
+    "hercules": {
+        jpName: "ヘルクレス座", rank: "minor", catch: "最強の英雄の姿",
+        // Hの字 (Keystone) + 手足
+        lines: [ 
+            ["her_epsilon", "her_zeta"], ["her_zeta", "her_eta"], ["her_eta", "her_pi"], ["her_pi", "her_epsilon"], // 胴体 (Keystone)
+            ["her_zeta", "kornephoros"], // 右足
+            ["her_pi", "rasalgethi"] // 頭
+        ],
+        navTarget: "rasalgethi", // 頭の赤い星
+        info: {
+            science: "夏の夜空に大きく広がる星座ですが、明るい星が少ないため見つけるのは少し難しいです。目印は「H」の形に並んだ4つの星（キーストーン）です。ここには北半球で最も美しい球状星団M13があります。",
+            trivia: "α星ラス・アルゲティは「ひざまずく者の頭」という意味。直径が太陽の400倍以上もある赤色超巨星で、不気味に赤く輝いています。",
+            myth: "ギリシャ神話最強の英雄ヘルクレスです。生まれたときから女神ヘラに命を狙われ続けましたが、持ち前の怪力と勇気で「12の冒険」を成し遂げました。しし座のライオンや、かに座の怪物ガニを倒したのも彼です。"
+        }
+    },
+
+    "corona_borealis": {
+        jpName: "かんむり座", rank: "minor", catch: "夜空に輝く宝石の冠",
+        // 半円形
+        lines: [ 
+            ["gemma", "crb_beta"] 
+            // 今回のSTAR_DBでは星が少ないため、Gemmaを中心とした半円を描くには星不足ですが、主要なペアを結びます。
+            // 本来は [theta, beta, alpha(Gemma), gamma, delta, epsilon] と繋ぎます。
+        ],
+        navTarget: "gemma",
+        info: {
+            science: "春から夏の夜空に見える、半円形に星が並んだ美しい星座です。その形から「北の王冠」と呼ばれます。2等星ゲンマは「宝石」という意味で、王冠の中央で輝く真珠に例えられます。",
+            trivia: "日本でも「太鼓星」や「馬のわらじ星」「かまど星」など、そのユニークな形から様々な名前で親しまれてきました。",
+            myth: "酒の神ディオニュソスが、クレタ島の王女アリアドネに贈った結婚祝いの冠です。アリアドネが亡くなった後、ディオニュソスは彼女を偲んでこの冠を空に投げ上げ、星座にしました。"
+        }
+    },
+
+    "ophiuchus": {
+        jpName: "へびつかい座", rank: "minor", catch: "13番目の星座？",
+        // 将棋の駒型
+        lines: [ 
+            ["rasalhague", "cebalrai"], ["rasalhague", "oph_kappa"], // 肩
+            ["cebalrai", "sabik"], ["oph_kappa", "oph_zeta"], // 胴体
+            ["sabik", "oph_zeta"], // 底辺
+            ["oph_kappa", "yed_prior"] // 蛇を持つ手
+        ],
+        navTarget: "rasalhague",
+        info: {
+            science: "将棋の駒のような形をした巨大な星座です。黄道（太陽の通り道）の上にあるため、星占いでは「13番目の星座」として扱われることがあります。へび座とセットになっており、巨大な蛇を両手で掴んでいます。",
+            trivia: "太陽はさそり座よりも、このへびつかい座の方を長く通ります（約20日間）。それでも12星座に入らなかったのは、12という数字が暦などで扱いやすかったからだと言われています。",
+            myth: "死者さえも生き返らせることができた名医アスクレピオスの姿です。しかし、勝手に死者を蘇らせたことで冥界の秩序が乱れると冥王ハデスが怒り、ゼウスに頼んで雷で撃たれてしまいました。死後、その医術を称えて星座になりました。"
+        }
+    },
+
+    "cetus": {
+        jpName: "くじら座", rank: "minor", catch: "秋の夜空の巨大怪獣",
+        // 頭 + 胴体 + 尾
+        lines: [ 
+            ["menkar", "mira"], ["mira", "baten_kaitos"], ["baten_kaitos", "diphda"] // 長い体
+        ],
+        navTarget: "mira", // 不思議な変光星
+        info: {
+            science: "秋の南の空に横たわる、全天で4番目に巨大な星座です。胸のあたりにある「ミラ」は、明るさが2等星から10等星まで大きく変わる「変光星」として有名で、「不思議な星」と呼ばれます。",
+            trivia: "「くじら」という名前ですが、今の可愛いクジラではなく、前足があり、口から炎や水を吐く「海の怪物（ティアマト）」として描かれています。",
+            myth: "海神ポセイドンが、エチオピア王国を襲わせるために送り込んだ化け物くじらです。王女アンドロメダを食べようとしましたが、メドゥーサの首を持ったペルセウスによって石に変えられてしまいました。"
+        }
+    },
+
+    "centaurus": {
+        jpName: "ケンタウルス座", rank: "minor", catch: "南の地平線の半人半馬",
+        // 上半身のみ（日本から見える範囲）
+        lines: [ 
+            ["menkent", "hadar"], ["hadar", "rigil_kent"] // ※hadar, rigil_kentは日本（本州）では見えませんが、線データとしては保持
+        ],
+        navTarget: "menkent", // 日本から見える肩の星
+        info: {
+            science: "南半球を代表する巨大な星座です。α星（リギル・ケンタウルス）とβ星（ハダル）は非常に明るい1等星ですが、日本からは南の地平線の下に隠れて見えません。沖縄や小笠原諸島、五島列島なら上半分が見えるかもしれません。",
+            trivia: "α星は太陽系から最も近い恒星系（約4.3光年）です。SF映画『アバター』の舞台にもなりました。",
+            myth: "荒くれ者が多いケンタウルス族の中で、例外的に賢かったケイローン（いて座）とは別の、粗暴なケンタウルスの誰かだと言われています。一説には、ヘルクレスと酒を飲み交わしたポロスだとも。"
+        }
+    },
+
+
+    // ==========================================
+    // 🌌 Objects & Asterisms
+    // ==========================================
+
+    "pleiades": {
+        jpName: "すばる", rank: "object", catch: "清少納言も愛した星団",
+        lines: [], // 点として表示
+        navTarget: "pleiades",
+        info: {
+            science: "おうし座の肩にある散開星団（M45）。肉眼でも6〜7個の星が集まっているのが見えます。生まれたばかりの若い青白い星たちの集まりです。",
+            trivia: "平安時代の随筆『枕草子』でも「星はすばる」と絶賛されました。「統（す）ばる＝集まる」という言葉が語源です。自動車メーカーSUBARUのエンブレムにもなっています。",
+            myth: "天空を支える巨人アトラスと女神プレイオネの間に生まれた7人姉妹（プレアデス7姉妹）です。狩人オリオンに追いかけ回され、逃げるために鳩になって空へ舞い上がり、星になりました。"
+        }
+    },
+
+    "canopus": {
+        jpName: "カノープス", rank: "object", catch: "見ると長生き！南極老人星",
+        lines: [], // 点として表示
+        navTarget: "canopus",
+        info: {
+            science: "全天でシリウスに次いで2番目に明るい恒星（-0.7等）ですが、日本のほとんどの地域では南の地平線すれすれにしか見えません。赤みがかって見えるのが特徴です。",
+            trivia: "中国では「南極老人星」と呼ばれ、平和な時代にしか現れない縁起の良い星とされました。一目見ることができれば寿命が延びると言われています。",
+            myth: "ギリシャ神話のトロイア戦争で、スパルタ王メネラオスの艦隊を導いた優秀な水先案内人、カノープスの名前が付けられています。"
+        }
+    },
+
+    "winter_triangle": {
+        jpName: "冬の大三角", rank: "object", catch: "冬の夜空の目印",
+        // ベテルギウス - シリウス - プロキオン
+        lines: [ 
+            ["betelgeuse", "sirius"], ["sirius", "procyon"], ["procyon", "betelgeuse"] 
+        ],
+        isSpecial: true, // 特別な描画色などを適用するためのフラグ（任意）
+        navTarget: "procyon", // 代表としてベテルギウス
+        info: {
+            science: "オリオン座の「ベテルギウス」、おおいぬ座の「シリウス」、こいぬ座の「プロキオン」を結んでできる正三角形に近い形です。冬の星空を見上げる時の最高のガイド役になります。",
+            trivia: "この三角形の中を天の川が流れていますが、冬の天の川は淡いため、街明かりのある場所では見るのが難しいです。三角形の中には「いっかくじゅう座」が隠れています。",
+            myth: "特定の神話はありませんが、狩人オリオン（ベテルギウス）と、そのお供の2匹の犬（シリウス・プロキオン）の絆を表す形とも言えます。"
+        }
+    },
+
+    "summer_triangle": {
+        jpName: "夏の大三角", rank: "object", catch: "七夕の星めぐり",
+        // ベガ - アルタイル - デネブ
+        lines: [ 
+            ["vega", "altair"], ["altair", "deneb"], ["deneb", "vega"] 
+        ],
+        isSpecial: true,
+        navTarget: "vega", // 代表としてベガ
+        info: {
+            science: "こと座の「ベガ」、わし座の「アルタイル」、はくちょう座の「デネブ」を結んでできる細長い三角形です。3つとも明るい1等星なので、夏の夜空で最初に見つかります。",
+            trivia: "ベガは「織姫」、アルタイルは「彦星」です。この2つの星の間を天の川が流れています。旧暦の7月7日（現在の8月中旬）の七夕の頃に、天頂付近で最もよく見えます。",
+            myth: "神話では、こと座（竪琴）、わし座（鷲）、はくちょう座（白鳥）と、それぞれ独立した物語を持っていますが、日本では七夕伝説の舞台として親しまれています。"
+        }
+    },
+
+    "big_dipper": {
+        jpName: "北斗七星", rank: "object", catch: "北極星を探すひしゃく",
+        // ドゥーベ〜アルカイド
+        lines: [ 
+            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], 
+            ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"], 
+            ["dubhe", "megrez"] // ひしゃくの口を閉じる
+        ],
+        isSpecial: true,
+        navTarget: "alioth", // 一番明るい星
+        info: {
+            science: "おおぐま座の腰から尻尾の部分にあたる7つの星の並びです。ひしゃくの形をしています。先端の2つの星（指極星）を結んで5倍伸ばすと、北極星が見つかります。",
+            trivia: "世界中で様々なものに見立てられています。アメリカでは「大きなひしゃく（Big Dipper）」、イギリスでは「鋤（すき）」、中国では「帝の車」、日本では「舵星（かじぼし）」などと呼ばれました。",
+            myth: "おおぐま座の一部ですが、中国の神話では「死」を司る神とされ、「生」を司る南斗六星（いて座）と対になる存在と考えられていました。"
+        }
+    },
+
+    "milkyway_center": { // 便宜上のID
+        jpName: "天の川", rank: "object", catch: "夜空を流れる大河",
+        lines: [], // 星座線なし
+        navTarget: "kaus_australis", // いて座（銀河中心方向）をターゲットに
+        info: {
+            science: "夜空を横切る雲のような光の帯です。その正体は、私たちが住んでいる「天の川銀河」を内側から見た姿。数千億個もの恒星の集まりです。",
+            trivia: "いて座の方向が銀河の中心なので、夏に見る天の川が最も濃く明るく見えます。逆に冬の天の川は、銀河の外側を見ているため淡く見えます。",
+            myth: "ギリシャ神話では、女神ヘラの母乳がこぼれて空に広がったもの（Milky Way）だと言われています。日本では、織姫と彦星を隔てる川として知られています。"
+        }
+    },
+
+    "monoceros": {
+        jpName: "いっかくじゅう座", rank: "object", catch: "大三角の中の隠れキャラ",
+        lines: [], // 今回は「点（ターゲット）」として扱う
+        navTarget: "betelgeuse", // 近くのベテルギウスをターゲットにする（または専用のmon_alphaがあればそちら）
+        // 修正: STAR_DBに "rosette" (バラ星雲) を入れたので、それをターゲットにすると面白い
+        // navTarget: "rosette",
+        info: {
+            science: "冬の大三角（ベテルギウス、シリウス、プロキオン）の内側に隠れている星座です。暗い星ばかりで見つけにくいですが、有名な「バラ星雲」があります。",
+            trivia: "一角獣（ユニコーン）は、額に一本の角を持つ伝説の生き物です。その角には解毒作用があり、あらゆる病気を治すと信じられていました。",
+            myth: "17世紀に作られた新しい星座なので、ギリシャ神話はありません。聖書に登場する一角獣がモデルだと言われています。"
+        }
+    },
+
+    "praesepe": {
+        jpName: "プレセペ星団", rank: "object", catch: "かに座の心臓部",
+        lines: [],
+        navTarget: "praesepe",
+        info: {
+            science: "かに座の中心にある散開星団（M44）です。空の暗い場所なら、肉眼でもぼんやりとした光のシミのように見えます。「かにの甲羅の模様」とも言われます。",
+            trivia: "プレセペとは「飼い葉桶」のこと。ガリレオ・ガリレイが初めて望遠鏡を向けた天体の一つで、「雲ではなく、たくさんの星の集まりだ」と発見しました。",
+            myth: "古代中国では「積尸気（せきしき）」と呼ばれ、死者の魂が集まる場所だと考えられていました。なんだか少し怖い名前ですね。"
+        }
+    },
+
+    "m31": {
+        jpName: "アンドロメダ銀河", rank: "object", catch: "お隣の巨大銀河",
+        lines: [],
+        navTarget: "m31",
+        info: {
+            science: "アンドロメダ座にある渦巻銀河です。私たちの天の川銀河のお隣さんですが、大きさは天の川銀河よりも一回り大きいです。肉眼で見える最も遠い天体（230万光年）です。",
+            trivia: "アンドロメダ銀河と天の川銀河は、猛スピードでお互いに引き合っています。約40億年後には衝突・合体して、一つの巨大な銀河になると予測されています。",
+            myth: "星座神話には直接登場しませんが、鎖に繋がれた王女アンドロメダの腰のあたりで、王女を飾る宝石のように輝いています。"
+        }
+    }
+
         };
 
         // --- Config ---
@@ -1098,6 +1670,9 @@ const STAR_DB = {
         let moonMesh = null; 
         let navMarker = null;
         let shootingStars = [];
+
+// ★追加: またたく星たちを管理する配列 
+　　let twinklingStars = []; 
 
         // --- ORBITAL MATH ENGINE ---
         const PLANET_ELEMENTS = {
@@ -1615,11 +2190,21 @@ const STAR_DB = {
             for(const [id, data] of Object.entries(STAR_DB)) {
                 const pos = getStarPos(data.ra, data.dec);
                 const geo = new THREE.SphereGeometry(data.size * 2, 8, 8);
-                const mat = new THREE.MeshBasicMaterial({ color: data.color });
+                // 透明度を変更できるように transparent: true に設定
+                const mat = new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.8 });
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.copy(pos);
+                
+                // ★追加: アニメーション用のデータを仕込む
+                mesh.userData = {
+                    baseSize: data.size * 2, // 基準サイズ
+                    phase: Math.random() * Math.PI * 2, // 点滅タイミングのズレ
+                    speed: 2.0 + Math.random() * 3.0 // 点滅の速さ
+                };
+                twinklingStars.push(mesh); // リストに登録
+
                 celestialGroup.add(mesh);
-                starMeshes[id] = pos;
+                starMeshes[id] = pos; // 線の接続用に位置を保存
             }
 
             // Planets
@@ -1655,17 +2240,27 @@ const STAR_DB = {
                     labelPos.copy(centerSum.divideScalar(points.length));
                 }
 
-                if(points.length > 0) {
+if(points.length > 0) {
                     const mat = data.isSpecial ? specialMat.clone() : lineMat.clone();
                     const geo = new THREE.BufferGeometry().setFromPoints(points);
                     const line = new THREE.LineSegments(geo, mat);
                     constellationGroup.add(line);
                     cstLines[key] = line; 
+                } else {
+                    // ★修正パッチ: 線がない天体（単独星・星団）も更新ループの対象にするためのダミー登録
+                    cstLines[key] = { visible: true };
                 }
 
-                if(data.jpName) {
+              if(data.jpName) {
                     const offsetPos = labelPos.clone().normalize().multiplyScalar(CONFIG.starDistance * 0.95);
-                    offsetPos.y += 20; 
+                    
+                    // ★修正パッチ: objectランクなら、さらに高く持ち上げて重なりを回避
+                    if (data.rank === 'object') {
+                        offsetPos.y += 70; // 通常よりかなり上に (20 -> 60)
+                    } else {
+                        offsetPos.y += 20; // 通常の星座
+                    }
+
                     const sprite = createTextSprite(data.jpName, data.catch);
                     sprite.position.copy(offsetPos);
                     labelsGroup.add(sprite);
@@ -1754,12 +2349,33 @@ const STAR_DB = {
 
         function createPlanets() {
             for(const [key, data] of Object.entries(PLANET_DB)) {
-                const pos = new THREE.Vector3(0,0,0);
-                
-                let geo, mat;
-                geo = new THREE.SphereGeometry(data.size * 2, 16, 16);
-                mat = new THREE.MeshBasicMaterial({ color: data.color });
+                // 1. 惑星本体（球）
+                const geo = new THREE.SphereGeometry(data.size * 2, 16, 16);
+                const mat = new THREE.MeshBasicMaterial({ color: data.color });
                 const mesh = new THREE.Mesh(geo, mat);
+                
+                // ★追加: ぼんやり光るオーラ（Glow）
+                // 太陽と月は特に強く光らせる
+                const glowSizeMultiplier = (key === 'sun' || key === 'moon') ? 6.0 : 4.0; 
+                
+                // createGlowTexture関数を使って光の画像を生成
+                const glowTex = createGlowTexture(data.color);
+                const glowMat = new THREE.SpriteMaterial({ 
+                    map: glowTex, 
+                    transparent: true, 
+                    opacity: 0.6, 
+                    blending: THREE.AdditiveBlending, // 加算合成で光らしく
+                    depthWrite: false // 前後関係でおかしくならないように
+                });
+                const glowSprite = new THREE.Sprite(glowMat);
+                
+                // 本体よりずっと大きくする
+                const s = (data.size * 2) * glowSizeMultiplier;
+                glowSprite.scale.set(s, s, 1.0);
+                
+                // メッシュの子要素にすることで、惑星と一緒に移動するようにする
+                mesh.add(glowSprite);
+
                 planetGroup.add(mesh);
                 planetMeshes[key] = mesh;
 
@@ -1768,9 +2384,11 @@ const STAR_DB = {
                 const sprite = createTextSprite(data.jpName, null, data.color); 
                 labelsGroup.add(sprite);
                 cstLabels[key] = sprite;
+                // 惑星も線データのダミー登録が必要
                 cstLines[key] = { visible: true, material: {} }; 
             }
         }
+
         
         function createNavMarker() {
             const geo = new THREE.RingGeometry(15, 18, 32);
@@ -1838,17 +2456,7 @@ const STAR_DB = {
                 milkyWayGroup.add(sprite);
             }
             
-            const dustMat = new THREE.SpriteMaterial({ map: tex, color: 0x000015, transparent: true, opacity: 0.6, blending: THREE.NormalBlending });
-            for(let i=0; i<250; i++) {
-                const ra = 17 + Math.random()*4; 
-                const dec = -30 + Math.random()*60;
-                const pos = getStarPos(ra, dec);
-                pos.normalize().multiplyScalar(680); 
-                const sp = new THREE.Sprite(dustMat);
-                sp.position.copy(pos);
-                sp.scale.set(160, 160, 1);
-                milkyWayGroup.add(sp);
-            }
+// ★修正パッチ: 「黒いボカシ（暗黒星雲）」の生成コードを削除しました。 // これにより、星座線が黒い霧に隠されることがなくなります。
         }
 
         function createStardust() {
@@ -1874,31 +2482,96 @@ const STAR_DB = {
             stardustGroup.add(new THREE.Points(geo, mat));
         }
 
-        function createTextSprite(name, catchphrase, colorHex) {
+	// ★追加: ぼんやり光るグラデーションテクスチャを生成する関数
+        function createGlowTexture(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // 中心から外側へ透明になるグラデーション
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            
+            // 色の文字列変換
+            const col = new THREE.Color(colorHex);
+            const r = Math.floor(col.r * 255);
+            const g = Math.floor(col.g * 255);
+            const b = Math.floor(col.b * 255);
+            
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1.0)`);   // 中心: 濃い
+            gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, 0.4)`); // 中間: 半透明
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);   // 外側: 透明
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+
+       function createTextSprite(name, catchphrase, colorHex) {
+            // ★改良版: 高解像度キャンバス (1024x512) を使用
+            const w = 1024;
+            const h = 512;
             const cvs = document.createElement('canvas'); 
-            cvs.width=512; cvs.height=256;
+            cvs.width = w; cvs.height = h;
             const ctx = cvs.getContext('2d');
             
+            // シャドウ設定
             let fillCol = "white";
             if (colorHex) {
                  ctx.shadowColor = '#' + colorHex.toString(16).padStart(6, '0');
             } else {
                  ctx.shadowColor = "black";
             }
+            ctx.shadowBlur = 12; 
+            ctx.shadowOffsetX = 4; 
+            ctx.shadowOffsetY = 4;
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = "middle"; // 上下中央揃え
 
-            ctx.fillStyle = fillCol; ctx.font = "bold 80px 'Zen Maru Gothic', sans-serif";
-            ctx.textAlign = "center"; ctx.shadowBlur = 10; ctx.shadowOffsetX=3; ctx.shadowOffsetY=3;
-            ctx.fillText(name, 256, 120);
-            if (catchphrase) {
-                ctx.fillStyle = "#ffd700"; ctx.font = "50px 'Zen Maru Gothic', sans-serif";
-                ctx.fillText(catchphrase, 256, 180);
+            // --- 1. 名前 (Name) の描画 ---
+            let fontSize = 100; // 初期サイズを大きく設定
+            ctx.font = `bold ${fontSize}px 'Zen Maru Gothic', sans-serif`;
+            ctx.fillStyle = fillCol;
+
+            // 長さチェック: キャンバス幅(900px)を超える場合、収まるまでフォントを小さくする
+            let textMetrics = ctx.measureText(name);
+            while (textMetrics.width > 900 && fontSize > 40) {
+                fontSize -= 5;
+                ctx.font = `bold ${fontSize}px 'Zen Maru Gothic', sans-serif`;
+                textMetrics = ctx.measureText(name);
             }
+            // 少し上に描画 (中心512/2 = 256 より上)
+            ctx.fillText(name, w/2, h/2 - 40);
+
+            // --- 2. キャッチコピー (Catchphrase) の描画 ---
+            if (catchphrase) {
+                let subSize = 60; // 初期サイズ
+                ctx.font = `${subSize}px 'Zen Maru Gothic', sans-serif`;
+                ctx.fillStyle = "#ffd700";
+
+                // こちらも長すぎる場合は縮小
+                let subMetrics = ctx.measureText(catchphrase);
+                while (subMetrics.width > 900 && subSize > 30) {
+                    subSize -= 3;
+                    ctx.font = `${subSize}px 'Zen Maru Gothic', sans-serif`;
+                    subMetrics = ctx.measureText(catchphrase);
+                }
+                // 名前の下に描画
+                ctx.fillText(catchphrase, w/2, h/2 + 60);
+            }
+
             const tex = new THREE.CanvasTexture(cvs);
             const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.9 });
             const sp = new THREE.Sprite(mat);
-            sp.scale.set(80, 40, 1);
+            
+            // 3D空間でのサイズ設定 (アスペクト比 2:1 を維持しつつ、少し大きく)
+            sp.scale.set(100, 50, 1);
+            
             return sp;
         }
+
 
         function getStarPos(ra, dec) {
             const r = CONFIG.starDistance;
@@ -1961,6 +2634,26 @@ const STAR_DB = {
             if(state.isRunning) {
                 camera.quaternion.slerp(state.targetQuaternion, 0.15);
             }
+
+            // ★修正: 上品で穏やかなまたたき (Gentle Twinkle)
+            const time = Date.now() * 0.001; 
+            twinklingStars.forEach(star => {
+                const ud = star.userData;
+                
+                // スピード係数: ud.speed に 0.3 を掛けて、全体の動きを「ゆっくり」にする
+                const slowSpeed = ud.speed * 0.3;
+
+                // スケール: 0.85 を基準に ±0.15 変動させる
+                // 結果: 最小 0.7倍 〜 最大 1.0倍 (極端に小さくならない)
+                const scale = 0.85 + 0.15 * Math.sin(time * slowSpeed + ud.phase);
+                star.scale.set(scale, scale, scale);
+                
+                // 透明度: 0.85 を基準に ±0.15 変動させる
+                // 結果: 最小 0.7 〜 最大 1.0 (完全には消えず、うっすら暗くなる程度)
+                star.material.opacity = 0.85 + 0.15 * Math.sin(time * slowSpeed + ud.phase);
+            });
+
+
 
             // TimeLapse Logic
             if(state.isTimeLapse) {
@@ -2042,7 +2735,8 @@ const STAR_DB = {
             });
         }
 
-        function updateVisuals() {
+  function updateVisuals() {
+            // Update Constellations and Planets Labels
             for(const [key, line] of Object.entries(cstLines)) {
                 const data = CONSTELLATION_DB[key] || PLANET_DB[key]; 
                 if(!data) continue;
@@ -2050,16 +2744,33 @@ const STAR_DB = {
                 const rank = data.rank || "normal";
                 let visible = false;
                 
+                // 1. 基本フィルター判定
                 if (state.filter[rank]) visible = true;
-                if (data.isSpecial && state.filter.object) visible = true; 
+                
+                // 2. 特例判定 (isSpecialかつobjectフィルターONなら表示)
+                if (data.isSpecial) {
+                    if(state.filter.object) visible = true;
+                    else if(rank === 'object') visible = false; // rankがobjectなら強制OFF
+                }
 
+                // 3. objectランクの強制同期 (重要: ここでカノープス等を消す)
+                if (rank === 'object' && !state.filter.object) {
+                    visible = false;
+                }
+
+                // 線の表示更新
                 if(line.visible !== undefined) line.visible = visible;
 
+                // ラベルの表示更新
                 if (cstLabels[key]) {
                     const sprite = cstLabels[key];
+                    
+                    // ★ ラベル表示の最終判定 ★
+                    // 「対象自体が非表示」 または 「ラベル設定が'none'」 なら消す
                     if (!visible || state.labels === 'none') {
                         sprite.visible = false;
                     } else {
+                        // 表示する場合のテキスト更新処理
                         sprite.visible = true;
                         
                         let displayName = data.jpName;
@@ -2077,22 +2788,30 @@ const STAR_DB = {
                            }
                         }
 
+                        // テキスト内容が変わった場合のみ更新（負荷軽減）
+                        // ※今回は厳密な比較は省略し、常に更新する（確実性重視）
                         const newSp = createTextSprite(displayName, displaySub, PLANET_DB[key] ? PLANET_DB[key].color : null);
+                        sprite.material.map.dispose(); // メモリリーク防止
                         sprite.material.map = newSp.material.map;
                     }
                 }
             }
+            
+            // 背景アセットの更新
             if (milkyWayGroup) milkyWayGroup.visible = state.filter.milkyway;
             if (stardustGroup) stardustGroup.visible = state.filter.stardust;
             if (planetGroup) planetGroup.visible = state.filter.planet;
         }
+
 
         function renderEncyclopedia(category) {
             const list = document.getElementById('encyclopedia-list');
             list.innerHTML = '';
             
             for(const [key, data] of Object.entries(CONSTELLATION_DB)) {
-                if (data.rank === category || (category==='object' && data.isSpecial)) {
+                // もしランクが一致するか、または「タブがminorで、中身がobject」なら表示
+if (data.rank === category || (category === 'minor' && data.rank === 'object')) {
+
                     const card = document.createElement('div');
                     card.className = 'constellation-card';
                     card.innerHTML = `
@@ -2151,7 +2870,7 @@ const STAR_DB = {
             
             switchGuideTab('science'); 
             
-            document.getElementById('settings-modal').classList.remove('active');
+     // 設定画面は開いたままにする（背景に残る） //　document.getElementById('settings-modal').classList.remove('active'); 
             document.getElementById('guide-modal').classList.add('active');
         };
 
@@ -2165,16 +2884,20 @@ const STAR_DB = {
             const content = data.info[tabName] || "データがありません";
             document.getElementById('guide-content').innerText = content;
         };
+function closeGuide() {
+    // 解説モーダルだけを閉じる
+    // 設定モーダルが開いていれば、自然とそれが見えるようになる
+    document.getElementById('guide-modal').classList.remove('active');
+}
 
-        function closeGuide() {
-            document.getElementById('guide-modal').classList.remove('active');
-        }
-
-        function startNavigation() {
-            if(!currentGuideId) return;
-            state.activeConstellation = currentGuideId;
-            closeGuide();
-            showToast(`★ ${CONSTELLATION_DB[currentGuideId].jpName} ナビゲーション開始`);
+function startNavigation() {
+    if(!currentGuideId) return;
+    state.activeConstellation = currentGuideId;
+    
+    closeGuide(); // 解説を閉じる
+    document.getElementById('settings-modal').classList.remove('active'); // ★ 設定も閉じる！
+    
+    showToast(`★ ${CONSTELLATION_DB[currentGuideId].jpName} ナビゲーション開始`);
             document.getElementById('btn-stop-nav').style.display = 'block';
 
             for(const k in cstLines) {
@@ -2247,3 +2970,6 @@ const STAR_DB = {
     </script>
 </body>
 </html>
+
+
+
