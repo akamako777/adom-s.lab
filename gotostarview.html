@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v7.1 (Gyro Fix)</title>
+    <title>Star Compass v7.2 (Final UI Fix)</title>
     
     <!-- 
         === 🏛️ ARCHITECT'S LEGACY & HANDOVER NOTES ===
         
         Project: Star Compass (Goto Archipelago Edition)
-        Version: 7.1 (Landscape Gyro & QR Fix)
+        Version: 7.2 (Final UI Polish for Landscape)
         
-        【v7.1 Patch Notes】
+        【v7.2 Update Log】
         
-        1. Gyroscope Rotation Correction:
-           - 横持ち(Landscape)時に地平線が縦になる問題を修正。
-           - `screen.orientation.angle` を取得し、カメラのZ軸回転(Roll)を動的に補正。
-           - 縦持ちコード(聖域)には影響を与えない「Post-Correction」方式を採用。
+        1. Landscape UI Refinement (The Final Touch):
+           - 横向き時、時間操作パネル(#time-controls)の位置を左端へ移動(left: 85px)。
+           - パネル内のパディングとボタン間隔を圧縮し、コンパクト化。
+           - これにより、右側のスライダー操作エリアとの重複(Collision)を完全回避。
         
-        2. QR Code Restoration:
-           - PC/Landscape環境でQRコードが非表示になっていたCSSバグを修正。
-           - メディアクエリの条件を緩和し、PCデバッグ時の利便性を回復。
+        2. Previous Core Features (Maintained):
+           - Gyro Rotation Fix (v7.1)
+           - Dynamic FOV System (v7.0)
+           - WebAR & Shooting Stars (v6.6)
+           
+        This is the "Golden Master" candidate.
+        Everything is ready for deployment.
     -->
 
     <!-- Google Fonts: Zen Maru Gothic -->
@@ -128,7 +132,6 @@
 
         /* Tablet/PC Centering for Portrait & General Desktop rules */
         @media (min-width: 481px) {
-            /* QR Code & Center Layout for Portrait-ish Windows */
             .overlay, .modal-overlay {
                 left: 50% !important; transform: translateX(-50%) !important;
                 max-width: var(--ui-max-width);
@@ -145,7 +148,7 @@
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
         }
 
-        /* ★ LANDSCAPE OPTIMIZATION (スマホ横持ち/PC全画面) ★ */
+        /* ★ LANDSCAPE OPTIMIZATION v7.2 (Conflict Resolution) ★ */
         @media (orientation: landscape) {
             .ui-center-wrapper {
                 max-width: none !important;
@@ -163,13 +166,13 @@
             /* Bottom HUD: 右サイドバーに変形 */
             .hud-bottom {
                 position: absolute; right: 0; top: 0; bottom: 0;
-                width: 100px; /* 細身のサイドバー */
+                width: 110px; /* 少し幅確保 */
                 padding: 10px 5px !important;
                 display: flex !important;
                 flex-direction: column-reverse; /* 下から積む */
                 justify-content: center;
                 gap: 15px !important;
-                background: linear-gradient(to left, rgba(0,0,0,0.6), transparent); /* 背景グラデ */
+                background: linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%); /* 背景を濃くして視認性UP */
                 pointer-events: none;
             }
             
@@ -177,26 +180,34 @@
             .control-unit {
                 width: 100%; padding: 10px 5px !important;
                 align-items: center;
-                background: rgba(20, 30, 50, 0.6) !important; /* 少し透過強める */
+                background: rgba(20, 30, 50, 0.6) !important;
             }
             .center-unit {
-                position: absolute; left: 20px; bottom: 20px; /* 時間ボタンは左下へ */
+                position: absolute; left: 15px; bottom: 15px; /* 左下隅へ */
             }
             .right-unit {
                 flex-direction: column !important; /* ボタン縦並び */
                 gap: 15px !important;
             }
             
-            /* スライダー調整: 横向きスライダーは見切れやすいので調整 */
+            /* スライダー調整 */
             .slider-row { width: 100%; justify-content: center; }
-            input[type=range] { width: 60px !important; } /* 少し短く */
+            input[type=range] { width: 60px !important; } 
 
-            /* 時間操作パネル */
+            /* ★ Time Control Panel (Compact & Left-Aligned) ★ */
             #time-controls {
-                left: 140px !important; bottom: 20px !important; transform: none !important;
+                left: 85px !important; /* 時計アイコンのすぐ右へ */
+                bottom: 15px !important; 
+                transform: none !important;
                 width: auto !important;
+                padding: 10px 8px !important; /* コンパクト化 */
             }
-            #time-controls.active { bottom: 20px !important; } /* アニメーション位置調整 */
+            #time-controls.active { bottom: 15px !important; }
+            
+            /* 内部パーツも少し小さく */
+            #time-controls .btn-rect { padding: 6px 10px !important; font-size: 11px !important; }
+            #time-controls .btn-icon { width: 36px !important; height: 36px !important; font-size: 14px !important; }
+            #time-controls .time-row { gap: 4px !important; }
 
             /* モーダル調整 */
             .modal-sheet {
@@ -209,7 +220,6 @@
             @media (min-width: 481px) {
                 #qr-container { display: block !important; }
                 .overlay {
-                    /* Overlayは全画面センタリングに戻す */
                     left: 0 !important; transform: none !important;
                     max-width: none !important; 
                 }
@@ -380,7 +390,7 @@
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.1<br><span style="font-size:1rem; opacity:0.8;">Gyro Fix Edition</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.2<br><span style="font-size:1rem; opacity:0.8;">Landscape Perfect</span></h1>
         
         <div id="qr-container">
             <img id="qr-img" src="" alt="QR Code">
@@ -532,7 +542,7 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V7.1 (Gyro Fix & QR Fix)
+         * 🌌 STAR COMPASS V7.2 (Final UI Fix)
          */
 
         // --- 0. Database ---
