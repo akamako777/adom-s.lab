@@ -26,6 +26,7 @@
         【Bug Fix - The Last Patch】
         - Nightモード切り替え時、オーバーレイが操作をブロックする問題を修正。
           CSSクラスだけでなく、JSから直接 `style.display` を制御することで動作を安定化。
+        - ナビゲーション開始・終了時に惑星のダミー線データで発生するエラーを修正。
 
         これにて、Star Compassの開発は完了です。
         五島の星空が、あなたの手のひらで永遠に輝き続けますように。
@@ -1743,7 +1744,7 @@
 
             // Dim others
             for(const k in cstLines) {
-                if(k !== currentGuideId && cstLines[k].material) {
+                if(k !== currentGuideId && cstLines[k].material && cstLines[k].material.color) {
                     cstLines[k].material.color.setHex(0x555555);
                     cstLines[k].material.opacity = 0.3;
                 }
@@ -1759,7 +1760,7 @@
             updateVisuals();
             for(const k in cstLines) {
                  const data = CONSTELLATION_DB[k];
-                 if(data && cstLines[k].material) {
+                 if(data && cstLines[k].material && cstLines[k].material.color) {
                      const isSpecial = data.isSpecial;
                      cstLines[k].material.color.setHex(isSpecial ? 0x8888ff : 0x555555);
                      cstLines[k].material.opacity = isSpecial ? 0.6 : 0.5;
