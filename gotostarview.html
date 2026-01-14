@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v7.2 (Final UI Fix)</title>
+    <title>Star Compass v7.3 (Left-Side UI)</title>
     
     <!-- 
         === 🏛️ ARCHITECT'S LEGACY & HANDOVER NOTES ===
         
         Project: Star Compass (Goto Archipelago Edition)
-        Version: 7.2 (Final UI Polish for Landscape)
+        Version: 7.3 (Landscape Left-Side Control)
         
-        【v7.2 Update Log】
+        【v7.3 Update Log: The Ergonomic Shift】
         
-        1. Landscape UI Refinement (The Final Touch):
-           - 横向き時、時間操作パネル(#time-controls)の位置を左端へ移動(left: 85px)。
-           - パネル内のパディングとボタン間隔を圧縮し、コンパクト化。
-           - これにより、右側のスライダー操作エリアとの重複(Collision)を完全回避。
+        1. Landscape UI Revolution:
+           - Slider Control Panel (.hud-bottom) -> Moved to LEFT Sidebar.
+             (Prevents thumb collision and mimics gamepad layout)
+           - Time Toggle Button (.center-unit) -> Moved to RIGHT Bottom corner.
+           - Time Control Panel (#time-controls) -> Restored to BOTTOM CENTER.
         
-        2. Previous Core Features (Maintained):
-           - Gyro Rotation Fix (v7.1)
-           - Dynamic FOV System (v7.0)
-           - WebAR & Shooting Stars (v6.6)
-           
-        This is the "Golden Master" candidate.
-        Everything is ready for deployment.
+        2. Modal Optimization:
+           - Expanded width for Landscape mode (60% -> 90% with max-width).
+             (Fixes the "cramped settings" issue on phones/tablets)
+             
+        This layout offers the best balance for dual-thumb interaction.
     -->
 
     <!-- Google Fonts: Zen Maru Gothic -->
@@ -148,31 +147,33 @@
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
         }
 
-        /* ★ LANDSCAPE OPTIMIZATION v7.2 (Conflict Resolution) ★ */
+        /* ★ LANDSCAPE OPTIMIZATION v7.3 (Left-Side Controls) ★ */
         @media (orientation: landscape) {
             .ui-center-wrapper {
                 max-width: none !important;
-                flex-direction: row !important; /* 横並び */
+                flex-direction: row !important; 
                 align-items: flex-end;
             }
             
-            /* Top HUD: 左上に固定 */
+            /* Top HUD: 左上に固定 (そのまま) */
             .hud-top {
                 position: absolute; top: 0; left: 0; 
                 flex-direction: column; align-items: flex-start; gap: 10px;
                 padding: 10px !important;
+                z-index: 60; /* サイドバーより上に */
             }
 
-            /* Bottom HUD: 右サイドバーに変形 */
+            /* Bottom HUD: ★ 左サイドバーに変更 ★ */
             .hud-bottom {
-                position: absolute; right: 0; top: 0; bottom: 0;
-                width: 110px; /* 少し幅確保 */
+                position: absolute; left: 0; top: 70px; bottom: 0; /* 上部を空ける */
+                right: auto;
+                width: 120px; /* 少し余裕を持たせる */
                 padding: 10px 5px !important;
                 display: flex !important;
                 flex-direction: column-reverse; /* 下から積む */
-                justify-content: center;
+                justify-content: flex-start; /* 下から */
                 gap: 15px !important;
-                background: linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%); /* 背景を濃くして視認性UP */
+                background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); /* 左からグラデ */
                 pointer-events: none;
             }
             
@@ -181,38 +182,44 @@
                 width: 100%; padding: 10px 5px !important;
                 align-items: center;
                 background: rgba(20, 30, 50, 0.6) !important;
+                pointer-events: auto;
             }
+            
+            /* 時計ボタン: ★ 右下へ移動 ★ */
             .center-unit {
-                position: absolute; left: 15px; bottom: 15px; /* 左下隅へ */
+                position: absolute; right: 20px; bottom: 20px; 
+                left: auto; padding: 0;
+                pointer-events: auto;
             }
+            
+            /* カメラ/設定ボタン群: 右サイドバー風に縦並び */
             .right-unit {
-                flex-direction: column !important; /* ボタン縦並び */
+                position: absolute; right: 0; top: 0; bottom: 80px; /* 時計の上まで */
+                width: 80px;
+                display: flex; flex-direction: column; justify-content: center;
                 gap: 15px !important;
+                pointer-events: none; /* コンテナ自体はスルー */
             }
+            .right-unit > * { pointer-events: auto; } /* ボタンは有効 */
             
             /* スライダー調整 */
             .slider-row { width: 100%; justify-content: center; }
-            input[type=range] { width: 60px !important; } 
+            input[type=range] { width: 70px !important; } 
 
-            /* ★ Time Control Panel (Compact & Left-Aligned) ★ */
+            /* ★ Time Control Panel: 中央下 (縦持ちと同じ位置) ★ */
             #time-controls {
-                left: 85px !important; /* 時計アイコンのすぐ右へ */
-                bottom: 15px !important; 
-                transform: none !important;
-                width: auto !important;
-                padding: 10px 8px !important; /* コンパクト化 */
+                left: 50% !important; 
+                bottom: 20px !important; 
+                transform: translateX(-50%) !important;
+                width: max-content !important;
+                padding: 15px 10px !important;
             }
-            #time-controls.active { bottom: 15px !important; }
+            #time-controls.active { bottom: 20px !important; }
             
-            /* 内部パーツも少し小さく */
-            #time-controls .btn-rect { padding: 6px 10px !important; font-size: 11px !important; }
-            #time-controls .btn-icon { width: 36px !important; height: 36px !important; font-size: 14px !important; }
-            #time-controls .time-row { gap: 4px !important; }
-
-            /* モーダル調整 */
+            /* モーダル調整: 幅広に */
             .modal-sheet {
-                max-height: 80vh; 
-                width: 60% !important; margin: 0 auto;
+                max-height: 85vh; 
+                width: 90% !important; max-width: 600px; margin: 0 auto;
                 border-radius: 24px 24px 0 0;
             }
             
@@ -390,7 +397,7 @@
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.2<br><span style="font-size:1rem; opacity:0.8;">Landscape Perfect</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.3<br><span style="font-size:1rem; opacity:0.8;">Left-Side UI</span></h1>
         
         <div id="qr-container">
             <img id="qr-img" src="" alt="QR Code">
@@ -542,7 +549,7 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V7.2 (Final UI Fix)
+         * 🌌 STAR COMPASS V7.3 (Left-Side UI)
          */
 
         // --- 0. Database ---
