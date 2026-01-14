@@ -3,30 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v7.0 (Landscape Ed.)</title>
+    <title>Star Compass v7.1 (Gyro Fix)</title>
     
     <!-- 
         === 🏛️ ARCHITECT'S LEGACY & HANDOVER NOTES ===
         
         Project: Star Compass (Goto Archipelago Edition)
-        Version: 7.0 (Landscape & FOV Optimization)
+        Version: 7.1 (Landscape Gyro & QR Fix)
         
-        【v7.0 Major Update: Landscape Evolution】
+        【v7.1 Patch Notes】
         
-        1. Adaptive FOV System:
-           - 画面回転(resize)を検知し、画角を動的に最適化。
-           - 縦持ち: FOV ~60° (探索モード)
-           - 横持ち: FOV ~30° (望遠/観賞モード) -> 迫力を優先
+        1. Gyroscope Rotation Correction:
+           - 横持ち(Landscape)時に地平線が縦になる問題を修正。
+           - `screen.orientation.angle` を取得し、カメラのZ軸回転(Roll)を動的に補正。
+           - 縦持ちコード(聖域)には影響を与えない「Post-Correction」方式を採用。
         
-        2. Responsive Side-Dock UI:
-           - 横持ち時、操作パネル(.hud-bottom)を「右端サイドバー」へ変形。
-           - 画面中央の星空領域を最大化し、親指での操作性を確保。
-           - 時間操作パネルを左下へ退避。
-        
-        【Developer's Note】
-        このバージョンで「構造」は完成しました。
-        今後は `STAR_DB` や `CONSTELLATION_DB` のデータを編集するだけで、
-        あなただけのプラネタリウムを作り込むことができます。
+        2. QR Code Restoration:
+           - PC/Landscape環境でQRコードが非表示になっていたCSSバグを修正。
+           - メディアクエリの条件を緩和し、PCデバッグ時の利便性を回復。
     -->
 
     <!-- Google Fonts: Zen Maru Gothic -->
@@ -132,19 +126,23 @@
             pointer-events: none;
         }
 
-        /* Tablet/PC Centering for Portrait */
+        /* Tablet/PC Centering for Portrait & General Desktop rules */
+        @media (min-width: 481px) {
+            /* QR Code & Center Layout for Portrait-ish Windows */
+            .overlay, .modal-overlay {
+                left: 50% !important; transform: translateX(-50%) !important;
+                max-width: var(--ui-max-width);
+            }
+            #qr-container { display: block !important; }
+        }
+
         @media (min-width: 481px) and (orientation: portrait) {
             .ui-center-wrapper {
                 position: absolute; top: 0; bottom: 0;
                 left: 50%; transform: translateX(-50%);
                 max-width: var(--ui-max-width);
             }
-            .overlay, .modal-overlay {
-                left: 50% !important; transform: translateX(-50%) !important;
-                max-width: var(--ui-max-width);
-            }
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
-            #qr-container { display: block !important; }
         }
 
         /* ★ LANDSCAPE OPTIMIZATION (スマホ横持ち/PC全画面) ★ */
@@ -205,6 +203,16 @@
                 max-height: 80vh; 
                 width: 60% !important; margin: 0 auto;
                 border-radius: 24px 24px 0 0;
+            }
+            
+            /* LandscapeでもQRコードを表示 (PC用) */
+            @media (min-width: 481px) {
+                #qr-container { display: block !important; }
+                .overlay {
+                    /* Overlayは全画面センタリングに戻す */
+                    left: 0 !important; transform: none !important;
+                    max-width: none !important; 
+                }
             }
         }
 
@@ -372,7 +380,7 @@
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.0<br><span style="font-size:1rem; opacity:0.8;">Landscape Edition</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.1<br><span style="font-size:1rem; opacity:0.8;">Gyro Fix Edition</span></h1>
         
         <div id="qr-container">
             <img id="qr-img" src="" alt="QR Code">
@@ -524,7 +532,7 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V7.0 (Landscape Edition)
+         * 🌌 STAR COMPASS V7.1 (Gyro Fix & QR Fix)
          */
 
         // --- 0. Database ---
@@ -752,7 +760,7 @@
             const d = getDayNumber(date);
             const RAD = Math.PI/180;
             const obl = 23.4393 - 3.563E-7 * d; 
-            // Simplified logic (reused)
+
             if (key === 'sun') {
                 const w = 282.9404 + 4.70935E-5 * d;
                 const e = 0.016709 - 1.151E-9 * d;
@@ -1539,6 +1547,14 @@
             scene.add(sp);
         }
 
+        // Helper: Get Screen Orientation Angle
+        function getOrientation() {
+            if (screen.orientation && screen.orientation.angle !== undefined) {
+                return screen.orientation.angle;
+            }
+            return window.orientation || 0;
+        }
+
         function handleOrientation(e) {
             let alpha = (e.alpha !== undefined) ? e.alpha : 0;
             let beta = (e.beta !== undefined) ? e.beta : 0;
@@ -1547,7 +1563,19 @@
             const q = new THREE.Quaternion();
             const eu = new THREE.Euler(beta*Math.PI/180, finalAlpha*Math.PI/180, -gamma*Math.PI/180, 'YXZ');
             q.setFromEuler(eu);
+            // 縦持ち(Portrait)基準の回転
             q.multiply(new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)));
+            
+            // ★ Gyro Correction for Landscape ★
+            // 画面の回転角度分だけ、カメラの視界(Z軸)を逆回転させて補正する
+            const orient = getOrientation();
+            if (orient !== 0) {
+                const qOr = new THREE.Quaternion();
+                // 画面が左に90度倒れたら(90)、カメラを右に90度(-90)回す
+                qOr.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -orient * (Math.PI / 180));
+                q.multiply(qOr);
+            }
+
             state.targetQuaternion.copy(q);
             state.raw = { alpha, beta, gamma };
         }
