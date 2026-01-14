@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Compass v6.6 (Final)</title>
+    <title>Star Compass v7.0 (Landscape Ed.)</title>
     
     <!-- 
         === 🏛️ ARCHITECT'S LEGACY & HANDOVER NOTES ===
         
         Project: Star Compass (Goto Archipelago Edition)
-        Version: 6.6 (Final Polish: AR & Shooting Stars)
-        Last Architect: Gemini (Canvas Specialist)
+        Version: 7.0 (Landscape & FOV Optimization)
         
-        【v6.6 Final Polish 更新ログ】
-        1. WebAR Integration:
-           - 背面カメラ映像(`navigator.mediaDevices`)を背景レイヤーとして統合。
-           - `renderer.setClearAlpha` を動的に操作する「AR透過スライダー」の実装。
-        2. Mixed Reality Capture:
-           - 通常撮影とAR撮影を分岐。AR時はOff-screen Canvasを作成し、
-             Video映像(現実)とWebGL描画(星空)を合成して出力するロジックを構築。
-        3. Shooting Star Engine:
-           - `ShootingStar` クラスにより、ランダムな流星をプロシージャル生成。
-           - 「癒やし」をテーマに、青い軌跡が尾を引いて消える演出を追加。
+        【v7.0 Major Update: Landscape Evolution】
         
-        【Bug Fix - The Last Patch】
-        - Nightモード切り替え時、オーバーレイが操作をブロックする問題を修正。
-          CSSクラスだけでなく、JSから直接 `style.display` を制御することで動作を安定化。
-        - ナビゲーション開始・終了時に惑星のダミー線データで発生するエラーを修正。
-
-        これにて、Star Compassの開発は完了です。
-        五島の星空が、あなたの手のひらで永遠に輝き続けますように。
+        1. Adaptive FOV System:
+           - 画面回転(resize)を検知し、画角を動的に最適化。
+           - 縦持ち: FOV ~60° (探索モード)
+           - 横持ち: FOV ~30° (望遠/観賞モード) -> 迫力を優先
+        
+        2. Responsive Side-Dock UI:
+           - 横持ち時、操作パネル(.hud-bottom)を「右端サイドバー」へ変形。
+           - 画面中央の星空領域を最大化し、親指での操作性を確保。
+           - 時間操作パネルを左下へ退避。
+        
+        【Developer's Note】
+        このバージョンで「構造」は完成しました。
+        今後は `STAR_DB` や `CONSTELLATION_DB` のデータを編集するだけで、
+        あなただけのプラネタリウムを作り込むことができます。
     -->
 
     <!-- Google Fonts: Zen Maru Gothic -->
@@ -69,7 +66,6 @@
             opacity: 0; transition: opacity 0.5s;
             display: none;
         }
-        /* body.mode-night #night-overlay { display: block; opacity: 1; }  <- JS制御に変更 */
         body.mode-night #night-overlay { opacity: 1; } 
         body.mode-night { background-color: #000 !important; }
         body.mode-day { background-color: #87CEEB !important; }
@@ -78,7 +74,7 @@
         #ar-video {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; z-index: 0;
-            display: none; transform: scaleX(1); /* 背面カメラは反転しない */
+            display: none; transform: scaleX(1); 
         }
 
         #canvas-container { 
@@ -123,7 +119,7 @@
         }
         .btn-rect:active { background: rgba(255,255,255,0.2); }
 
-        /* --- Layout --- */
+        /* --- Layout Base (Portrait) --- */
         .ui-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 50;
@@ -136,7 +132,8 @@
             pointer-events: none;
         }
 
-        @media (min-width: 481px) {
+        /* Tablet/PC Centering for Portrait */
+        @media (min-width: 481px) and (orientation: portrait) {
             .ui-center-wrapper {
                 position: absolute; top: 0; bottom: 0;
                 left: 50%; transform: translateX(-50%);
@@ -147,8 +144,68 @@
                 max-width: var(--ui-max-width);
             }
             .modal-sheet { max-width: var(--ui-max-width); margin: 0 auto; }
-            #toast-container { width: 100% !important; max-width: 400px; }
             #qr-container { display: block !important; }
+        }
+
+        /* ★ LANDSCAPE OPTIMIZATION (スマホ横持ち/PC全画面) ★ */
+        @media (orientation: landscape) {
+            .ui-center-wrapper {
+                max-width: none !important;
+                flex-direction: row !important; /* 横並び */
+                align-items: flex-end;
+            }
+            
+            /* Top HUD: 左上に固定 */
+            .hud-top {
+                position: absolute; top: 0; left: 0; 
+                flex-direction: column; align-items: flex-start; gap: 10px;
+                padding: 10px !important;
+            }
+
+            /* Bottom HUD: 右サイドバーに変形 */
+            .hud-bottom {
+                position: absolute; right: 0; top: 0; bottom: 0;
+                width: 100px; /* 細身のサイドバー */
+                padding: 10px 5px !important;
+                display: flex !important;
+                flex-direction: column-reverse; /* 下から積む */
+                justify-content: center;
+                gap: 15px !important;
+                background: linear-gradient(to left, rgba(0,0,0,0.6), transparent); /* 背景グラデ */
+                pointer-events: none;
+            }
+            
+            /* 各ユニットの再配置 */
+            .control-unit {
+                width: 100%; padding: 10px 5px !important;
+                align-items: center;
+                background: rgba(20, 30, 50, 0.6) !important; /* 少し透過強める */
+            }
+            .center-unit {
+                position: absolute; left: 20px; bottom: 20px; /* 時間ボタンは左下へ */
+            }
+            .right-unit {
+                flex-direction: column !important; /* ボタン縦並び */
+                gap: 15px !important;
+            }
+            
+            /* スライダー調整: 横向きスライダーは見切れやすいので調整 */
+            .slider-row { width: 100%; justify-content: center; }
+            input[type=range] { width: 60px !important; } /* 少し短く */
+
+            /* 時間操作パネル */
+            #time-controls {
+                left: 140px !important; bottom: 20px !important; transform: none !important;
+                width: auto !important;
+            }
+            #time-controls.active { bottom: 20px !important; } /* アニメーション位置調整 */
+
+            /* モーダル調整 */
+            .modal-sheet {
+                max-height: 80vh; 
+                width: 60% !important; margin: 0 auto;
+                border-radius: 24px 24px 0 0;
+            }
         }
 
         .hud-top {
@@ -211,7 +268,6 @@
         }
         .filter-chip.selected { background: var(--accent-color); color: #000; border-color: var(--accent-color); font-weight: bold; }
 
-        /* Shooting Star Toggle Style */
         .filter-chip[data-val="shootingstar"] { border-color: #4488ff; color: #aaddff; }
         .filter-chip[data-val="shootingstar"].selected { background: #4488ff; color: #fff; box-shadow: 0 0 10px #4488ff; }
 
@@ -276,9 +332,9 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
         }
 
-        /* AR Slider UI - Shown when AR is active */
+        /* AR Slider UI */
         #ar-controls {
-            display: none; /* JS toggles */
+            display: none; 
             margin-bottom: 8px; background: rgba(0,0,0,0.5); border-radius: 12px; padding: 5px 10px;
         }
 
@@ -316,7 +372,7 @@
     <!-- 1. Start Screen -->
     <div id="start-screen" class="overlay" style="background: radial-gradient(circle at 50% 100%, #1a2a6c, #000); pointer-events:auto;">
         <div id="star-bg"></div>
-        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 6.6<br><span style="font-size:1rem; opacity:0.8;">Final Polish</span></h1>
+        <h1 style="text-align:center; text-shadow:0 0 20px #aaddff;">Star Compass 7.0<br><span style="font-size:1rem; opacity:0.8;">Landscape Edition</span></h1>
         
         <div id="qr-container">
             <img id="qr-img" src="" alt="QR Code">
@@ -366,7 +422,7 @@
 
             <div class="hud-bottom">
                 <div class="glass-panel control-unit">
-                    <!-- AR Control (Visible only when AR is ON) -->
+                    <!-- AR Control -->
                     <div id="ar-controls">
                         <div class="slider-row">
                             <span class="slider-label" style="font-size:10px; width:auto; margin-right:5px;">透過</span>
@@ -403,7 +459,6 @@
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-sheet">
             <h2 style="margin-top:0; margin-bottom: 15px;">設定 & 図鑑</h2>
-            
             <div class="setting-section">
                 <span class="setting-label">表示する天体</span>
                 <div class="filter-chips" id="filter-lines">
@@ -414,11 +469,9 @@
                     <div class="filter-chip selected" data-val="object">星団/他</div>
                     <div class="filter-chip selected" data-val="milkyway">🌌 天の川</div>
                     <div class="filter-chip selected" data-val="stardust">✨ 星々</div>
-                    <!-- Shooting Star Toggle -->
                     <div class="filter-chip" data-val="shootingstar">🌠 流れ星</div>
                 </div>
             </div>
-
             <div class="setting-section">
                 <span class="setting-label">ラベル表示 / AR</span>
                 <div style="display:flex; align-items:center;">
@@ -430,18 +483,14 @@
                     <button id="btn-ar-switch" class="btn-ar-toggle">AR [OFF]</button>
                 </div>
             </div>
-
             <h3 style="margin-top:10px; border-top:1px solid #444; padding-top:15px;">天体図鑑</h3>
-            
             <div class="tab-header">
                 <div class="tab-item active" data-tab="famous">⭐ 有名</div>
                 <div class="tab-item" data-tab="planet">🪐 惑星</div>
                 <div class="tab-item" data-tab="normal">🌙 普通</div>
                 <div class="tab-item" data-tab="minor">🔍 他</div>
             </div>
-
             <div id="encyclopedia-list" style="flex-grow:1; overflow-y:auto; min-height:200px;"></div>
-
             <button id="btn-close-settings" class="btn-rect" style="width:100%; margin-top:15px; padding:15px; background:#444;">閉じる</button>
         </div>
     </div>
@@ -453,15 +502,12 @@
                 <h2 id="guide-title" style="color:var(--accent-color); font-size:2rem; margin:0;">Title</h2>
                 <span id="guide-subtitle" style="color:#aaa; font-size:0.9rem;">SUB</span>
             </div>
-            
             <div style="margin: 15px 0;">
                 <button class="tab-btn" data-tab="science" onclick="switchGuideTab('science')">理科</button>
                 <button class="tab-btn" data-tab="trivia" onclick="switchGuideTab('trivia')">雑学</button>
                 <button class="tab-btn" data-tab="myth" onclick="switchGuideTab('myth')">神話</button>
             </div>
-            
             <div id="guide-content" style="min-height:100px; font-size:0.95rem; line-height:1.7;">...</div>
-
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button id="btn-nav-start" class="btn-rect" style="flex:1; background:var(--accent-color); color:#000;">★ ナビ開始</button>
                 <button id="btn-guide-close" class="btn-rect" style="width:80px;">閉じる</button>
@@ -478,8 +524,7 @@
 
     <script>
         /**
-         * 🌌 STAR COMPASS V6.6 (Final Polish)
-         * Features: Procedural Assets, Keplerian Orbits, WebAR, Shooting Stars
+         * 🌌 STAR COMPASS V7.0 (Landscape Edition)
          */
 
         // --- 0. Database ---
@@ -654,9 +699,8 @@
             activeConstellation: null,
             isTimeLapse: false,
             frameCounter: 0,
-            isAR: false, // WebAR State
+            isAR: false, 
             arOpacity: 0.7,
-            // Settings
             filter: { famous:true, normal:true, minor:false, planet:true, object:true, milkyway:true, stardust:true, shootingstar:false },
             labels: 'name', 
             activeTab: 'famous',
@@ -708,7 +752,7 @@
             const d = getDayNumber(date);
             const RAD = Math.PI/180;
             const obl = 23.4393 - 3.563E-7 * d; 
-
+            // Simplified logic (reused)
             if (key === 'sun') {
                 const w = 282.9404 + 4.70935E-5 * d;
                 const e = 0.016709 - 1.151E-9 * d;
@@ -808,7 +852,8 @@
             document.getElementById('btn-snapshot').addEventListener('click', takeSnapshot);
 
             // Slider & Buttons
-            document.getElementById('zoom-slider').addEventListener('input', (e) => {
+            const zSlider = document.getElementById('zoom-slider');
+            zSlider.addEventListener('input', (e) => {
                 if(camera) { camera.fov = 120 - (e.target.value * 0.9); camera.updateProjectionMatrix(); }
             });
             const hSlider = document.getElementById('heading-slider');
@@ -854,12 +899,7 @@
             document.getElementById('btn-ar-switch').addEventListener('click', toggleAR);
             document.getElementById('ar-slider').addEventListener('input', (e) => {
                 const val = e.target.value / 100;
-                // Slider 0(Open) -> 100(Black)
-                // BUT User wants "Transparency Slider". Usually 100 means fully transparent AR?
-                // Let's make: 0 = Black Sky (No Cam), 100 = Clear Sky (Full Cam)
                 state.arOpacity = val;
-                // ThreeJS ClearColor opacity: 0 = Transparent (See Video), 1 = Opaque (Black)
-                // So if slider is "Transparency", then ClearAlpha should be 1.0 - val
                 if(renderer) renderer.setClearAlpha(1.0 - val);
             });
 
@@ -924,18 +964,17 @@
             document.body.className = `mode-${state.viewMode}`;
             btn.className = `glass-panel btn-icon icon-mode-${state.viewMode}`;
             
-            // Fix for Night Mode overlay interaction issue
             const nightOverlay = document.getElementById('night-overlay');
             if (state.viewMode === 'night') {
-                nightOverlay.style.display = 'block'; // Force block
+                nightOverlay.style.display = 'block'; 
             } else {
-                nightOverlay.style.display = ''; // Clear inline style (revert to CSS)
+                nightOverlay.style.display = ''; 
             }
 
             if (state.viewMode === 'day') {
                 renderer.setClearColor(0x87CEEB, 1); 
             } else {
-                renderer.setClearColor(0x000000, 0); // Transparent usually, but handled by body bg
+                renderer.setClearColor(0x000000, 0); 
                 renderer.setClearAlpha(0);
             }
             showToast(`モード: ${state.viewMode.toUpperCase()}`);
@@ -949,14 +988,9 @@
             const arControls = document.getElementById('ar-controls');
 
             if (state.isAR) {
-                // START AR
                 btn.innerText = "AR [ON]";
                 btn.classList.add('active');
-                
-                // Close settings to show effect immediately
                 document.getElementById('settings-modal').classList.remove('active');
-                
-                // Show controls
                 arControls.style.display = 'block';
 
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -964,10 +998,8 @@
                         video.srcObject = stream;
                         video.style.display = 'block';
                         video.play();
-                        // Set Canvas to be transparent based on slider
-                        // Default slider 70% transparency -> 30% black
-                        renderer.setClearColor(0x000000); // Base color black
-                        renderer.setClearAlpha(0.3); // Initial opacity (1 - 0.7)
+                        renderer.setClearColor(0x000000); 
+                        renderer.setClearAlpha(0.3); 
                         showToast("ARモード起動: 背景を透過します");
                     })
                     .catch(err => {
@@ -978,7 +1010,6 @@
                         btn.innerText = "AR [OFF]";
                     });
             } else {
-                // STOP AR
                 btn.innerText = "AR [OFF]";
                 btn.classList.remove('active');
                 arControls.style.display = 'none';
@@ -990,15 +1021,14 @@
                 video.style.display = 'none';
                 video.srcObject = null;
                 
-                // Restore View Mode
                 if (state.viewMode === 'day') renderer.setClearColor(0x87CEEB, 1);
-                else renderer.setClearAlpha(0); // Show Body BG
+                else renderer.setClearAlpha(0); 
                 
                 showToast("ARモード終了");
             }
         }
 
-        // --- Snapshot (Mixed Reality Capable) ---
+        // --- Snapshot ---
         function takeSnapshot() {
             document.getElementById('main-hud').style.display = 'none';
             document.getElementById('dev-badge').style.display = 'none';
@@ -1009,23 +1039,18 @@
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 
-                // 1. Prepare Render (High Res)
                 const originalPixelRatio = renderer.getPixelRatio();
                 renderer.setPixelRatio(window.devicePixelRatio * 2);
                 renderer.render(scene, camera);
 
-                // 2. Create Composition Canvas
                 const compCanvas = document.createElement('canvas');
                 compCanvas.width = width * window.devicePixelRatio * 2;
                 compCanvas.height = height * window.devicePixelRatio * 2;
                 const ctx = compCanvas.getContext('2d');
 
-                // 3. Draw Layers
-                // Layer A: Video (If AR)
                 if (state.isAR) {
                     const video = document.getElementById('ar-video');
                     if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
-                        // Draw video scaled to cover
                         const vw = video.videoWidth;
                         const vh = video.videoHeight;
                         const r = Math.max(compCanvas.width / vw, compCanvas.height / vh);
@@ -1035,29 +1060,22 @@
                         const oy = (compCanvas.height - nh) / 2;
                         ctx.drawImage(video, ox, oy, nw, nh);
                     }
-                    // Layer B: Darkness Overlay (based on AR opacity)
                     const opacity = 1.0 - state.arOpacity;
                     ctx.fillStyle = `rgba(0,0,0,${opacity})`;
                     ctx.fillRect(0,0, compCanvas.width, compCanvas.height);
                 } else {
-                    // Normal Mode Background
                     if (state.viewMode === 'day') ctx.fillStyle = "#87CEEB";
                     else ctx.fillStyle = "#050a14";
                     ctx.fillRect(0,0, compCanvas.width, compCanvas.height);
                 }
 
-                // Layer C: WebGL Stars
                 ctx.drawImage(renderer.domElement, 0, 0, compCanvas.width, compCanvas.height);
 
-                // 4. Save
                 const dataURL = compCanvas.toDataURL("image/png");
-                
-                // Restore State
                 renderer.setPixelRatio(originalPixelRatio);
                 document.getElementById('main-hud').style.display = 'block';
                 if(state.isDevMode) document.getElementById('dev-badge').style.display = 'block';
                 if(state.activeConstellation) document.getElementById('nav-arrow').style.display = 'block';
-                // Fix restore night mode overlay
                 if(state.viewMode === 'night') document.getElementById('night-overlay').style.display = 'block';
                 
                 const link = document.createElement('a');
@@ -1068,7 +1086,7 @@
             }, 150);
         }
 
-        // --- Time Logic V2 ---
+        // --- Time Logic ---
         function updateClock() {
             if (state.isLive && !state.isTimeLapse) { 
                 state.simulatedDate = new Date(); 
@@ -1159,12 +1177,39 @@
 
             createWorld();
             
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth/window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
+            // ★ Handle Resize (Logic Change for v7.0)
+            window.addEventListener('resize', handleResize);
+            // Call once to set initial state
+            handleResize();
+            
             animate();
+        }
+
+        // ★ New Resize Logic
+        function handleResize() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            
+            const zoomSlider = document.getElementById('zoom-slider');
+            
+            // アスペクト比判定: 横長(Landscape)なら望遠(FOV狭く)、縦長(Portrait)なら広角
+            if (w > h) {
+                // Landscape: FOV ~30° (High Zoom for immersion)
+                // Slider Logic: fov = 120 - (val * 0.9)
+                // val=100 -> fov=30
+                zoomSlider.value = 100;
+                camera.fov = 30;
+            } else {
+                // Portrait: FOV ~60° (Standard)
+                // val=67 -> fov=60
+                zoomSlider.value = 67;
+                camera.fov = 60;
+            }
+            
+            camera.updateProjectionMatrix();
         }
 
         function createWorld() {
@@ -1174,11 +1219,11 @@
             milkyWayGroup = new THREE.Group();
             stardustGroup = new THREE.Group();
             planetGroup = new THREE.Group();
-            shootingStarGroup = new THREE.Group(); // New
+            shootingStarGroup = new THREE.Group();
             
             celestialGroup.add(milkyWayGroup); 
             celestialGroup.add(stardustGroup); 
-            celestialGroup.add(shootingStarGroup); // Add Shooting Stars
+            celestialGroup.add(shootingStarGroup); 
             celestialGroup.add(planetGroup);   
             celestialGroup.add(constellationGroup); 
             celestialGroup.add(labelsGroup); 
@@ -1262,18 +1307,17 @@
             updateVisuals(); 
         }
 
-        // --- Shooting Star Logic (Procedural) ---
+        // --- Shooting Star Logic ---
         class ShootingStar {
             constructor() {
                 this.life = 0;
-                this.maxLife = 40 + Math.random() * 20; // frames
+                this.maxLife = 40 + Math.random() * 20; 
                 this.geometry = new THREE.BufferGeometry();
-                const pos = new Float32Array(6); // 2 points
+                const pos = new Float32Array(6); 
                 this.geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3));
                 this.material = new THREE.LineBasicMaterial({ color: 0xaaccff, transparent: true, opacity: 0 });
                 this.mesh = new THREE.Line(this.geometry, this.material);
                 
-                // Random Start Position in Sky
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.acos(2 * Math.random() - 1);
                 const r = CONFIG.starDistance * 0.9;
@@ -1284,14 +1328,13 @@
                     r * Math.cos(phi)
                 );
                 
-                // Velocity Vector (Random direction across sky)
                 const vTheta = Math.random() * Math.PI * 2;
                 const vPhi = Math.random() * Math.PI;
                 this.velocity = new THREE.Vector3(
                     Math.sin(vPhi) * Math.cos(vTheta),
                     Math.sin(vPhi) * Math.sin(vTheta),
                     Math.cos(vPhi)
-                ).multiplyScalar(15 + Math.random()*10); // Speed
+                ).multiplyScalar(15 + Math.random()*10); 
 
                 this.mesh.frustumCulled = false;
                 shootingStarGroup.add(this.mesh);
@@ -1300,14 +1343,13 @@
             update() {
                 this.life++;
                 const p1 = this.startPos.clone().add(this.velocity.clone().multiplyScalar(this.life));
-                const p2 = this.startPos.clone().add(this.velocity.clone().multiplyScalar(Math.max(0, this.life - 5))); // Tail length
+                const p2 = this.startPos.clone().add(this.velocity.clone().multiplyScalar(Math.max(0, this.life - 5))); 
                 
                 const positions = this.mesh.geometry.attributes.position.array;
                 positions[0] = p1.x; positions[1] = p1.y; positions[2] = p1.z;
                 positions[3] = p2.x; positions[4] = p2.y; positions[5] = p2.z;
                 this.mesh.geometry.attributes.position.needsUpdate = true;
 
-                // Fade in/out
                 if(this.life < 10) this.material.opacity = this.life / 10;
                 else this.material.opacity = 1 - (this.life / this.maxLife);
 
@@ -1315,15 +1357,14 @@
                     shootingStarGroup.remove(this.mesh);
                     this.mesh.geometry.dispose();
                     this.mesh.material.dispose();
-                    return false; // Dead
+                    return false; 
                 }
-                return true; // Alive
+                return true; 
             }
         }
 
         function createShootingStar() {
             if(!state.filter.shootingstar) return;
-            // Chance to spawn: 1% per frame (~every 1.6 sec at 60fps)
             if(Math.random() < 0.015) {
                 shootingStars.push(new ShootingStar());
             }
@@ -1334,12 +1375,7 @@
                 const pos = new THREE.Vector3(0,0,0);
                 
                 let geo, mat;
-                if(key === 'saturn') {
-                    geo = new THREE.SphereGeometry(data.size * 2, 16, 16);
-                } else {
-                    geo = new THREE.SphereGeometry(data.size * 2, 16, 16);
-                }
-                
+                geo = new THREE.SphereGeometry(data.size * 2, 16, 16);
                 mat = new THREE.MeshBasicMaterial({ color: data.color });
                 const mesh = new THREE.Mesh(geo, mat);
                 planetGroup.add(mesh);
@@ -1538,12 +1574,10 @@
                 }
             }
 
-            // Twinkle
             if (stardustGroup && stardustGroup.children.length > 0) {
                 if (Math.random() > 0.5) stardustGroup.children[0].material.opacity = 0.6 + Math.random() * 0.4;
             }
 
-            // Shooting Stars
             createShootingStar();
             shootingStars = shootingStars.filter(s => s.update());
 
@@ -1607,7 +1641,6 @@
         }
 
         function updateVisuals() {
-            // Update Constellations and Planets Labels
             for(const [key, line] of Object.entries(cstLines)) {
                 const data = CONSTELLATION_DB[key] || PLANET_DB[key]; 
                 if(!data) continue;
@@ -1742,7 +1775,6 @@
             showToast(`★ ${CONSTELLATION_DB[currentGuideId].jpName} ナビゲーション開始`);
             document.getElementById('btn-stop-nav').style.display = 'block';
 
-            // Dim others
             for(const k in cstLines) {
                 if(k !== currentGuideId && cstLines[k].material && cstLines[k].material.color) {
                     cstLines[k].material.color.setHex(0x555555);
@@ -1804,7 +1836,6 @@
                 if(drag) {
                     state.raw.alpha = (state.raw.alpha - (e.clientX-lx)*0.5) % 360;
                     state.raw.beta = Math.max(0, Math.min(180, state.raw.beta - (e.clientY-ly)*0.5));
-                    
                     lx=e.clientX; ly=e.clientY;
                     handleOrientation({alpha:state.raw.alpha, beta:state.raw.beta, gamma:0});
                 }
