@@ -575,622 +575,885 @@
 
 const STAR_DB = {
 
-    
+	
     // ==========================================
-    // ♈ Aries (おひつじ座) - Full Body -
-    // ==========================================
-    "hamal":        { ra: 2.12,  dec: 23.46, color: 0xFFDDAA, size: 1.3 }, // α
-    "sheratan":     { ra: 1.91,  dec: 20.80, color: 0xFFFFFF, size: 1.2 }, // β
-    "mesarthim":    { ra: 1.89,  dec: 19.29, color: 0xCCCCFF, size: 1.1 }, // γ
-    "ari_41":       { ra: 3.08,  dec: 27.26, color: 0xCCCCFF, size: 1.0 }, // 41番 (背中)
-    "botein":       { ra: 3.19,  dec: 19.72, color: 0xFFDDAA, size: 1.0 }, // δ (お腹)
-    // ★マニア追加：走る躍動感のための「後ろ足」
-    "ari_epsilon":  { ra: 2.98,  dec: 21.34, color: 0xFFFFFF, size: 0.9 }, // ε (尻尾)
-    "ari_pi":       { ra: 2.82,  dec: 17.46, color: 0xAACCFF, size: 0.9 }, // π (後ろ足の関節)
+// ♓ Pisces (うお座) - 学校アプリ用・完全版 (20星)
+// ==========================================
+// --- 既存のデータ (13個) ---
+"alrescha":     { ra: 2.03,  dec: 2.76,   color: 0xFFFFFF, size: 1.2 }, // α (結び目)
+"pis_gamma":    { ra: 23.28, dec: 3.28,   color: 0xFFFFEE, size: 1.1 }, // γ (西の魚・頭)
+"pis_iota":     { ra: 23.66, dec: 5.62,   color: 0xFFFFDD, size: 1.0 }, // ι
+"pis_theta":    { ra: 23.46, dec: 6.38,   color: 0xFFDDAA, size: 1.0 }, // θ
+"pis_kappa":    { ra: 23.45, dec: 1.24,   color: 0xAACCFF, size: 1.0 }, // κ
+"pis_lambda":   { ra: 23.70, dec: 1.77,   color: 0xFFFFFF, size: 1.0 }, // λ
+"pis_tx":       { ra: 23.77, dec: 3.49,   color: 0xFF4422, size: 1.0 }, // TX (赤色星)
+"pis_omicron":  { ra: 1.76,  dec: 9.29,   color: 0xFFFF33, size: 1.1 }, // ο (北の紐)
+"pis_eta":      { ra: 1.52,  dec: 15.34,  color: 0xFFFF99, size: 1.1 }, // η
+"pis_rho":      { ra: 1.44,  dec: 19.17,  color: 0xFFFFFF, size: 1.0 }, // ρ
+"pis_phi":      { ra: 1.23,  dec: 24.58,  color: 0xFFDDAA, size: 1.0 }, // φ (北の魚)
+"pis_upsilon":  { ra: 1.33,  dec: 27.27,  color: 0xFFFFFF, size: 1.0 }, // υ
+"pis_tau":      { ra: 1.22,  dec: 30.09,  color: 0xFFDDAA, size: 1.0 }, // τ
 
-    // ==========================================
-    // ♉ Taurus (おうし座) - Full Horns & Legs -
-    // ==========================================
-    "aldebaran":    { ra: 4.60,  dec: 16.51, color: 0xFFD4AA, size: 1.5 }, // α
-    "elnath":       { ra: 5.43,  dec: 28.61, color: 0xCCCCFF, size: 1.3 }, // β (北の角)
-    "tau_zeta":     { ra: 5.63,  dec: 21.14, color: 0xAACCFF, size: 1.2 }, // ζ (南の角)
-    "pleiades":     { ra: 3.78,  dec: 24.10, color: 0xAACCEE, size: 2.2 }, // すばる
-    // ヒアデス星団 (顔)
-    "tau_epsilon":  { ra: 4.47,  dec: 19.18, color: 0xFFFFDD, size: 1.1 }, // ε (目)
-    "tau_gamma":    { ra: 4.33,  dec: 15.63, color: 0xFFFFEE, size: 1.0 }, // γ
-    "tau_delta1":   { ra: 4.38,  dec: 17.54, color: 0xFFFFEE, size: 1.0 }, // δ
-    // ★マニア追加：前足の蹄（ひづめ）まで描く
-    "tau_lambda":   { ra: 4.01,  dec: 12.49, color: 0xAACCFF, size: 1.0 }, // λ (胸)
-    "tau_nu":       { ra: 4.05,  dec: 5.99,  color: 0xFFFFFF, size: 1.0 }, // ν (足の付け根)
-    "tau_10":       { ra: 3.61,  dec: 0.40,  color: 0xFFFF99, size: 1.0 }, // 10番 (右前足の蹄)
+// --- ★追加データ (7個) ---
+// 西の魚の口先と、結び目へ伸びる南側の紐(ひも)を補完
+"pis_beta":     { ra: 23.06, dec: 3.82,   color: 0xAACCFF, size: 1.1 }, // β (フム・アル・サマカ：魚の口)
+"pis_omega":    { ra: 23.99, dec: 6.86,   color: 0xFFFF99, size: 1.1 }, // ω (輪っかのそば)
+"pis_delta":    { ra: 0.81,  dec: 7.59,   color: 0xFFDDAA, size: 1.1 }, // δ (南の紐)
+"pis_epsilon":  { ra: 1.05,  dec: 7.89,   color: 0xFFDDAA, size: 1.1 }, // ε (南の紐)
+"pis_zeta":     { ra: 1.23,  dec: 7.58,   color: 0xFFFFFF, size: 1.0 }, // ζ (南の紐)
+"pis_mu":       { ra: 1.50,  dec: 6.14,   color: 0xFFDDAA, size: 1.0 }, // μ (南の紐)
+"pis_nu":       { ra: 1.69,  dec: 5.49,   color: 0xFFDDAA, size: 1.1 }, // ν (南の紐)
 
-    // ==========================================
-    // ♊ Gemini (ふたご座) - With Arms -
-    // ==========================================
-    // ★マニア修正：ただの棒人間から「手を伸ばす双子」へ
-    "pollux":       { ra: 7.76,  dec: 28.03, color: 0xFFD700, size: 1.4 }, // β (弟頭)
-    "castor":       { ra: 7.58,  dec: 31.89, color: 0xFFFFFF, size: 1.3 }, // α (兄頭)
-    "alhena":       { ra: 6.63,  dec: 16.39, color: 0xFFFFFF, size: 1.3 }, // γ (弟足)
-    "mebsuta":      { ra: 6.73,  dec: 25.13, color: 0xFFFFDD, size: 1.2 }, // ε (兄胴体)
-    "tejat":        { ra: 6.24,  dec: 22.51, color: 0xFF5544, size: 1.1 }, // μ (兄足元)
-    "propus":       { ra: 6.25,  dec: 22.50, color: 0xFFAAAA, size: 1.1 }, // η (兄足先)
-    "wasat":        { ra: 7.34,  dec: 21.98, color: 0xFFF5E1, size: 1.1 }, // δ (弟腰)
-    "mekbuda":      { ra: 7.07,  dec: 20.57, color: 0xFFFF99, size: 1.1 }, // ζ (弟膝)
-    // 追加パーツ：腕と手
-    "gem_iota":     { ra: 7.43,  dec: 27.80, color: 0xFFDDAA, size: 1.0 }, // ι (兄の肩)
-    "gem_upsilon":  { ra: 7.59,  dec: 26.89, color: 0xFFFFFF, size: 1.0 }, // υ (兄の手・弟の肩に置いている)
-    "gem_theta":    { ra: 6.88,  dec: 33.96, color: 0xFFFFFF, size: 1.1 }, // θ (兄が振り上げた右腕)
-    "gem_kappa":    { ra: 7.74,  dec: 24.39, color: 0xFFDDAA, size: 1.0 }, // κ (弟の右腕)
-
-    // ==========================================
-    // ♋ Cancer (かに座) - Full Legs -
-    // ==========================================
-    "acubens":      { ra: 8.97,  dec: 11.85, color: 0xFFFFFF, size: 1.1 }, // α (ハサミ)
-    "altarf":       { ra: 8.27,  dec: 9.19,  color: 0xFFDDAA, size: 1.1 }, // β (足)
-    "asellus_bor":  { ra: 8.72,  dec: 21.47, color: 0xAACCFF, size: 1.0 }, // γ (北のロバ)
-    "asellus_aus":  { ra: 8.74,  dec: 18.15, color: 0xFFDDAA, size: 1.1 }, // δ (南のロバ)
-    "praesepe":     { ra: 8.67,  dec: 19.67, color: 0xAACCFF, size: 1.8 }, // 星団
-    "cnc_iota":     { ra: 8.77,  dec: 28.76, color: 0xFFFF99, size: 1.0 }, // ι (上の脚)
-    // ★マニア追加：下の脚
-    "cnc_chi":      { ra: 8.45,  dec: 27.22, color: 0xFFFFFF, size: 0.9 }, // χ (脚の関節)
-
-    // ==========================================
-    // ♌ Leo (しし座) - Full Beast -
-    // ==========================================
-    // ★マニア修正：後ろ足と「耳」を追加
-    "regulus":      { ra: 10.14, dec: 11.97, color: 0xCCCCFF, size: 1.5 }, // α
-    "denebola":     { ra: 11.82, dec: 14.57, color: 0xFFFFFF, size: 1.4 }, // β (尻尾)
-    "algieba":      { ra: 10.33, dec: 19.84, color: 0xFFD700, size: 1.3 }, // γ (たてがみ)
-    "zosma":        { ra: 11.24, dec: 20.52, color: 0xFFFFFF, size: 1.3 }, // δ (背中)
-    "leo_epsilon":  { ra: 9.76,  dec: 23.77, color: 0xFFFFEE, size: 1.2 }, // ε (頭・口先)
-    "leo_zeta":     { ra: 10.27, dec: 23.42, color: 0xFFFFFF, size: 1.2 }, // ζ (たてがみ)
-    "leo_theta":    { ra: 11.23, dec: 15.43, color: 0xFFFFFF, size: 1.2 }, // θ (腰)
-    // 前足
-    "leo_eta":      { ra: 10.12, dec: 16.76, color: 0xFFFFFF, size: 1.1 }, // η (胸元)
-    "subra":        { ra: 9.87,  dec: 26.01, color: 0xFFFFEE, size: 1.1 }, // ο (前足先)
-    // 後ろ足（ここ重要！）
-    "leo_iota":     { ra: 11.40, dec: 15.43, color: 0xAACCFF, size: 1.0 }, // ι (後ろ足の関節)
-    "leo_sigma":    { ra: 11.35, dec: 6.03,  color: 0xAACCFF, size: 1.0 }, // σ (後ろ足の蹴り出し)
-    // 耳
-    "leo_mu":       { ra: 9.88,  dec: 26.00, color: 0xFFDDAA, size: 1.0 }, // μ (耳・頭のてっぺん)
-
-    // ==========================================
-    // ♍ Virgo (おとめ座) - Full Robe -
-    // ==========================================
-    "spica":        { ra: 13.42, dec: -11.16, color: 0xAACCFF, size: 1.5 }, // α
-    "zavijava":     { ra: 11.84, dec: 1.76,   color: 0xFFFFEE, size: 1.1 }, // β (後頭部)
-    "porrima":      { ra: 12.69, dec: -1.45,  color: 0xFFFFEE, size: 1.2 }, // γ (胴体)
-    "auva":         { ra: 12.93, dec: 3.40,   color: 0xFF5544, size: 1.1 }, // δ (背中)
-    "vindemiatrix": { ra: 13.04, dec: 10.96,  color: 0xFFFFCC, size: 1.2 }, // ε (右腕)
-    "heze":         { ra: 13.58, dec: -0.60,  color: 0xFFFFFF, size: 1.1 }, // ζ (腰)
-    "syrma":        { ra: 14.27, dec: -5.80,  color: 0xFFFFEE, size: 1.0 }, // ι (裾)
-    "rijl_al_awwa": { ra: 14.72, dec: -5.65,  color: 0xFFDDAA, size: 1.0 }, // μ (足先)
-    // ★マニア追加：顔のラインと麦の穂の先
-    "vir_nu":       { ra: 11.76, dec: 6.53,   color: 0xFFDDAA, size: 1.0 }, // ν (顔・額)
-    "vir_109":      { ra: 14.77, dec: -1.89,  color: 0xFFFFFF, size: 0.9 }, // 109番 (麦の穂の先)
-
-    // ==========================================
-    // ♎ Libra (てんびん座) - Complete Scale -
-    // ==========================================
-    // 天秤の「釣竿（ビーム）」の上部を追加
-    "zubenelgenubi":   { ra: 14.84, dec: -16.04, color: 0xCCCCFF, size: 1.3 }, // α
-    "zubeneschamali":  { ra: 15.28, dec: -9.38,  color: 0xAACCFF, size: 1.3 }, // β
-    "zubenelhakrabi":  { ra: 15.59, dec: -14.79, color: 0xFFDDAA, size: 1.2 }, // γ
-    "brachium":        { ra: 15.01, dec: -19.80, color: 0xFF5544, size: 1.1 }, // σ
-    "lib_upsilon":     { ra: 15.62, dec: -28.14, color: 0xFF9966, size: 1.0 }, // υ
-    "lib_tau":         { ra: 15.64, dec: -29.77, color: 0xAACCFF, size: 1.0 }, // τ
-    // 追加：天秤の支点
-    "lib_theta":       { ra: 15.89, dec: -16.73, color: 0xFFDDAA, size: 1.0 }, // θ (天秤の竿の根本)
-
-    // ==========================================
-    // ♏ Scorpius (さそり座)
-    // ==========================================
-    // ※前回で既に「完全版」です。変更なし。
-    "antares":      { ra: 16.49, dec: -26.43, color: 0xFF4422, size: 1.6 },
-    "graffias":     { ra: 16.09, dec: -19.80, color: 0xCCCCFF, size: 1.3 },
-    "dschubba":     { ra: 16.00, dec: -22.62, color: 0xCCCCFF, size: 1.3 },
-    "sco_pi":       { ra: 15.98, dec: -26.11, color: 0xCCCCFF, size: 1.2 },
-    "wei":          { ra: 16.84, dec: -34.29, color: 0xFFDDAA, size: 1.2 },
-    "sco_mu1":      { ra: 16.89, dec: -38.04, color: 0xAACCFF, size: 1.1 },
-    "sco_zeta2":    { ra: 16.90, dec: -42.36, color: 0xFFDDAA, size: 1.1 },
-    "sco_eta":      { ra: 17.20, dec: -43.24, color: 0xFFFFEE, size: 1.1 },
-    "sargas":       { ra: 17.62, dec: -42.99, color: 0xFFFFEE, size: 1.3 },
-    "sco_iota1":    { ra: 17.79, dec: -40.12, color: 0xFFFFCC, size: 1.1 },
-    "sco_kappa":    { ra: 17.70, dec: -39.03, color: 0xCCCCFF, size: 1.2 },
-    "shaula":       { ra: 17.56, dec: -37.10, color: 0xAACCFF, size: 1.4 },
-    "lesath":       { ra: 17.51, dec: -37.29, color: 0xFFFFFF, size: 1.2 },
-
-    // ==========================================
-    // ♐ Sagittarius (いて座) - The Centaur -
-    // ==========================================
-    // ★マニア修正：ティーポットだけじゃない！「馬の体」と「足」を追加！
-    // これがないと半人半馬のケンタウルスになりません。
-    "rukbat":       { ra: 19.39, dec: -40.61, color: 0xAACCFF, size: 1.2 }, // α (膝)
-    "arkab_prior":  { ra: 19.38, dec: -44.46, color: 0xFFFFFF, size: 1.1 }, // β1 (前足の腱)
-    "alnasl":       { ra: 18.10, dec: -30.42, color: 0xFFFFDD, size: 1.2 }, // γ (矢尻)
-    "kaus_med":     { ra: 18.35, dec: -29.82, color: 0xFFDDAA, size: 1.3 }, // δ (弓)
-    "kaus_aus":     { ra: 18.40, dec: -34.38, color: 0xAACCFF, size: 1.4 }, // ε (弓)
-    "ascella":      { ra: 19.04, dec: -29.88, color: 0xFFFFFF, size: 1.3 }, // ζ (脇)
-    "kaus_bor":     { ra: 18.47, dec: -25.42, color: 0xFFDDAA, size: 1.3 }, // λ (弓)
-    "nunki":        { ra: 18.92, dec: -26.30, color: 0xAACCFF, size: 1.4 }, // σ (手)
-    // ティースプーン
-    "sgr_xi2":      { ra: 18.96, dec: -21.10, color: 0xFFDDAA, size: 1.0 },
-    "sgr_omicron":  { ra: 19.07, dec: -21.74, color: 0xFFFFEE, size: 1.0 },
-    "sgr_pi":       { ra: 19.16, dec: -21.02, color: 0xFFFFFF, size: 1.0 },
-    // ★追加：テレベラム（四辺形・馬のお尻）
-    "sgr_omega":    { ra: 19.92, dec: -26.29, color: 0xFFFF99, size: 1.0 }, // ω
-    "sgr_59":       { ra: 19.94, dec: -27.16, color: 0xFFFFFF, size: 0.9 }, // 59番
-    "sgr_60":       { ra: 19.98, dec: -28.22, color: 0xAACCFF, size: 1.0 }, // 60番
-    "sgr_62":       { ra: 20.04, dec: -27.71, color: 0xFFDDAA, size: 1.0 }, // 62番 (テレベルム)
-    // ★追加：馬の前足
-    "sgr_eta":      { ra: 18.29, dec: -36.76, color: 0xFF4422, size: 1.0 }, // η (赤っぽい星・心臓付近)
-
-    // ==========================================
-    // ♑ Capricornus (やぎ座)
-    // ==========================================
-    // 魚の尾びれ部分をより細かく
-    "algedi":       { ra: 20.29, dec: -12.54, color: 0xFFFFEE, size: 1.2 }, // α
-    "dabih":        { ra: 20.35, dec: -14.78, color: 0xFFFFCC, size: 1.2 }, // β
-    "nashira":      { ra: 21.67, dec: -16.66, color: 0xFFFFEE, size: 1.2 }, // γ
-    "deneb_algedi": { ra: 21.78, dec: -16.13, color: 0xFFFFFF, size: 1.3 }, // δ
-    "cap_theta":    { ra: 21.09, dec: -17.23, color: 0xFFFFFF, size: 1.0 }, // θ
-    "cap_psi":      { ra: 20.77, dec: -25.27, color: 0xFFFFDD, size: 1.0 }, // ψ
-    "cap_omega":    { ra: 20.86, dec: -26.92, color: 0xFFDDAA, size: 1.0 }, // ω
-    // 追加：顔のヒゲ？
-    "cap_nu":       { ra: 20.34, dec: -12.75, color: 0xAACCFF, size: 1.0 }, // ν (アルゲディのすぐ近く)
-
-    // ==========================================
-    // ♒ Aquarius (みずがめ座) - Long Flow -
-    // ==========================================
-    // ★マニア修正：水流が短すぎました。「みなみのうお座」まで届く水流を！
-    "sadalmelik":   { ra: 22.09, dec: -0.32,  color: 0xFFFF99, size: 1.3 }, // α
-    "sadalsuud":    { ra: 21.53, dec: -5.57,  color: 0xFFFF99, size: 1.3 }, // β
-    "sadachbia":    { ra: 22.35, dec: -1.39,  color: 0xFFFFFF, size: 1.2 }, // γ
-    "skat":         { ra: 22.91, dec: -15.82, color: 0xFFFFFF, size: 1.2 }, // δ
-    "albali":       { ra: 20.79, dec: -9.50,  color: 0xAACCFF, size: 1.1 }, // ε
-    "ancha":        { ra: 22.28, dec: -7.79,  color: 0xFFFFDD, size: 1.1 }, // θ
-    "aqr_zeta":     { ra: 22.48, dec: -0.02,  color: 0xFFFFFF, size: 1.1 }, // ζ
-    "aqr_eta":      { ra: 22.59, dec: -0.12,  color: 0xAACCFF, size: 1.1 }, // η
-    "aqr_pi":       { ra: 22.42, dec: 1.38,   color: 0xAACCFF, size: 1.1 }, // π
-    "aqr_lambda":   { ra: 22.88, dec: -7.58,  color: 0xFF4422, size: 1.0 }, // λ
-    "aqr_phi":      { ra: 23.24, dec: -6.05,  color: 0xFFDDAA, size: 1.0 }, // φ
-    "aqr_psi1":     { ra: 23.26, dec: -9.09,  color: 0xFFFFEE, size: 1.0 }, // ψ1
-    // ★追加：水流の末端
-    "aqr_omega2":   { ra: 23.71, dec: -14.54, color: 0xFFFFFF, size: 1.0 }, // ω2 (みなみのうお座のすぐ上)
-    "aqr_iota":     { ra: 22.11, dec: -13.87, color: 0xAACCFF, size: 1.0 }, // ι (スカトの近く)
-
-    // ==========================================
-    // ♓ Pisces (うお座)
-    // ==========================================
-    // ※前回で既に「完全版」です。変更なし。
-    "alrescha":     { ra: 2.03,  dec: 2.76,   color: 0xFFFFFF, size: 1.2 },
-    "pis_gamma":    { ra: 23.28, dec: 3.28,   color: 0xFFFFEE, size: 1.1 },
-    "pis_iota":     { ra: 23.66, dec: 5.62,   color: 0xFFFFDD, size: 1.0 },
-    "pis_theta":    { ra: 23.46, dec: 6.38,   color: 0xFFDDAA, size: 1.0 },
-    "pis_kappa":    { ra: 23.45, dec: 1.24,   color: 0xAACCFF, size: 1.0 },
-    "pis_lambda":   { ra: 23.70, dec: 1.77,   color: 0xFFFFFF, size: 1.0 },
-    "pis_tx":       { ra: 23.77, dec: 3.49,   color: 0xFF4422, size: 1.0 },
-    "pis_omicron":  { ra: 1.76,  dec: 9.29,   color: 0xFFFF33, size: 1.1 },
-    "pis_eta":      { ra: 1.52,  dec: 15.34,  color: 0xFFFF99, size: 1.1 },
-    "pis_rho":      { ra: 1.44,  dec: 19.17,  color: 0xFFFFFF, size: 1.0 },
-    "pis_phi":      { ra: 1.23,  dec: 24.58,  color: 0xFFDDAA, size: 1.0 },
-    "pis_upsilon":  { ra: 1.33,  dec: 27.27,  color: 0xFFFFFF, size: 1.0 },
-    "pis_tau":      { ra: 1.22,  dec: 30.09,  color: 0xFFDDAA, size: 1.0 },
-
-
-    // ==========================================
-    // 🏹 Orion (オリオン座) - The Complete Hero -
-    // ==========================================
-    // ★マニア修正★ 盾(π1-6)と棍棒(χ1-2)を全網羅
-    
-    // --- 主要部 ---
-    "betelgeuse":   { ra: 5.92,  dec: 7.41,   color: 0xFFD700, size: 1.6 }, // α (右肩)
-    "rigel":        { ra: 5.24,  dec: -8.20,  color: 0xAADDFF, size: 1.6 }, // β (左足)
-    "bellatrix":    { ra: 5.42,  dec: 6.35,   color: 0xBBCCFF, size: 1.3 }, // γ (左肩)
-    "saiph":        { ra: 5.79,  dec: -9.67,  color: 0xBBCCFF, size: 1.2 }, // κ (右足)
-    "alnitak":      { ra: 5.68,  dec: -1.94,  color: 0xBBCCFF, size: 1.3 }, // ζ (ベルト東)
-    "alnilam":      { ra: 5.60,  dec: -1.20,  color: 0xFFFFFF, size: 1.3 }, // ε (ベルト中)
-    "mintaka":      { ra: 5.53,  dec: -0.30,  color: 0xBBCCFF, size: 1.2 }, // δ (ベルト西)
-    "meissa":       { ra: 5.58,  dec: 9.93,   color: 0xAACCFF, size: 1.1 }, // λ (頭部)
-    "hatsa":        { ra: 5.59,  dec: -5.91,  color: 0xFFFFFF, size: 1.1 }, // ι (剣先)
-
-    // --- 棍棒 (The Club) ---
-    // ベテルギウスの上、ふたご座の足元へ振り上げられた腕
-    "ori_chi1":     { ra: 5.90,  dec: 20.27,  color: 0xFFFFEE, size: 1.0 }, // χ1
-    "ori_chi2":     { ra: 6.07,  dec: 20.14,  color: 0xFFDDAA, size: 1.0 }, // χ2 (棍棒の先端)
-
-    // --- 盾 / 獅子の毛皮 (The Shield) ---
-    // 右側にカーブを描く「π(パイ)星列」。これが欲しかったんですね！
-    "ori_pi1":      { ra: 4.83,  dec: 8.90,   color: 0xFFFFFF, size: 1.0 }, // π1 (一番上)
-    "ori_pi2":      { ra: 4.84,  dec: 8.72,   color: 0xFFFFFF, size: 1.0 }, // π2
-    "ori_pi3":      { ra: 4.83,  dec: 6.96,   color: 0xFFFFEE, size: 1.1 }, // π3 (タビト・盾の中央)
-    "ori_pi4":      { ra: 4.85,  dec: 5.61,   color: 0xFF4422, size: 1.0 }, // π4 (赤っぽい)
-    "ori_pi5":      { ra: 4.90,  dec: 2.44,   color: 0xFFFFFF, size: 1.0 }, // π5
-    "ori_pi6":      { ra: 4.97,  dec: 1.71,   color: 0xFFDDAA, size: 1.0 }, // π6 (一番下)
-
-
-    // ==========================================
-    // 🐕 Canis Major (おおいぬ座)
-    // ==========================================
-    "sirius":       { ra: 6.75,  dec: -16.72, color: 0xFFFFFF, size: 1.8 }, // α
-    "mirzam":       { ra: 6.38,  dec: -17.96, color: 0xAACCFF, size: 1.2 }, // β (前足)
-    "muliphein":    { ra: 7.06,  dec: -15.63, color: 0xAACCFF, size: 1.0 }, // γ (頭)
-    "wezen":        { ra: 7.14,  dec: -26.39, color: 0xFFFFDD, size: 1.3 }, // δ (腰)
-    "adhara":       { ra: 6.98,  dec: -28.97, color: 0xAACCFF, size: 1.4 }, // ε (後ろ足)
-    "furud":        { ra: 6.28,  dec: -30.06, color: 0xAACCFF, size: 1.1 }, // ζ (足先)
-    "aludra":       { ra: 7.40,  dec: -29.30, color: 0xAACCFF, size: 1.2 }, // η (尻尾)
-    "cma_omicron2": { ra: 7.05,  dec: -23.83, color: 0xFF9966, size: 1.1 }, // ο2 (背中)
-    // マニア追加：前足の爪先など
-    "cma_nu2":      { ra: 6.61,  dec: -19.25, color: 0xFFDDAA, size: 1.0 }, // ν2 (前足の関節)
-
-
-    // ==========================================
-    // 🎻 Lyra (こと座)
-    // ==========================================
-    "vega":         { ra: 18.62, dec: 38.78,  color: 0xAACCFF, size: 1.6 }, // α
-    "sheliak":      { ra: 18.83, dec: 33.36,  color: 0xFFFFFF, size: 1.1 }, // β
-    "sulafat":      { ra: 18.98, dec: 32.68,  color: 0xAACCFF, size: 1.1 }, // γ
-    "lyr_delta2":   { ra: 18.91, dec: 36.90,  color: 0xFF4422, size: 1.0 }, // δ2
-    "lyr_epsilon":  { ra: 18.74, dec: 39.67,  color: 0xFFFFFF, size: 0.9 }, // ε (二重星)
-    "lyr_zeta":     { ra: 18.75, dec: 37.60,  color: 0xFFFFFF, size: 1.0 }, // ζ
-    // マニア追加：琴の枠組み
-    "lyr_eta":      { ra: 19.23, dec: 39.14,  color: 0xAACCFF, size: 1.0 }, // η (アラスド・ベガの東)
-
-
-    // ==========================================
-    // 🦅 Aquila (わし座)
-    // ==========================================
-    "altair":       { ra: 19.85, dec: 8.87,   color: 0xFFFFFF, size: 1.5 }, // α
-    "alshain":      { ra: 19.92, dec: 6.41,   color: 0xFFFFEE, size: 1.1 }, // β
-    "tarazed":      { ra: 19.77, dec: 10.61,  color: 0xFFDDAA, size: 1.2 }, // γ
-    "aql_delta":    { ra: 19.42, dec: 3.11,   color: 0xFFFFEE, size: 1.1 }, // δ (右翼)
-    "aql_epsilon":  { ra: 18.99, dec: 15.06,  color: 0xFFDDAA, size: 1.0 }, // ε (尾)
-    "aql_zeta":     { ra: 19.09, dec: 13.86,  color: 0xFFFFFF, size: 1.1 }, // ζ (左翼)
-    "aql_theta":    { ra: 20.19, dec: -0.82,  color: 0xAACCFF, size: 1.1 }, // θ (右翼端)
-    // マニア追加：尾羽の広がりを再現
-    "althalimain":  { ra: 19.10, dec: -4.88,  color: 0xFFFFFF, size: 1.0 }, // λ (南の尾羽)
-    "aql_iota":     { ra: 19.61, dec: -1.06,  color: 0xAACCFF, size: 1.0 }, // ι (右翼の下部)
-
-
-    // ==========================================
-    // 🦢 Cygnus (はくちょう座)
-    // ==========================================
-    // 翼をさらに大きく広げます
-    "deneb":        { ra: 20.69, dec: 45.28,  color: 0xFFFFFF, size: 1.5 }, // α
-    "albireo":      { ra: 19.51, dec: 27.96,  color: 0xFFD700, size: 1.2 }, // β
-    "sadr":         { ra: 20.37, dec: 40.26,  color: 0xFFFFEE, size: 1.3 }, // γ
-    "cyg_delta":    { ra: 19.75, dec: 45.13,  color: 0xFFFFFF, size: 1.2 }, // δ
-    "gjenah":       { ra: 20.77, dec: 33.97,  color: 0xFFDDAA, size: 1.2 }, // ε
-    "cyg_zeta":     { ra: 21.21, dec: 30.22,  color: 0xFFFF99, size: 1.1 }, // ζ
-    "cyg_tau":      { ra: 21.24, dec: 38.05,  color: 0xFFFFFF, size: 1.0 }, // τ
-    // マニア追加：翼の本当の先端
-    "cyg_iota2":    { ra: 19.49, dec: 51.72,  color: 0xFFFFFF, size: 1.0 }, // ι2 (右翼の最果て)
-    "cyg_kappa":    { ra: 19.29, dec: 53.37,  color: 0xFFDDAA, size: 1.0 }, // κ (さらに翼の先)
-
-
-    // ==========================================
-    // 👑 Cassiopeia (カシオペヤ座)
-    // ==========================================
-    "schedar":      { ra: 0.67,  dec: 56.54,  color: 0xFFDDAA, size: 1.3 }, // α
-    "caph":         { ra: 0.15,  dec: 59.15,  color: 0xFFFFEE, size: 1.3 }, // β
-    "cas_gamma":    { ra: 0.94,  dec: 60.72,  color: 0xAACCFF, size: 1.3 }, // γ
-    "ruchbah":      { ra: 1.43,  dec: 60.24,  color: 0xFFFFFF, size: 1.2 }, // δ
-    "segin":        { ra: 1.91,  dec: 63.67,  color: 0xAACCFF, size: 1.2 }, // ε
-    "achird":       { ra: 0.82,  dec: 57.81,  color: 0xFFFF99, size: 1.1 }, // η (椅子のパーツ)
-    // マニア追加：より「椅子」っぽくする補助星
-    "cas_zeta":     { ra: 0.61,  dec: 53.89,  color: 0xAACCFF, size: 1.0 }, // ζ (椅子の下部)
-
-
-    // ==========================================
-    // 🐻 Ursa Major (おおぐま座)
-    // ==========================================
-    // 前回のお褒めの言葉に応えて、前回と同じ完璧なフルセットを維持！
-    "dubhe":        { ra: 11.06, dec: 61.75,  color: 0xFFDDAA, size: 1.4 }, // α
-    "merak":        { ra: 11.03, dec: 56.38,  color: 0xFFFFFF, size: 1.3 }, // β
-    "phecda":       { ra: 11.90, dec: 53.69,  color: 0xFFFFFF, size: 1.3 }, // γ
-    "megrez":       { ra: 12.26, dec: 57.03,  color: 0xFFFFFF, size: 1.2 }, // δ
-    "alioth":       { ra: 12.90, dec: 55.96,  color: 0xFFFFFF, size: 1.4 }, // ε
-    "mizar":        { ra: 13.40, dec: 54.93,  color: 0xFFFFFF, size: 1.3 }, // ζ
-    "alkaid":       { ra: 13.80, dec: 49.31,  color: 0xAACCFF, size: 1.4 }, // η
-    "muscida":      { ra: 8.50,  dec: 60.72,  color: 0xFFFFEE, size: 1.1 }, // ο (鼻先)
-    "talitha":      { ra: 8.99,  dec: 48.04,  color: 0xFFFFFF, size: 1.1 }, // ι/κエリア
-    "uma_kappa":    { ra: 9.06,  dec: 47.16,  color: 0xFFFFFF, size: 1.1 }, // κ (前足爪)
-    "tania_bor":    { ra: 10.29, dec: 42.91,  color: 0xFFFFFF, size: 1.1 }, // λ (後ろ足)
-    "tania_aus":    { ra: 10.37, dec: 41.50,  color: 0xFF4422, size: 1.1 }, // μ (後ろ足爪)
-    "ula_bor":      { ra: 11.31, dec: 33.10,  color: 0xFFFFEE, size: 1.1 }, // ν (後ろ足2)
-    "ula_aus":      { ra: 11.30, dec: 31.53,  color: 0xFFDDAA, size: 1.1 }, // ξ (後ろ足2爪)
-
-
-
-    // ==========================================
-    // 🐕 Canis Minor (こいぬ座)
-    // ==========================================
-    // シンプルですが、プロキオンの輝きとゴメイサの存在感が大事
-    "procyon":      { ra: 7.65,  dec: 5.22,   color: 0xFFF5E1, size: 1.5 }, // α (冬の大三角・黄白)
-    "gomeisa":      { ra: 7.45,  dec: 8.29,   color: 0xAACCFF, size: 1.2 }, // β (首飾り・青白)
-    // マニア追加：これを入れると、ただの線じゃなくて「小さな犬」に見えます
-    "cmi_epsilon":  { ra: 7.42,  dec: 9.28,   color: 0xFFFF99, size: 1.0 }, // ε (頭の先)
-    "cmi_eta":      { ra: 7.47,  dec: 6.95,   color: 0xFFFFFF, size: 0.9 }, // η (体の一部)
-
-    // ==========================================
-    // 🐰 Lepus (うさぎ座)
-    // ==========================================
-    // オリオンの足元にうずくまるウサギ。耳の形が最大のポイント！
-    "arneb":        { ra: 5.55,  dec: -17.82, color: 0xFFFFCC, size: 1.2 }, // α (体)
-    "nihal":        { ra: 5.47,  dec: -20.76, color: 0xFFFF99, size: 1.2 }, // β (体)
-    "lep_gamma":    { ra: 5.74,  dec: -22.44, color: 0xFFFFFF, size: 1.1 }, // γ (後ろ足)
-    "lep_delta":    { ra: 6.02,  dec: -20.84, color: 0xFFFFEE, size: 1.1 }, // δ (体)
-    "lep_epsilon":  { ra: 5.09,  dec: -22.37, color: 0xFFDDAA, size: 1.1 }, // ε (頭)
-    "lep_mu":       { ra: 5.22,  dec: -16.20, color: 0xAACCFF, size: 1.0 }, // μ (頭)
-    // ★マニア重要ポイント：ウサギの長い耳
-    "lep_iota":     { ra: 5.20,  dec: -11.87, color: 0xFFFFFF, size: 1.0 }, // ι (耳の先1)
-    "lep_kappa":    { ra: 5.22,  dec: -12.94, color: 0xAACCFF, size: 1.0 }, // κ (耳の先2)
-
-    // ==========================================
-    // 🎺 Auriga (ぎょしゃ座)
-    // ==========================================
-    // 五角形の中にひそむ「子ヤギ(The Kids)」たちを完全収録
-    "capella":      { ra: 5.27,  dec: 45.99,  color: 0xFFFFEE, size: 1.6 }, // α (全天で6番目に明るい・黄色)
-    "menkalinan":   { ra: 5.99,  dec: 44.95,  color: 0xAACCFF, size: 1.3 }, // β (肩)
-    "aur_theta":    { ra: 5.99,  dec: 37.21,  color: 0xFFFFFF, size: 1.2 }, // θ (右手)
-    "aur_iota":     { ra: 4.93,  dec: 33.16,  color: 0xFFDDAA, size: 1.2 }, // ι (左足)
-    // ※五角形のもう一つの角「エルナト(β Tau)」は、おうし座データを使用
-    // --- The Kids (Haedi / 子ヤギたち) ---
-    // カペラのすぐそばにある小さな三角形。これがあると通っぽいです。
-    "aur_epsilon":  { ra: 5.03,  dec: 43.82,  color: 0xFFFFFF, size: 1.1 }, // ε (アル・アンズ)
-    "aur_zeta":     { ra: 5.04,  dec: 41.07,  color: 0xFFDDAA, size: 1.1 }, // ζ (サダル・トニ)
-    "aur_eta":      { ra: 5.11,  dec: 41.23,  color: 0xAACCFF, size: 1.1 }, // η
-
-    // ==========================================
-    // 🍦 Boötes (うしかい座)
-    // ==========================================
-    // ネクタイ形（凧形）だけでなく、左手の「パイプ」まで描画
-    "arcturus":     { ra: 14.26, dec: 19.18,  color: 0xFFAA00, size: 1.7 }, // α (春の大三角・オレンジ)
-    "nekkar":       { ra: 15.03, dec: 40.39,  color: 0xFFFFEE, size: 1.2 }, // β (頭)
-    "seginus":      { ra: 14.54, dec: 38.31,  color: 0xFFFFFF, size: 1.2 }, // γ (左肩)
-    "izar":         { ra: 14.75, dec: 27.07,  color: 0xFFDDAA, size: 1.2 }, // ε (腰・最も美しい二重星プルケリマ)
-    "muphrid":      { ra: 13.91, dec: 18.39,  color: 0xFFFFEE, size: 1.2 }, // η (左足・アルクトゥルスの隣)
-    "boo_rho":      { ra: 14.53, dec: 30.37,  color: 0xFFDDAA, size: 1.1 }, // ρ (腰)
-    // 右手（杖を持っているほう）
-    "alkalurops":   { ra: 15.40, dec: 51.95,  color: 0xFFFFFF, size: 1.1 }, // μ (杖の先)
-    "boo_delta":    { ra: 15.26, dec: 33.31,  color: 0xFFFF99, size: 1.2 }, // δ (右肩)
-    // 左手（パイプまたはリードを持っているほう）
-    "boo_lambda":   { ra: 14.27, dec: 46.09,  color: 0xFFFFFF, size: 1.1 }, // λ (腕)
-    "boo_theta":    { ra: 14.42, dec: 51.85,  color: 0xAACCFF, size: 1.1 }, // θ (手先)
-
-    // ==========================================
-    // 👑 Corona Borealis (かんむり座)
-    // ==========================================
-    // 半円のネックレスのような並び。欠けがないように全チェーン収録
-    "gemma":        { ra: 15.58, dec: 26.71,  color: 0xFFFFFF, size: 1.3 }, // α (宝石・アルフェッカ)
-    "nusakan":      { ra: 15.46, dec: 29.11,  color: 0xFFFF99, size: 1.2 }, // β
-    "crb_gamma":    { ra: 15.71, dec: 26.30,  color: 0xAACCFF, size: 1.1 }, // γ
-    "crb_delta":    { ra: 15.82, dec: 26.06,  color: 0xFFFFEE, size: 1.1 }, // δ
-    "crb_epsilon":  { ra: 15.96, dec: 26.88,  color: 0xFFDDAA, size: 1.1 }, // ε
-    "crb_theta":    { ra: 15.55, dec: 31.36,  color: 0xFFFFFF, size: 1.1 }, // θ
-    "crb_iota":     { ra: 15.66, dec: 29.86,  color: 0xAACCFF, size: 1.0 }, // ι
-
-    // ==========================================
-    // 💪 Hercules (ヘルクレス座)
-    // ==========================================
-    // Hの字（キーストーン）と、振り上げた腕、ひざまずく足
-    "rasalgethi":   { ra: 17.24, dec: 14.39,  color: 0xFF4422, size: 1.2 }, // α (頭・赤色巨星)
-    "kornephoros":  { ra: 16.50, dec: 21.49,  color: 0xFFFFEE, size: 1.3 }, // β (右肩)
-    "sarin":        { ra: 17.25, dec: 37.15,  color: 0xFFFFFF, size: 1.2 }, // δ (左肩)
-    // キーストーン (胴体)
-    "her_zeta":     { ra: 16.69, dec: 31.60,  color: 0xFFFF99, size: 1.2 }, // ζ
-    "her_eta":      { ra: 16.71, dec: 38.92,  color: 0xFFFFEE, size: 1.2 }, // η
-    "her_pi":       { ra: 17.25, dec: 36.81,  color: 0xFFDDAA, size: 1.2 }, // π
-    "her_epsilon":  { ra: 17.00, dec: 30.93,  color: 0xFFFFFF, size: 1.2 }, // ε
-    // 手足（ここが描けると英雄に見えます）
-    "her_iota":     { ra: 17.65, dec: 46.00,  color: 0xAACCFF, size: 1.1 }, // ι (振り上げた左足)
-    "her_theta":    { ra: 17.94, dec: 37.25,  color: 0xFFDDAA, size: 1.1 }, // θ (左膝)
-    "her_tau":      { ra: 16.33, dec: 46.31,  color: 0xAACCFF, size: 1.1 }, // τ (左膝)
-    "maasym":       { ra: 17.51, dec: 35.40,  color: 0xFFDDAA, size: 1.1 }, // λ (左腕)
-    "her_mu":       { ra: 17.77, dec: 27.72,  color: 0xFFFF99, size: 1.1 }, // μ (左手・サーベルラス)
-    "her_gamma":    { ra: 16.36, dec: 19.15,  color: 0xFFFFFF, size: 1.1 }, // γ (右手)
-
-    // ==========================================
-    // 🐍 Ophiuchus (へびつかい座)
-    // ==========================================
-    // 巨大な将棋の駒のような形。医神アスクレピオス。
-    "rasalhague":   { ra: 17.58, dec: 12.56,  color: 0xFFFFFF, size: 1.4 }, // α (頭・ヘルクレスの頭のすぐ近く)
-    "cebalrai":     { ra: 17.72, dec: 4.57,   color: 0xFFDDAA, size: 1.3 }, // β (右肩)
-    "oph_kappa":    { ra: 16.96, dec: 9.38,   color: 0xFFDDAA, size: 1.2 }, // κ (左肩)
-    "yed_prior":    { ra: 16.24, dec: -3.69,  color: 0xFF4422, size: 1.2 }, // δ (左手・へびを掴む手)
-    "yed_posterior":{ ra: 16.31, dec: -4.69,  color: 0xFFFFEE, size: 1.1 }, // ε (左手)
-    "sabik":        { ra: 17.17, dec: -15.72, color: 0xFFFFFF, size: 1.3 }, // η (左膝)
-    "oph_zeta":     { ra: 17.13, dec: -10.57, color: 0xAACCFF, size: 1.2 }, // ζ (右膝)
-    // マニア追加：足元と右手
-    "oph_theta":    { ra: 17.37, dec: -24.99, color: 0xAACCFF, size: 1.1 }, // θ (右足)
-    "oph_nu":       { ra: 17.98, dec: -9.77,  color: 0xFFDDAA, size: 1.1 }, // ν (右手・へびの尾を持つ手)
-
-    // ==========================================
-    // 👶 Ursa Minor (こぐま座)
-    // ==========================================
-    // 北天の要。ひしゃくの形を完全に描きます。
-    "polaris":      { ra: 2.53,  dec: 89.26,  color: 0xFFFFEE, size: 1.4 }, // α (北極星・現在ほぼ動かない)
-    "kochab":       { ra: 14.84, dec: 74.16,  color: 0xFFDDAA, size: 1.3 }, // β (ひしゃくの縁・かつての北極星)
-    "pherkad":      { ra: 15.35, dec: 71.83,  color: 0xFFFFFF, size: 1.2 }, // γ (ひしゃくの縁)
-    "yildun":       { ra: 17.54, dec: 86.58,  color: 0xAACCFF, size: 1.1 }, // δ (柄の真ん中)
-    "umi_epsilon":  { ra: 16.76, dec: 82.03,  color: 0xFFFF99, size: 1.1 }, // ε (柄の根元)
-    "umi_zeta":     { ra: 15.73, dec: 77.79,  color: 0xFFFFFF, size: 1.1 }, // ζ (柄の根元)
-    "umi_eta":      { ra: 16.29, dec: 75.75,  color: 0xFFFFFF, size: 1.1 }, // η (ひしゃくの底)
-
-
-
-    // ==========================================
-    // 🐎 Pegasus (ペガスス座) - The Winged Horse -
-    // ==========================================
-    // 秋の四辺形（胴体）だけでなく、長い首と前足がポイント！
-    // ※四辺形の左上(アルフェラッツ)はアンドロメダ座に登録します。
-    "markab":       { ra: 23.08, dec: 15.21,  color: 0xFFFFFF, size: 1.4 }, // α (四辺形の右下・馬の背)
-    "scheat":       { ra: 23.06, dec: 28.08,  color: 0xFF4422, size: 1.4 }, // β (四辺形の右上・馬の肩・赤色巨星)
-    "algenib":      { ra: 0.22,  dec: 15.18,  color: 0xAACCFF, size: 1.3 }, // γ (四辺形の左下・翼)
-    // 首と頭（ここを描くと一気に馬になります）
-    "homam":        { ra: 22.69, dec: 10.83,  color: 0xAACCFF, size: 1.1 }, // ζ (雷・首の付け根)
-    "baham":        { ra: 22.17, dec: 6.19,   color: 0xFFFFEE, size: 1.1 }, // θ (首の中間)
-    "enif":         { ra: 21.74, dec: 9.87,   color: 0xFFD700, size: 1.4 }, // ε (鼻先・秋の夜空で唯一明るいオレンジ星)
-    // 前足（駆け上がる姿）
-    "matar":        { ra: 22.72, dec: 30.22,  color: 0xFFFF99, size: 1.2 }, // η (前足の膝)
-    "peg_pi":       { ra: 22.16, dec: 33.17,  color: 0xFFFFEE, size: 1.1 }, // π (蹄)
-    "peg_mu":       { ra: 22.83, dec: 24.60,  color: 0xFFFF99, size: 1.1 }, // μ (お腹側)
-
-    // ==========================================
-    // 👸 Andromeda (アンドロメダ座) - The Chained Princess -
-    // ==========================================
-    // ペガススから伸びる「Ａ」の文字のような並び。
-    "alpheratz":    { ra: 0.14,  dec: 29.09,  color: 0xAACCFF, size: 1.4 }, // α (四辺形の左上・アンドロメダの頭)
-    "mirach":       { ra: 1.16,  dec: 35.62,  color: 0xFF4422, size: 1.4 }, // β (腰・赤っぽい)
-    "almaak":       { ra: 2.06,  dec: 42.33,  color: 0xFFDDAA, size: 1.3 }, // γ (左足・美しい二重星)
-    "and_delta":    { ra: 0.66,  dec: 30.86,  color: 0xFF9966, size: 1.1 }, // δ (右胸)
-    // 伸ばした手（鎖）と銀河への道しるべ
-    "and_mu":       { ra: 0.94,  dec: 38.50,  color: 0xFFFFFF, size: 1.1 }, // μ (ここから北へ行くとM31銀河)
-    "and_nu":       { ra: 0.83,  dec: 41.04,  color: 0xAACCFF, size: 1.0 }, // ν (M31のすぐ隣)
-    "and_51":       { ra: 1.63,  dec: 48.62,  color: 0xFFDDAA, size: 1.0 }, // 51番 (カシオペヤ側へ伸びる足)
-
-    // ==========================================
-    // 🗡️ Perseus (ペルセウス座) - The Hero -
-    // ==========================================
-    // 人という字（Wishbone）の形。悪魔の星アルゴルが必須！
-    "mirfak":       { ra: 3.41,  dec: 49.86,  color: 0xFFFFEE, size: 1.5 }, // α (右肩・散開星団の中心)
-    "algol":        { ra: 3.13,  dec: 40.96,  color: 0xAACCFF, size: 1.4 }, // β (生首・変光星・悪魔の星)
-    "per_gamma":    { ra: 3.08,  dec: 53.51,  color: 0xFFFFEE, size: 1.2 }, // γ (左肩)
-    "per_delta":    { ra: 3.71,  dec: 47.79,  color: 0xAACCFF, size: 1.2 }, // δ (体)
-    "per_epsilon":  { ra: 3.96,  dec: 40.01,  color: 0xAACCFF, size: 1.2 }, // ε (足)
-    "atik":         { ra: 3.74,  dec: 32.29,  color: 0xAACCFF, size: 1.2 }, // ζ (足先・すばるの近く)
-    "menkib":       { ra: 3.91,  dec: 35.79,  color: 0xFFDDAA, size: 1.1 }, // ξ (足)
-    // 剣の柄（二重星団 h-χ の位置）
-    "per_eta":      { ra: 2.84,  dec: 55.89,  color: 0xFFDDAA, size: 1.1 }, // η (頭のてっぺん・剣の柄)
-
-    // ==========================================
-    // 🐋 Cetus (くじら座) - The Sea Monster -
-    // ==========================================
-    // とにかくデカイ！頭の五角形と、尾のディフダを繋ぐのが大変です。
-    "menkar":       { ra: 3.04,  dec: 4.09,   color: 0xFF5544, size: 1.3 }, // α (頭の五角形・鼻)
-    "diphda":       { ra: 0.72,  dec: -17.99, color: 0xFFFF99, size: 1.4 }, // β (尾・デネブカイトス)
-    "kaffaljidhma": { ra: 2.72,  dec: 3.24,   color: 0xFFFFFF, size: 1.1 }, // γ (頭の五角形・あご)
-    "baten_kaitos": { ra: 1.60,  dec: -10.33, color: 0xFFDDAA, size: 1.1 }, // ζ (お腹・これを中継しないと線が引けません)
-    "mira":         { ra: 2.32,  dec: -2.98,  color: 0xFF3300, size: 1.2 }, // ο (首・有名な変光星ミラ)
-    "cet_eta":      { ra: 1.14,  dec: -10.18, color: 0xFFDDAA, size: 1.1 }, // η (尾の付け根)
-    "cet_iota":     { ra: 0.32,  dec: -8.82,  color: 0xFFDDAA, size: 1.1 }, // ι (尾の先)
-    // 頭部の形を作る星々
-    "cet_lambda":   { ra: 2.99,  dec: 8.91,   color: 0xAACCFF, size: 1.0 }, // λ (頭頂部)
-    "cet_mu":       { ra: 2.75,  dec: 10.12,  color: 0xFFFFEE, size: 1.0 }, // μ (頭頂部)
-    "cet_xi2":      { ra: 2.47,  dec: 8.46,   color: 0xAACCFF, size: 1.0 }, // ξ2 (頭の後ろ)
-
-    // ==========================================
-    // 🐟 Piscis Austrinus (みなみのうお座)
-    // ==========================================
-    // 秋の南の空にぽつんと輝くフォーマルハウトと、その下の輪っか。
-    "fomalhaut":    { ra: 22.96, dec: -29.62, color: 0xFFFFFF, size: 1.6 }, // α (秋のひとつ星・魚の口)
-    // 魚の胴体（平べったい輪を描く星々）
-    "psa_beta":     { ra: 22.52, dec: -32.35, color: 0xFFFFFF, size: 1.1 }, // β (エラ・胴体)
-    "psa_delta":    { ra: 22.93, dec: -32.54, color: 0xFFFF99, size: 1.1 }, // δ (胴体)
-    "psa_gamma":    { ra: 22.88, dec: -32.87, color: 0xFFFFFF, size: 1.1 }, // γ (胴体)
-    "psa_epsilon":  { ra: 22.67, dec: -27.04, color: 0xAACCFF, size: 1.0 }, // ε (背中)
-
-    // ==========================================
-    // 🐎 Centaurus (ケンタウルス座) - The Centaur -
-    // ==========================================
-    // ★マニアの注意点★
-    // 五島市(北緯32度)では、αとβは水平線ギリギリか見えない季節が多いです。
-    // しかし、上半身（メンケントなど）は春に南の空によく見えます！
-    
-    // --- 南の地平線下の伝説（データとして保持）---
-    "rigil_kent":   { ra: 14.66, dec: -60.83, color: 0xFFFFCC, size: 1.8 }, // α (リギル・ケンタウルス・全天3位)
-    "hadar":        { ra: 14.06, dec: -60.37, color: 0xAACCFF, size: 1.6 }, // β (ハダル・全天11位)
-    
-    // --- 日本から見える上半身 ---
-    "menkent":      { ra: 14.11, dec: -36.37, color: 0xFFDDAA, size: 1.3 }, // θ (頭/肩・秋の夜明け前や春に見えます)
-    "cen_iota":     { ra: 13.34, dec: -36.71, color: 0xFFFFFF, size: 1.2 }, // ι (肩)
-    "cen_gamma":    { ra: 12.69, dec: -48.96, color: 0xFFFFFF, size: 1.2 }, // γ (背中・五島ならギリギリ見える！)
-    "cen_epsilon":  { ra: 13.66, dec: -53.46, color: 0xAACCFF, size: 1.2 }, // ε (腹・南十字のすぐ近く)
-    "cen_eta":      { ra: 14.59, dec: -42.16, color: 0xAACCFF, size: 1.2 }, // η (前足)
-    "cen_zeta":     { ra: 13.92, dec: -47.28, color: 0xAACCFF, size: 1.2 }, // ζ (腹)
-
-    // ==========================================
-    // 🦄 Monoceros (いっかくじゅう座) - The Unicorn -
-    // ==========================================
-    // 冬の大三角の中に隠れている暗い星座ですが、線をつなぐと美しい矢印型に。
-    "mon_alpha":    { ra: 7.69,  dec: -9.55,  color: 0xFFDDAA, size: 1.1 }, // α (胴体)
-    "mon_beta":     { ra: 6.48,  dec: -7.03,  color: 0xAACCFF, size: 1.1 }, // β (三重星・非常に美しい)
-    "mon_gamma":    { ra: 6.24,  dec: -6.27,  color: 0xFFDDAA, size: 1.1 }, // γ (胴体)
-    "mon_delta":    { ra: 7.20,  dec: -0.49,  color: 0xFFFFFF, size: 1.1 }, // δ (鼻先・プロキオンの近く)
-    "mon_zeta":     { ra: 8.14,  dec: -2.98,  color: 0xFFFFEE, size: 1.1 }, // ζ (尾)
 
 // ==========================================
-    // 🐬 Delphinus (いるか座) - The Dolphin -
-    // ==========================================
-    // 夏の天の川のほとりにある、愛らしいひし形
-    "rotanev":      { ra: 20.62, dec: 14.60, color: 0xFFFFEE, size: 1.2 }, // β (一番明るい)
-    "sualocin":     { ra: 20.66, dec: 15.90, color: 0xAACCFF, size: 1.2 }, // α
-    "del_gamma":    { ra: 20.78, dec: 16.12, color: 0xFFFF99, size: 1.2 }, // γ (美しい二重星)
-    "del_delta":    { ra: 20.72, dec: 15.07, color: 0xFFFFFF, size: 1.1 }, // δ
-    "deneb_dulfim": { ra: 20.56, dec: 11.26, color: 0xAACCFF, size: 1.1 }, // ε (尾びれ)
+// ♈ Aries (おひつじ座) - 11星
+// ==========================================
+// 小さい星座ですが、角のカーブと背中のラインを補強しました
+"hamal":        { ra: 2.12,  dec: 23.46, color: 0xFFDDAA, size: 1.3 }, // α
+"sheratan":     { ra: 1.91,  dec: 20.80, color: 0xFFFFFF, size: 1.2 }, // β
+"mesarthim":    { ra: 1.89,  dec: 19.29, color: 0xCCCCFF, size: 1.1 }, // γ
+"ari_41":       { ra: 3.08,  dec: 27.26, color: 0xCCCCFF, size: 1.0 }, // 41 (背中)
+"botein":       { ra: 3.19,  dec: 19.72, color: 0xFFDDAA, size: 1.0 }, // δ
+"ari_epsilon":  { ra: 2.98,  dec: 21.34, color: 0xFFFFFF, size: 0.9 }, // ε (尻尾の付け根)
+"ari_pi":       { ra: 2.82,  dec: 17.46, color: 0xAACCFF, size: 0.9 }, // π (足)
 
-    // ==========================================
-    // 🏹 Sagitta (や座) - The Arrow -
-    // ==========================================
-    // わし座とはくちょう座の間を飛ぶ、黄金の矢
-    "sham":         { ra: 19.80, dec: 16.39, color: 0xFFFF33, size: 1.1 }, // α (矢羽)
-    "sge_beta":     { ra: 19.68, dec: 17.47, color: 0xFFFF99, size: 1.1 }, // β (矢羽)
-    "sge_delta":    { ra: 19.79, dec: 18.53, color: 0xFF3333, size: 1.1 }, // δ (赤い星・矢の軸)
-    "sge_gamma":    { ra: 19.97, dec: 19.49, color: 0xFFDDAA, size: 1.2 }, // γ (矢尻)
+// --- ★追加データ ---
+"ari_lambda":   { ra: 1.96,  dec: 23.59, color: 0xFFFFEE, size: 1.0 }, // λ (角の付け根)
+"ari_eta":      { ra: 2.21,  dec: 21.21, color: 0xAACCFF, size: 1.0 }, // η (前足の付け根)
+"ari_theta":    { ra: 2.25,  dec: 19.90, color: 0xFFFFFF, size: 1.0 }, // θ (胴体)
+"ari_iota":     { ra: 1.95,  dec: 17.81, color: 0xFFDDAA, size: 1.0 }, // ι (足先)
 
-    // ==========================================
-    // 🐍 Serpens (へび座) - The Serpent -
-    // ==========================================
-    // へびつかい座に分断された「頭部」と「尾部」
-    // --- 頭部 (Caput) ---
-    "unukalhai":    { ra: 15.74, dec: 6.42,  color: 0xFFDDAA, size: 1.3 }, // α (心臓)
-    "ser_beta":     { ra: 15.77, dec: 15.42, color: 0xFFFFFF, size: 1.2 }, // β (顎)
-    "ser_gamma":    { ra: 15.94, dec: 15.68, color: 0xFFFFEE, size: 1.1 }, // γ
-    "ser_delta":    { ra: 15.58, dec: 10.54, color: 0xFFFFDD, size: 1.1 }, // δ
-    // --- 尾部 (Cauda) ---
-    "alya":         { ra: 18.93, dec: 4.20,  color: 0xFFFFFF, size: 1.2 }, // θ (尾の先・美しい二重星)
-    "ser_eta":      { ra: 18.35, dec: -2.98, color: 0xFFDDAA, size: 1.1 }, // η
-
-    // ==========================================
-    // 🐦 Corvus (からす座) - The Crow -
-    // ==========================================
-    // おとめ座の隣にある、目立つ台形
-    "gienah":       { ra: 12.26, dec: -17.54, color: 0xAACCFF, size: 1.3 }, // γ (翼)
-    "kraz":         { ra: 12.57, dec: -23.39, color: 0xFFFF99, size: 1.3 }, // β (足)
-    "algorab":      { ra: 12.49, dec: -16.51, color: 0xFFFFFF, size: 1.2 }, // δ (翼)
-    "minkar":       { ra: 12.17, dec: -22.62, color: 0xFFDDAA, size: 1.1 }, // ε (くちばし)
-    // ※α星アルキバは暗いので省略し、形を優先
-
-    // ==========================================
-    // 💆 Coma Berenices (かみのけ座)
-    // ==========================================
-    // しし座の尻尾の美しい星の散らばり
-    "diadem":       { ra: 13.16, dec: 17.52, color: 0xFFFFFF, size: 1.1 }, // α (王冠)
-    "com_beta":     { ra: 13.19, dec: 27.87, color: 0xFFFF99, size: 1.1 }, // β
-    "com_gamma":    { ra: 12.45, dec: 28.27, color: 0xFFDDAA, size: 1.1 }, // γ
 
 // ==========================================
-    // 🚢 Carina (りゅうこつ座) - The Keel -
-    // ==========================================
-    // カノープスと、船の底骨（キール）を形作る星々
-    "canopus":      { ra: 6.40,  dec: -52.70, color: 0xF5F5DC, size: 1.7 }, // α (全天2位の輝き・南極老人星)
-    "miaplacidus":  { ra: 9.22,  dec: -69.72, color: 0xFFFFFF, size: 1.4 }, // β (船の底)
-    "avior":        { ra: 8.38,  dec: -59.51, color: 0xFFDDAA, size: 1.3 }, // ε (ニセ十字の一角)
-    "aspidiske":    { ra: 9.29,  dec: -59.27, color: 0xFFFFFF, size: 1.3 }, // ι (ニセ十字の一角)
-    "car_theta":    { ra: 10.72, dec: -64.39, color: 0xAACCFF, size: 1.2 }, // θ (南のプレアデスの根本)
-    "car_upsilon":  { ra: 9.78,  dec: -65.07, color: 0xFFFFFF, size: 1.2 }, // υ
-    "car_omega":    { ra: 10.23, dec: -70.04, color: 0xFFFFFF, size: 1.2 }, // ω
+// ♉ Taurus (おうし座) - 16星
+// ==========================================
+// ヒアデス星団の「V字」を完成させ、長く伸びた角と前足を再現
+"aldebaran":    { ra: 4.60,  dec: 16.51, color: 0xFFD4AA, size: 1.5 }, // α (赤い目)
+"elnath":       { ra: 5.43,  dec: 28.61, color: 0xCCCCFF, size: 1.3 }, // β (北の角)
+"tau_zeta":     { ra: 5.63,  dec: 21.14, color: 0xAACCFF, size: 1.2 }, // ζ (南の角)
+"pleiades":     { ra: 3.78,  dec: 24.10, color: 0xAACCEE, size: 2.2 }, // すばる
+"tau_epsilon":  { ra: 4.47,  dec: 19.18, color: 0xFFFFDD, size: 1.1 }, // ε (V字の目)
+"tau_gamma":    { ra: 4.33,  dec: 15.63, color: 0xFFFFEE, size: 1.0 }, // γ (V字の鼻先)
+"tau_delta1":   { ra: 4.38,  dec: 17.54, color: 0xFFFFEE, size: 1.0 }, // δ (V字)
+"tau_lambda":   { ra: 4.01,  dec: 12.49, color: 0xAACCFF, size: 1.0 }, // λ (胸)
+"tau_nu":       { ra: 4.05,  dec: 5.99,  color: 0xFFFFFF, size: 1.0 }, // ν (足)
+"tau_10":       { ra: 3.61,  dec: 0.40,  color: 0xFFFF99, size: 1.0 }, // 10 (リボン)
 
-    // ==========================================
-    // ✝️ Crux (みなみじゅうじ座) - The Southern Cross -
-    // ==========================================
-    // 南天の宝石箱。小さくても存在感は抜群です。
-    "acrux":        { ra: 12.44, dec: -63.10, color: 0xAACCFF, size: 1.5 }, // α (下の星・青白)
-    "mimosa":       { ra: 12.80, dec: -59.69, color: 0xAACCFF, size: 1.4 }, // β (左の星・青白)
-    "gacrux":       { ra: 12.52, dec: -57.11, color: 0xFF4422, size: 1.4 }, // γ (上の星・真っ赤な赤色巨星)
-    "imai":         { ra: 12.25, dec: -58.75, color: 0xAACCFF, size: 1.3 }, // δ (右の星)
-    // マニア必須：十字の「欠け」を作る5番目の星
-    "ginan":        { ra: 12.36, dec: -60.40, color: 0xFFDDAA, size: 1.1 }, // ε (5番目の星・オレンジ)
+// --- ★追加データ ---
+"tau_theta1":   { ra: 4.48,  dec: 15.87, color: 0xFFDDAA, size: 1.1 }, // θ1 (V字を構成する重要な星)
+"tau_mu":       { ra: 4.25,  dec: 8.96,  color: 0xAACCFF, size: 1.0 }, // μ (前足の関節)
+"tau_xi":       { ra: 3.45,  dec: 9.73,  color: 0xAACCFF, size: 1.1 }, // ξ (背中・首筋)
+"tau_omicron":  { ra: 3.45,  dec: 9.03,  color: 0xFFFF99, size: 1.1 }, // ο (背中・首筋)
+"tau_tau":      { ra: 4.70,  dec: 22.95, color: 0xAACCFF, size: 1.0 }, // τ (北の角の付け根)
+"tau_upsilon":  { ra: 4.44,  dec: 22.81, color: 0xFFFFFF, size: 1.0 }, // υ (ヒアデスの広がり)
+
+
+// ==========================================
+// ♊ Gemini (ふたご座) - 17星
+// ==========================================
+// カストル(兄)とポルックス(弟)が手をつなぐ、完全な「Ｈ型」を描く構成
+"pollux":       { ra: 7.76,  dec: 28.03, color: 0xFFD700, size: 1.4 }, // β (弟の頭)
+"castor":       { ra: 7.58,  dec: 31.89, color: 0xFFFFFF, size: 1.3 }, // α (兄の頭)
+"alhena":       { ra: 6.63,  dec: 16.39, color: 0xFFFFFF, size: 1.3 }, // γ (弟の足)
+"mebsuta":      { ra: 6.73,  dec: 25.13, color: 0xFFFFDD, size: 1.2 }, // ε (兄の右ひざ)
+"tejat":        { ra: 6.24,  dec: 22.51, color: 0xFF5544, size: 1.1 }, // μ (兄の足)
+"propus":       { ra: 6.25,  dec: 22.50, color: 0xFFAAAA, size: 1.1 }, // η (兄の足先)
+"wasat":        { ra: 7.34,  dec: 21.98, color: 0xFFF5E1, size: 1.1 }, // δ (弟の腰)
+"mekbuda":      { ra: 7.07,  dec: 20.57, color: 0xFFFF99, size: 1.1 }, // ζ (弟のひざ)
+"gem_iota":     { ra: 7.43,  dec: 27.80, color: 0xFFDDAA, size: 1.0 }, // ι (兄の肩・腕)
+"gem_upsilon":  { ra: 7.59,  dec: 26.89, color: 0xFFFFFF, size: 1.0 }, // υ (弟の肩・胸)
+"gem_theta":    { ra: 6.88,  dec: 33.96, color: 0xFFFFFF, size: 1.1 }, // θ (兄の腕・手)
+"gem_kappa":    { ra: 7.74,  dec: 24.39, color: 0xFFDDAA, size: 1.0 }, // κ (弟の腕)
+
+// --- ★追加データ ---
+// ここが重要！兄の胴体と、弟のもう片方の足を追加
+"gem_tau":      { ra: 7.18,  dec: 30.24, color: 0xFFDDAA, size: 1.2 }, // τ (兄の心臓・胴体の要)
+"gem_lambda":   { ra: 7.30,  dec: 16.54, color: 0xFFFFFF, size: 1.1 }, // λ (弟の太もも)
+"gem_xi":       { ra: 6.75,  dec: 12.90, color: 0xFFFFEE, size: 1.1 }, // ξ (アルジル：弟のもう片方の足)
+"gem_sigma":    { ra: 7.72,  dec: 28.88, color: 0xFFDDAA, size: 1.0 }, // σ (弟の顔の輪郭)
+"gem_nu":       { ra: 6.48,  dec: 20.21, color: 0xAACCFF, size: 1.0 }, // ν (兄の足首)
+
+// ==========================================
+// ♋ Cancer (かに座) - 13星
+// ==========================================
+// 甲羅の四角形だけでなく、ハサミと足を伸ばして「カニ感」をアップ！
+"acubens":      { ra: 8.97,  dec: 11.85, color: 0xFFFFFF, size: 1.1 }, // α (左のハサミ)
+"altarf":       { ra: 8.27,  dec: 9.19,  color: 0xFFDDAA, size: 1.1 }, // β (右の後ろ足)
+"asellus_bor":  { ra: 8.72,  dec: 21.47, color: 0xAACCFF, size: 1.0 }, // γ (甲羅・北)
+"asellus_aus":  { ra: 8.74,  dec: 18.15, color: 0xFFDDAA, size: 1.1 }, // δ (甲羅・南)
+"praesepe":     { ra: 8.67,  dec: 19.67, color: 0xAACCFF, size: 1.8 }, // M44 (プレセペ星団・カニの味噌)
+"cnc_iota":     { ra: 8.77,  dec: 28.76, color: 0xFFFF99, size: 1.0 }, // ι (右のハサミの先)
+"cnc_chi":      { ra: 8.45,  dec: 27.22, color: 0xFFFFFF, size: 0.9 }, // χ (右のハサミの関節)
+
+// --- ★追加データ ---
+"cnc_zeta":     { ra: 8.20,  dec: 17.65, color: 0xFFFFEE, size: 1.1 }, // ζ (テグミン：右の後ろ足の関節)
+"cnc_mu2":      { ra: 8.22,  dec: 21.31, color: 0xFFFF99, size: 1.0 }, // μ2 (右の前の足)
+"cnc_theta":    { ra: 8.52,  dec: 18.09, color: 0xFFDDAA, size: 1.0 }, // θ (甲羅の中央)
+"cnc_eta":      { ra: 8.54,  dec: 20.44, color: 0xFFDDAA, size: 1.0 }, // η (甲羅の一部)
+"cnc_xi":       { ra: 9.06,  dec: 22.04, color: 0xFFFFEE, size: 1.0 }, // ξ (ナノセ：左の足)
+"cnc_psi":      { ra: 8.28,  dec: 25.26, color: 0xAACCFF, size: 0.9 }, // ψ (右のハサミの付け根)
+
+
+// ==========================================
+// ♌ Leo (しし座) - 17星
+// ==========================================
+// 「ししの大鎌（?マーク）」だけでなく、後ろ足までしっかり再現
+"regulus":      { ra: 10.14, dec: 11.97, color: 0xCCCCFF, size: 1.5 }, // α (心臓)
+"denebola":     { ra: 11.82, dec: 14.57, color: 0xFFFFFF, size: 1.4 }, // β (尻尾)
+"algieba":      { ra: 10.33, dec: 19.84, color: 0xFFD700, size: 1.3 }, // γ (たてがみ)
+"zosma":        { ra: 11.24, dec: 20.52, color: 0xFFFFFF, size: 1.3 }, // δ (背中・尻)
+"leo_epsilon":  { ra: 9.76,  dec: 23.77, color: 0xFFFFEE, size: 1.2 }, // ε (頭の先)
+"leo_zeta":     { ra: 10.27, dec: 23.42, color: 0xFFFFFF, size: 1.2 }, // ζ (たてがみ)
+"leo_theta":    { ra: 11.23, dec: 15.43, color: 0xFFFFFF, size: 1.2 }, // θ (後ろ足の付け根)
+"leo_eta":      { ra: 10.12, dec: 16.76, color: 0xFFFFFF, size: 1.1 }, // η (胸)
+"subra":        { ra: 9.87,  dec: 26.01, color: 0xFFFFEE, size: 1.1 }, // ο (前足・鼻先)
+"leo_iota":     { ra: 11.40, dec: 15.43, color: 0xAACCFF, size: 1.0 }, // ι (後ろ足の関節)
+"leo_sigma":    { ra: 11.35, dec: 6.03,  color: 0xAACCFF, size: 1.0 }, // σ (後ろ足の先)
+"leo_mu":       { ra: 9.88,  dec: 26.00, color: 0xFFDDAA, size: 1.0 }, // μ (頭頂部)
+
+// --- ★追加データ ---
+"leo_rho":      { ra: 10.55, dec: 9.30,  color: 0xAACCFF, size: 1.1 }, // ρ (前足の爪)
+"leo_lambda":   { ra: 9.53,  dec: 22.97, color: 0xFFDDAA, size: 1.0 }, // λ (アルテラフ：口元)
+"leo_kappa":    { ra: 9.41,  dec: 26.18, color: 0xFFDDAA, size: 1.0 }, // κ (鼻先)
+"leo_pi":       { ra: 10.01, dec: 8.04,  color: 0xFF4422, size: 1.0 }, // π (前足の裏)
+"leo_omicron":  { ra: 9.68,  dec: 9.89,  color: 0xFFFFCC, size: 1.0 }, // ο (前足) (既存のsubraとID被りを避けて omicron 表記)
+
+
+// ==========================================
+// ♍ Virgo (おとめ座) - 18星
+// ==========================================
+// 巨大なY字型を中心に、乙女の頭とスカートの広がりを追加
+"spica":        { ra: 13.42, dec: -11.16, color: 0xAACCFF, size: 1.5 }, // α (麦の穂)
+"zavijava":     { ra: 11.84, dec: 1.76,   color: 0xFFFFEE, size: 1.1 }, // β (頭の後ろ)
+"porrima":      { ra: 12.69, dec: -1.45,  color: 0xFFFFEE, size: 1.2 }, // γ (胴体・腰)
+"auva":         { ra: 12.93, dec: 3.40,   color: 0xFF5544, size: 1.1 }, // δ (背中)
+"vindemiatrix": { ra: 13.04, dec: 10.96,  color: 0xFFFFCC, size: 1.2 }, // ε (右腕・手)
+"heze":         { ra: 13.58, dec: -0.60,  color: 0xFFFFFF, size: 1.1 }, // ζ (お腹)
+"syrma":        { ra: 14.27, dec: -5.80,  color: 0xFFFFEE, size: 1.0 }, // ι (スカートの裾)
+"rijl_al_awwa": { ra: 14.72, dec: -5.65,  color: 0xFFDDAA, size: 1.0 }, // μ (足先)
+"vir_nu":       { ra: 11.76, dec: 6.53,   color: 0xFFDDAA, size: 1.0 }, // ν (頭頂部)
+"vir_109":      { ra: 14.77, dec: -1.89,  color: 0xFFFFFF, size: 0.9 }, // 109 (スカート)
+
+// --- ★追加データ ---
+"vir_theta":    { ra: 13.16, dec: -5.54,  color: 0xFFFFFF, size: 1.1 }, // θ (腰のあたり)
+"vir_kappa":    { ra: 14.22, dec: -10.27, color: 0xFFDDAA, size: 1.1 }, // κ (スカートの裾)
+"vir_lambda":   { ra: 14.32, dec: -13.37, color: 0xFFFFFF, size: 1.0 }, // λ (カンバリア：足元)
+"vir_omicron":  { ra: 12.08, dec: 8.73,   color: 0xFFFF99, size: 1.0 }, // ο (顔・頭)
+"vir_chi":      { ra: 12.65, dec: -7.99,  color: 0xFFDDAA, size: 1.0 }, // χ (スカートの一部)
+"vir_tau":      { ra: 14.03, dec: 1.54,   color: 0xFFFFFF, size: 1.0 }, // τ (背中のライン)
+"vir_rho":      { ra: 12.70, dec: 10.23,  color: 0xFFFFFF, size: 1.0 }, // ρ (肩)
+"vir_phi":      { ra: 14.47, dec: -2.22,  color: 0xFFFFEE, size: 1.0 }, // φ (スカート)
+
+// ==========================================
+// ♎ Libra (てんびん座) - 10星
+// ==========================================
+// 天秤の「皿」と、それを釣る「棒」の形を整える星を追加
+"zubenelgenubi":   { ra: 14.84, dec: -16.04, color: 0xCCCCFF, size: 1.3 }, // α (南の皿の支点)
+"zubeneschamali":  { ra: 15.28, dec: -9.38,  color: 0xAACCFF, size: 1.3 }, // β (北の皿の支点)
+"zubenelhakrabi":  { ra: 15.59, dec: -14.79, color: 0xFFDDAA, size: 1.2 }, // γ (天秤の支柱・根本)
+"brachium":        { ra: 15.01, dec: -19.80, color: 0xFF5544, size: 1.1 }, // σ (南の皿の一部)
+"lib_upsilon":     { ra: 15.62, dec: -28.14, color: 0xFF9966, size: 1.0 }, // υ (南の皿の底)
+"lib_tau":         { ra: 15.64, dec: -29.77, color: 0xAACCFF, size: 1.0 }, // τ (南の皿の縁)
+"lib_theta":       { ra: 15.89, dec: -16.73, color: 0xFFDDAA, size: 1.0 }, // θ (北の皿への腕)
+
+// --- ★追加データ ---
+"lib_iota1":       { ra: 15.20, dec: -19.79, color: 0xAACCFF, size: 1.0 }, // ι1 (南の皿のつり紐)
+"lib_delta":       { ra: 15.01, dec: -8.52,  color: 0xFFFFFF, size: 1.1 }, // δ (北の皿のつり紐)
+"lib_mu":          { ra: 14.82, dec: -14.16, color: 0xFFFFEE, size: 1.0 }, // μ (天秤の竿)
+
+
+// ==========================================
+// ♏ Scorpius (さそり座) - 18星
+// ==========================================
+// 巨大なS字カーブを持つ、夏の夜空の王者！
+"antares":      { ra: 16.49, dec: -26.43, color: 0xFF4422, size: 1.6 }, // α (赤い心臓)
+"graffias":     { ra: 16.09, dec: -19.80, color: 0xCCCCFF, size: 1.3 }, // β (北の爪の根元)
+"dschubba":     { ra: 16.00, dec: -22.62, color: 0xCCCCFF, size: 1.3 }, // δ (頭部)
+"sco_pi":       { ra: 15.98, dec: -26.11, color: 0xCCCCFF, size: 1.2 }, // π (頭部・南)
+"wei":          { ra: 16.84, dec: -34.29, color: 0xFFDDAA, size: 1.2 }, // ε (背中)
+"sco_mu1":      { ra: 16.89, dec: -38.04, color: 0xAACCFF, size: 1.1 }, // μ1 (背中のカーブ)
+"sco_zeta2":    { ra: 16.90, dec: -42.36, color: 0xFFDDAA, size: 1.1 }, // ζ2 (腰)
+"sco_eta":      { ra: 17.20, dec: -43.24, color: 0xFFFFEE, size: 1.1 }, // η (尾の付け根)
+"sargas":       { ra: 17.62, dec: -42.99, color: 0xFFFFEE, size: 1.3 }, // θ (尾のカーブ)
+"sco_iota1":    { ra: 17.79, dec: -40.12, color: 0xFFFFCC, size: 1.1 }, // ι1 (尾のカーブ)
+"sco_kappa":    { ra: 17.70, dec: -39.03, color: 0xCCCCFF, size: 1.2 }, // κ (尾の関節)
+"shaula":       { ra: 17.56, dec: -37.10, color: 0xAACCFF, size: 1.4 }, // λ (毒針)
+"lesath":       { ra: 17.51, dec: -37.29, color: 0xFFFFFF, size: 1.2 }, // υ (毒針の先)
+
+// --- ★追加データ ---
+// ハサミを大きく広げ、胴体のつながりを強化
+"sco_nu":       { ra: 16.20, dec: -19.46, color: 0xAACCFF, size: 1.1 }, // ν (ジャバハー：北の爪)
+"sco_rho":      { ra: 15.95, dec: -29.21, color: 0xFFFFFF, size: 1.0 }, // ρ (頭部の横)
+"sco_sigma":    { ra: 16.36, dec: -25.59, color: 0xAACCFF, size: 1.1 }, // σ (アルニヤト：アンタレスの脇)
+"sco_tau":      { ra: 16.60, dec: -28.21, color: 0xFFDDAA, size: 1.1 }, // τ (背中の始まり)
+"sco_omega1":   { ra: 16.11, dec: -20.67, color: 0xFFDDAA, size: 1.0 }, // ω1 (北の爪の一部)
+
+
+// ==========================================
+// ♐ Sagittarius (いて座) - 20星
+// ==========================================
+// 南斗六星（ひしゃく）＋ 弓矢 ＋ ケンタウロスの体
+"rukbat":       { ra: 19.39, dec: -40.61, color: 0xAACCFF, size: 1.2 }, // α (膝)
+"arkab_prior":  { ra: 19.38, dec: -44.46, color: 0xFFFFFF, size: 1.1 }, // β1 (足首)
+"alnasl":       { ra: 18.10, dec: -30.42, color: 0xFFFFDD, size: 1.2 }, // γ (矢尻)
+"kaus_med":     { ra: 18.35, dec: -29.82, color: 0xFFDDAA, size: 1.3 }, // δ (弓の中央)
+"kaus_aus":     { ra: 18.40, dec: -34.38, color: 0xAACCFF, size: 1.4 }, // ε (弓の下部)
+"ascella":      { ra: 19.04, dec: -29.88, color: 0xFFFFFF, size: 1.3 }, // ζ (脇の下)
+"kaus_bor":     { ra: 18.47, dec: -25.42, color: 0xFFDDAA, size: 1.3 }, // λ (弓の上部)
+"nunki":        { ra: 18.92, dec: -26.30, color: 0xAACCFF, size: 1.4 }, // σ (ひしゃくの柄)
+"sgr_xi2":      { ra: 18.96, dec: -21.10, color: 0xFFDDAA, size: 1.0 }, // ξ2 (頭部)
+"sgr_omicron":  { ra: 19.07, dec: -21.74, color: 0xFFFFEE, size: 1.0 }, // ο (顔)
+"sgr_pi":       { ra: 19.16, dec: -21.02, color: 0xFFFFFF, size: 1.0 }, // π (頭の後ろ)
+"sgr_omega":    { ra: 19.92, dec: -26.29, color: 0xFFFF99, size: 1.0 }, // ω (背中・腰)
+"sgr_59":       { ra: 19.94, dec: -27.16, color: 0xFFFFFF, size: 0.9 }, // 59 (背中)
+"sgr_60":       { ra: 19.98, dec: -28.22, color: 0xAACCFF, size: 1.0 }, // 60 (背中)
+"sgr_62":       { ra: 20.04, dec: -27.71, color: 0xFFDDAA, size: 1.0 }, // 62 (尻尾)
+"sgr_eta":      { ra: 18.29, dec: -36.76, color: 0xFF4422, size: 1.0 }, // η (腰・変光星)
+
+// --- ★追加データ ---
+"sgr_mu":       { ra: 18.23, dec: -21.06, color: 0xAACCFF, size: 1.1 }, // μ (ポリス：弓の上端)
+"sgr_tau":      { ra: 19.11, dec: -27.67, color: 0xFFDDAA, size: 1.0 }, // τ (ひしゃくの底・背中)
+"sgr_phi":      { ra: 18.76, dec: -27.09, color: 0xAACCFF, size: 1.0 }, // φ (ひしゃくの柄・胸)
+"sgr_rho1":     { ra: 19.36, dec: -17.85, color: 0xFFFFFF, size: 1.0 }, // ρ1 (頭の上の飾り)
+
+
+// ==========================================
+// ♑ Capricornus (やぎ座) - 13星
+// ==========================================
+// 逆三角形の笑顔のような形に、魚の尾ヒレを追加
+"algedi":       { ra: 20.29, dec: -12.54, color: 0xFFFFEE, size: 1.2 }, // α (右の角)
+"dabih":        { ra: 20.35, dec: -14.78, color: 0xFFFFCC, size: 1.2 }, // β (左の角・目)
+"nashira":      { ra: 21.67, dec: -16.66, color: 0xFFFFEE, size: 1.2 }, // γ (尻尾の付け根)
+"deneb_algedi": { ra: 21.78, dec: -16.13, color: 0xFFFFFF, size: 1.3 }, // δ (尻尾の先)
+"cap_theta":    { ra: 21.09, dec: -17.23, color: 0xFFFFFF, size: 1.0 }, // θ (背中)
+"cap_psi":      { ra: 20.77, dec: -25.27, color: 0xFFFFDD, size: 1.0 }, // ψ (腹)
+"cap_omega":    { ra: 20.86, dec: -26.92, color: 0xFFDDAA, size: 1.0 }, // ω (腹の下)
+"cap_nu":       { ra: 20.34, dec: -12.75, color: 0xAACCFF, size: 1.0 }, // ν (右の目)
+
+// --- ★追加データ ---
+"cap_zeta":     { ra: 21.44, dec: -22.41, color: 0xFFFF99, size: 1.1 }, // ζ (腰・魚の胴体)
+"cap_iota":     { ra: 21.37, dec: -16.83, color: 0xFFFFEE, size: 1.0 }, // ι (背中の一部)
+"cap_rho":      { ra: 20.48, dec: -17.81, color: 0xFFFFFF, size: 1.0 }, // ρ (頭の下)
+"cap_epsilon":  { ra: 21.62, dec: -19.46, color: 0xAACCFF, size: 1.0 }, // ε (カストラ：腹部)
+"cap_pi":       { ra: 20.45, dec: -18.22, color: 0xFFDDAA, size: 1.0 }, // π (首元)
+
+
+// ==========================================
+// ♒ Aquarius (みずがめ座) - 18星
+// ==========================================
+// 三ツ矢マークの水瓶と、そこから流れ落ちる複雑な水流
+"sadalmelik":   { ra: 22.09, dec: -0.32,  color: 0xFFFF99, size: 1.3 }, // α (右肩)
+"sadalsuud":    { ra: 21.53, dec: -5.57,  color: 0xFFFF99, size: 1.3 }, // β (左肩)
+"sadachbia":    { ra: 22.35, dec: -1.39,  color: 0xFFFFFF, size: 1.2 }, // γ (水瓶の口)
+"skat":         { ra: 22.91, dec: -15.82, color: 0xFFFFFF, size: 1.2 }, // δ (右足・水流の先)
+"albali":       { ra: 20.79, dec: -9.50,  color: 0xAACCFF, size: 1.1 }, // ε (左手)
+"ancha":        { ra: 22.28, dec: -7.79,  color: 0xFFFFDD, size: 1.1 }, // θ (腰)
+"aqr_zeta":     { ra: 22.48, dec: -0.02,  color: 0xFFFFFF, size: 1.1 }, // ζ (水瓶の胴体・三ツ矢の中央)
+"aqr_eta":      { ra: 22.59, dec: -0.12,  color: 0xAACCFF, size: 1.1 }, // η (水瓶の右・三ツ矢)
+"aqr_pi":       { ra: 22.42, dec: 1.38,   color: 0xAACCFF, size: 1.1 }, // π (水瓶の左・三ツ矢)
+"aqr_lambda":   { ra: 22.88, dec: -7.58,  color: 0xFF4422, size: 1.0 }, // λ (ヒドール：水流の始まり)
+"aqr_phi":      { ra: 23.24, dec: -6.05,  color: 0xFFDDAA, size: 1.0 }, // φ (水流)
+"aqr_psi1":     { ra: 23.26, dec: -9.09,  color: 0xFFFFEE, size: 1.0 }, // ψ1 (水流)
+"aqr_omega2":   { ra: 23.71, dec: -14.54, color: 0xFFFFFF, size: 1.0 }, // ω2 (水流の分岐)
+"aqr_iota":     { ra: 22.11, dec: -13.87, color: 0xAACCFF, size: 1.0 }, // ι (右の太もも)
+
+// --- ★追加データ ---
+"aqr_tau2":     { ra: 22.82, dec: -13.59, color: 0xFFDDAA, size: 1.0 }, // τ2 (水流・足元)
+"aqr_c2":       { ra: 22.60, dec: -21.40, color: 0xFFFFFF, size: 0.9 }, // 88番星 (水流の最も下・みなみのうお座へ続く)
+"aqr_nu":       { ra: 21.16, dec: -11.36, color: 0xFFFF99, size: 1.0 }, // ν (アルブリラ：左手・服の袖)
+"aqr_mu":       { ra: 20.87, dec: -8.98,  color: 0xAACCFF, size: 1.0 }, // μ (左手の先)
+
+
+// ==========================================
+// 🏹 Orion (オリオン座) - 20星
+// ==========================================
+// 鼓（つづみ）型は完璧ですが、おうし座と戦う「棍棒」と「もう片方の腕」が足りません！
+"betelgeuse":   { ra: 5.92,  dec: 7.41,   color: 0xFFD700, size: 1.6 }, // α (右肩・赤色超巨星)
+"rigel":        { ra: 5.24,  dec: -8.20,  color: 0xAADDFF, size: 1.6 }, // β (左足・青色超巨星)
+"bellatrix":    { ra: 5.42,  dec: 6.35,   color: 0xBBCCFF, size: 1.3 }, // γ (左肩)
+"saiph":        { ra: 5.79,  dec: -9.67,  color: 0xBBCCFF, size: 1.2 }, // κ (右足)
+"alnitak":      { ra: 5.68,  dec: -1.94,  color: 0xBBCCFF, size: 1.3 }, // ζ (三ツ星・東)
+"alnilam":      { ra: 5.60,  dec: -1.20,  color: 0xFFFFFF, size: 1.3 }, // ε (三ツ星・中)
+"mintaka":      { ra: 5.53,  dec: -0.30,  color: 0xBBCCFF, size: 1.2 }, // δ (三ツ星・西)
+"meissa":       { ra: 5.58,  dec: 9.93,   color: 0xAACCFF, size: 1.1 }, // λ (頭部)
+"hatsa":        { ra: 5.59,  dec: -5.91,  color: 0xFFFFFF, size: 1.1 }, // ι (剣の先)
+"ori_chi1":     { ra: 5.90,  dec: 20.27,  color: 0xFFFFEE, size: 1.0 }, // χ1 (棍棒の先)
+"ori_chi2":     { ra: 6.07,  dec: 20.14,  color: 0xFFDDAA, size: 1.0 }, // χ2 (棍棒の先)
+"ori_pi1":      { ra: 4.83,  dec: 8.90,   color: 0xFFFFFF, size: 1.0 }, // π1 (盾)
+"ori_pi2":      { ra: 4.84,  dec: 8.72,   color: 0xFFFFFF, size: 1.0 }, // π2 (盾)
+"ori_pi3":      { ra: 4.83,  dec: 6.96,   color: 0xFFFFEE, size: 1.1 }, // π3 (盾)
+"ori_pi4":      { ra: 4.85,  dec: 5.61,   color: 0xFF4422, size: 1.0 }, // π4 (盾)
+"ori_pi5":      { ra: 4.90,  dec: 2.44,   color: 0xFFFFFF, size: 1.0 }, // π5 (盾)
+"ori_pi6":      { ra: 4.97,  dec: 1.71,   color: 0xFFDDAA, size: 1.0 }, // π6 (盾)
+
+// --- ★追加データ ---
+// これで右手の「棍棒」がつながります！
+"ori_mu":       { ra: 6.04,  dec: 9.65,   color: 0xFFFFFF, size: 1.1 }, // μ (肘・棍棒の付け根)
+"ori_nu":       { ra: 6.13,  dec: 14.77,  color: 0xAACCFF, size: 1.1 }, // ν (棍棒の柄)
+"ori_xi":       { ra: 6.20,  dec: 14.21,  color: 0xAACCFF, size: 1.1 }, // ξ (棍棒の柄)
+
+// ==========================================
+// 🐻 Ursa Major (おおぐま座) - 17星
+// ==========================================
+// 北斗七星（尻尾）と足は揃っていますが、「首」がつながっていません！
+"dubhe":        { ra: 11.06, dec: 61.75,  color: 0xFFDDAA, size: 1.4 }, // α (ひしゃくの先・背中)
+"merak":        { ra: 11.03, dec: 56.38,  color: 0xFFFFFF, size: 1.3 }, // β (ひしゃくの先・腹)
+"phecda":       { ra: 11.90, dec: 53.69,  color: 0xFFFFFF, size: 1.3 }, // γ (ひしゃくの底)
+"megrez":       { ra: 12.26, dec: 57.03,  color: 0xFFFFFF, size: 1.2 }, // δ (ひしゃくの柄の付け根)
+"alioth":       { ra: 12.90, dec: 55.96,  color: 0xFFFFFF, size: 1.4 }, // ε (尻尾の付け根)
+"mizar":        { ra: 13.40, dec: 54.93,  color: 0xFFFFFF, size: 1.3 }, // ζ (尻尾の真ん中)
+"alkaid":       { ra: 13.80, dec: 49.31,  color: 0xAACCFF, size: 1.4 }, // η (尻尾の先)
+"muscida":      { ra: 8.50,  dec: 60.72,  color: 0xFFFFEE, size: 1.1 }, // ο (鼻先)
+"talitha":      { ra: 8.99,  dec: 48.04,  color: 0xFFFFFF, size: 1.1 }, // ι (前足の爪)
+"uma_kappa":    { ra: 9.06,  dec: 47.16,  color: 0xFFFFFF, size: 1.1 }, // κ (前足の爪)
+"tania_bor":    { ra: 10.29, dec: 42.91,  color: 0xFFFFFF, size: 1.1 }, // λ (後ろ足の爪)
+"tania_aus":    { ra: 10.37, dec: 41.50,  color: 0xFF4422, size: 1.1 }, // μ (後ろ足の爪)
+"ula_bor":      { ra: 11.31, dec: 33.10,  color: 0xFFFFEE, size: 1.1 }, // ν (後ろ足の爪)
+"ula_aus":      { ra: 11.30, dec: 31.53,  color: 0xFFDDAA, size: 1.1 }, // ξ (後ろ足の爪)
+
+// --- ★追加データ ---
+// 鼻先(muscida)と胴体(dubhe)をつなぐ重要な首のパーツ
+"uma_theta":    { ra: 9.55,  dec: 51.68,  color: 0xFFFFEE, size: 1.2 }, // θ (首・のど元)
+"uma_upsilon":  { ra: 9.85,  dec: 59.04,  color: 0xFFFFCC, size: 1.1 }, // υ (首・背中側)
+"uma_23":       { ra: 9.68,  dec: 63.06,  color: 0xFFFF99, size: 1.0 }, // 23 (首筋)
+
+
+// ==========================================
+// 🐕 Canis Minor (こいぬ座) - 5星
+// ==========================================
+// ただの直線じゃつまらない！ γ星を足して「三角おみみ」を作りましょう。
+"procyon":      { ra: 7.65,  dec: 5.22,   color: 0xFFF5E1, size: 1.5 }, // α (明るい一等星)
+"gomeisa":      { ra: 7.45,  dec: 8.29,   color: 0xAACCFF, size: 1.2 }, // β (首輪の星)
+"cmi_epsilon":  { ra: 7.42,  dec: 9.28,   color: 0xFFFF99, size: 1.0 }, // ε (顔の一部)
+"cmi_eta":      { ra: 7.47,  dec: 6.95,   color: 0xFFFFFF, size: 0.9 }, // η (体の一部)
+
+// --- ★追加データ ---
+"cmi_gamma":    { ra: 7.47,  dec: 8.92,   color: 0xFFDDAA, size: 1.1 }, // γ (三角おみみを作るのに必須！)
+
+
+// ==========================================
+// 🐰 Lepus (うさぎ座) - 10星
+// ==========================================
+// 耳と体はありますが、可愛い「しっぽ」と背中のラインを補強します。
+"arneb":        { ra: 5.55,  dec: -17.82, color: 0xFFFFCC, size: 1.2 }, // α (体の中央)
+"nihal":        { ra: 5.47,  dec: -20.76, color: 0xFFFF99, size: 1.2 }, // β (前足の付け根)
+"lep_gamma":    { ra: 5.74,  dec: -22.44, color: 0xFFFFFF, size: 1.1 }, // γ (後ろ足)
+"lep_delta":    { ra: 6.02,  dec: -20.84, color: 0xFFFFEE, size: 1.1 }, // δ (後ろ足)
+"lep_epsilon":  { ra: 5.09,  dec: -22.37, color: 0xFFDDAA, size: 1.1 }, // ε (頭・横顔)
+"lep_mu":       { ra: 5.22,  dec: -16.20, color: 0xAACCFF, size: 1.0 }, // μ (耳の付け根)
+"lep_iota":     { ra: 5.20,  dec: -11.87, color: 0xFFFFFF, size: 1.0 }, // ι (耳の先)
+"lep_kappa":    { ra: 5.22,  dec: -12.94, color: 0xAACCFF, size: 1.0 }, // κ (耳の先)
+
+// --- ★追加データ ---
+"lep_zeta":     { ra: 5.78,  dec: -14.82, color: 0xFFFFFF, size: 1.1 }, // ζ (背中・しっぽの付け根)
+"lep_eta":      { ra: 5.94,  dec: -14.17, color: 0xFFFFEE, size: 1.1 }, // η (しっぽの先)
+
+
+// ==========================================
+// 🎺 Auriga (ぎょしゃ座) - 9星
+// ==========================================
+// 綺麗な五角形を描くには、北側の頂点δ星と、おうし座のエルナトが必要です。
+"capella":      { ra: 5.27,  dec: 45.99,  color: 0xFFFFEE, size: 1.6 }, // α (カペラ・黄金の輝き)
+"menkalinan":   { ra: 5.99,  dec: 44.95,  color: 0xAACCFF, size: 1.3 }, // β (東の肩)
+"aur_theta":    { ra: 5.99,  dec: 37.21,  color: 0xFFFFFF, size: 1.2 }, // θ (西の腕)
+"aur_iota":     { ra: 4.93,  dec: 33.16,  color: 0xFFDDAA, size: 1.2 }, // ι (ハサリ・足元)
+"aur_epsilon":  { ra: 5.03,  dec: 43.82,  color: 0xFFFFFF, size: 1.1 }, // ε (子ヤギ1)
+"aur_zeta":     { ra: 5.04,  dec: 41.07,  color: 0xFFDDAA, size: 1.1 }, // ζ (子ヤギ2)
+"aur_eta":      { ra: 5.11,  dec: 41.23,  color: 0xAACCFF, size: 1.1 }, // η (子ヤギ3)
+
+// --- ★追加データ ---
+"aur_delta":    { ra: 5.99,  dec: 54.28,  color: 0xFFDDAA, size: 1.1 }, // δ (北の帽子部分)
+
+// ※注意：ぎょしゃ座の五角形の南の頂点は、おうし座のβ星「エルナト(elnath)」を共有します。
+// アプリで描画する際は、Taurusデータの "elnath" (ra: 5.43, dec: 28.61) に線を繋げてくださいね！
+
+// ==========================================
+// 🐕 Canis Major (おおいぬ座) - 15星
+// ==========================================
+// シリウスだけでなく、前足・後ろ足・尻尾を揃えて「完璧な犬」に！
+"sirius":       { ra: 6.75,  dec: -16.72, color: 0xFFFFFF, size: 1.8 }, // α (鼻先/首輪)
+"mirzam":       { ra: 6.38,  dec: -17.96, color: 0xAACCFF, size: 1.2 }, // β (前足の付け根)
+"muliphein":    { ra: 7.06,  dec: -15.63, color: 0xAACCFF, size: 1.0 }, // γ (首)
+"wezen":        { ra: 7.14,  dec: -26.39, color: 0xFFFFDD, size: 1.3 }, // δ (腰)
+"adhara":       { ra: 6.98,  dec: -28.97, color: 0xAACCFF, size: 1.4 }, // ε (後ろ足の付け根)
+"furud":        { ra: 6.28,  dec: -30.06, color: 0xAACCFF, size: 1.1 }, // ζ (前足の先)
+"aludra":       { ra: 7.40,  dec: -29.30, color: 0xAACCFF, size: 1.2 }, // η (尻尾)
+"cma_omicron2": { ra: 7.05,  dec: -23.83, color: 0xFF9966, size: 1.1 }, // ο2 (背中)
+"cma_nu2":      { ra: 6.61,  dec: -19.25, color: 0xFFDDAA, size: 1.0 }, // ν2 (胸)
+
+// --- ★追加データ ---
+"cma_sigma":    { ra: 7.03,  dec: -27.93, color: 0xFF4422, size: 1.1 }, // σ (後ろ足の関節)
+"cma_kappa":    { ra: 6.83,  dec: -32.51, color: 0xAACCFF, size: 1.0 }, // κ (後ろ足の先)
+"cma_iota":     { ra: 6.94,  dec: -17.05, color: 0xFFFFFF, size: 1.0 }, // ι (首の下)
+"cma_theta":    { ra: 6.86,  dec: -12.04, color: 0xFFFF99, size: 1.0 }, // θ (頭のてっぺん)
+"cma_xi1":      { ra: 6.62,  dec: -23.43, color: 0xAACCFF, size: 1.0 }, // ξ1 (前足の関節)
+"cma_pi":       { ra: 6.92,  dec: -20.14, color: 0xFFFFFF, size: 1.0 }, // π (背中のライン)
+
+
+// ==========================================
+// ★追加: 🐕 Canes Venatici (りょうけん座) - 2星
+// ==========================================
+// シンプルですが、春のダイヤモンドの重要な一角。この2つで十分です！
+"cor_caroli":   { ra: 12.93, dec: 38.32, color: 0xE0FFFF, size: 1.3 }, // α (チャールズ王の心臓)
+"chara":        { ra: 12.56, dec: 41.35, color: 0xFFFFEE, size: 1.1 }, // β (南の犬の頭)
+
+
+// ==========================================
+// 🐍 Hydra (うみへび座) - 15星
+// ==========================================
+// 全天一長い星座！頭から、孤独なアルファルド、そして延々と続く尻尾まで。
+"alphard":      { ra: 9.46,  dec: -8.65,  color: 0xFF8844, size: 1.3 }, // α (心臓・孤独なもの)
+"hyd_zeta":     { ra: 9.26,  dec: 5.94,   color: 0xFFFFEE, size: 1.1 }, // ζ (頭部)
+"hyd_epsilon":  { ra: 8.78,  dec: 6.42,   color: 0xFFFF99, size: 1.1 }, // ε (頭部)
+"hyd_delta":    { ra: 8.62,  dec: 5.95,   color: 0xFFFFFF, size: 1.1 }, // δ (頭部)
+"hyd_sigma":    { ra: 8.64,  dec: 3.34,   color: 0xFFDDAA, size: 1.1 }, // σ (頭部・口先)
+
+// --- ★追加データ (長～い体を表現) ---
+"hyd_eta":      { ra: 8.72,  dec: 3.39,   color: 0xAACCFF, size: 1.1 }, // η (頭部)
+"hyd_theta":    { ra: 9.24,  dec: 2.31,   color: 0xAACCFF, size: 1.0 }, // θ (首)
+"hyd_iota":     { ra: 9.66,  dec: -1.14,  color: 0xFFFF99, size: 1.0 }, // ι (首・アルファルドへのつなぎ)
+"hyd_tau1":     { ra: 9.48,  dec: -2.74,  color: 0xFFFFFF, size: 1.0 }, // τ1 (首)
+"hyd_upsilon1": { ra: 9.86,  dec: -14.84, color: 0xFFFF99, size: 1.0 }, // υ1 (胴体・前半)
+"hyd_lambda":   { ra: 10.18, dec: -12.35, color: 0xFFDDAA, size: 1.1 }, // λ (胴体)
+"hyd_mu":       { ra: 10.43, dec: -16.83, color: 0xFFDDAA, size: 1.1 }, // μ (胴体・コップ座の下)
+"hyd_nu":       { ra: 10.83, dec: -16.19, color: 0xFFDDAA, size: 1.1 }, // ν (胴体・後半)
+"hyd_pi":       { ra: 14.10, dec: -26.68, color: 0xFFDDAA, size: 1.1 }, // π (尻尾の先・長さを実感！)
+"hyd_gamma":    { ra: 13.31, dec: -23.17, color: 0xFFFF99, size: 1.2 }, // γ (尻尾の付け根)
+
+
+// ==========================================
+// 🎻 Lyra (こと座) - 9星
+// ==========================================
+// ベガの輝きと、平行四辺形の竪琴（たてごと）の形を整えます。
+"vega":         { ra: 18.62, dec: 38.78,  color: 0xAACCFF, size: 1.6 }, // α (七夕の織姫)
+"sheliak":      { ra: 18.83, dec: 33.36,  color: 0xFFFFFF, size: 1.1 }, // β (平行四辺形・右下)
+"sulafat":      { ra: 18.98, dec: 32.68,  color: 0xAACCFF, size: 1.1 }, // γ (平行四辺形・左下)
+"lyr_delta2":   { ra: 18.91, dec: 36.90,  color: 0xFF4422, size: 1.0 }, // δ2 (平行四辺形・左上)
+"lyr_epsilon":  { ra: 18.74, dec: 39.67,  color: 0xFFFFFF, size: 0.9 }, // ε (ダブルダブルスター・ベガの近く)
+"lyr_zeta":     { ra: 18.75, dec: 37.60,  color: 0xFFFFFF, size: 1.0 }, // ζ (平行四辺形・右上)
+"lyr_eta":      { ra: 19.23, dec: 39.14,  color: 0xAACCFF, size: 1.0 }, // η (楽器の枠)
+
+// --- ★追加データ ---
+"lyr_theta":    { ra: 19.27, dec: 38.13,  color: 0xFFFFEE, size: 1.0 }, // θ (楽器の枠・右側)
+"lyr_kappa":    { ra: 18.33, dec: 36.06,  color: 0xFFDDAA, size: 1.0 }, // κ (楽器の持ち手)
+
+
+// ==========================================
+// 🦅 Aquila (わし座) - 12星
+// ==========================================
+// アルタイルを頭に、左右に大きく広げた翼を描きます。
+"altair":       { ra: 19.85, dec: 8.87,   color: 0xFFFFFF, size: 1.5 }, // α (牽牛星・鷲の頭)
+"alshain":      { ra: 19.92, dec: 6.41,   color: 0xFFFFEE, size: 1.1 }, // β (首)
+"tarazed":      { ra: 19.77, dec: 10.61,  color: 0xFFDDAA, size: 1.2 }, // γ (背中)
+"aql_delta":    { ra: 19.42, dec: 3.11,   color: 0xFFFFEE, size: 1.1 }, // δ (右の翼・中心)
+"aql_epsilon":  { ra: 18.99, dec: 15.06,  color: 0xFFDDAA, size: 1.0 }, // ε (尻尾)
+"aql_zeta":     { ra: 19.09, dec: 13.86,  color: 0xFFFFFF, size: 1.1 }, // ζ (右の翼・上部)
+"aql_theta":    { ra: 20.19, dec: -0.82,  color: 0xAACCFF, size: 1.1 }, // θ (左の翼・先端)
+"althalimain":  { ra: 19.10, dec: -4.88,  color: 0xFFFFFF, size: 1.0 }, // λ (右の翼・先端)
+"aql_iota":     { ra: 19.61, dec: -1.06,  color: 0xAACCFF, size: 1.0 }, // ι (右の翼・下部)
+
+// --- ★追加データ ---
+"aql_eta":      { ra: 19.87, dec: 1.00,   color: 0xFFFF99, size: 1.1 }, // η (左の翼・付け根)
+"aql_mu":       { ra: 19.57, dec: 7.37,   color: 0xFFDDAA, size: 1.0 }, // μ (右の翼・付け根)
+"aql_sigma":    { ra: 19.65, dec: 5.40,   color: 0xFFFFFF, size: 1.0 }, // σ (右の翼・飾り)
+
+
+// ==========================================
+// 🦢 Cygnus (はくちょう座) - 13星
+// ==========================================
+// 北十字（ノーザンクロス）だけでなく、大きく広げた翼全体を描きます。
+"deneb":        { ra: 20.69, dec: 45.28,  color: 0xFFFFFF, size: 1.5 }, // α (尾羽・夏の大三角)
+"albireo":      { ra: 19.51, dec: 27.96,  color: 0xFFD700, size: 1.2 }, // β (くちばし・二重星)
+"sadr":         { ra: 20.37, dec: 40.26,  color: 0xFFFFEE, size: 1.3 }, // γ (胸)
+"cyg_delta":    { ra: 19.75, dec: 45.13,  color: 0xFFFFFF, size: 1.2 }, // δ (右の翼・内側)
+"gjenah":       { ra: 20.77, dec: 33.97,  color: 0xFFDDAA, size: 1.2 }, // ε (左の翼・内側)
+"cyg_zeta":     { ra: 21.21, dec: 30.22,  color: 0xFFFF99, size: 1.1 }, // ζ (左の翼・先端)
+"cyg_tau":      { ra: 21.24, dec: 38.05,  color: 0xFFFFFF, size: 1.0 }, // τ (左の翼・中間)
+"cyg_iota2":    { ra: 19.49, dec: 51.72,  color: 0xFFFFFF, size: 1.0 }, // ι2 (右の翼・先端)
+"cyg_kappa":    { ra: 19.29, dec: 53.37,  color: 0xFFDDAA, size: 1.0 }, // κ (右の翼・先端)
+
+// --- ★追加データ ---
+"cyg_eta":      { ra: 19.94, dec: 35.08,  color: 0xFFDDAA, size: 1.1 }, // η (首)
+"cyg_theta":    { ra: 19.64, dec: 50.22,  color: 0xFFFFFF, size: 1.0 }, // θ (右の翼・関節)
+"cyg_nu":       { ra: 20.96, dec: 41.17,  color: 0xFFFFFF, size: 1.0 }, // ν (左の翼・付け根)
+"cyg_xi":       { ra: 21.08, dec: 43.92,  color: 0xFFDDAA, size: 1.0 }, // ξ (左の翼・飾り)
+
+
+// ==========================================
+// 👑 Cassiopeia (カシオペヤ座) - 7星
+// ==========================================
+// Wの形（またはMの形）は完璧ですが、王妃が座る椅子の背もたれも表現できます。
+"schedar":      { ra: 0.67,  dec: 56.54,  color: 0xFFDDAA, size: 1.3 }, // α (胸元)
+"caph":         { ra: 0.15,  dec: 59.15,  color: 0xFFFFEE, size: 1.3 }, // β (椅子の端)
+"cas_gamma":    { ra: 0.94,  dec: 60.72,  color: 0xAACCFF, size: 1.3 }, // γ (腰)
+"ruchbah":      { ra: 1.43,  dec: 60.24,  color: 0xFFFFFF, size: 1.2 }, // δ (膝)
+"segin":        { ra: 1.91,  dec: 63.67,  color: 0xAACCFF, size: 1.2 }, // ε (足元)
+"achird":       { ra: 0.82,  dec: 57.81,  color: 0xFFFF99, size: 1.1 }, // η (王妃の左腕)
+"cas_zeta":     { ra: 0.61,  dec: 53.89,  color: 0xAACCFF, size: 1.0 }, // ζ (王妃の顔)
+
+
+// ==========================================
+// 🍦 Boötes (うしかい座) - 14星
+// ==========================================
+// ネクタイ型（または凧型）だけでなく、左手のパイプと右手の鎌（かま）を追加。
+"arcturus":     { ra: 14.26, dec: 19.18,  color: 0xFFAA00, size: 1.7 }, // α (足元・春の大曲線)
+"nekkar":       { ra: 15.03, dec: 40.39,  color: 0xFFFFEE, size: 1.2 }, // β (頭部)
+"seginus":      { ra: 14.54, dec: 38.31,  color: 0xFFFFFF, size: 1.2 }, // γ (左肩)
+"izar":         { ra: 14.75, dec: 27.07,  color: 0xFFDDAA, size: 1.2 }, // ε (腰)
+"muphrid":      { ra: 13.91, dec: 18.39,  color: 0xFFFFEE, size: 1.2 }, // η (左足)
+"boo_rho":      { ra: 14.53, dec: 30.37,  color: 0xFFDDAA, size: 1.1 }, // ρ (腰)
+"alkalurops":   { ra: 15.40, dec: 51.95,  color: 0xFFFFFF, size: 1.1 }, // μ (右手の杖・上部)
+"boo_delta":    { ra: 15.26, dec: 33.31,  color: 0xFFFF99, size: 1.2 }, // δ (右肩)
+"boo_lambda":   { ra: 14.27, dec: 46.09,  color: 0xFFFFFF, size: 1.1 }, // λ (左腕)
+"boo_theta":    { ra: 14.42, dec: 51.85,  color: 0xAACCFF, size: 1.1 }, // θ (左手・パイプの先)
+
+// --- ★追加データ ---
+"boo_sigma":    { ra: 14.57, dec: 29.74,  color: 0xFFFFEE, size: 1.0 }, // σ (腰のあたり)
+"boo_tau":      { ra: 13.79, dec: 17.46,  color: 0xFFFFCC, size: 1.1 }, // τ (左足先)
+"boo_upsilon":  { ra: 13.82, dec: 15.80,  color: 0xFFDDAA, size: 1.0 }, // υ (右足)
+"boo_zeta":     { ra: 14.68, dec: 13.72,  color: 0xFFFFFF, size: 1.1 }, // ζ (右足先)
+
+
+// ==========================================
+// 👑 Corona Borealis (かんむり座) - 7星
+// ==========================================
+// 美しい半円形（王冠）を描くには、この7つで完璧です！
+"gemma":        { ra: 15.58, dec: 26.71,  color: 0xFFFFFF, size: 1.3 }, // α (アルフェッカ・宝石)
+"nusakan":      { ra: 15.46, dec: 29.11,  color: 0xFFFF99, size: 1.2 }, // β (冠の端)
+"crb_gamma":    { ra: 15.71, dec: 26.30,  color: 0xAACCFF, size: 1.1 }, // γ (冠の中央)
+"crb_delta":    { ra: 15.82, dec: 26.06,  color: 0xFFFFEE, size: 1.1 }, // δ (冠の中央)
+"crb_epsilon":  { ra: 15.96, dec: 26.88,  color: 0xFFDDAA, size: 1.1 }, // ε (冠の端)
+"crb_theta":    { ra: 15.55, dec: 31.36,  color: 0xFFFFFF, size: 1.1 }, // θ (冠の飾り)
+"crb_iota":     { ra: 15.66, dec: 29.86,  color: 0xAACCFF, size: 1.0 }, // ι (冠の飾り)
+
+
+// ==========================================
+// 💪 Hercules (ヘルクレス座) - 17星
+// ==========================================
+// 逆さまになった「H」型を中心に、振り上げた腕と踏ん張る足を追加！
+"rasalgethi":   { ra: 17.24, dec: 14.39,  color: 0xFF4422, size: 1.2 }, // α (頭部)
+"kornephoros":  { ra: 16.50, dec: 21.49,  color: 0xFFFFEE, size: 1.3 }, // β (右肩)
+"sarin":        { ra: 17.25, dec: 37.15,  color: 0xFFFFFF, size: 1.2 }, // δ (左肩)
+"her_zeta":     { ra: 16.69, dec: 31.60,  color: 0xFFFF99, size: 1.2 }, // ζ (右腰)
+"her_eta":      { ra: 16.71, dec: 38.92,  color: 0xFFFFEE, size: 1.2 }, // η (左腰)
+"her_pi":       { ra: 17.25, dec: 36.81,  color: 0xFFDDAA, size: 1.2 }, // π (左太もも)
+"her_epsilon":  { ra: 17.00, dec: 30.93,  color: 0xFFFFFF, size: 1.2 }, // ε (右腰・H型の要)
+"her_iota":     { ra: 17.65, dec: 46.00,  color: 0xAACCFF, size: 1.1 }, // ι (左足)
+"her_theta":    { ra: 17.94, dec: 37.25,  color: 0xFFDDAA, size: 1.1 }, // θ (左ひざ)
+"her_tau":      { ra: 16.33, dec: 46.31,  color: 0xAACCFF, size: 1.1 }, // τ (右ひざ)
+"maasym":       { ra: 17.51, dec: 35.40,  color: 0xFFDDAA, size: 1.1 }, // λ (左腕・ひじ)
+"her_mu":       { ra: 17.77, dec: 27.72,  color: 0xFFFF99, size: 1.1 }, // μ (左腕・手)
+"her_gamma":    { ra: 16.36, dec: 19.15,  color: 0xFFFFFF, size: 1.1 }, // γ (右腕・伸ばした手)
+
+// --- ★追加データ ---
+"her_omicron":  { ra: 18.13, dec: 28.76,  color: 0xAACCFF, size: 1.0 }, // ο (左手で掴んだケルベロスの一部)
+"her_xi":       { ra: 17.98, dec: 29.25,  color: 0xFFFF99, size: 1.0 }, // ξ (左手)
+"her_phi":      { ra: 16.14, dec: 44.93,  color: 0xAACCFF, size: 1.0 }, // φ (右足・ふくらはぎ)
+"her_chi":      { ra: 15.88, dec: 42.45,  color: 0xFFDDAA, size: 1.0 }, // χ (右足先・へびつかい座の頭を踏んでいる)
+
+
+// ==========================================
+// 🐍 Ophiuchus (へびつかい座) - 15星
+// ==========================================
+// 医神アスクレピオスが巨大な蛇をつかんでいる姿。将棋の駒のような五角形がベース。
+"rasalhague":   { ra: 17.58, dec: 12.56,  color: 0xFFFFFF, size: 1.4 }, // α (頭部)
+"cebalrai":     { ra: 17.72, dec: 4.57,   color: 0xFFDDAA, size: 1.3 }, // β (右肩)
+"oph_kappa":    { ra: 16.96, dec: 9.38,   color: 0xFFDDAA, size: 1.2 }, // κ (左肩)
+"yed_prior":    { ra: 16.24, dec: -3.69,  color: 0xFF4422, size: 1.2 }, // δ (左手・蛇をつかむ)
+"yed_posterior":{ ra: 16.31, dec: -4.69,  color: 0xFFFFEE, size: 1.1 }, // ε (左手)
+"sabik":        { ra: 17.17, dec: -15.72, color: 0xFFFFFF, size: 1.3 }, // η (左ひざ)
+"oph_zeta":     { ra: 17.13, dec: -10.57, color: 0xAACCFF, size: 1.2 }, // ζ (左太もも)
+"oph_theta":    { ra: 17.37, dec: -24.99, color: 0xAACCFF, size: 1.1 }, // θ (右足)
+"oph_nu":       { ra: 17.98, dec: -9.77,  color: 0xFFDDAA, size: 1.1 }, // ν (右手・蛇をつかむ)
+
+// --- ★追加データ ---
+"oph_iota":     { ra: 16.91, dec: 10.12,  color: 0xAACCFF, size: 1.1 }, // ι (左肩の関節)
+"oph_lambda":   { ra: 16.51, dec: 2.10,   color: 0xFFFFFF, size: 1.1 }, // λ (マルフィク：左肘)
+"oph_mu":       { ra: 17.63, dec: -8.12,  color: 0xFFFFEE, size: 1.0 }, // μ (右肘)
+"oph_rho":      { ra: 17.36, dec: -23.49, color: 0xFFDDAA, size: 1.0 }, // ρ (右足首)
+"oph_chi":      { ra: 16.45, dec: -18.45, color: 0xAACCFF, size: 1.0 }, // χ (コートの裾)
+"oph_psi":      { ra: 16.60, dec: -20.04, color: 0xFFDDAA, size: 1.0 }, // ψ (左足先)
+
+
+// ==========================================
+// 👶 Ursa Minor (こぐま座) - 7星
+// ==========================================
+// こぐま座は「北斗七星」のミニチュア版（小ひしゃく）。この7つで完璧に描けます。
+"polaris":      { ra: 2.53,  dec: 89.26,  color: 0xFFFFEE, size: 1.4 }, // α (北極星・尻尾の先)
+"kochab":       { ra: 14.84, dec: 74.16,  color: 0xFFDDAA, size: 1.3 }, // β (ひしゃくの先・背中)
+"pherkad":      { ra: 15.35, dec: 71.83,  color: 0xFFFFFF, size: 1.2 }, // γ (ひしゃくの先・腹)
+"yildun":       { ra: 17.54, dec: 86.58,  color: 0xAACCFF, size: 1.1 }, // δ (尻尾の中間)
+"umi_epsilon":  { ra: 16.76, dec: 82.03,  color: 0xFFFF99, size: 1.1 }, // ε (尻尾の付け根)
+"umi_zeta":     { ra: 15.73, dec: 77.79,  color: 0xFFFFFF, size: 1.1 }, // ζ (ひしゃくの付け根・背中)
+"umi_eta":      { ra: 16.29, dec: 75.75,  color: 0xFFFFFF, size: 1.1 }, // η (ひしゃくの底・腹)
+
+
+// ==========================================
+// 🐎 Pegasus (ペガスス座) - 15星
+// ==========================================
+// 秋の四辺形（胴体）から、長い首と前足が伸びる「天馬」の姿。
+"markab":       { ra: 23.08, dec: 15.21,  color: 0xFFFFFF, size: 1.4 }, // α (四辺形・右下)
+"scheat":       { ra: 23.06, dec: 28.08,  color: 0xFF4422, size: 1.4 }, // β (四辺形・右上)
+"algenib":      { ra: 0.22,  dec: 15.18,  color: 0xAACCFF, size: 1.3 }, // γ (四辺形・左下)
+"homam":        { ra: 22.69, dec: 10.83,  color: 0xAACCFF, size: 1.1 }, // ζ (首の付け根)
+"baham":        { ra: 22.17, dec: 6.19,   color: 0xFFFFEE, size: 1.1 }, // θ (首)
+"enif":         { ra: 21.74, dec: 9.87,   color: 0xFFD700, size: 1.4 }, // ε (鼻先)
+"matar":        { ra: 22.72, dec: 30.22,  color: 0xFFFF99, size: 1.2 }, // η (左の前足・膝)
+"peg_pi":       { ra: 22.16, dec: 33.17,  color: 0xFFFFEE, size: 1.1 }, // π (左の前足・蹄)
+"peg_mu":       { ra: 22.83, dec: 24.60,  color: 0xFFFF99, size: 1.1 }, // μ (左の前足・付け根)
+
+// ※注意：四辺形の左上（アルフェラッツ）は、アンドロメダ座のα星と共有されます。
+// アプリ描画時は Andromeda の "alpheratz" に線を繋げてください！
+
+// --- ★追加データ ---
+"peg_iota":     { ra: 22.12, dec: 25.34,  color: 0xFFFFEE, size: 1.0 }, // ι (右の前足・付け根)
+"peg_kappa":    { ra: 21.74, dec: 25.64,  color: 0xFFDDAA, size: 1.0 }, // κ (右の前足・膝)
+"peg_lambda":   { ra: 22.78, dec: 23.56,  color: 0xFFFF99, size: 1.0 }, // λ (胸部)
+"peg_upsilon":  { ra: 23.42, dec: 23.40,  color: 0xFFFFFF, size: 1.0 }, // υ (背中)
+"peg_tau":      { ra: 23.34, dec: 23.73,  color: 0xAACCFF, size: 1.0 }, // τ (背中・尾のあたり)
+"peg_psi":      { ra: 23.96, dec: 25.13,  color: 0xFF4422, size: 1.0 }, // ψ (尾のあたり)
+
+
+// ==========================================
+// 👸 Andromeda (アンドロメダ座) - 13星
+// ==========================================
+// 鎖につながれた王女の姿。両手を広げたAの字のような形になります。
+"alpheratz":    { ra: 0.14,  dec: 29.09,  color: 0xAACCFF, size: 1.4 }, // α (頭部・ペガススの四辺形共有)
+"mirach":       { ra: 1.16,  dec: 35.62,  color: 0xFF4422, size: 1.4 }, // β (腰)
+"almaak":       { ra: 2.06,  dec: 42.33,  color: 0xFFDDAA, size: 1.3 }, // γ (左足)
+"and_delta":    { ra: 0.66,  dec: 30.86,  color: 0xFF9966, size: 1.1 }, // δ (右肩)
+"and_mu":       { ra: 0.94,  dec: 38.50,  color: 0xFFFFFF, size: 1.1 }, // μ (右腕)
+"and_nu":       { ra: 0.83,  dec: 41.04,  color: 0xAACCFF, size: 1.0 }, // ν (右手)
+"and_51":       { ra: 1.63,  dec: 48.62,  color: 0xFFDDAA, size: 1.0 }, // 51 (左足先)
+
+// --- ★追加データ ---
+"and_pi":       { ra: 0.61,  dec: 33.72,  color: 0xFFFFFF, size: 1.0 }, // π (右胸)
+"and_epsilon":  { ra: 0.64,  dec: 29.31,  color: 0xFFFF99, size: 1.0 }, // ε (口元)
+"and_theta":    { ra: 0.28,  dec: 38.67,  color: 0xFFFFFF, size: 1.0 }, // θ (右脇)
+"and_sigma":    { ra: 0.31,  dec: 36.79,  color: 0xAACCFF, size: 1.0 }, // σ (右腕の付け根)
+"and_eta":      { ra: 0.95,  dec: 23.42,  color: 0xFFDDAA, size: 1.0 }, // η (右肘)
+"and_zeta":     { ra: 0.79,  dec: 24.26,  color: 0xFFDDAA, size: 1.0 }, // ζ (右腕)
+
+
+// ==========================================
+// 🗡️ Perseus (ペルセウス座) - 15星
+// ==========================================
+// 「人」の字型が特徴。右手の剣、左手の魔物首、そして空を駆ける足。
+"mirfak":       { ra: 3.41,  dec: 49.86,  color: 0xFFFFEE, size: 1.5 }, // α (胸・アルゲニブ)
+"algol":        { ra: 3.13,  dec: 40.96,  color: 0xAACCFF, size: 1.4 }, // β (悪魔の星・メドゥーサの首)
+"per_gamma":    { ra: 3.08,  dec: 53.51,  color: 0xFFFFEE, size: 1.2 }, // γ (左肩)
+"per_delta":    { ra: 3.71,  dec: 47.79,  color: 0xAACCFF, size: 1.2 }, // δ (右肩・剣を持つ手)
+"per_epsilon":  { ra: 3.96,  dec: 40.01,  color: 0xAACCFF, size: 1.2 }, // ε (右膝)
+"per_zeta":     { ra: 3.90,  dec: 31.88,  color: 0xAACCFF, size: 1.2 }, // ζ (アティクの代わりに修正追加)
+"menkib":       { ra: 3.91,  dec: 35.79,  color: 0xFFDDAA, size: 1.1 }, // ξ (右足首)
+"per_eta":      { ra: 2.84,  dec: 55.89,  color: 0xFFDDAA, size: 1.1 }, // η (兜のあたり)
+
+// --- ★追加データ ---
+"per_iota":     { ra: 3.15,  dec: 49.61,  color: 0xFFFF99, size: 1.1 }, // ι (右太もも)
+"per_kappa":    { ra: 3.16,  dec: 44.85,  color: 0xFFFFEE, size: 1.0 }, // κ (右足)
+"per_nu":       { ra: 3.75,  dec: 42.58,  color: 0xFFDDAA, size: 1.0 }, // ν (右膝のあたり)
+"per_omicron":  { ra: 3.74,  dec: 32.29,  color: 0xAACCFF, size: 1.1 }, // ο (アティク・かかと)
+"per_rho":      { ra: 3.09,  dec: 38.84,  color: 0xFF4422, size: 1.1 }, // ρ (ゴルゴネア・テルティア：メドゥーサの髪)
+"per_pi":       { ra: 2.97,  dec: 39.77,  color: 0xFFFFFF, size: 1.0 }, // π (ゴルゴネア・セクンダ)
+"per_omega":    { ra: 3.19,  dec: 39.61,  color: 0xFFDDAA, size: 1.0 }, // ω (ゴルゴネア・クアルタ)
+
+
+// ==========================================
+// 🐋 Cetus (くじら座) - 15星
+// ==========================================
+// 巨大な海の怪獣（ティアマト）。五角形の頭部と、長く伸びる胴体、二股の尾びれ。
+"menkar":       { ra: 3.04,  dec: 4.09,   color: 0xFF5544, size: 1.3 }, // α (頭部・鼻先)
+"diphda":       { ra: 0.72,  dec: -17.99, color: 0xFFFF99, size: 1.4 }, // β (デネブ・カイトス：尾びれ南)
+"kaffaljidhma": { ra: 2.72,  dec: 3.24,   color: 0xFFFFFF, size: 1.1 }, // γ (頭部・首)
+"baten_kaitos": { ra: 1.60,  dec: -10.33, color: 0xFFDDAA, size: 1.1 }, // ζ (腹部)
+"mira":         { ra: 2.32,  dec: -2.98,  color: 0xFF3300, size: 1.2 }, // ο (ミラ：変光星・心臓)
+"cet_eta":      { ra: 1.14,  dec: -10.18, color: 0xFFDDAA, size: 1.1 }, // η (尾の付け根)
+"cet_iota":     { ra: 0.32,  dec: -8.82,  color: 0xFFDDAA, size: 1.1 }, // ι (尾びれ北)
+"cet_lambda":   { ra: 2.99,  dec: 8.91,   color: 0xAACCFF, size: 1.0 }, // λ (頭部)
+"cet_mu":       { ra: 2.75,  dec: 10.12,  color: 0xFFFFEE, size: 1.0 }, // μ (頭部)
+"cet_xi2":      { ra: 2.47,  dec: 8.46,   color: 0xAACCFF, size: 1.0 }, // ξ2 (頭部)
+
+// --- ★追加データ ---
+"cet_tau":      { ra: 1.74,  dec: -15.99, color: 0xFFFF99, size: 1.1 }, // τ (体と尾をつなぐ重要な星)
+"cet_theta":    { ra: 1.40,  dec: -8.18,  color: 0xFFDDAA, size: 1.0 }, // θ (腹部)
+"cet_upsilon":  { ra: 1.98,  dec: -21.08, color: 0xFFDDAA, size: 1.0 }, // υ (南側のヒレ)
+"cet_delta":    { ra: 2.66,  dec: 0.33,   color: 0xAACCFF, size: 1.1 }, // δ (首のあたり)
+"cet_pi":       { ra: 2.74,  dec: -13.84, color: 0xFFFFFF, size: 1.0 }, // π (胸びれ)
+
+
+// ==========================================
+// 🐟 Piscis Austrinus (みなみのうお座) - 7星
+// ==========================================
+// フォーマルハウトが目立ちますが、ちゃんと魚の形をしています。
+"fomalhaut":    { ra: 22.96, dec: -29.62, color: 0xFFFFFF, size: 1.6 }, // α (秋のひとつ星・魚の口)
+"psa_beta":     { ra: 22.52, dec: -32.35, color: 0xFFFFFF, size: 1.1 }, // β (魚の体)
+"psa_delta":    { ra: 22.93, dec: -32.54, color: 0xFFFF99, size: 1.1 }, // δ (魚の体)
+"psa_gamma":    { ra: 22.88, dec: -32.87, color: 0xFFFFFF, size: 1.1 }, // γ (背びれ)
+"psa_epsilon":  { ra: 22.67, dec: -27.04, color: 0xAACCFF, size: 1.0 }, // ε (魚の体)
+
+// --- ★追加データ ---
+"psa_iota":     { ra: 21.74, dec: -33.02, color: 0xFFFFFF, size: 1.0 }, // ι (魚の尾びれ)
+"psa_mu":       { ra: 22.14, dec: -32.99, color: 0xFFFFFF, size: 1.0 }, // μ (魚の尾びれ)
+
+
+// ==========================================
+// 🐎 Centaurus (ケンタウルス座) - 13星
+// ==========================================
+// 南天の巨大星座。前足、後ろ足、そして人間の上半身を描きます。
+"rigil_kent":   { ra: 14.66, dec: -60.83, color: 0xFFFFCC, size: 1.8 }, // α (前足の蹄・リギル)
+"hadar":        { ra: 14.06, dec: -60.37, color: 0xAACCFF, size: 1.6 }, // β (前足・ハダル)
+"menkent":      { ra: 14.11, dec: -36.37, color: 0xFFDDAA, size: 1.3 }, // θ (右肩・人間の部分)
+"cen_iota":     { ra: 13.34, dec: -36.71, color: 0xFFFFFF, size: 1.2 }, // ι (左肩・人間の部分)
+"cen_gamma":    { ra: 12.69, dec: -48.96, color: 0xFFFFFF, size: 1.2 }, // γ (馬の背中)
+"cen_epsilon":  { ra: 13.66, dec: -53.46, color: 0xAACCFF, size: 1.2 }, // ε (馬の腹)
+"cen_eta":      { ra: 14.59, dec: -42.16, color: 0xAACCFF, size: 1.2 }, // η (馬の前身頃)
+"cen_zeta":     { ra: 13.92, dec: -47.28, color: 0xAACCFF, size: 1.2 }, // ζ (馬の腹)
+
+// --- ★追加データ ---
+"cen_delta":    { ra: 12.14, dec: -50.72, color: 0xAACCFF, size: 1.2 }, // δ (馬の腰・十字の一部)
+"cen_nu":       { ra: 13.82, dec: -41.68, color: 0xAACCFF, size: 1.1 }, // ν (人間の腹)
+"cen_mu":       { ra: 13.83, dec: -42.47, color: 0xAACCFF, size: 1.1 }, // μ (人間の胸)
+"cen_kappa":    { ra: 14.99, dec: -42.10, color: 0xAACCFF, size: 1.1 }, // κ (右前足の関節)
+"cen_lambda":   { ra: 11.59, dec: -62.89, color: 0xAACCFF, size: 1.0 }, // λ (後ろ足の蹄)
+
+
+// ==========================================
+// 🦄 Monoceros (いっかくじゅう座) - 7星
+// ==========================================
+// オリオンの東にある目立たない星座ですが、つなぐと綺麗な「く」の字になります。
+"mon_alpha":    { ra: 7.69,  dec: -9.55,  color: 0xFFDDAA, size: 1.1 }, // α (胴体)
+"mon_beta":     { ra: 6.48,  dec: -7.03,  color: 0xAACCFF, size: 1.1 }, // β (胴体・バラ星雲の近く)
+"mon_gamma":    { ra: 6.24,  dec: -6.27,  color: 0xFFDDAA, size: 1.1 }, // γ (尻尾)
+"mon_delta":    { ra: 7.20,  dec: -0.49,  color: 0xFFFFFF, size: 1.1 }, // δ (首・顔)
+"mon_zeta":     { ra: 8.14,  dec: -2.98,  color: 0xFFFFEE, size: 1.1 }, // ζ (後ろ足)
+
+// --- ★追加データ ---
+"mon_epsilon":  { ra: 6.39,  dec: 4.59,   color: 0xFFFFFF, size: 1.0 }, // ε (頭部・角の付け根)
+"mon_13":       { ra: 6.53,  dec: 0.58,   color: 0xFFFFFF, size: 1.0 }, // 13 (首)
+
+
+// ==========================================
+// 🐬 Delphinus (いるか座) - 6星
+// ==========================================
+// 夏の夜空のアイドル。4つの星で作る「ひし形」に、尻尾をチョンと足すだけ。
+"rotanev":      { ra: 20.62, dec: 14.60, color: 0xFFFFEE, size: 1.2 }, // β (ひし形・頭)
+"sualocin":     { ra: 20.66, dec: 15.90, color: 0xAACCFF, size: 1.2 }, // α (ひし形・背中)
+"del_gamma":    { ra: 20.78, dec: 16.12, color: 0xFFFF99, size: 1.2 }, // γ (ひし形・鼻先)
+"del_delta":    { ra: 20.72, dec: 15.07, color: 0xFFFFFF, size: 1.1 }, // δ (ひし形・お腹)
+"deneb_dulfim": { ra: 20.56, dec: 11.26, color: 0xAACCFF, size: 1.1 }, // ε (尻尾の付け根)
+
+// --- ★追加データ ---
+"del_zeta":     { ra: 20.59, dec: 14.67, color: 0xFFFFFF, size: 1.0 }, // ζ (ひし形の下・ひれ)
+
+// ==========================================
+// 🏹 Sagitta (や座) - 4星
+// ==========================================
+// 全天で3番目に小さい星座ですが、4つの星が完璧な矢の形をしています。
+// 追加の必要なし！この4つで完成です。
+"sham":         { ra: 19.80, dec: 16.39, color: 0xFFFF33, size: 1.1 }, // α (矢羽)
+"sge_beta":     { ra: 19.68, dec: 17.47, color: 0xFFFF99, size: 1.1 }, // β (矢羽)
+"sge_delta":    { ra: 19.79, dec: 18.53, color: 0xFF3333, size: 1.1 }, // δ (矢柄)
+"sge_gamma":    { ra: 19.97, dec: 19.49, color: 0xFFDDAA, size: 1.2 }, // γ (矢尻)
+
+
+// ==========================================
+// 🐍 Serpens (へび座) - 13星
+// ==========================================
+// 唯一、2つの領域（頭部・尾部）に分かれている星座。へびつかい座を挟みます。
+// --- 頭部 (Serpens Caput) ---
+"unukalhai":    { ra: 15.74, dec: 6.42,  color: 0xFFDDAA, size: 1.3 }, // α (心臓・首)
+"ser_beta":     { ra: 15.77, dec: 15.42, color: 0xFFFFFF, size: 1.2 }, // β (顎)
+"ser_gamma":    { ra: 15.94, dec: 15.68, color: 0xFFFFEE, size: 1.1 }, // γ (頭)
+"ser_delta":    { ra: 15.58, dec: 10.54, color: 0xFFFFDD, size: 1.1 }, // δ (喉)
+
+// --- 尾部 (Serpens Cauda) ---
+"alya":         { ra: 18.93, dec: 4.20,  color: 0xFFFFFF, size: 1.2 }, // θ (尾の先・二重星)
+"ser_eta":      { ra: 18.35, dec: -2.98, color: 0xFFDDAA, size: 1.1 }, // η (尾の一部)
+
+// --- ★追加データ ---
+// 頭部と尾部のつながりを強化
+"ser_epsilon":  { ra: 15.84, dec: 4.47,   color: 0xFFFFFF, size: 1.1 }, // ε (頭部・首)
+"ser_mu":       { ra: 15.83, dec: -3.43,  color: 0xFFFFFF, size: 1.1 }, // μ (頭部・胴体)
+"ser_kappa":    { ra: 15.81, dec: 18.14,  color: 0xFF4422, size: 1.1 }, // κ (頭部・頭頂)
+"ser_iota":     { ra: 15.69, dec: 19.67,  color: 0xAACCFF, size: 1.0 }, // ι (頭部・あご先)
+"ser_xi":       { ra: 17.63, dec: -15.35, color: 0xFFFF99, size: 1.1 }, // ξ (尾部・へびつかい座の足元)
+"ser_nu":       { ra: 17.34, dec: -12.84, color: 0xAACCFF, size: 1.0 }, // ν (尾部・付け根)
+"ser_omicron":  { ra: 17.69, dec: -12.92, color: 0xFFFFFF, size: 1.0 }, // ο (尾部)
+
+
+// ==========================================
+// 🐦 Corvus (からす座) - 5星
+// ==========================================
+// 台形のような形が特徴。アポロンの使いの鳥です。
+"gienah":       { ra: 12.26, dec: -17.54, color: 0xAACCFF, size: 1.3 }, // γ (右の翼)
+"kraz":         { ra: 12.57, dec: -23.39, color: 0xFFFF99, size: 1.3 }, // β (右足)
+"algorab":      { ra: 12.49, dec: -16.51, color: 0xFFFFFF, size: 1.2 }, // δ (左の翼)
+"minkar":       { ra: 12.17, dec: -22.62, color: 0xFFDDAA, size: 1.1 }, // ε (くちばし)
+
+// --- ★追加データ ---
+"crv_alpha":    { ra: 12.14, dec: -24.73, color: 0xFFDDAA, size: 1.0 }, // α (アルキバ：見かけは暗いがα星)
+
+
+// ==========================================
+// 💆 Coma Berenices (かみのけ座) - 3星
+// ==========================================
+// L字型。星団（Mel 111）が散らばっているので、主要な3つを結べばOKです。
+"diadem":       { ra: 13.16, dec: 17.52, color: 0xFFFFFF, size: 1.1 }, // α (王冠の宝石)
+"com_beta":     { ra: 13.19, dec: 27.87, color: 0xFFFF99, size: 1.1 }, // β (もっとも明るい)
+"com_gamma":    { ra: 12.45, dec: 28.27, color: 0xFFDDAA, size: 1.1 }, // γ (星団の中心)
+
+
+// ==========================================
+// 🚢 Carina (りゅうこつ座) - 9星
+// ==========================================
+// 旧アルゴ船座の船底部分。カノープスが輝きます。
+"canopus":      { ra: 6.40,  dec: -52.70, color: 0xF5F5DC, size: 1.7 }, // α (南極老人星・全天2位の輝き)
+"miaplacidus":  { ra: 9.22,  dec: -69.72, color: 0xFFFFFF, size: 1.4 }, // β (船尾)
+"avior":        { ra: 8.38,  dec: -59.51, color: 0xFFDDAA, size: 1.3 }, // ε (ニセ十字の一角)
+"aspidiske":    { ra: 9.29,  dec: -59.27, color: 0xFFFFFF, size: 1.3 }, // ι (ニセ十字の一角)
+"car_theta":    { ra: 10.72, dec: -64.39, color: 0xAACCFF, size: 1.2 }, // θ (船底)
+"car_upsilon":  { ra: 9.78,  dec: -65.07, color: 0xFFFFFF, size: 1.2 }, // υ (船底)
+"car_omega":    { ra: 10.23, dec: -70.04, color: 0xFFFFFF, size: 1.2 }, // ω (船底)
+
+// --- ★追加データ ---
+"car_chi":      { ra: 7.95,  dec: -52.99, color: 0xAACCFF, size: 1.1 }, // χ (船体の一部)
+"car_h":        { ra: 8.92,  dec: -59.23, color: 0xFFFF99, size: 1.1 }, // h (近くに散開星団)
+
+
+// ==========================================
+// ✝️ Crux (みなみじゅうじ座) - 5星
+// ==========================================
+// サザンクロス。4つの星で十字、イプシロン星がアクセント。追加不要！
+"acrux":        { ra: 12.44, dec: -63.10, color: 0xAACCFF, size: 1.5 }, // α (足元・1等星)
+"mimosa":       { ra: 12.80, dec: -59.69, color: 0xAACCFF, size: 1.4 }, // β (東の腕・1等星)
+"gacrux":       { ra: 12.52, dec: -57.11, color: 0xFF4422, size: 1.4 }, // γ (頭・赤色巨星)
+"imai":         { ra: 12.25, dec: -58.75, color: 0xAACCFF, size: 1.3 }, // δ (西の腕)
+"ginan":        { ra: 12.36, dec: -60.40, color: 0xFFDDAA, size: 1.1 }, // ε (十字の間の小さな星)
+
+
+// ==========================================
+// ★追加: 🌊 Eridanus (エリダヌス座) - 15星
+// ==========================================
+// オリオンの足元から始まり、蛇行しながら南の果てまで続く「天の川」。
+"cursa":        { ra: 5.13,  dec: -5.09,  color: 0xFFFFFF, size: 1.2 }, // β (オリオン座リゲルのすぐそば)
+"zaurak":       { ra: 3.97,  dec: -13.51, color: 0xFFDDAA, size: 1.1 }, // γ (川の流れ)
+"rana":         { ra: 3.72,  dec: -9.77,  color: 0xFFFF99, size: 1.1 }, // δ (修正済み)
+"achernar":     { ra: 1.63,  dec: -57.24, color: 0xAACCFF, size: 1.6 }, // α (川の果て・1等星)
+
+// --- ★追加データ (川の蛇行を描くために必須！) ---
+"eri_epsilon":  { ra: 3.55,  dec: -9.46,  color: 0xFFFF99, size: 1.1 }, // ε (ラナ：δ星と同じ位置の近く) ※注: Ranaはδ星
+// 訂正: ε星(Epsilon Eridani)は有名な星
+"eri_zeta":     { ra: 3.26,  dec: -8.82,  color: 0xFFFFEE, size: 1.1 }, // ζ (ジバル)
+"eri_eta":      { ra: 2.94,  dec: -8.89,  color: 0xFFDDAA, size: 1.1 }, // η (アズハ)
+"eri_theta":    { ra: 2.97,  dec: -40.30, color: 0xFFFFFF, size: 1.2 }, // θ (アカマル・南天の宝石)
+"eri_iota":     { ra: 2.50,  dec: -39.86, color: 0xFFFF99, size: 1.0 }, // ι (川の流れ)
+"eri_kappa":    { ra: 2.45,  dec: -47.70, color: 0xFFFFEE, size: 1.0 }, // κ (川の流れ)
+"eri_nu":       { ra: 4.60,  dec: -3.35,  color: 0xAACCFF, size: 1.0 }, // ν (川の上流)
+"eri_omicron1": { ra: 4.19,  dec: -6.84,  color: 0xFFFFFF, size: 1.0 }, // ο1 (ベイド)
+"eri_tau4":     { ra: 3.33,  dec: -21.75, color: 0xFFDDAA, size: 1.0 }, // τ4 (川の中流)
+"eri_upsilon2": { ra: 4.40,  dec: -30.56, color: 0xFFFF99, size: 1.0 }, // υ2 (テミン)
+
+
 
 
 };
@@ -1294,24 +1557,40 @@ const STAR_DB = {
         }
     },
 
-
-"orion": {
+   
+    "orion": {
         jpName: "オリオン座", rank: "famous", catch: "冬の夜空の絶対王者",
         lines: [
-            // 鼓（つづみ）型の胴体
-            ["betelgeuse", "bellatrix"], ["betelgeuse", "alnitak"],
-            ["rigel", "saiph"], ["rigel", "mintaka"],
-            ["bellatrix", "mintaka"], ["saiph", "alnitak"],
-            // 三ツ星
-            ["mintaka", "alnilam"], ["alnilam", "alnitak"],
-            // 頭部
+            // --- 基本の鼓（つづみ）型 ---
+            // ベテルギウス(α)とリゲル(β)を対角線で結ぶのが綺麗です
+            ["betelgeuse", "alnitak"], ["bellatrix", "mintaka"], 
+            ["rigel", "saiph"], ["saiph", "alnitak"], 
+            ["rigel", "mintaka"],
+            
+            // --- 三ツ星 ---
+            // 東のアルニタクから西のミンタカへ
+            ["alnitak", "alnilam"], ["alnilam", "mintaka"],
+
+            // --- 頭部 ---
+            // メイッサ(λ)を頂点に三角形を作ります
             ["meissa", "betelgeuse"], ["meissa", "bellatrix"],
-            // 剣（三ツ星の下）
+
+            // --- 剣（小三ツ星） ---
+            // 三ツ星の中央アルニラムから、剣の先ハツァ(ι)へ
             ["alnilam", "hatsa"],
-            // 棍棒（振り上げた右腕）
-            ["betelgeuse", "ori_chi1"], ["ori_chi1", "ori_chi2"],
-            // 盾 / 獅子の毛皮（左腕の先にあるπ星列のカーブ）
-            ["bellatrix", "ori_pi3"], // 肩から盾の中央へ
+
+            // --- ★ここが進化！右手の棍棒 ---
+            // ベテルギウスから、μ(肘)→ν(柄)→ξ(柄)→χ1(先端)→χ2(先端)と繋ぎます
+            // これで力強く武器を振り上げている姿になります！
+            ["betelgeuse", "ori_mu"], 
+            ["ori_mu", "ori_nu"], 
+            ["ori_nu", "ori_xi"], 
+            ["ori_xi", "ori_chi1"], 
+            ["ori_chi1", "ori_chi2"],
+
+            // --- 左手の盾（獅子の毛皮） ---
+            // ベラトリックスから、π3星へ繋ぎ、そこから弓なりにπ星列を結びます
+            ["bellatrix", "ori_pi3"],
             ["ori_pi1", "ori_pi2"], ["ori_pi2", "ori_pi3"],
             ["ori_pi3", "ori_pi4"], ["ori_pi4", "ori_pi5"], ["ori_pi5", "ori_pi6"]
         ],
@@ -1322,18 +1601,35 @@ const STAR_DB = {
             myth: "ギリシャ神話の英雄オリオンは、月と狩猟の女神アルテミスと恋仲でしたが、兄アポロンの策略によって命を落としました。悲しんだ女神が彼を空に上げましたが、苦手なサソリが昇ると逃げるように沈みます。"
         }
     },
+
     "canis_major": {
         jpName: "おおいぬ座", rank: "famous", catch: "全天一明るい星シリウス",
         lines: [
-            // 頭部
+            // --- 頭部 ---
+            // シリウス(鼻先)から頭頂部のθ星へ。
+            ["sirius", "cma_theta"],
+            // 一般的な接続：シリウスからムリフェイン(γ)へ
             ["sirius", "muliphein"],
-            // 胴体から腰
-            ["sirius", "cma_omicron2"], ["cma_omicron2", "wezen"],
-            // 前足（マニアックな接続！）
-            ["sirius", "mirzam"], ["mirzam", "cma_nu2"],
-            // 後ろ足
-            ["wezen", "adhara"], ["adhara", "furud"],
-            // 尻尾
+            // ★追加：シリウスからι星(首下)を経由して前足へつなぐとリアルです
+            ["sirius", "cma_iota"], ["cma_iota", "mirzam"],
+
+            // --- 前足 ---
+            // ミルザム(β)から、関節(ξ1)を経て、足先フルド(ζ)へ
+            ["mirzam", "cma_xi1"], ["cma_xi1", "furud"],
+
+            // --- 胴体 ---
+            // シリウスから胸(ν2)→背中(ο2)→腰(δ)へと流れるライン
+            ["sirius", "cma_nu2"], ["cma_nu2", "cma_omicron2"], ["cma_omicron2", "wezen"],
+
+            // --- ★ここが進化！後ろ足 ---
+            // ウェズン(腰)からアダラ(太もも)へ行き、
+            // 新データσ(関節)とκ(足先)を使って、踏ん張る後ろ足を描画！
+            ["wezen", "adhara"], 
+            ["adhara", "cma_sigma"], 
+            ["cma_sigma", "cma_kappa"],
+
+            // --- 尻尾 ---
+            // ウェズンからアルドラ(η)へ
             ["wezen", "aludra"]
         ],
         navTarget: "sirius",
@@ -1343,22 +1639,36 @@ const STAR_DB = {
             myth: "オリオンが連れていた猟犬です。とても足が速く、獲物を逃したことがないと言われています。主人のオリオン座を追いかけるように、少し遅れて東の空から昇ってきます。"
         }
     },
+
     "scorpius": {
         jpName: "さそり座", rank: "famous", catch: "S字を描く夏の主役",
         lines: [
-            // 頭とハサミ
-            ["antares", "graffias"], ["graffias", "dschubba"], ["dschubba", "sco_pi"],
-            // 胴体のS字カーブ（座標リストにある星だけで丁寧に接続）
-            ["antares", "wei"],
+            // --- 頭部とハサミ ---
+            // アンタレスから北の爪グラフィアスへ
+            ["antares", "graffias"],
+            // 北の爪：グラフィアスから、追加されたν(ジャバハー)やω1へ
+            ["graffias", "sco_nu"], ["graffias", "sco_omega1"],
+            // 頭部の横ライン：グラフィアス - ジュバ - π - ρ (★追加データ活用)
+            ["graffias", "dschubba"], ["dschubba", "sco_pi"], ["sco_pi", "sco_rho"],
+
+            // --- ★ここが進化！胴体の接続 ---
+            // アンタレスから、脇の星σ(アルニヤト)→背中のτ→背骨のε(ウェイ)と繋ぎます。
+            // これで心臓から体へのラインが途切れません！
+            ["antares", "sco_sigma"], ["sco_sigma", "sco_tau"], ["sco_tau", "wei"],
+
+            // --- 巨大なS字カーブ ---
+            // ウェイ(ε)から μ1→ζ2→η→サルガス(θ)へと続く背骨
             ["wei", "sco_mu1"],
             ["sco_mu1", "sco_zeta2"],
             ["sco_zeta2", "sco_eta"],
             ["sco_eta", "sargas"],
-            // 尾から毒針へ
+
+            // --- 尾と毒針 ---
+            // サルガスから釣り針のように曲がり、シャウラ(毒針)へ
             ["sargas", "sco_iota1"],
             ["sco_iota1", "sco_kappa"],
             ["sco_kappa", "shaula"],
-            ["shaula", "lesath"] // 最後の毒針の一撃
+            ["shaula", "lesath"] // 最後の毒針の先端
         ],
         navTarget: "antares",
         info: {
@@ -1367,18 +1677,27 @@ const STAR_DB = {
             myth: "暴れん坊だったオリオンを刺し殺した猛毒のサソリです。その功績で星座になりましたが、空でもオリオンを追いかけているため、決して同じ空には現れず、サソリが昇るとオリオンは沈みます。"
         }
     },
+
     "lyra": {
         jpName: "こと座", rank: "famous", catch: "七夕の織姫星ベガ",
         lines: [
-            // こと座の三角形
+            // --- こと座の小さな三角形 ---
+            // ベガ(α) - ε - ζ - ベガ
             ["vega", "lyr_epsilon"], ["lyr_epsilon", "lyr_zeta"], ["lyr_zeta", "vega"],
-            // 平行四辺形の枠組み
+
+            // --- 平行四辺形 ---
+            // ζから平行四辺形を描きます
             ["lyr_zeta", "sheliak"],
             ["sheliak", "sulafat"],
             ["sulafat", "lyr_delta2"],
             ["lyr_delta2", "lyr_zeta"],
-            // 琴の装飾（マニア追加）
-            ["vega", "lyr_eta"]
+
+            // --- ★ここが進化！竪琴のディテール ---
+            // 追加データを使って、楽器の「枠」や「持ち手」を表現
+            // ベガから枠の横へ
+            ["vega", "lyr_eta"], ["lyr_eta", "lyr_theta"],
+            // 平行四辺形の底辺から持ち手へ
+            ["lyr_delta2", "lyr_kappa"]
         ],
         navTarget: "vega",
         info: {
@@ -1387,19 +1706,33 @@ const STAR_DB = {
             myth: "音楽の名手オルフェウスが持っていた竪琴です。彼が奏でる音色は、人間だけでなく動物や草木、岩までも感動させたと伝えられています。妻エウリュディケを冥界から救い出そうとした悲劇の物語が有名です。"
         }
     },
+
     "aquila": {
         jpName: "わし座", rank: "famous", catch: "天の川を飛ぶ彦星",
         lines: [
-            // 鷲の背骨
-            ["altair", "alshain"], ["altair", "tarazed"],
-            // 右翼
-            ["altair", "aql_delta"],
-            ["aql_delta", "aql_theta"], // 翼の先
-            ["aql_delta", "aql_iota"],  // 翼の下部
-            // 左翼と尾
-            ["altair", "aql_zeta"],
+            // --- 鷲の背骨（アルタイルを中心に） ---
+            // タラゼド(γ) - アルタイル(α) - アルシャイン(β) という「わし座の三ツ星」
+            ["tarazed", "altair"], ["altair", "alshain"],
+            // 背中から尾へ伸びるライン（δ星へ接続）
+            ["alshain", "aql_delta"],
+
+            // --- ★ここが進化！右の翼（北側） ---
+            // 以前はスカスカでしたが、μ(付け根)・σ(飾り)・ζ(上部)・ε(尾部)を使って
+            // 複雑な翼の形を描きます
+            ["aql_delta", "aql_mu"], 
+            ["aql_mu", "aql_sigma"],
+            ["aql_sigma", "aql_zeta"],
             ["aql_zeta", "aql_epsilon"],
-            ["aql_epsilon", "althalimain"] // 尾の先端
+
+            // --- ★ここが進化！左の翼（南側） ---
+            // 翼の付け根η(エータ)を追加したことで、関節が表現できます
+            ["aql_delta", "aql_eta"], 
+            ["aql_eta", "aql_theta"], // 翼の先端へ
+
+            // --- 翼の下部/足 ---
+            // λ(アルタリマイン)周辺のディテール
+            ["aql_delta", "althalimain"], 
+            ["althalimain", "aql_iota"]
         ],
         navTarget: "altair",
         info: {
@@ -1408,36 +1741,61 @@ const STAR_DB = {
             myth: "大神ゼウスが変身した黒鷲の姿です。美少年ガニュメデスをさらって天界へ連れ去るために、この姿になったと言われています。わし座の近くにガニュメデスの姿（みずがめ座）があるのはそのためです。"
         }
     },
+
     "cygnus": {
         jpName: "はくちょう座", rank: "famous", catch: "天の川を泳ぐ北十字",
         lines: [
-            // 北十字（クロス）
-            ["deneb", "sadr"], ["sadr", "albireo"],
-            // 翼の広がり（右翼・西側）
+            // --- 北十字（ノーザンクロス） ---
+            // 縦のライン：デネブ(α) - サドル(γ)
+            ["deneb", "sadr"], 
+            
+            // --- ★ここが進化！長い首 ---
+            // サドルからアルビレオ(β)へ一気に引くのではなく、
+            // 途中にあるη(エータ)星を経由させることで、優雅な首のカーブを作ります
+            ["sadr", "cyg_eta"], ["cyg_eta", "albireo"],
+
+            // --- 右の翼（北西側） ---
+            // δ(デルタ)から、θ(関節)→ι2→κ(先端)とつなぎます
             ["sadr", "cyg_delta"],
-            ["cyg_delta", "cyg_iota2"], // マニアックな翼端への延長
+            ["cyg_delta", "cyg_theta"],
+            ["cyg_theta", "cyg_iota2"],
             ["cyg_iota2", "cyg_kappa"],
-            // 翼の広がり（左翼・東側）
+
+            // --- 左の翼（南東側） ---
+            // ジェナ(ε)から、ν(付け根)・τ・ζ(先端)へ
+            // さらにξ(クシー)で翼の飾り羽を表現
             ["sadr", "gjenah"],
-            ["gjenah", "cyg_zeta"],
-            ["cyg_zeta", "cyg_tau"]
+            ["gjenah", "cyg_nu"],
+            ["cyg_nu", "cyg_tau"],
+            ["cyg_tau", "cyg_zeta"],
+            ["cyg_nu", "cyg_xi"] // 追加の飾り羽
         ],
         navTarget: "deneb",
         info: {
             science: "夏の大三角の一角デネブを持ち、「北十字（ノーザン・クロス）」の愛称で親しまれています。天の川の流れに沿って大きな十字を描いており、口ばしのアルビレオは全天で最も美しい二重星と言われます。",
             trivia: "デネブは1等星の中でも特に遠くにあり（約1400光年）、本来の明るさは太陽の数万倍という超高輝度星です。もしシリウスの距離にあったら、満月より明るく輝いていたでしょう。",
-            myth: "スパルタ王妃レダに恋をした大神ゼウスが、彼女に近づくために変身した白鳥の姿です。または、太陽の馬車を暴走させて川に落ちた親友パエトーンを探し続ける友人キュクノスの姿とも言われています。"
+            myth: "スパルタ王妃レダに恋をした大神ゼウスが、彼女に近づくために変身した白鳥の姿です。または、太陽の馬車を暴走させて川に落ちた親友パエトーンを探し続ける友人キュクノスの姿とも言われています。
         }
     },
 
-"cassiopeia": {
+    "cassiopeia": {
         jpName: "カシオペヤ座", rank: "famous", catch: "北の夜空の女王",
         lines: [
-            // W字（M字）
-            ["caph", "schedar"], ["schedar", "cas_gamma"],
-            ["cas_gamma", "ruchbah"], ["ruchbah", "segin"],
-            // 椅子の背もたれ・脚（マニアックな立体感）
-            ["schedar", "achird"], ["achird", "cas_zeta"]
+            // --- 基本のW字（M字） ---
+            ["caph", "schedar"], 
+            ["schedar", "cas_gamma"],
+            ["cas_gamma", "ruchbah"], 
+            ["ruchbah", "segin"],
+
+            // --- ★ここが進化！女王の玉座 ---
+            // α星シェダル(胸元)とγ星(腰)の間に、η星アキルドを挟んで三角形を作ります。
+            // これで「背もたれのある椅子」の形になります！
+            ["schedar", "achird"], 
+            ["achird", "cas_gamma"], // これで背中のラインが閉じる
+
+            // --- 王妃の顔/腕 ---
+            // アキルドからζ星へ伸ばします
+            ["achird", "cas_zeta"]
         ],
         navTarget: "schedar",
         info: {
@@ -1446,19 +1804,28 @@ const STAR_DB = {
             myth: "古代エチオピアの王妃カシオペヤです。「私は海の妖精より美しい」と自慢したため、海神ポセイドンの怒りを買い、娘のアンドロメダが生贄にされる原因を作ってしまいました。その罰として、椅子に縛られたまま空を回り続けています。"
         }
     },
+
     "ursa_major": {
         jpName: "おおぐま座", rank: "famous", catch: "北斗七星を抱く大熊",
         lines: [
-            // 北斗七星（ひしゃく）
-            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], ["megrez", "dubhe"], // マス
-            ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"], // 柄（尻尾）
-            // 頭部
-            ["dubhe", "muscida"],
-            // 前足（ガゼルの第1の跳躍）
+            // --- 北斗七星（ひしゃく/尻尾と腰） ---
+            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], ["megrez", "dubhe"], 
+            ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"],
+
+            // --- ★ここが進化！頭部と首 ---
+            // 以前はドゥーベ(α)から鼻先へ直結していましたが、
+            // θ(喉)、υ(背中側)、23番星(首筋)を使って「首」をしっかり描きます
+            ["dubhe", "uma_theta"], ["uma_theta", "muscida"], // 喉のライン
+            ["dubhe", "uma_23"], ["uma_23", "uma_upsilon"], ["uma_upsilon", "muscida"], // 頭頂部のライン
+
+            // --- 前足 ---
+            // メラク(β)からタリタ(ι)・κ星へ
             ["merak", "talitha"], ["talitha", "uma_kappa"],
-            // 後ろ足1（ガゼルの第2の跳躍）
+
+            // --- 後ろ足 ---
+            // フェクダ(γ)からタニア(λ・μ)へ
             ["phecda", "tania_bor"], ["tania_bor", "tania_aus"],
-            // 後ろ足2（ガゼルの第3の跳躍）
+            // メグレズ(δ)からウラ(ν・ξ)へ
             ["megrez", "ula_bor"], ["ula_bor", "ula_aus"]
         ],
         navTarget: "alioth",
@@ -1467,16 +1834,33 @@ const STAR_DB = {
             trivia: "北斗七星の柄の端から2番目のミザールには「アルコル」という死兆星（補星）がくっついています。視力検査に使われたり、漫画『北斗の拳』で有名ですね。",
             myth: "森の妖精カリストが姿を変えられた姿です。大神ゼウスと恋に落ちましたが、女神ヘラの嫉妬を買って熊にされてしまいました。狩人になった息子アルカス（うしかい座）に射殺されそうになったところを、ゼウスによって空に上げられました。"
         }
-    },
+},
+    
+
     "aries": {
         jpName: "おひつじ座", rank: "famous", catch: "黄金の毛を持つ羊",
         lines: [
-            // 頭部と角
+            // --- 頭部と角 ---
+            // ハマル(α) - シェラタン(β) - メサルティム(γ) で角のカーブを描く
             ["hamal", "sheratan"], ["sheratan", "mesarthim"],
-            // 胴体
+
+            // --- ★ここが進化！胴体と脚 ---
+            // 追加データの λ(角の根元) を経由させることで、首のつながりが自然に！
+            ["hamal", "ari_lambda"], 
+
+            // 胴体：ハマルから背中(41番星)→腰(ボテインδ)
             ["hamal", "ari_41"], ["ari_41", "botein"],
-            // 走る後ろ足（マニア追加）
-            ["botein", "ari_epsilon"], ["ari_epsilon", "ari_pi"]
+            
+            // お腹側：ハマルから前足の付け根(η)→胴体(θ)→腰(ボテイン)
+            // これで「ただの線」から「動物の体」になります
+            ["hamal", "ari_eta"], ["ari_eta", "ari_theta"], ["ari_theta", "botein"],
+
+            // --- 走る後ろ足 ---
+            // ボテインから尻尾の付け根(ε)→足(π)→足先(ι)
+            // 追加されたι星まで伸ばすことで、力強く蹴っている足になります
+            ["botein", "ari_epsilon"], 
+            ["ari_epsilon", "ari_pi"], 
+            ["ari_pi", "ari_iota"]
         ],
         navTarget: "hamal",
         info: {
@@ -1485,20 +1869,36 @@ const STAR_DB = {
             myth: "黄金の毛を持つ空飛ぶ羊です。ボイオティア王の子供たち、プリクソスとヘレが継母にいじめられていたところを助け出し、背中に乗せて空を飛んで逃がしました。"
         }
     },
+
     "taurus": {
         jpName: "おうし座", rank: "famous", catch: "すばると赤い瞳の猛牛",
         lines: [
-            // ヒアデス星団（V字の顔）
-            ["aldebaran", "tau_epsilon"], ["tau_epsilon", "tau_gamma"], 
-            ["tau_gamma", "tau_delta1"], ["tau_delta1", "aldebaran"],
-            // 長い角
-            ["tau_epsilon", "tau_zeta"], // 南の角
-            ["tau_gamma", "elnath"],     // 北の角
-            // すばるへの視線
-            ["tau_epsilon", "pleiades"],
-            // 前足（蹄まで再現）
-            ["tau_lambda", "tau_gamma"], // 胸への接続
-            ["tau_lambda", "tau_nu"], ["tau_nu", "tau_10"]
+            // --- ヒアデス星団（V字の顔） ---
+            // アルデバラン(α)から、θ1→γ(鼻先)→δ1→ε(目)とつないでV字を閉じます
+            // θ1の追加でV字の密度が増しました
+            ["aldebaran", "tau_theta1"], ["tau_theta1", "tau_gamma"], 
+            ["tau_gamma", "tau_delta1"], ["tau_delta1", "tau_epsilon"],
+            ["tau_epsilon", "aldebaran"],
+
+            // --- 巨大な角 ---
+            // 南の角：アルデバランの近くからζ(天関)へ
+            ["aldebaran", "tau_zeta"], 
+            // 北の角：εからτ(付け根)→エルナト(β)へ
+            // ★ポイント：ぎょしゃ座と共有するエルナトまでしっかり伸ばします
+            ["tau_epsilon", "tau_tau"], ["tau_tau", "elnath"],
+
+            // --- 胴体と前足 ---
+            // アルデバランから胸(λ)へ
+            ["aldebaran", "tau_lambda"],
+            // 背中：追加されたξとοを使って、首筋のラインを描きます
+            ["tau_lambda", "tau_xi"], ["tau_xi", "tau_omicron"],
+            // 前足：胸(λ)からμ(関節)→ν(足)→10番星(足先)へ
+            ["tau_lambda", "tau_mu"], ["tau_mu", "tau_nu"], ["tau_nu", "tau_10"],
+
+            // --- すばるへの視線 ---
+            // 距離感を示すため、あえて線は引かず、独立した存在として輝かせても良いですが、
+            // 星座絵としてつなぐなら、ヒアデスの一部から伸ばします
+            ["tau_upsilon", "pleiades"] // υ星からすばるへ
         ],
         navTarget: "aldebaran",
         info: {
@@ -1507,19 +1907,40 @@ const STAR_DB = {
             myth: "大神ゼウスが、フェニキアの王女エウロペに近づくために変身した白い牡牛の姿です。背中にエウロペを乗せてクレタ島まで泳いで渡ったと言われています。"
         }
     },
+
     "gemini": {
         jpName: "ふたご座", rank: "famous", catch: "仲良く並ぶカストルとポルックス",
         lines: [
-            // 頭同士の絆
-            ["castor", "pollux"],
-            // 弟ポルックスの体
-            ["pollux", "wasat"], ["wasat", "mekbuda"], ["mekbuda", "alhena"],
-            ["wasat", "gem_kappa"], // 弟の腕
-            // 兄カストルの体
-            ["castor", "mebsuta"], ["mebsuta", "tejat"], ["tejat", "propus"],
-            ["castor", "gem_iota"], // 兄の肩
-            ["gem_iota", "gem_theta"], // 振り上げた腕
-            ["gem_iota", "gem_upsilon"] // 弟の肩に置いた手
+            // --- 兄弟の絆 ---
+            // 頭同士をつなぐ線はあえて引かず、肩を組ませます
+
+            // --- 弟ポルックス（β）の体 ---
+            // 頭(β) - 首 - 肩(υ) - 脇(ι・兄の肩) ※兄弟で肩を組む！
+            ["pollux", "gem_upsilon"], ["gem_upsilon", "gem_iota"],
+
+            // 弟の胴体：肩(υ) - 腰(ワサトδ) - 膝(ζ) - 足(アルヘナγ)
+            // 完全な「人」の字になります
+            ["gem_upsilon", "wasat"], ["wasat", "mekbuda"], ["mekbuda", "alhena"],
+            
+            // ★追加：弟のもう片方の足（λとξ）
+            // これで片足立ちじゃなくなりました！
+            ["wasat", "gem_lambda"], ["gem_lambda", "gem_xi"],
+            // 弟の腕：肩(υ) - 手(σ)
+            ["gem_upsilon", "gem_sigma"],
+
+            // --- 兄カストル（α）の体 ---
+            // 頭(α) - 胴体(τ・心臓) - 腰(メブスタε)
+            // ★τ星の追加で胴体がしっかりしました
+            ["castor", "gem_tau"], ["gem_tau", "mebsuta"],
+            
+            // 兄の足：腰(ε) - 膝(μ) - 足先(η)
+            ["mebsuta", "tejat"], ["tejat", "propus"],
+            // ★追加：兄のもう片方の足
+            // 腰(ε) - ν(足首)
+            ["mebsuta", "gem_nu"],
+
+            // 兄の腕：肩(ι) - 肘(θ) - 手(τ・お牛の角へ)
+            ["gem_iota", "gem_theta"]
         ],
         navTarget: "pollux",
         info: {
@@ -1528,37 +1949,70 @@ const STAR_DB = {
             myth: "スパルタ王妃レダの息子たちです。弟ポルックスは神の子で不死身でしたが、兄カストルは人間の子でした。戦いで兄が死んだとき、弟は嘆き悲しみ、自分の不死の命を分けて兄と共に星になりました。"
         }
     },
+
     "cancer": {
         jpName: "かに座", rank: "famous", catch: "プレセペ星団を抱く خرچنگ",
         lines: [
-            // 甲羅と足
-            ["asellus_bor", "asellus_aus"], // 甲羅（南北のロバ）
-            ["asellus_aus", "acubens"], // 左下のハサミ
-            ["asellus_aus", "altarf"], // 右下の足
-            ["asellus_bor", "cnc_iota"], // 左上の足
-            ["asellus_bor", "cnc_chi"] // 右上の足
+            // --- 甲羅（四角形） ---
+            // γ(北) - δ(南) - θ(中央) - η(甲羅端)
+            // 甲羅の中央にθとηが入ることで、立体感が出ます
+            ["asellus_bor", "cnc_eta"], ["cnc_eta", "asellus_aus"],
+            ["asellus_aus", "cnc_theta"], ["cnc_theta", "asellus_bor"],
+
+            // --- 巨大なハサミ ---
+            // 左のハサミ：甲羅(南) - アクベンス(α)
+            ["asellus_aus", "acubens"],
+            // 右のハサミ：甲羅(北) - χ - ι(先端)
+            // さらにψ(付け根)を追加して、ハサミの可動部を再現
+            ["asellus_bor", "cnc_psi"], ["cnc_psi", "cnc_chi"], ["cnc_chi", "cnc_iota"],
+
+            // --- 多くの足 ---
+            // 右後ろ足：甲羅(南) - アルタルフ(β) - ζ(関節・追加！)
+            ["asellus_aus", "cnc_zeta"], ["cnc_zeta", "altarf"],
+            
+            // 左足：甲羅(北) - ξ(追加！)
+            ["asellus_bor", "cnc_xi"],
+
+            // 右前足：甲羅(北) - μ2(追加！)
+            ["asellus_bor", "cnc_mu2"]
         ],
         navTarget: "praesepe",
         info: {
-            science: "ふたご座としし座の間にある、少し暗い星座です。中心にある「プレセペ星団（M44）」は、空が暗い場所なら肉眼でもぼんやりとした雲のように見え、「蟹の気泡」とも呼ばれました。",
+           science: "ふたご座としし座の間にある、少し暗い星座です。中心にある「プレセペ星団（M44）」は、空が暗い場所なら肉眼でもぼんやりとした雲のように見え、「蟹の気泡」とも呼ばれました。",
             trivia: "「キャンサー（Cancer）」は医学用語の「癌」の語源でもあります。乳がんの腫瘍がカニの足のように血管を広げる様子に似ていたからだそうです。",
             myth: "勇者ヘルクレスがヒドラ（うみへび）と戦っているとき、ヒドラに加勢しようとしてヘルクレスの足を挟んだ巨大ガニです。あっさり踏み潰されてしまいましたが、女神ヘラがその勇気を称えて星座にしました。"
         }
     },
+
     "leo": {
         jpName: "しし座", rank: "famous", catch: "春の空に吠える獅子",
         lines: [
-            // ししの大鎌（頭部）
+            // --- ししの大鎌（頭部） ---
+            // レグルス(α) - η(胸) - アルギエバ(γ)
             ["regulus", "leo_eta"], ["leo_eta", "algieba"],
-            ["algieba", "leo_zeta"], ["leo_zeta", "leo_mu"], // 耳
-            ["leo_mu", "leo_epsilon"], // 鼻先
-            ["leo_epsilon", "leo_zeta"], // 顔のラインを閉じる
-            // 胴体
+            // アルギエバから頭頂部へ：ζ(たてがみ) - μ(頭頂) - ε(南の頭)
+            ["algieba", "leo_zeta"], ["leo_zeta", "leo_mu"], ["leo_mu", "leo_epsilon"],
+            // 鼻先と口元（★追加データ活用！）
+            // εから、κ(鼻先) - λ(口元) - ο(あご) と繋ぐと、横顔が完璧になります
+            ["leo_epsilon", "leo_kappa"], ["leo_kappa", "leo_lambda"], ["leo_lambda", "subra"],
+
+            // --- 前足 ---
+            // η(胸)から、ο(サブら)を経て、ρ(爪)・π(足裏)へ
+            // これでライオンが前足を突き出しているポーズになります
+            ["leo_eta", "subra"], ["subra", "leo_rho"], ["leo_rho", "leo_pi"],
+
+            // --- 胴体 ---
+            // アルギエバ(首) - ゾスマ(δ・背中) - デネボラ(β・尻尾)
             ["algieba", "zosma"], ["zosma", "denebola"],
-            // 前足
-            ["leo_eta", "subra"],
-            // 後ろ足（マニアックな蹴り出し）
-            ["zosma", "leo_theta"], ["leo_theta", "leo_iota"], ["leo_iota", "leo_sigma"]
+            // お腹のライン：レグルス - θ(後ろ足付け根)
+            ["regulus", "leo_theta"],
+
+            // --- 後ろ足 ---
+            // ゾスマとθをつないで腰を作り、
+            // θ - ι(関節) - σ(足先) へ
+            ["zosma", "leo_theta"], 
+            ["leo_theta", "leo_iota"], 
+            ["leo_iota", "leo_sigma"]
         ],
         navTarget: "regulus",
         info: {
@@ -1568,24 +2022,40 @@ const STAR_DB = {
         }
     },
 
-"virgo": {
+    "virgo": {
         jpName: "おとめ座", rank: "famous", catch: "麦の穂を持つ農業の女神",
         lines: [
-            // 頭部から背中
-            ["vir_nu", "zavijava"], // 額から後頭部
-            ["zavijava", "porrima"], // 首筋から胴体へ
-            ["porrima", "auva"], // 背中
-            // 腕
-            ["porrima", "vindemiatrix"], // 右腕を広げる
-            // 胴体から腰
-            ["porrima", "heze"], // 腰
-            ["heze", "spica"], // 腰から真珠星スピカへ
-            ["porrima", "spica"], // 体のライン
-            // スカート（ローブ）の裾
-            ["spica", "syrma"],
-            ["syrma", "rijl_al_awwa"], // 足先
-            // ★マニアックポイント：麦の穂
-            ["spica", "vir_109"] // スピカ（穂）の先端
+            // --- 頭部と胴体 ---
+            // 頭頂部(ν)を追加して、後頭部(β)→首(ο)→胴体(γ)へ
+            // これで頭の丸みがでます
+            ["vir_nu", "zavijava"], 
+            ["zavijava", "vir_omicron"], ["vir_omicron", "porrima"],
+            
+            // 背中のライン：ポリマ(γ) - アウヴァ(δ) - τ - ι(シルマ)
+            // 追加されたτ(タウ)星を経由することで、背中からスカートへのラインが滑らかに！
+            ["porrima", "auva"], ["auva", "vir_tau"], ["vir_tau", "syrma"],
+
+            // --- 腕 ---
+            // 右腕：ポリマ(γ) - ヴィンデミアトリックス(ε)
+            ["porrima", "vindemiatrix"],
+            // 左肩：ρ(ロー)星を追加して、肩の肉付きを表現
+            ["porrima", "vir_rho"],
+
+            // --- スカートと足（ここが進化！） ---
+            // 腰(ζ) - θ - スピカ(α) - κ - λ(足先)
+            // 以前はスピカで止まっていましたが、κとλ(カンバリア)をつなぐことで
+            // 長いローブの裾と、そこから覗く足先まで描画しました。
+            ["porrima", "heze"], ["heze", "vir_theta"], 
+            ["vir_theta", "spica"], ["spica", "vir_kappa"], ["vir_kappa", "vir_lambda"],
+            
+            // 別の裾ライン：シルマ(ι) - μ(足)
+            ["syrma", "rijl_al_awwa"],
+            // スカートの広がり：追加データφとχを使ってふんわり感を演出
+            ["spica", "vir_chi"], ["vir_chi", "vir_phi"], ["vir_phi", "heze"],
+
+            // --- 麦の穂 ---
+            // スピカから109番星へ。これが女神が持つ「麦の穂」の先端です。
+            ["spica", "vir_109"]
         ],
         navTarget: "spica",
         info: {
@@ -1594,18 +2064,26 @@ const STAR_DB = {
             myth: "正義の女神アストライアの姿とも言われています。かつて人間と神が地上で共存していた時代、人間たちが争いを始めると、神々は次々と天へ去りましたが、アストライアだけは最後まで地上に留まり正義を訴えました。しかし、遂に彼女も失望して空に昇ったとされています。"
         }
     },
+
     "libra": {
         jpName: "てんびん座", rank: "famous", catch: "正義を測る神の天秤",
         lines: [
-            // 天秤の竿（ビーム）
-            ["zubenelgenubi", "lib_theta"], // α星から支点へ
-            ["lib_theta", "zubeneschamali"], // 支点からβ星へ
-            // 北の皿（β星側）
-            ["zubeneschamali", "zubenelhakrabi"], // 吊り紐
-            ["zubenelhakrabi", "brachium"], // 皿の底
-            // 南の皿（α星側）
-            ["zubenelgenubi", "lib_upsilon"], // 吊り紐
-            ["lib_upsilon", "lib_tau"] // 皿の底
+            // --- 天秤の竿（ビーム） ---
+            // α星とβ星を直結せず、中央のμ(ミュー)星を経由させます。
+            // これが「支点」となり、天秤らしさが倍増します！
+            ["zubenelgenubi", "lib_mu"], ["lib_mu", "zubeneschamali"],
+
+            // --- 北の皿（β星側） ---
+            // 吊り紐にδ(デルタ)星を追加。これで紐が長くなります。
+            ["zubeneschamali", "lib_delta"], ["lib_delta", "zubenelhakrabi"],
+            // 皿の底
+            ["zubenelhakrabi", "brachium"],
+
+            // --- 南の皿（α星側） ---
+            // 吊り紐にι1(イオタ)星を追加。左右のバランスが整いました。
+            ["zubenelgenubi", "lib_iota1"], ["lib_iota1", "lib_upsilon"],
+            // 皿の底
+            ["lib_upsilon", "lib_tau"]
         ],
         navTarget: "zubenelgenubi",
         info: {
@@ -1614,21 +2092,37 @@ const STAR_DB = {
             myth: "おとめ座のアストライアが持っている正義の天秤です。人間の魂の善悪を測るとされ、死者の魂が冥界に行く際、この天秤に掛けられると言われています。"
         }
     },
+
     "sagittarius": {
         jpName: "いて座", rank: "famous", catch: "銀河の中心を射るケンタウルス",
         lines: [
-            // ティーポット（Teapot）
-            ["nunki", "kaus_bor"], ["kaus_bor", "kaus_med"], // 蓋
-            ["kaus_med", "alnasl"], // 注ぎ口
-            ["alnasl", "kaus_aus"], ["kaus_aus", "ascella"], // 底
-            ["ascella", "nunki"], // 取っ手側
-            // ティースプーン（スプーンまたは弓を引く頭）
-            ["nunki", "sgr_pi"], ["sgr_pi", "sgr_omicron"], ["sgr_omicron", "sgr_xi2"],
-            // ★マニアック修正：馬の体（南斗六星から下へ）
-            ["kaus_aus", "rukbat"], ["rukbat", "arkab_prior"], // 後ろ足
-            ["kaus_med", "sgr_eta"], // 前足（心臓部へ）
-            // テレベルム（馬のお尻の四辺形）
-            ["ascella", "sgr_62"], // 接続
+            // --- ティーポット（基本骨格） ---
+            ["nunki", "kaus_bor"], ["kaus_bor", "kaus_med"], 
+            ["kaus_med", "alnasl"], ["alnasl", "kaus_aus"], 
+            ["kaus_aus", "ascella"], ["ascella", "nunki"],
+
+            // --- 弓と矢 ---
+            // 矢の先端：アルナスル(γ)
+            // 弓の上部：カウス・ボレアリス(λ)から、追加されたμ(ポリス)へ延長！
+            ["kaus_bor", "sgr_mu"],
+
+            // --- ひしゃくの柄 / 上半身 ---
+            // ヌンキ(σ)から、φ(胸) - τ(背中) - ヌンキへ戻る三角形
+            // これで上半身の厚みが出ます
+            ["nunki", "sgr_phi"], ["sgr_phi", "sgr_tau"], ["sgr_tau", "nunki"],
+            // 頭部：φから頭へ
+            ["sgr_phi", "sgr_xi2"], ["sgr_xi2", "sgr_omicron"], 
+            ["sgr_omicron", "sgr_pi"], ["sgr_pi", "sgr_rho1"], // 髪飾り(ρ1)まで再現
+
+            // --- 馬の体（南斗六星の下） ---
+            // 前足：カウス・メディア(δ)からη(心臓)へ
+            ["kaus_med", "sgr_eta"],
+            // 腹部：カウス・アウストラリス(ε)からルクバト(α)へ
+            ["kaus_aus", "rukbat"], ["rukbat", "arkab_prior"],
+            
+            // --- テレベルム（馬のお尻） ---
+            // アスケラ(ζ)から62番星へつなぎ、四辺形を描く
+            ["ascella", "sgr_62"],
             ["sgr_62", "sgr_60"], ["sgr_60", "sgr_omega"], ["sgr_omega", "sgr_59"], ["sgr_59", "sgr_62"]
         ],
         navTarget: "kaus_aus",
@@ -1638,43 +2132,71 @@ const STAR_DB = {
             myth: "半人半馬の賢者ケイローンの姿です。ヘルクレス、アキレウス、アスクレピオスなど多くの英雄の師匠でしたが、ヘルクレスが誤って放った毒矢に当たり、不死の命を返上して星座になりました。"
         }
     },
+
     "capricornus": {
         jpName: "やぎ座", rank: "famous", catch: "海を泳ぐヤギ",
         lines: [
-            // 逆三角形（パンツ型）の基本ライン
-            ["algedi", "dabih"], // 頭の角
-            ["dabih", "cap_theta"], // 首
-            ["cap_theta", "cap_psi"], ["cap_psi", "cap_omega"], // お腹
-            ["cap_omega", "nashira"], // 尾びれへのライン
-            ["nashira", "deneb_algedi"], // 尾びれ
-            ["deneb_algedi", "cap_theta"], // 背中を閉じる（ショートカット）
-            // 顔のディテール
-            ["algedi", "cap_nu"] // 顔の近くにある小さな星
+            // --- 逆三角形の輪郭 ---
+            ["algedi", "dabih"], 
+            ["dabih", "cap_rho"], ["cap_rho", "cap_pi"], // 頭から首のラインを細かく
+            ["cap_pi", "cap_omicron"], // ※提供データにomicronがない場合、ここは飛ばしてpi->thetaへ
+            ["cap_pi", "cap_theta"], // 背中
+
+            // --- 魚の尾（後半身） ---
+            // ナシラ(γ) - デネブ・アルゲディ(δ) - ι - θ と繋いで背中を閉じる
+            ["cap_theta", "cap_iota"], ["cap_iota", "deneb_algedi"], 
+            ["deneb_algedi", "nashira"],
+
+            // --- 腹部（ここが進化！） ---
+            // 以前は直角三角形でしたが、ψ(腹) - ω(腹下) - ζ(腰) - ε(カストラ)
+            // とつなぐことで、丸みを帯びた魚の腹部を描きます
+            ["dabih", "cap_psi"], 
+            ["cap_psi", "cap_omega"], 
+            ["cap_omega", "cap_zeta"], 
+            ["cap_zeta", "cap_epsilon"], // カストラ(腹)
+            ["cap_epsilon", "nashira"]   // 尾びれへ
         ],
         navTarget: "deneb_algedi",
         info: {
-            science: "秋の空に浮かぶ逆三角形（パンツ型とも呼ばれます）の星座です。α星アルゲディは肉眼でも二重星に見える珍しい星です。",
+           science: "秋の空に浮かぶ逆三角形（パンツ型とも呼ばれます）の星座です。α星アルゲディは肉眼でも二重星に見える珍しい星です。",
             trivia: "モデルは牧神パン。上半身がヤギ、下半身が魚という奇妙な姿をしています。これは怪物テュポンから逃げる際、変身に失敗して慌てて川に飛び込んだためと言われています。",
             myth: "神々の宴会中、突然怪物が現れ、パンはパニックになって変身魔法を使いました。しかし川に飛び込んだ下半身だけ魚になり、上半身はヤギのままというユーモラスな姿になってしまい、ゼウスがそれを面白がって星座にしました。"
         }
     },
+
     "aquarius": {
         jpName: "みずがめ座", rank: "famous", catch: "美少年ガニュメデスの水瓶",
         lines: [
-            // 少年ガニュメデスの体
-            ["sadalmelik", "sadalsuud"], // 肩
-            ["sadalsuud", "albali"], ["albali", "ancha"], // 体のライン
-            ["sadalmelik", "aqr_zeta"], // 腕から瓶へ
-            // 三ツ矢（水瓶）
-            ["aqr_zeta", "sadachbia"], // 瓶の口
-            ["aqr_zeta", "aqr_eta"], 
-            ["aqr_zeta", "aqr_pi"], 
-            // 流れ落ちる水（ここが最重要！）
+            // --- 少年ガニュメデスの体 ---
+            // 右肩(α) - 左肩(β)
+            ["sadalmelik", "sadalsuud"],
+            // 胴体：左肩(β) - θ(腰)
+            ["sadalsuud", "ancha"], // ancha(θ)へ直接つなぐラインも綺麗です
+
+            // --- ★ここが進化！ 左手と袖 ---
+            // 追加データ ν(左手袖)・μ(左手先)・ε(左手) をつなぎます
+            // これで瓶を支える手と、風になびく袖が描けます
+            ["sadalsuud", "aqr_nu"], ["aqr_nu", "aqr_mu"], ["aqr_mu", "albali"], ["albali", "ancha"],
+
+            // 右手から瓶へ：右肩(α) - ι(右太もも) ※座っている姿ならここもつなぐ
+            ["sadalmelik", "aqr_zeta"],
+
+            // --- 三ツ矢（水瓶） ---
+            ["aqr_zeta", "sadachbia"], ["aqr_zeta", "aqr_eta"], ["aqr_zeta", "aqr_pi"],
+
+            // --- 流れ落ちる水（最重要！） ---
+            // η(エータ)から流れ出し、λ - φ - ψ1 - χ(データ外なら省略) - φ - ...
+            // 提供データの流れ：η -> λ -> φ -> ψ1 -> ω2 -> τ2 -> 88番星(c2)
             ["aqr_eta", "aqr_lambda"],
             ["aqr_lambda", "aqr_phi"],
-            ["aqr_phi", "skat"], // 足元の星
-            ["skat", "aqr_iota"], 
-            ["aqr_iota", "aqr_omega2"] // みなみのうお座へ届く水流の末端
+            ["aqr_phi", "aqr_psi1"],
+            ["aqr_psi1", "aqr_omega2"], // 分岐点
+            ["aqr_omega2", "aqr_iota"], // 足元の星へも水を散らす
+            
+            // さらに下へ：ω2 -> τ2 -> 88番星(c2)
+            // ここまで描くと、みなみのうお座の口元ギリギリまで水が届きます！
+            ["aqr_omega2", "aqr_tau2"],
+            ["aqr_tau2", "aqr_c2"]
         ],
         navTarget: "sadalmelik",
         info: {
@@ -1683,40 +2205,64 @@ const STAR_DB = {
             myth: "トロイアの王子ガニュメデスは、人間界で一番の美少年でした。ゼウスに見初められ、大鷲（わし座）にさらわれて天界へ連れてこられ、神々の給仕係として永遠に働くことになりました。"
         }
     },
+
     "pisces": {
         jpName: "うお座", rank: "famous", catch: "リボンで結ばれた二匹の魚",
         lines: [
-            // 結び目（リボン）
-            ["alrescha", "pis_gamma"], // 西の魚へ
-            ["alrescha", "pis_omicron"], // 北の魚へ
-            // 西の魚（Circlet / 輪）
-            ["pis_gamma", "pis_iota"], ["pis_iota", "pis_theta"], 
-            ["pis_theta", "pis_kappa"], ["pis_kappa", "pis_lambda"],
-            ["pis_lambda", "pis_tx"], ["pis_tx", "pis_gamma"],
-            // 北の魚（長い紐の先）
+            // --- 🎀 結び目（リボン） ---
+            ["alrescha", "pis_omicron"], // 北への紐
+
+            // --- 🎣 北の魚 ---
             ["pis_omicron", "pis_eta"], ["pis_eta", "pis_rho"],
-            ["pis_rho", "pis_phi"], ["pis_phi", "pis_upsilon"],
-            ["pis_upsilon", "pis_tau"] // 北の魚の先端
+            ["pis_rho", "pis_phi"], ["pis_phi", "pis_upsilon"], ["pis_upsilon", "pis_tau"],
+
+            // --- 🐟 西の魚（サークレット） ---
+            // γ - κ - λ - TX - ι - θ - γ で一周
+            ["pis_gamma", "pis_kappa"], ["pis_kappa", "pis_lambda"],
+            ["pis_lambda", "pis_tx"], ["pis_tx", "pis_iota"],
+            ["pis_iota", "pis_theta"], ["pis_theta", "pis_gamma"],
+            // 口先（β）を追加してディテールアップ
+            ["pis_gamma", "pis_beta"],
+
+            // --- ★ここが進化！ 南側の紐（幻のライン） ---
+            // 今までは結び目(α)から西の魚(γ)へ直結していましたが、それは間違い！
+            // 追加データの ν, μ, ζ, ε, δ を経由して、だらりと垂れ下がった紐を描きます。
+            ["alrescha", "pis_delta"], 
+            ["pis_delta", "pis_epsilon"],
+            ["pis_epsilon", "pis_zeta"],
+            ["pis_zeta", "pis_mu"],
+            ["pis_mu", "pis_nu"],
+            ["pis_nu", "pis_gamma"] // 西の魚へ接続
         ],
         navTarget: "alrescha",
         info: {
-            science: "「く」の字型に並んだ星々が特徴です。西側の輪っか部分は「サークレット」と呼ばれ、空が暗ければ可愛らしく見えます。",
+            science: "「く」の字型に並んだ星々が特徴です。西側の輪っか部分は「サークレット」と呼ばれ、空が暗ければ可愛らしく見えます。提供データのTX星まで使って輪を描くのは非常に本格的です。",
             trivia: "現在は春分点がこの星座にあります。キリスト教では魚がシンボルとされることがありますが、これはキリストの誕生時期と春分点がうお座に入った時期が重なることに関連するという説もあります。",
             myth: "美の女神アフロディーテとその子エロスが、怪物テュポンから逃げるために魚に変身した姿です。はぐれないように、お互いの尾をリボン（紐）で結んでいます。やぎ座のパンと同じ時のエピソードですね。"
         }
     },
 
-
-"auriga": {
+    "auriga": {
         jpName: "ぎょしゃ座", rank: "normal", catch: "カペラ輝く五角形",
         lines: [
-            // 五角形（エルナトはおうし座の星を使用）
-            ["capella", "menkalinan"], ["menkalinan", "aur_theta"],
-            ["aur_theta", "aur_iota"], ["aur_iota", "elnath"], // elnathはTaurusにある
+            // --- 五角形（基本の将棋の駒型） ---
+            // エルナト（おうし座β）を共有して五角形を閉じます
+            ["capella", "menkalinan"], 
+            ["menkalinan", "aur_theta"],
+            ["aur_theta", "aur_iota"], 
+            ["aur_iota", "elnath"], // Taurusの星を使用
             ["elnath", "capella"],
-            // 子ヤギたち (The Kids)
+
+            // --- 北の三角帽子（追加データ活用） ---
+            // αとβからδ星へ伸ばして、五角形の上に帽子を乗せます
+            ["capella", "aur_delta"], ["aur_delta", "menkalinan"],
+
+            // --- 子ヤギたち (The Kids) ---
+            // カペラのすぐそばにある小さな三角形
             ["capella", "aur_epsilon"], 
-            ["aur_epsilon", "aur_zeta"], ["aur_zeta", "aur_eta"]
+            ["aur_epsilon", "aur_zeta"], 
+            ["aur_zeta", "aur_eta"],
+            ["aur_eta", "aur_epsilon"] // 閉じて三角形にする
         ],
         navTarget: "capella",
         info: {
@@ -1725,14 +2271,23 @@ const STAR_DB = {
             myth: "アテネの王エリクトニオスの姿とされています。彼は足が不自由だったため、移動手段として馬車（戦車）を発明しました。その功績を称えてゼウスが天に上げたとされています。"
         }
     },
+
     "canis_minor": {
         jpName: "こいぬ座", rank: "normal", catch: "冬の大三角の一角プロキオン",
         lines: [
-            // 背骨
+            // --- 背骨（メインライン） ---
             ["procyon", "gomeisa"],
-            // マニアックな肉付け（頭と足）
-            ["gomeisa", "cmi_epsilon"], // 頭
-            ["procyon", "cmi_eta"] // 足・体
+
+            // --- ★ここが進化！ 三角おみみ ---
+            // ゴメイサ(β) - ε - γ(追加！) を結んで、ピンと立った耳を描きます
+            // これで「ただの直線」から「犬の顔」に見えるようになります
+            ["gomeisa", "cmi_epsilon"], 
+            ["cmi_epsilon", "cmi_gamma"], 
+            ["cmi_gamma", "gomeisa"],
+
+            // --- 足 ---
+            // プロキオンからη(エータ)星へ。ちょこんとした前足です。
+            ["procyon", "cmi_eta"]
         ],
         navTarget: "procyon",
         info: {
@@ -1741,18 +2296,31 @@ const STAR_DB = {
             myth: "おおいぬ座と共にオリオンが連れている猟犬の一匹です。または、主人アクタイオンを間違って噛み殺してしまった悲しい犬メランポスだとも言われています。"
         }
     },
+
     "bootes": {
         jpName: "うしかい座", rank: "normal", catch: "オレンジ色の巨星アルクトゥルス",
         lines: [
-            // ネクタイ（凧）型の胴体
+            // --- ネクタイ（凧）型の胴体 ---
             ["arcturus", "izar"], ["izar", "nekkar"],
             ["nekkar", "seginus"], ["seginus", "boo_rho"],
-            ["boo_rho", "izar"], // 腰で閉じる
-            // 足
-            ["arcturus", "muphrid"],
-            // 右手（杖）
+            ["boo_rho", "izar"],
+            // 追加の接続：σ(シグマ)星を使って腰周りを補強
+            ["boo_rho", "boo_sigma"], ["boo_sigma", "arcturus"],
+
+            // --- 足 ---
+            // 左足：アルクトゥルス - ムフリッド(η) - τ(追加！)
+            ["arcturus", "muphrid"], ["muphrid", "boo_tau"],
+            // 右足：アルクトゥルス - ζ(追加！) - υ(追加！)
+            // これで両足で踏ん張っている姿になります
+            ["arcturus", "boo_zeta"], ["boo_zeta", "boo_upsilon"],
+
+            // --- 右手（杖 / 鎌） ---
+            // セギヌス(γ) - δ - μ(アルカルロプス)
             ["seginus", "boo_delta"], ["boo_delta", "alkalurops"],
-            // 左手（パイプ/リード）
+
+            // --- 左手（パイプ / 猟犬のリード） ---
+            // ネッカル(β) - λ - θ(追加！)
+            // θ星まで伸ばすことで、何か（パイプやカバン）を持っているように見えます
             ["nekkar", "boo_lambda"], ["boo_lambda", "boo_theta"]
         ],
         navTarget: "arcturus",
@@ -1762,15 +2330,20 @@ const STAR_DB = {
             myth: "天空を支える巨人アトラスとも、農業の神デメテールの息子プルトスとも言われます。また、おおぐま座（母カリスト）を誤って射ようとした息子アルカスの姿という説もあります。"
         }
     },
+
     "ursa_minor": {
         jpName: "こぐま座", rank: "normal", catch: "不動の北極星ポラリス",
         lines: [
-            // 小ひしゃくの柄
+            // --- 小ひしゃくの柄（尻尾） ---
             ["polaris", "yildun"], ["yildun", "umi_epsilon"], 
-            ["umi_epsilon", "umi_zeta"], // 柄の付け根
-            // 小ひしゃくのマス
+            ["umi_epsilon", "umi_zeta"],
+
+            // --- 小ひしゃくのマス（胴体） ---
             ["umi_zeta", "kochab"], ["kochab", "pherkad"],
             ["pherkad", "umi_eta"], ["umi_eta", "umi_zeta"]
+            
+            // こぐま座はこの7つで完璧です。追加の線は蛇足になるので引きません。
+            // シンプル・イズ・ベスト！
         ],
         navTarget: "yildun",
         info: {
@@ -1779,16 +2352,34 @@ const STAR_DB = {
             myth: "おおぐま座になったカリストの息子、アルカスの姿です。狩りの最中に母熊（カリスト）に出会い、槍で突こうとした瞬間、ゼウスによって小熊に変えられ、母と共に天に上げられました。"
         }
     },
+
     "pegasus": {
         jpName: "ペガスス座", rank: "normal", catch: "秋の空を駆ける天馬",
         lines: [
-            // 秋の四辺形（アルフェラッツはアンドロメダ座を使用）
-            ["markab", "scheat"], ["scheat", "alpheratz"],
-            ["alpheratz", "algenib"], ["algenib", "markab"],
-            // 首と頭
+            // --- 秋の四辺形（胴体） ---
+            ["markab", "scheat"], 
+            ["scheat", "alpheratz"], // アンドロメダ座α星へ
+            ["alpheratz", "algenib"], 
+            ["algenib", "markab"],
+
+            // --- 首と頭 ---
+            // マルカブ(α) - ホマム(ζ) - バハム(θ) - エニフ(ε・鼻先)
             ["markab", "homam"], ["homam", "baham"], ["baham", "enif"],
-            // 駆け上がる前足
-            ["scheat", "matar"], ["matar", "peg_pi"]
+
+            // --- 駆け上がる前足（ここが進化！） ---
+            // 左前足：シェアト(β) - マタル(η) - π(蹄)
+            // 追加データ μ(付け根) を経由させるとより正確です
+            ["scheat", "peg_mu"], ["peg_mu", "matar"], ["matar", "peg_pi"],
+
+            // 右前足（★完全新規！）：
+            // 追加データの ι(付け根) - κ(膝) を使って、もう一本の足を描画！
+            // これで「二本の前足」で空を駆ける姿になります。
+            ["scheat", "peg_iota"], ["peg_iota", "peg_kappa"],
+
+            // --- 背中と尻尾 ---
+            // アルゲニブ(γ)周辺に追加された υ, τ, ψ をつないで、
+            // 胴体の厚みと短い尻尾を描きます
+            ["algenib", "peg_upsilon"], ["peg_upsilon", "peg_tau"], ["peg_tau", "peg_psi"]
         ],
         navTarget: "markab",
         info: {
@@ -1797,14 +2388,26 @@ const STAR_DB = {
             myth: "勇者ペルセウスがメドゥーサの首を切り落とした際、その血飛沫の中から生まれた翼を持つ白馬です。後に英雄ベレロフォンの愛馬となりました。"
         }
     },
+
     "andromeda": {
         jpName: "アンドロメダ座", rank: "normal", catch: "鎖に繋がれた王女",
         lines: [
-            // 体のライン（A字型）
-            ["alpheratz", "and_delta"], ["and_delta", "mirach"], ["mirach", "almaak"],
-            // 伸ばした腕（鎖）
-            ["mirach", "and_mu"], ["and_mu", "and_nu"],
-            // カシオペヤ側へ伸びる足
+            // --- 体のライン（A字型 / 王女の体） ---
+            // 頭(α) - 胸(π) - 右肩(δ)
+            ["alpheratz", "and_pi"], ["and_pi", "and_delta"],
+            // 頭(α) - 胸(π) - 腰(β) - 左足(γ)
+            ["alpheratz", "and_pi"], ["and_pi", "mirach"], ["mirach", "almaak"],
+
+            // --- 鎖に繋がれた腕（ここが進化！） ---
+            // 右腕：右肩(δ) - 脇(θ) - 腕(σ) - 肘(η) - 腕(ζ) - 手(ν) - 手先(μ)
+            // 今までは棒一本でしたが、これで「鎖を引きちぎろうとしている」ような、
+            // 苦悶の表情すら浮かぶリアルな腕の形になります。
+            ["and_delta", "and_theta"], ["and_theta", "and_sigma"],
+            ["and_sigma", "and_eta"], ["and_eta", "and_zeta"],
+            ["and_zeta", "and_nu"], ["and_nu", "and_mu"],
+
+            // --- カシオペヤ側へ伸びる足 ---
+            // 右肩(δ) - 足(51番星)
             ["and_delta", "and_51"]
         ],
         navTarget: "alpheratz",
@@ -1814,16 +2417,28 @@ const STAR_DB = {
             myth: "古代エチオピアの王女です。母カシオペヤの自慢話のせいで海神の怒りを買い、生贄として岩場に鎖で繋がれてしまいました。怪物クジラに襲われる寸前、ペルセウスに助けられ彼の妻となりました。"
         }
     },
+
     "perseus": {
         jpName: "ペルセウス座", rank: "normal", catch: "メドゥーサの首を持つ英雄",
         lines: [
-            // 英雄の体（人型・Wishbone）
-            ["mirfak", "per_delta"], ["per_delta", "per_epsilon"],
-            ["per_epsilon", "menkib"], ["menkib", "atik"],
-            // 振り上げた剣を持つ腕
+            // --- 英雄の体（人型） ---
+            // アルゲニブ(α) - 右肩(δ) - 右太もも(ι) - 右足(κ) - 右膝(ε)
+            // 追加データの ι, κ を経由させることで、走り出しそうな足の躍動感が出ます。
+            ["mirfak", "per_delta"], 
+            ["per_delta", "per_iota"], ["per_iota", "per_kappa"], ["per_kappa", "per_epsilon"],
+            // 右足先：膝(ε) - ν(膝下) - 足首(ξ) - かかと(ο) - つま先(ζ)
+            ["per_epsilon", "per_nu"], ["per_nu", "menkib"], ["menkib", "per_omicron"], ["per_omicron", "per_zeta"],
+
+            // --- 振り上げた剣を持つ腕 ---
+            // アルゲニブ(α) - 左肩(γ) - 剣(η)
             ["mirfak", "per_gamma"], ["per_gamma", "per_eta"],
-            // メドゥーサの生首を持つ腕
-            ["mirfak", "algol"]
+
+            // --- ★ここが進化！ メドゥーサの首 ---
+            // アルゲニブ(α) - アルゴル(β・悪魔の首) - ρ(蛇の髪)
+            // さらに π, ω, ρ をつないで、生首の不気味なシルエットを描きます
+            ["mirfak", "algol"], 
+            ["algol", "per_rho"], 
+            ["per_rho", "per_pi"], ["per_pi", "per_omega"], ["per_omega", "algol"] // 小さな三角形を作る
         ],
         navTarget: "mirfak",
         info: {
@@ -1833,15 +2448,21 @@ const STAR_DB = {
         }
     },
 
-"lepus": {
+    "lepus": {
         jpName: "うさぎ座", rank: "minor", catch: "オリオンの足元に潜む兎",
         lines: [
-            // 胴体
+            // --- 胴体 ---
             ["arneb", "nihal"], ["nihal", "lep_gamma"], 
             ["lep_gamma", "lep_delta"], ["lep_delta", "arneb"],
-            // 頭
+
+            // --- 尻尾（追加データ活用） ---
+            // γ星の近くにある ζ, η をつなぐと、ちょこんとした可愛い尻尾ができます
+            ["lep_gamma", "lep_zeta"], ["lep_zeta", "lep_eta"],
+
+            // --- 頭 ---
             ["arneb", "lep_epsilon"], ["lep_epsilon", "lep_mu"],
-            // 長い耳（ここが可愛いポイント！）
+
+            // --- 長い耳 ---
             ["lep_epsilon", "lep_iota"], ["lep_iota", "lep_kappa"]
         ],
         navTarget: "arneb",
@@ -1851,23 +2472,35 @@ const STAR_DB = {
             myth: "特に神話はありませんが、オリオンが狩りを好んだため、その獲物として置かれたと言われています。中世のアラビアでは、この4つの星を「喉の乾いたラクダ」と呼んでいました。"
         }
     },
+
     "hercules": {
         jpName: "ヘルクレス座", rank: "minor", catch: "最強の英雄のひざまずく姿",
         lines: [
-            // キーストーン（胴体）
+            // --- キーストーン（胴体） ---
             ["her_epsilon", "her_zeta"], ["her_zeta", "her_eta"],
             ["her_eta", "her_pi"], ["her_pi", "her_epsilon"],
-            // 頭と肩
-            ["rasalgethi", "kornephoros"], ["kornephoros", "her_zeta"], // 右肩
-            ["sarin", "her_pi"], // 左肩
-            ["rasalgethi", "sarin"], // 頭周辺
-            // 右手（こん棒）
-            ["kornephoros", "her_gamma"],
-            // 左手（ケルベロスや蛇を掴む手）
-            ["sarin", "maasym"], ["maasym", "her_mu"],
-            // 足（ひざまずく姿勢）
-            ["her_epsilon", "her_theta"], ["her_theta", "her_iota"], // 左足（蹴り上げ）
-            ["her_zeta", "her_tau"] // 右足（膝）
+
+            // --- 頭と肩 ---
+            ["her_zeta", "kornephoros"], // 右肩
+            ["her_eta", "sarin"], // 左肩
+            ["kornephoros", "rasalgethi"], ["sarin", "rasalgethi"], // 頭(α)へ
+
+            // --- 右手（こん棒） ---
+            // コルネフォロス(β) - γ - χ(追加！)
+            // χ星まで伸ばすことで、こん棒の長さと、へびつかい座の頭を踏みつける位置関係が明確に。
+            ["kornephoros", "her_gamma"], ["her_gamma", "her_chi"],
+
+            // --- 左手（ケルベロス/蛇を掴む手） ---
+            // サリン(δ) - マアセム(λ) - μ - ξ(手先) - ο(ケルベロス)
+            // ξとοの追加で、何かを力強く握りしめている様子が描けます。
+            ["sarin", "maasym"], ["maasym", "her_mu"], 
+            ["her_mu", "her_xi"], ["her_xi", "her_omicron"],
+
+            // --- 足（ひざまずく姿勢） ---
+            // 右足（膝をついている）：ε - τ - φ(追加！)
+            ["her_epsilon", "her_tau"], ["her_tau", "her_phi"],
+            // 左足（踏み込んでいる）：π - θ - ι
+            ["her_pi", "her_theta"], ["her_theta", "her_iota"]
         ],
         navTarget: "rasalgethi",
         info: {
@@ -1876,35 +2509,52 @@ const STAR_DB = {
             myth: "ギリシャ神話最大の英雄ヘラクレスです。12の冒険（難業）を成し遂げた姿で描かれています。うみへび座（ヒドラ）、しし座（ネメアの獅子）、かに座（化け蟹）など、彼に退治された怪物が夜空にはたくさんいます。"
         }
     },
+
     "corona_borealis": {
         jpName: "かんむり座", rank: "minor", catch: "宝石が輝く冠",
         lines: [
-            // 半円のネックレス
-            ["crb_iota", "crb_theta"], ["crb_theta", "nusakan"],
-            ["nusakan", "gemma"], // 宝石アルフェッカ
-            ["gemma", "crb_gamma"], ["crb_gamma", "crb_delta"],
-            ["crb_delta", "crb_epsilon"]
+            // --- 半円のネックレス（王冠） ---
+            // ι - ε - δ - γ - α - β - θ と並べるのが一番きれいな円弧になります
+            ["crb_iota", "crb_epsilon"], 
+            ["crb_epsilon", "crb_delta"], 
+            ["crb_delta", "crb_gamma"],
+            ["crb_gamma", "gemma"], 
+            ["gemma", "nusakan"],
+            ["nusakan", "crb_theta"]
         ],
         navTarget: "gemma",
         info: {
-            science: "うしかい座のすぐ隣にある、美しい半円形の星座です。2等星ゲンマ（アルフェッカ）が宝石のように輝いています。",
+           science: "うしかい座のすぐ隣にある、美しい半円形の星座です。2等星ゲンマ（アルフェッカ）が宝石のように輝いています。",
             trivia: "「北の冠」という意味です（南の冠座もあります）。日本でも「太鼓星」「かまど星」「首飾り星」など、その形から多くの和名が付けられています。",
             myth: "酒の神ディオニュソスが、クレタ島の王女アリアドネに贈った黄金の冠です。彼女が亡くなった後、その美しさを永遠に残すために空に上げられました。"
         }
     },
+
     "ophiuchus": {
         jpName: "へびつかい座", rank: "minor", catch: "医神アスクレピオスの姿",
         lines: [
-            // 将棋の駒のような大きな胴体
-            ["rasalhague", "cebalrai"], ["cebalrai", "oph_kappa"],
-            ["oph_kappa", "yed_prior"], // 左手（へびの頭側）
+            // --- 胴体（将棋の駒型） ---
+            ["rasalhague", "cebalrai"], 
+            ["cebalrai", "oph_kappa"], 
+            ["oph_kappa", "yed_prior"], 
             ["yed_prior", "yed_posterior"], 
-            ["yed_posterior", "sabik"], // 左足
-            ["sabik", "oph_zeta"], // 右足
-            ["oph_zeta", "rasalhague"], // 胴体を閉じる
-            // 手足の先
-            ["sabik", "oph_theta"], // 右足先
-            ["oph_zeta", "oph_nu"]  // 右手（へびの尾側）
+            ["yed_posterior", "sabik"],
+            ["sabik", "oph_zeta"], 
+            ["oph_zeta", "rasalhague"], // ここで閉じても良いが、開けておく流儀もある
+
+            // --- ★ここが進化！ 両腕と肩 ---
+            // 今までは肩からいきなり手が出ていましたが、追加データで関節を表現！
+            // 左肩：κ - ι(追加) - λ(肘) - δ(手)
+            ["oph_kappa", "oph_iota"], ["oph_iota", "oph_lambda"], ["oph_lambda", "yed_prior"],
+            
+            // 右肩：セバルライ(β) - μ(肘・追加) - ν(手)
+            ["cebalrai", "oph_mu"], ["oph_mu", "oph_nu"],
+
+            // --- 足 ---
+            // 左足：サビク(η) - θ - ψ(追加・足先)
+            ["sabik", "oph_theta"], ["oph_theta", "oph_psi"],
+            // 右足：ζ - ρ(追加) - χ(追加・裾) - ξ(Serpensへ接続)
+            ["oph_zeta", "oph_rho"], ["oph_rho", "oph_chi"]
         ],
         navTarget: "rasalhague",
         info: {
@@ -1913,18 +2563,39 @@ const STAR_DB = {
             myth: "死者をも蘇らせるほどの名医アスクレピオスです。しかし、死者が減って困った冥界の王ハデスの訴えにより、ゼウスの雷に打たれて星になりました。さそり座の毒を癒やすため、さそりの上に配置されたと言われています。"
         }
     },
+
+
     "cetus": {
         jpName: "くじら座", rank: "minor", catch: "アンドロメダを襲う化け鯨",
         lines: [
-            // 頭部の五角形
-            ["menkar", "kaffaljidhma"], ["kaffaljidhma", "cet_xi2"],
-            ["cet_xi2", "cet_mu"], ["cet_mu", "cet_lambda"], 
-            ["cet_lambda", "menkar"],
-            // 首から胴体
-            ["menkar", "mira"], ["mira", "baten_kaitos"],
-            // 巨大な尾とヒレ
-            ["baten_kaitos", "cet_eta"], ["cet_eta", "diphda"],
-            ["diphda", "cet_iota"] // 尾の先
+            // --- 頭部の五角形 ---
+            // メンカル(α) - λ - μ - ξ2 - カファルジドマ(γ) - メンカル
+            // これで巨大な怪獣の顎（あご）を描きます
+            ["menkar", "cet_lambda"], 
+            ["cet_lambda", "cet_mu"], 
+            ["cet_mu", "cet_xi2"], 
+            ["cet_xi2", "kaffaljidhma"], 
+            ["kaffaljidhma", "menkar"],
+            // 頭部のディテール：δ星(首)を追加
+            ["kaffaljidhma", "cet_delta"],
+
+            // --- 首から胴体 ---
+            // ミラ(ο)を経由して腹部へ
+            ["cet_delta", "mira"], ["mira", "baten_kaitos"], 
+            // 腹部の厚み：バテン・カイトス(ζ) - θ - τ - デネブ・カイトス(β)
+            // 追加されたθ, τを使うことで、巨大な腹部と尾へのつながりを描画
+            ["baten_kaitos", "cet_theta"], 
+            ["cet_theta", "cet_tau"], 
+            ["cet_tau", "diphda"],
+
+            // --- 巨大な尾とヒレ ---
+            // 尾の付け根(η)から二股の尾びれへ
+            ["diphda", "cet_iota"], // 北側のヒレ
+            ["diphda", "cet_upsilon"], // 南側のヒレ（★ここが追加！）
+
+            // --- 胸びれ ---
+            // バテン・カイトスからπ星へ
+            ["baten_kaitos", "cet_pi"]
         ],
         navTarget: "mira",
         info: {
@@ -1933,14 +2604,22 @@ const STAR_DB = {
             myth: "エチオピア王家を襲った怪物ティアマト（ケートス）です。アンドロメダ王女を食べようとしたところを、ペルセウスによって石に変えられてしまいました。"
         }
     },
+
     "piscis_austrinus": {
         jpName: "みなみのうお座", rank: "minor", catch: "秋のひとつ星フォーマルハウト",
         lines: [
-            // 魚の口から胴体へ
+            // --- 魚の輪郭 ---
+            // フォーマルハウト(α・口)から胴体へ
             ["fomalhaut", "psa_epsilon"],
-            // 魚の胴体（平たい輪）
-            ["psa_epsilon", "psa_beta"], ["psa_beta", "psa_gamma"],
-            ["psa_gamma", "psa_delta"], ["psa_delta", "psa_epsilon"]
+            ["psa_epsilon", "psa_beta"], 
+            ["psa_beta", "psa_gamma"], 
+            ["psa_gamma", "psa_delta"], 
+            ["psa_delta", "psa_epsilon"], // 胴体の輪を閉じる
+
+            // --- ★ここが進化！ 尾びれ ---
+            // 胴体(γ, β)から μ, ι へ伸ばして、魚の尾を描画
+            ["psa_gamma", "psa_mu"], 
+            ["psa_beta", "psa_iota"]
         ],
         navTarget: "fomalhaut",
         info: {
@@ -1949,19 +2628,36 @@ const STAR_DB = {
             myth: "うお座の神話と同様、怪物テュポンから逃げるときに変身した姿ですが、こちらは一匹だけで描かれています。女神デルケトが魚になった姿とも言われています。"
         }
     },
+
     "centaurus": {
         jpName: "ケンタウルス座", rank: "minor", catch: "南天に輝く半人半馬",
         lines: [
-            // 日本から見える上半身
-            ["menkent", "cen_iota"], ["cen_iota", "cen_epsilon"], // 肩から腹
-            ["cen_epsilon", "cen_zeta"], ["cen_zeta", "cen_gamma"], // 腹から背中
-            ["cen_gamma", "cen_iota"], // 胴体を閉じる
-            // 前足
-            ["cen_epsilon", "cen_eta"],
-            // 南の地平線下の足（※表示エリアによっては見えない可能性があります）
+            // --- 人間の上半身 ---
+            // イオタ(ι・左肩) - メンケント(θ・右肩)
+            ["menkent", "cen_iota"],
+            // 胴体：両肩から ν(腹) - μ(胸) を経由して馬部分へ
+            ["cen_iota", "cen_mu"], ["cen_mu", "cen_nu"], ["cen_nu", "cen_zeta"], // 左脇腹のライン
+            ["menkent", "cen_nu"], // 右脇腹のライン
+
+            // --- 馬の胴体 ---
+            // ゼータ(腹) - イプシロン(腹) - ガンマ(背中) - デルタ(腰)
+            ["cen_zeta", "cen_epsilon"], 
+            ["cen_epsilon", "cen_gamma"], 
+            ["cen_gamma", "cen_delta"], 
+            ["cen_delta", "cen_iota"], // 背中と人の肩をつなぐ
+
+            // --- 前足（ここが進化！） ---
+            // イプシロンから、η - κ(関節) をつなぐ
+            ["cen_epsilon", "cen_eta"], ["cen_eta", "cen_kappa"],
+
+            // --- 後ろ足（南天の星々） ---
+            // 日本からは見づらいですが、データがあるなら引きます！
+            // デルタ - ラムダ(蹄)
+            ["cen_delta", "cen_lambda"],
+            // ゼータ - ハダル(β) - リギル(α)
             ["cen_zeta", "hadar"], ["hadar", "rigil_kent"]
         ],
-        navTarget: "hadar", // 日本からは見づらいですが、あえて南への憧れを込めて
+        navTarget: "hadar",
         info: {
             science: "全天で最もゴージャスな星座の一つですが、日本からは上半身しか見えません。α星リギル・ケンタウルスは太陽系に最も近い恒星系（約4.3光年）です。",
             trivia: "ω（オメガ）星団という全天最大の球状星団を持っています。肉眼でもボヤッとした星のように見え、望遠鏡で見ると数百万個の星が密集する圧巻の姿です。",
@@ -1969,9 +2665,9 @@ const STAR_DB = {
         }
     },
 
-"polaris_obj": {
+    "polaris_obj": {
         jpName: "北極星", rank: "object", catch: "不動の道しるべ",
-        lines: [], // 単独の星として表示
+        lines: [], // 単独表示
         navTarget: "polaris",
         info: {
             science: "こぐま座のα星。地球の地軸の延長線上にあるため、夜空の中で唯一ほとんど動きません。現在の北極星は2等星ですが、数万年後にはベガなどが北極星になります。",
@@ -1979,20 +2675,22 @@ const STAR_DB = {
             myth: "天の北極は、あらゆる星々が回る中心であるため、多くの文明で「天帝」や「宇宙の中心」として神聖視されてきました。"
         }
     },
+
     "big_dipper": {
         jpName: "北斗七星", rank: "object", catch: "夜空の大ひしゃく",
         lines: [
-            // ひしゃくの形
-            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], ["megrez", "dubhe"], // マス
-            ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"] // 柄
+            // おおぐま座の一部ですが、アステリズムとして独立定義
+            ["dubhe", "merak"], ["merak", "phecda"], ["phecda", "megrez"], ["megrez", "dubhe"],
+            ["megrez", "alioth"], ["alioth", "mizar"], ["mizar", "alkaid"]
         ],
-        navTarget: "megrez", // ひしゃくの付け根
+        navTarget: "alioth", // 一番明るい星(ε)をターゲットに
         info: {
             science: "おおぐま座の腰から尻尾の部分にあたる7つの星です。ひしゃくの縁の2つの星（メラクとドゥーベ）を結んで5倍伸ばすと、北極星が見つかります。",
             trivia: "ミザール（柄の先から2番目）のすぐそばにある「アルコル」は、昔のアラビアや日本で軍隊の視力検査に使われました。「寿命星」とも呼ばれ、これが見えなくなると還暦などと言われました。",
             myth: "中国では「死」を司る神とされ、南斗六星（いて座）の「生」の神と対になって語られます。北斗七星に祈ると寿命が延びるという伝説もあります。"
         }
     },
+
     "winter_triangle": {
         jpName: "冬の大三角", rank: "object", catch: "冬の夜空のダイヤモンド",
         lines: [
@@ -2000,30 +2698,36 @@ const STAR_DB = {
             ["sirius", "procyon"], 
             ["procyon", "betelgeuse"]
         ],
-        navTarget: "betelgeuse", // 三角形の重心に近く、赤色が目立つため
+        navTarget: "betelgeuse",
         info: {
-            science: "おおいぬ座のシリウス、こいぬ座のプロキオン、オリオン座のベテルギウスを結んでできる正三角形です。色の対比（シリウスの青白、ベテルギウスの赤、プロキオンの黄白）が見事です。",
+           science: "おおいぬ座のシリウス、こいぬ座のプロキオン、オリオン座のベテルギウスを結んでできる正三角形です。色の対比（シリウスの青白、ベテルギウスの赤、プロキオンの黄白）が見事です。",
             trivia: "この三角形の中を天の川が流れています（淡い冬の天の川）。また、さらに外側の星を結んだ「冬のダイヤモンド（六角形）」も見つけられたら上級者です！",
             myth: "特定の神話はありませんが、冬の寒空の下で最も煌びやかな領域です。これが見えると「冬が来たな」と実感する天文ファンも多いです。"
         }
     },
+
     "summer_triangle": {
         jpName: "夏の大三角", rank: "object", catch: "天の川をまたぐ大三角",
         lines: [
+            // シンプルな三角形
             ["vega", "altair"], 
             ["altair", "deneb"], 
             ["deneb", "vega"]
         ],
-        navTarget: "deneb", // 天の川の中にあり、全体を見渡すのに適している
+        navTarget: "deneb", // デネブは天の川の中にあり、全体のバランスが良い
         info: {
             science: "こと座のベガ、わし座のアルタイル、はくちょう座のデネブを結ぶ巨大な三角形です。ベガとアルタイルの間を天の川が流れています。",
             trivia: "都会の明るい空でもこの3つだけはよく見えます。真上に見えるベガが「織姫」、少し離れたアルタイルが「彦星」、天の川にどっしり構えるデネブが「渡し守（またはカササギの橋）」です。",
             myth: "七夕伝説の舞台です。一年に一度、7月7日の夜だけ、天の川を渡って二人が会うことが許されています。"
         }
     },
+
     "pleiades_obj": {
         jpName: "すばる（プレアデス星団）", rank: "object", catch: "清少納言も愛した星の集まり",
-        lines: [], // 星団なので線は引かず、ターゲットのみ
+        lines: [
+            // おうし座の一部ですが、強調するためにヒアデスからの線を引いても良いでしょう
+            // ここではあえて線なしで、独立した輝きを尊重します
+        ],
         navTarget: "pleiades",
         info: {
             science: "おうし座にある若い散開星団（M45）です。生まれたばかりの青白い高温の星が集まっています。肉眼でも6〜7個の星が集まっているのが見えます。",
@@ -2031,6 +2735,7 @@ const STAR_DB = {
             myth: "ギリシャ神話では、巨人アトラスの7人の娘たちです。オリオンに追いかけ回されて困っていたところを、神によって鳩（または星）に変えられて逃げたとされています。"
         }
     },
+
     "praesepe_obj": {
         jpName: "プレセペ星団", rank: "object", catch: "カニの甲羅の真ん中",
         lines: [], 
@@ -2041,40 +2746,54 @@ const STAR_DB = {
             myth: "中国では「積尸気（せきしき）」と呼ばれ、亡くなった人の魂が集まる場所、あるいは魂が天に昇る際の入り口と考えられていました。"
         }
     },
+
     "milky_way": {
         jpName: "天の川", rank: "object", catch: "夜空を流れる星の川",
-        lines: [], // 線は引かず、ターゲットへ誘導
-        navTarget: "sadr", // はくちょう座の中心、天の川が濃い場所
+        lines: [], 
+        navTarget: "sadr", // はくちょう座γ星付近が最も濃く美しい
         info: {
             science: "私たちの住む「天の川銀河」を内側から見た姿です。数千億個の星の集まりですが、遠すぎて肉眼では雲のように見えます。夏と冬で見え方が異なります。",
             trivia: "夏の天の川（さそり座〜はくちょう座周辺）は濃く、冬の天の川（オリオン座周辺）は淡いです。これは、夏は銀河の中心方向を、冬は外側を見ているからです。",
             myth: "ギリシャ神話では、女神ヘラの母乳がこぼれて空に流れたもの（Milky Way）と言われています。東洋では川に見立てられ、織姫と彦星を隔てる障害として語られます。"
         }
     },
+
     "andromeda_galaxy": {
         jpName: "アンドロメダ銀河", rank: "object", catch: "肉眼で見える最も遠い天体",
         lines: [
-            // 銀河への導入路（ミラクからたどるルート）
+            // --- M31へのスターホッピング（導入路） ---
+            // アンドロメダ座の腰(ミラクβ) -> μ -> ν とたどるのが定石
             ["mirach", "and_mu"], 
-            ["and_mu", "and_nu"] // ここに行くとM31がある
+            ["and_mu", "and_nu"] 
+            // ν星のすぐ北西にM31があります。
+            // アプリ上ではν星から小さな矢印を出してもいいくらいです！
         ],
-        navTarget: "and_nu", // M31のすぐ隣にあるガイド星
+        navTarget: "and_nu",
         info: {
             science: "地球から約230万光年離れたお隣の巨大銀河（M31）です。肉眼で見える最も遠い物体です。私たちの銀河系といずれ衝突・合体すると予測されています。",
             trivia: "アンドロメダ座の腰の星（ミラク）から、暗い星を2つたどった先に「ぼんやりしたシミ」のように見えます。双眼鏡を使うと楕円形の光の広がりがよく分かります。",
             myth: "特有の神話はありませんが、鎖に繋がれたアンドロメダ王女の腰のあたりに位置することから、王女の悲しみや涙に例えられることもあります。"
         }
     },
+
+
     "monoceros": {
         jpName: "いっかくじゅう座", rank: "object", catch: "冬の大三角の中の隠れキャラ",
         lines: [
-            // 矢印型（ユニコーンの角と体）
-            ["mon_delta", "mon_beta"], // 鼻先から胴体へ
-            ["mon_beta", "mon_alpha"], // 胴体
-            ["mon_alpha", "mon_gamma"], // 後ろ足側
-            ["mon_alpha", "mon_zeta"] // 尾
+            // --- ユニコーンの体 ---
+            // 鼻先(δ) - 首(13番星) - 胴体(ε) - 胴体(β) - 胴体(α)
+            // 追加データの13, εを使うことで、馬のような首のラインを描きます
+            ["mon_delta", "mon_13"], ["mon_13", "mon_epsilon"], 
+            ["mon_epsilon", "mon_beta"], ["mon_beta", "mon_alpha"],
+
+            // --- 足と尾 ---
+            // 後ろ足：α - ζ
+            ["mon_alpha", "mon_zeta"],
+            // 尻尾：α - γ
+            ["mon_alpha", "mon_gamma"],
+            // 前足：β - (オリオン座参宿五付近へ) ※ここはデータ内の星だけで閉じるならβまで
         ],
-        navTarget: "mon_beta", // 最も美しい三重星
+        navTarget: "mon_beta", 
         info: {
             science: "冬の大三角の中にすっぽり収まっている、暗い星ばかりの星座です。しかし、バラ星雲などの美しい天体が隠れています。",
             trivia: "17世紀に作られた新しい星座なので神話はありません。β星はウィリアム・ハーシェルが「最も美しい眺め」と絶賛した三重星で、望遠鏡で見ると素晴らしいです。",
@@ -2082,17 +2801,22 @@ const STAR_DB = {
         }
     },
 
-"carina": {
+    "carina": {
         jpName: "りゅうこつ座", rank: "minor", catch: "長寿の星カノープスと巨大な船底",
         lines: [
-            // カノープスから船体へ（巨大なL字のようなライン）
-            ["canopus", "avior"], // アヴィオールへ接続
-            // ニセ十字 (False Cross) の形成と船底
+            // --- 巨大な船底（竜骨） ---
+            // カノープス(α)から船底へ
+            ["canopus", "car_chi"], ["car_chi", "avior"], // χ星を経由
+
+            // --- ニセ十字 (False Cross) と船体 ---
+            // アヴィオール(ε) - アスピディスケ(ι)
             ["avior", "aspidiske"], 
-            ["aspidiske", "car_upsilon"], 
-            ["car_upsilon", "miaplacidus"],
+            // 船尾側：アスピディスケ - h星 - υ
+            ["aspidiske", "car_h"], ["car_h", "car_upsilon"],
+            // 船底のライン：υ - ミアプラキドゥス(β) - ω - θ
+            ["car_upsilon", "miaplacidus"], 
             ["miaplacidus", "car_omega"], 
-            ["car_omega", "car_theta"] // 南のプレアデス星団付近へ
+            ["car_omega", "car_theta"]
         ],
         navTarget: "canopus",
         info: {
@@ -2101,14 +2825,18 @@ const STAR_DB = {
             myth: "勇者イアソンが率いるアルゴ探検隊が乗った巨大船アルゴ号の「竜骨（船底）」の部分です。カノープスは水先案内人の名前だと言われています。"
         }
     },
+
     "crux": {
         jpName: "みなみじゅうじ座", rank: "object", catch: "南天のシンボル・サザンクロス",
         lines: [
-            // 十字架
-            ["gacrux", "acrux"], // 縦のライン（上から下）
-            ["imai", "mimosa"],  // 横のライン（右から左）
-            // 5番目の星（ここがマニアック！）
-            ["imai", "ginan"] // 右の星からちょこんと出ているのが特徴
+            // --- 十字架 ---
+            ["gacrux", "acrux"], // 縦
+            ["imai", "mimosa"],  // 横
+            
+            // --- 5番目の星（マニアックポイント） ---
+            // δ星(イマイ)からε星(ギナン)へ
+            // これをつなぐのが通の証です。ニセ十字との区別にもなります。
+            ["imai", "ginan"]
         ],
         navTarget: "acrux",
         info: {
@@ -2118,14 +2846,20 @@ const STAR_DB = {
         }
     },
 
-"delphinus": {
+    "delphinus": {
         jpName: "いるか座", rank: "normal", catch: "夏の夜空の愛らしいイルカ",
         lines: [
-            // 菱形（Job's Coffin / ヨブの棺）
+            // --- 菱形（胴体） ---
             ["sualocin", "rotanev"], ["rotanev", "del_delta"],
             ["del_delta", "del_gamma"], ["del_gamma", "sualocin"],
-            // 尾びれ
-            ["rotanev", "deneb_dulfim"]
+            
+            // --- 尾びれ ---
+            ["rotanev", "deneb_dulfim"],
+
+            // --- ★ここが進化！ 胸びれ ---
+            // 菱形の下にある ζ(ゼータ)星 へちょこんと伸ばします
+            // これでイルカがジャンプしている躍動感が出ます
+            ["del_delta", "del_zeta"]
         ],
         navTarget: "rotanev",
         info: {
@@ -2134,13 +2868,17 @@ const STAR_DB = {
             myth: "海王ポセイドンの恋のキューピッド役を務めたイルカです。ポセイドンが女神アンフィトリテに求婚して逃げられた際、イルカが彼女を見つけて説得し、結婚を成立させました。その功績で空に上げられました。"
         }
     },
+
     "sagitta": {
         jpName: "や座", rank: "minor", catch: "天の川を射抜く黄金の矢",
         lines: [
-            // 矢の形
-            ["sham", "sge_delta"], // 矢羽から軸へ
-            ["sge_beta", "sge_delta"], // もう一つの矢羽
-            ["sge_delta", "sge_gamma"] // 軸から矢尻へ
+            // --- 矢の形 ---
+            // シャム(α) - δ - γ(矢尻)
+            ["sham", "sge_delta"], 
+            ["sge_delta", "sge_gamma"],
+            // もう一つの矢羽：β - δ
+            ["sge_beta", "sge_delta"]
+            // 非常にシンプルですが、これ以上足しようがありません！
         ],
         navTarget: "sge_gamma",
         info: {
@@ -2149,16 +2887,21 @@ const STAR_DB = {
             myth: "愛の神エロスの矢、英雄ヘルクレスが放った矢、あるいはアポロンの矢など、諸説ありますが、とにかく「誰かが放った矢」として空を飛んでいます。"
         }
     },
+
     "serpens": {
         jpName: "へび座", rank: "minor", catch: "へびつかいが操る巨蛇",
         lines: [
-            // 頭部 (Caput) - へびつかい座の左手(yed_prior)から伸びる
-            ["yed_prior", "ser_delta"], // へびつかい座との接続（重要！）
+            // --- 頭部 (Caput) ---
+            // へびつかい座の左手(yed_prior)から接続
+            ["yed_prior", "ser_epsilon"], ["ser_epsilon", "ser_delta"], // 首
             ["ser_delta", "unukalhai"], ["unukalhai", "ser_gamma"], 
-            ["ser_gamma", "ser_beta"], // 頭の先
-            
-            // 尾部 (Cauda) - へびつかい座の右手(oph_nu)から伸びる
-            ["oph_nu", "ser_eta"], // へびつかい座との接続（重要！）
+            ["ser_gamma", "ser_iota"], ["ser_iota", "ser_kappa"], // 顎と頭頂
+            ["ser_kappa", "ser_beta"], ["ser_beta", "ser_gamma"], // 頭部を閉じる
+
+            // --- 尾部 (Cauda) ---
+            // へびつかい座の右手(oph_nu)から接続
+            ["oph_nu", "ser_xi"], ["ser_xi", "ser_omicron"], // 胴体
+            ["ser_omicron", "ser_nu"], ["ser_nu", "ser_eta"], 
             ["ser_eta", "alya"] // 尾の先
         ],
         navTarget: "unukalhai",
@@ -2168,12 +2911,18 @@ const STAR_DB = {
             myth: "医神アスクレピオス（へびつかい座）が薬作りのために捕まえている蛇です。古代において蛇は「脱皮して再生する」ことから、医療と永遠の命のシンボルとされていました。"
         }
     },
+
     "corvus": {
         jpName: "からす座", rank: "minor", catch: "おとめ座の隣の四角形",
         lines: [
-            // いびつな四角形
+            // --- いびつな四角形 ---
             ["gienah", "algorab"], ["algorab", "kraz"], 
-            ["kraz", "minkar"], ["minkar", "gienah"]
+            ["kraz", "minkar"], ["minkar", "gienah"],
+            
+            // --- くちばし（追加データ） ---
+            // ミンカル(ε)の近くにあるα星（アルキバ）をつなぐことで
+            // カラスがカーカー鳴いている様子を表現
+            ["minkar", "crv_alpha"]
         ],
         navTarget: "gienah",
         info: {
@@ -2182,21 +2931,22 @@ const STAR_DB = {
             myth: "太陽神アポロンに仕えるカラスでした。元々は銀色の美しい羽と人の言葉を話す能力を持っていましたが、嘘の報告をした罰として、言葉を奪われ、羽を真っ黒にされ、空に張り付けにされてしまいました。"
         }
     },
+
     "coma_berenices": {
         jpName: "かみのけ座", rank: "minor", catch: "星が降り注ぐ女王の髪",
         lines: [
-            // 直角三角形のような形
+            // --- L字型（基本） ---
             ["diadem", "com_beta"], ["com_beta", "com_gamma"]
+            // 散開星団なので、これ以上線を引きすぎるとごちゃごちゃします。
+            // シンプルにL字で「髪の房」を表現するのがベストです。
         ],
-        navTarget: "com_beta", // 星団の中心付近
+        navTarget: "com_beta",
         info: {
             science: "しし座とおとめ座の間にある、星がバラバラと散らばったような星座です。実はこの領域の星々自体が「Mel 111」という散開星団です。双眼鏡で見ると息をのむ美しさです。",
             trivia: "古代エジプトの実在の王妃ベレニケ2世の髪の毛がモデルです。神話ではなく実在の人物が星座になっている珍しい例です。",
             myth: "ベレニケ王妃は、夫が戦争から無事に帰還したことに感謝し、自慢の美しい髪を切り取って女神アフロディーテの神殿に捧げました。翌朝、髪の毛は消えており、神官は「女神が髪の美しさを気に入り、空に飾ったのです」と答えました。"
         }
     },
-
-
 
 
         };
