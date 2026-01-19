@@ -1,10 +1,15 @@
-// sw.js (Adom's Lab 統合版 v6: 星空アプリ追加)
-const CACHE_NAME = 'adom-lab-v6'; // ★バージョンを更新しました（スマホに更新を気づかせるため）
+// sw.js (Adom's Lab 統合版 v7: 星空アプリ "Highest Masterpiece" 追加)
+const CACHE_NAME = 'adom-lab-v7'; // ★バージョンを v7 に更新！
 const INITIAL_ASSETS = [
     // --- アプリ本体 ---
     './gotoshitrash.html', // ゴミ分別アプリ
     './teachers.html',     // 先生ツール
-    './gotostarview.html', // ★今回追加した星空アプリ
+    './gotostarview.html', // ★今回追加した最高傑作（星空アプリ）
+
+    // --- 必須エンジン (React/Babel) ※これがないとオフラインで動きません ---
+    'https://unpkg.com/react@18/umd/react.production.min.js',
+    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+    'https://unpkg.com/@babel/standalone/babel.min.js',
 
     // --- 共通ツール・デザイン (Tailwind, FontAwesome) ---
     'https://cdn.tailwindcss.com',
@@ -32,7 +37,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keyList) => {
             return Promise.all(keyList.map((key) => {
-                // 新しいバージョン(v6)以外は削除する
+                // 新しいバージョン(v7)以外は削除する
                 if (key !== CACHE_NAME) {
                     return caches.delete(key);
                 }
