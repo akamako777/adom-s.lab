@@ -1,0 +1,21 @@
+{
+  "name": "五島市ごみ分別ナビ",
+  "short_name": "ごみ分別",
+  "start_url": "./gotoshitrash.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "description": "五島市（福江・富江・玉之浦・三井楽・岐宿・奈留）のごみ分別検索ツール。オフライン対応。",
+  "icons": [
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/gotobaramon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/gotobaramon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
