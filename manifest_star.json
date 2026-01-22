@@ -1,0 +1,23 @@
+{
+  "name": "五島星空ナビ",
+  "short_name": "星空ナビ",
+  "id": "/adom-s.lab/star",
+  "start_url": "./gotostarview.html",
+  "scope": "./gotostarview.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "五島列島の星空を再現するWebプラネタリウム。月とばし機能付き。",
+  "icons": [
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/gotostarview.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/gotostarview.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
