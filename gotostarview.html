@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<link rel="icon" type="image/png" href="https://akamako777.github.io/adom-s.lab/gotostarview.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://akamako777.github.io/adom-s.lab/gotostarview.png">
+
+<link rel="manifest" href="./manifest_star.json">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Star Compass v7.4 (Complete Layout)</title>
@@ -43,6 +48,8 @@
         }
 
         body { 
+            width: 100%;          /* ← 追加 */
+            height: 100dvh;       /* ← 追加（これが重要！） */
             margin: 0; 
             overflow: hidden; 
             background-color: var(--bg-dark); 
@@ -53,6 +60,25 @@
             -webkit-user-select: none;
             transition: background-color 0.5s; 
         }
+
+/* --- ★追加: ローディング画面のスタイル --- */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: none; /* 最初は隠しておく */
+            justify-content: center; align-items: center;
+            color: #0ff; font-family: 'Courier New', monospace;
+            touch-action: none; /* 触らせない */
+        }
+        .loader-content { text-align: center; }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #333;
+            border-top: 4px solid #0ff; border-radius: 50%;
+            margin: 0 auto 15px auto;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         
         /* Night Mode Overlay */
         #night-overlay {
@@ -75,13 +101,18 @@
             display: none; transform: scaleX(1); 
         }
 
-        #canvas-container { 
-            position: fixed; top: 0; left: 0;
-            width: 100vw; height: 100vh; 
-            display: block; z-index: 1;
+      #canvas-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0;
+            width: 100vw; 
+            height: 100dvh;  /* ★ここを 100vh から 100dvh に変更！ */
+            display: block; 
+            z-index: 1;
             pointer-events: auto; 
             cursor: move;
         }
+
 
         /* --- UI Atoms --- */
         .glass-panel {
@@ -227,7 +258,7 @@
             
             /* モーダル: 横長画面用に幅広設定 */
             .modal-sheet {
-                max-height: 85vh; 
+                max-height: 100vh; 
                 width: 90% !important; max-width: 600px; margin: 0 auto;
                 border-radius: 24px 24px 0 0;
             }
@@ -282,13 +313,27 @@
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
-        .modal-sheet {
-            background: #1a2333; border-top: 1px solid #0ff; border-radius: 24px 24px 0 0;
-            padding: 24px; width: 100%; box-sizing: border-box;
-            max-height: 85vh; overflow-y: auto;
-            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            color: white; display: flex; flex-direction: column;
+       .modal-sheet {
+            background: #1a2333; 
+            border-top: 1px solid #0ff; 
+            /* 解説用: 角を丸くして、少し隙間を空ける */
+            border-radius: 24px 24px 0 0; 
+            padding: 24px; 
+            width: 100%; 
+            box-sizing: border-box;
+            /* 解説用: 高さは85%に戻す */
+            height: 100dvh; 
+            max-height: 100dvh;
+            overflow-y: auto;
+            transform: translateY(100%); 
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            color: white; 
+            display: flex; 
+            flex-direction: column;
+            z-index: 10000; /* 念のため手前に */
         }
+
+
         .modal-overlay.active .modal-sheet { transform: translateY(0); }
 
         /* Settings */
@@ -396,6 +441,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+<div id="loading-overlay">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p>SYSTEM INITIALIZING...</p>
+        </div>
+    </div>
+
 
     <video id="ar-video" playsinline autoplay muted></video>
     <div id="night-overlay"></div>
@@ -4513,11 +4565,15 @@ const STAR_DB = {
         document.addEventListener('DOMContentLoaded', () => {
             initStarBg();
             
-            // Check PC
+           // Check PC (Simple & Robust)
             const ua = navigator.userAgent.toLowerCase();
-            const isMobile = /iphone|ipad|ipod|android/i.test(ua);
+            // 純粋なAndroid端末とiOS端末のみをモバイル（ジャイロ）とする
+            const isMobile = /iphone|ipad|ipod|android/i.test(ua) && !/cros/i.test(ua); 
+            // ※ !/cros/i.test(ua) を加えることで、Androidアプリ対応Chromebookも明示的に除外できます
+
             if (!isMobile) {
-                state.isDevMode = true;
+                state.isDevMode = true; // Chromebookはこっち（マウス/タッチドラッグ操作）
+
                 document.getElementById('dev-badge').style.display = 'block';
                 setupDevControls();
                 const currentUrl = window.location.href;
@@ -4525,10 +4581,28 @@ const STAR_DB = {
                 document.getElementById('qr-img').src = qrUrl;
             }
 
-            // Bind Events
-            document.getElementById('btn-start').addEventListener('click', startApp);
+  // Bind Events
+            // ★ローディング画面付きスタート処理に変更
+            document.getElementById('btn-start').addEventListener('click', () => {
+                const loader = document.getElementById('loading-overlay');
+                const startScreen = document.getElementById('start-screen');
+
+                // 1. 幕を下ろす
+                if (loader) loader.style.display = 'flex';
+                if (startScreen) startScreen.style.display = 'none';
+
+                // 2. 画面描画を待ってから重い処理(startApp)を開始
+                setTimeout(() => {
+                    startApp();
+
+                    // 3. 処理が終わったら幕を上げる
+                    if (loader) loader.style.display = 'none';
+                }, 100);
+            });
+
             document.getElementById('btn-recalib').addEventListener('click', resetCalibration);
             document.getElementById('btn-stop-nav').addEventListener('click', stopNavigation);
+
             
             // Mode & Snapshot
             document.getElementById('btn-mode').addEventListener('click', toggleViewMode);
@@ -4655,6 +4729,22 @@ const STAR_DB = {
         // --- Core Logic ---
 
         function startApp() {
+
+if (window.DeviceOrientationEvent) {
+    window.addEventListener("deviceorientation", function(event) {
+        // alpha, beta, gamma がすべて null なら、センサーが無い（または無効）
+        if (event.alpha === null && event.beta === null && event.gamma === null) {
+            console.log("ジャイロセンサー非搭載（またはブラウザがブロック中）");
+        } else {
+            console.log("ジャイロセンサー稼働中！");
+            // 実際の値: event.alpha, event.beta, event.gamma
+        }
+    }, { once: true }); // 1回だけ実行して終了
+} else {
+    console.log("このブラウザはジャイロ非対応です");
+}
+
+
     // --- ★追加コード: GPS監視の開始 ---
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
@@ -4931,8 +5021,21 @@ const STAR_DB = {
             renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
             
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // ★軽量化対策（安全版）
+            // state変数を使わず、ここで直接判定してエラーを防ぎます
+            const _ua = navigator.userAgent.toLowerCase();
+            // 純粋なスマホかどうか判定（Chromebookは除外）
+            const _isSmartPhone = /iphone|ipad|ipod|android/i.test(_ua) && !/cros/i.test(_ua);
+            
+            // スマホなら高画質(最大2倍)、PC/Chromebookなら標準画質(1倍)
+            const pixelRatio = _isSmartPhone ? Math.min(window.devicePixelRatio, 2) : 1;
+            
+            renderer.setPixelRatio(pixelRatio);
+            console.log(`画質設定(PixelRatio): ${pixelRatio}`); // 確認用ログ
+
             document.getElementById('canvas-container').appendChild(renderer.domElement);
+
 
             createWorld();
             
@@ -5847,6 +5950,35 @@ function startNavigation() {
                     handleOrientation({alpha:state.raw.alpha, beta:state.raw.beta, gamma:0});
                 }
             });
+	// --- ★ 追加: タッチ操作 (Chromebook/PCタッチパネル用) ---
+            document.addEventListener('touchstart', e => {
+                // ボタンや入力欄を触ったときは反応させない
+                if(e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.closest('.modal-sheet')) return;
+                
+                drag = true; 
+                lx = e.touches[0].clientX; 
+                ly = e.touches[0].clientY;
+            }, {passive: false}); // passive: false は preventDefault() を使うために必須
+
+            document.addEventListener('touchend', () => {
+                drag = false;
+            });
+
+            document.addEventListener('touchmove', e => {
+                if(drag) {
+                    e.preventDefault(); // 画面スクロール（ページ全体の移動）を防ぐ
+                    
+                    // マウス操作と同じ計算式を、指の座標(touches[0])で実行
+                    state.raw.alpha = (state.raw.alpha - (e.touches[0].clientX - lx) * 0.5) % 360;
+                    state.raw.beta = Math.max(0, Math.min(180, state.raw.beta - (e.touches[0].clientY - ly) * 0.5));
+                    
+                    lx = e.touches[0].clientX;
+                    ly = e.touches[0].clientY;
+                    
+                    handleOrientation({alpha: state.raw.alpha, beta: state.raw.beta, gamma: 0});
+                }
+            }, {passive: false});
+
             handleOrientation({alpha:180, beta:45, gamma:0});
         }
 // --- ★ GPS機能の追加コード ---
@@ -5908,7 +6040,3 @@ function requestGPS() {
     </script>
 </body>
 </html>
-
-
-
-
