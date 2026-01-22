@@ -1,7 +1,9 @@
 {
   "name": "五島市ごみ分別ナビ",
   "short_name": "ごみ分別",
+  "id": "/adom-s.lab/trash",  <-- ★これを追加（ユニークなID）
   "start_url": "./gotoshitrash.html",
+  "scope": "./gotoshitrash.html",  <-- ★これを追加（このファイルだけをテリトリーにする）
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",
