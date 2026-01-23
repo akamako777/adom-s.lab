@@ -1792,7 +1792,7 @@
 
                     <div id="sResults" class="flex-1 overflow-y-auto pb-safe">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            ${['burnable','unburnable','plastic','resource1','resource2','resource3','resource4','hazardous'].map(k => {
+                            ${['burnable','unburnable','resource1','resource2','resource3','resource4','hazardous'].map(k => {
                                 const T = TYPES[k];
                                 return `
                                 <button onclick="filter('${k}')" class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-brand flex flex-col items-center gap-2 active:scale-95 transition-all">
@@ -2048,4 +2048,5 @@
 </script>
 </body>
 </html>
+
 
