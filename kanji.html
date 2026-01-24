@@ -746,10 +746,33 @@
             const applyPreset = (type) => {
                 const isPortrait = orientation === 'portrait';
                 switch(type) {
-                    case 'low': if (isPortrait) { setRows(6); setCols(5); } else { setRows(5); setCols(8); } setShowGuide(true); break;
-                    case 'mid': if (isPortrait) { setRows(8); setCols(7); } else { setRows(7); setCols(10); } setShowGuide(true); break;
-                    case 'high': if (isPortrait) { setRows(12); setCols(9); } else { setRows(10); setCols(13); } setShowGuide(true); break;
-                    case 'junior': if (isPortrait) { setRows(18); setCols(12); } else { setRows(15); setCols(18); } setShowGuide(false); break;
+                    // 低学年: 10×5
+                    case 'low': 
+                        if (isPortrait) { setRows(10); setCols(5); } 
+                        else { setRows(5); setCols(10); } 
+                        setShowGuide(true); 
+                        break;
+                    
+                    // 中学年: 12×7
+                    case 'mid': 
+                        if (isPortrait) { setRows(12); setCols(7); } 
+                        else { setRows(7); setCols(12); } 
+                        setShowGuide(true); 
+                        break;
+                    
+                    // 高学年: 16×8
+                    case 'high': 
+                        if (isPortrait) { setRows(16); setCols(8); } 
+                        else { setRows(8); setCols(16); } 
+                        setShowGuide(true); 
+                        break;
+                    
+                    // 中学生: 20×10
+                    case 'junior': 
+                        if (isPortrait) { setRows(20); setCols(10); } 
+                        else { setRows(10); setCols(20); } 
+                        setShowGuide(false); 
+                        break;
                 }
             };
 
@@ -868,7 +891,7 @@
                                                 className="w-full p-1.5 text-xs border border-indigo-200 rounded"
                                             />
                                         </div>
-                                        <div className="space-y-1">
+                                       <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-indigo-600 flex items-center">
                                                 使用する漢字 (任意)
                                                 {targetGrade === '小1' && <span className="text-red-500 text-[9px] ml-1 font-bold">※ひらがな対応可</span>}
@@ -876,12 +899,12 @@
                                             <textarea 
                                                 value={targetKanji}
                                                 onChange={(e) => setTargetKanji(e.target.value)}
-                                                placeholder="例: 赤、赤ちゃん、赤い玉..." 
-                                                rows={3}
-                                                className="w-full p-1.5 text-xs border border-indigo-200 rounded resize-none"
+                                                placeholder={'一般入力例：赤、青、白、黄\n先生入力例：赤、赤ちゃん、赤い玉、青い空'}
+                                                className="w-full p-1.5 text-xs border border-indigo-200 rounded h-16 resize-none leading-tight"
                                             />
-                                            <p className="text-[10px] text-gray-400">※先生入力モードではここに入力された内容がそのままドリルになります。</p>
+                                            <p className="text-[10px] text-gray-400">※スペース区切りで複数指定可</p>
                                         </div>
+
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-indigo-600">構成パターン</label>
                                             <select 
@@ -1251,3 +1274,4 @@
     </script>
 </body>
 </html>
+
