@@ -1,0 +1,23 @@
+{
+  "name": "Mission Ctrl ルート作成",
+  "short_name": "ルート作成",
+  "id": "/adom-s.lab/mission",
+  "start_url": "./mission.html",
+  "scope": "./mission.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "description": "AIが最適な巡回ルートを一瞬で構築。旅行計画や配送ルート作成に。",
+  "icons": [
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/plannavi.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/plannavi.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
