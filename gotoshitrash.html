@@ -1336,34 +1336,272 @@
 
         ];
 
-        // --- 5. DATA: Translations ---
+     // --- 5. DATA: Translations (Refined for Native Japanese Nuance) ---
         const LANGS = { ja: "日本語", en: "English", es: "Español", zh: "繁體中文", my: "မြန်မာ", vi: "Tiếng Việt" };
         const TRANSLATIONS = {
             ja: {
+                // Base UI
                 welcome: "地域設定", select_region: "お住まいの地域を選択してください", 
                 confirm_region_title: "地域確認",
                 confirm_region_body: "以下の地区設定を登録します。<br><br><b>{region}</b><br>よろしいですか？",
                 today: "今日", tomorrow: "明日", weekly: "週間予定", no_coll: "収集なし",
                 search_ph: "ごみを検索 (例: 電池, スプレー)", search_res: "検索結果", no_res: "見つかりませんでした",
-                guide_contact: "ガイド・連絡先",
                 alert_storm: "⚠️ 台風・荒天時は収集が中止になる場合があります。",
-                settings_reset: "地域をリセット", call_action: "発信",
+                settings_reset: "地域をリセット", 
                 toast_copied: "クリップボードにコピーしました",
-                guide_sodai: "粗大ごみ", guide_bring: "持ち込み", guide_biz: "事業系", guide_ng: "収集不可"
+                
+                // Common Actions
+                call_title: "発信確認", call_msg: "{name} ({number}) に発信しますか？", 
+                call_action: "発信", cancel: "キャンセル", close: "閉じる",
+
+                // Guide Menu (Original Nuance)
+                guide_contact: "ガイド・連絡先",
+                contact_list: "連絡先リスト", your_area: "あなたの地区の粗大ごみ担当",
+                
+                guide_sodai: "粗大ごみ", guide_sodai_sub: "予約・出し方",
+                guide_bring: "持ち込み", guide_bring_sub: "クリーンセンター",
+                guide_biz: "事業系", guide_biz_sub: "事業所・民泊など",
+                guide_ng: "収集不可", guide_ng_sub: "適正処理困難物",
+
+                // Sodai Modal (Detailed)
+                sodai_step1: "電話予約", sodai_step1_desc: "お住まいの地域の担当へ予約してください。",
+                sodai_step2: "シール購入", 
+                sodai_carry_ok: "1人で持てる", sodai_carry_ng: "持てない",
+                sodai_step3: "排出 (制限あり)",
+                sodai_rule_1: "300円券: 5個まで", sodai_rule_2: "600円券: 3個まで", sodai_rule_3: "混在: 合計5個 (600円は3個まで)",
+
+                // Biz Modal
+                biz_title: "原則、ステーション排出禁止", 
+                biz_desc: "事業活動（店舗・事務所・農業・民泊等）のごみは、自己搬入か許可業者へ委託してください。",
+                biz_exception: "例外 (定期収集)", 
+                biz_rule_1: "市指定の45L袋を使用", biz_rule_2: "1回につき 5袋以内",
+
+                // Bring-in Modal
+                bring_nearest: "最寄り", 
+                bring_hours: "平日 8:30-16:30 (12-13時休み)",
+                bring_recycle_title: "不燃性粗大ごみ・ブロック等",
+                bring_recycle_desc: "※五島市クリーンセンターで処理できない不燃物は、こちらへ案内される場合があります。",
+                bring_fee_sticker: "指定袋・シールあり", bring_free: "無料",
+                bring_fee_no_sticker: "指定袋なし", bring_paid: "10kg / 40円",
+
+                // NG Modal
+                ng_title: "市では収集できません", 
+                ng_desc: "以下の品目は、販売店または専門業者へ依頼してください。",
+                ng_list_1: "家電4品目 (エアコン、テレビ、冷蔵庫、洗濯機)",
+                ng_list_2: "パソコン",
+                ng_list_3: "適正処理困難物 (タイヤ、バッテリー、ピアノ等)",
+                ng_list_4: "危険物 (農薬、ガスボンベ、消火器等)",
+                ng_center_appliance: "家電リサイクル券センター",
+                ng_center_pc: "パソコン3R推進協会"
             },
-             en: {
-                welcome: "Setup", select_region: "Select your area",
-                confirm_region_title: "Confirm Region",
-                confirm_region_body: "Setting region to:<br><br><b>{region}</b><br>Is this correct?",
+            en: {
+                welcome: "Setup", select_region: "Select Area",
+                confirm_region_title: "Confirm", confirm_region_body: "Set region to:<br><br><b>{region}</b><br>OK?",
                 today: "Today", tomorrow: "Tomorrow", weekly: "Weekly", no_coll: "No Collection",
-                search_ph: "Search (e.g., Battery, Can)", search_res: "Results", no_res: "No results found",
-                guide_contact: "Guide & Contacts",
-                alert_storm: "⚠️ Collection may be canceled during storms.",
-                settings_reset: "Reset Region", call_action: "Call",
-                toast_copied: "Copied to clipboard",
-                guide_sodai: "Large Waste", guide_bring: "Bring-in", guide_biz: "Business", guide_ng: "Not Collected"
+                search_ph: "Search (e.g. Battery)", search_res: "Results", no_res: "Not found",
+                alert_storm: "⚠️ Collection may be canceled in storms.",
+                settings_reset: "Reset Region", toast_copied: "Copied",
+                
+                call_title: "Call", call_msg: "Call {name} ({number})?", 
+                call_action: "Call", cancel: "Cancel", close: "Close",
+
+                guide_contact: "Guide", contact_list: "Contacts", your_area: "Your Area Contact",
+                guide_sodai: "Large Waste", guide_sodai_sub: "Booking/Rules",
+                guide_bring: "Bring-in", guide_bring_sub: "Clean Center",
+                guide_biz: "Business", guide_biz_sub: "Shops/Farms",
+                guide_ng: "No Collection", guide_ng_sub: "Prohibited Items",
+
+                sodai_step1: "Booking", sodai_step1_desc: "Call your area contact first.",
+                sodai_step2: "Buy Sticker", 
+                sodai_carry_ok: "Carry by 1 person", sodai_carry_ng: "Cannot carry",
+                sodai_step3: "Disposal (Limit)",
+                sodai_rule_1: "300yen: Max 5", sodai_rule_2: "600yen: Max 3", sodai_rule_3: "Mixed: Max 5 Total",
+
+                biz_title: "No Station Disposal", 
+                biz_desc: "Business waste (Shops, Farms, AirBnB) must be brought in or collected by contractor.",
+                biz_exception: "Exception", 
+                biz_rule_1: "Use City 45L Bags", biz_rule_2: "Max 5 bags/time",
+
+                bring_nearest: "Nearest", 
+                bring_hours: "Mon-Fri 8:30-16:30 (Closed 12-13)",
+                bring_recycle_title: "Non-burnable Large/Blocks",
+                bring_recycle_desc: "*Items not accepted at Clean Center go here.",
+                bring_fee_sticker: "With Sticker/Bag", bring_free: "Free",
+                bring_fee_no_sticker: "No Bag", bring_paid: "10kg / 40yen",
+
+                ng_title: "City does not collect", 
+                ng_desc: "Ask dealer or specialist for:",
+                ng_list_1: "Home Appliances (TV, AC, etc)", ng_list_2: "PC/Laptop",
+                ng_list_3: "Hard-to-process (Tire, Piano)", ng_list_4: "Dangerous (Gas, Chemicals)",
+                ng_center_appliance: "Appliance Recycle Ctr", ng_center_pc: "PC3R Association"
+            },
+es: {
+                welcome: "Configuración", select_region: "Seleccionar área",
+                confirm_region_title: "Confirmar", confirm_region_body: "Región: <br><br><b>{region}</b><br>¿Es correcto?",
+                today: "Hoy", tomorrow: "Mañana", weekly: "Semanal", no_coll: "Sin recogida",
+                search_ph: "Buscar (ej. Pila)", search_res: "Resultados", no_res: "No encontrado",
+                alert_storm: "⚠️ La recogida puede cancelarse por tormentas.",
+                settings_reset: "Restablecer región", toast_copied: "Copiado",
+                
+                call_title: "Llamar", call_msg: "¿Llamar a {name} ({number})?", 
+                call_action: "Llamar", cancel: "Cancelar", close: "Cerrar",
+
+                guide_contact: "Guía", contact_list: "Contactos", your_area: "Contacto de su área",
+                guide_sodai: "Basura grande", guide_sodai_sub: "Reserva / Reglas",
+                guide_bring: "Llevar", guide_bring_sub: "Centro de Limpieza",
+                guide_biz: "Negocios", guide_biz_sub: "Tiendas / Granjas",
+                guide_ng: "No recogido", guide_ng_sub: "Prohibidos",
+
+                sodai_step1: "Reserva", sodai_step1_desc: "Llame primero al contacto de su área.",
+                sodai_step2: "Comprar etiqueta", 
+                sodai_carry_ok: "Llevable por 1 persona", sodai_carry_ng: "No llevable solo",
+                sodai_step3: "Disposición (Límite)",
+                sodai_rule_1: "300 yenes: Máx 5", sodai_rule_2: "600 yenes: Máx 3", sodai_rule_3: "Mixto: Máx 5 total",
+
+                biz_title: "Prohibido en la estación", 
+                biz_desc: "Residuos comerciales (Tiendas, Granjas, Airbnb) deben llevarse personalmente o usar contratista.",
+                biz_exception: "Excepción", 
+                biz_rule_1: "Bolsas ciudad 45L", biz_rule_2: "Máx 5 bolsas/vez",
+
+                bring_nearest: "Más cercano", 
+                bring_hours: "Lun-Vie 8:30-16:30 (Cerrado 12-13)",
+                bring_recycle_title: "No combustible / Bloques",
+                bring_recycle_desc: "*Artículos no aceptados en Centro de Limpieza.",
+                bring_fee_sticker: "Con etiqueta/bolsa", bring_free: "Gratis",
+                bring_fee_no_sticker: "Sin bolsa", bring_paid: "10kg / 40 yenes",
+
+                ng_title: "La ciudad no recoge", 
+                ng_desc: "Pregunte al vendedor o especialista:",
+                ng_list_1: "Electrodomésticos (TV, AC, etc)", ng_list_2: "PC / Portátil",
+                ng_list_3: "Difícil manejo (Neumático, Piano)", ng_list_4: "Peligroso (Gas, Químicos)",
+                ng_center_appliance: "Centro Reciclaje Electro.", ng_center_pc: "Asociación PC3R"
+            },
+            zh: {
+                welcome: "設定", select_region: "選擇地區",
+                confirm_region_title: "確認", confirm_region_body: "設定地區為：<br><br><b>{region}</b><br>正確嗎？",
+                today: "今天", tomorrow: "明天", weekly: "一週預報", no_coll: "無收集",
+                search_ph: "搜尋 (例如: 電池)", search_res: "搜尋結果", no_res: "未找到",
+                alert_storm: "⚠️ 颱風天可能暫停收集。",
+                settings_reset: "重設地區", toast_copied: "已複製",
+                
+                call_title: "撥號", call_msg: "撥打給 {name} ({number}) 嗎？", 
+                call_action: "撥打", cancel: "取消", close: "關閉",
+
+                guide_contact: "指南", contact_list: "聯絡人", your_area: "您所屬地區的窗口",
+                guide_sodai: "大型垃圾", guide_sodai_sub: "預約 / 規則",
+                guide_bring: "自行搬入", guide_bring_sub: "清潔中心",
+                guide_biz: "事業廢棄物", guide_biz_sub: "商店 / 農業",
+                guide_ng: "不收集", guide_ng_sub: "違禁品",
+
+                sodai_step1: "預約", sodai_step1_desc: "請先致電您所在地區的負責窗口。",
+                sodai_step2: "購買貼紙", 
+                sodai_carry_ok: "一人可搬運", sodai_carry_ng: "一人無法搬運",
+                sodai_step3: "排出 (限制)",
+                sodai_rule_1: "300日圓: 最多5個", sodai_rule_2: "600日圓: 最多3個", sodai_rule_3: "混合: 合計最多5個",
+
+                biz_title: "禁止丟棄於收集站", 
+                biz_desc: "事業廢棄物（商店、農場、民宿等）必須自行搬入或委託業者。",
+                biz_exception: "例外", 
+                biz_rule_1: "使用市指定45L袋", biz_rule_2: "每次最多5袋",
+
+                bring_nearest: "最近", 
+                bring_hours: "平日 8:30-16:30 (12-13休息)",
+                bring_recycle_title: "不可燃大型 / 磚塊",
+                bring_recycle_desc: "*清潔中心不收的物品請送至此處。",
+                bring_fee_sticker: "有貼紙/袋子", bring_free: "免費",
+                bring_fee_no_sticker: "無袋子", bring_paid: "10公斤 / 40日圓",
+
+                ng_title: "市公所不收集", 
+                ng_desc: "請諮詢經銷商或專業業者：",
+                ng_list_1: "家電四項 (電視, 冷氣等)", ng_list_2: "電腦 / 筆電",
+                ng_list_3: "困難處理物 (輪胎, 鋼琴)", ng_list_4: "危險物 (瓦斯, 化學品)",
+                ng_center_appliance: "家電回收券中心", ng_center_pc: "電腦3R推進協會"
+            },
+            my: {
+                welcome: "အပြင်အဆင်", select_region: "ဒေသရွေးပါ",
+                confirm_region_title: "အတည်ပြု", confirm_region_body: "ဒေသ: <br><br><b>{region}</b><br>မှန်ပါသလား?",
+                today: "ယနေ့", tomorrow: "မနက်ဖြန်", weekly: "အပတ်စဉ်", no_coll: "မရှိပါ",
+                search_ph: "ရှာရန် (ဥပမာ - ဓာတ်ခဲ)", search_res: "ရလဒ်များ", no_res: "မတွေ့ပါ",
+                alert_storm: "⚠️ မုန်တိုင်းတိုက်လျင် ရပ်ဆိုင်းနိုင်သည်။",
+                settings_reset: "ပြန်လည်သတ်မှတ်", toast_copied: "ကူးယူပြီး",
+                
+                call_title: "ခေါ်ဆိုရန်", call_msg: "{name} ({number}) သို့ ခေါ်ဆိုမလား?", 
+                call_action: "ခေါ်ဆို", cancel: "မလုပ်ပါ", close: "ပိတ်မည်",
+
+                guide_contact: "လမ်းညွှန်", contact_list: "ဖုန်းနံပါတ်များ", your_area: "သင့်ဒေသတာဝန်ခံ",
+                guide_sodai: "အမှိုက်ကြီး", guide_sodai_sub: "ဘွတ်ကင် / စည်းကမ်း",
+                guide_bring: "လာပို့ရန်", guide_bring_sub: "သန့်ရှင်းရေးစင်တာ",
+                guide_biz: "လုပ်ငန်းသုံး", guide_biz_sub: "ဆိုင် / လယ်ယာ",
+                guide_ng: "မကောက်ပါ", guide_ng_sub: "တားမြစ်ပစ္စည်း",
+
+                sodai_step1: "ဘွတ်ကင်", sodai_step1_desc: "သင့်ဒေသတာဝန်ခံကို အရင်ဖုန်းဆက်ပါ။",
+                sodai_step2: "တံဆိပ်ဝယ်ပါ", 
+                sodai_carry_ok: "တစ်ယောက်နိုင်", sodai_carry_ng: "တစ်ယောက်မနိုင်",
+                sodai_step3: "စွန့်ပစ်ခြင်း (ကန့်သတ်ချက်)",
+                sodai_rule_1: "၃၀၀ ယန်း - ၅ ခုအထိ", sodai_rule_2: "၆၀၀ ယန်း - ၃ ခုအထိ", sodai_rule_3: "ရောရာ - စုစုပေါင်း ၅ ခု",
+
+                biz_title: "စုရပ်တွင် မပစ်ရ", 
+                biz_desc: "လုပ်ငန်းသုံးအမှိုက် (ဆိုင်၊ လယ်ယာ၊ တည်းခိုခန်း) ကိုယ်တိုင်လာပို့ပါ သို့မဟုတ် ကုမ္ပဏီငှားပါ။",
+                biz_exception: "ခြွင်းချက်", 
+                biz_rule_1: "သတ်မှတ်အိတ် 45L သုံးပါ", biz_rule_2: "တစ်ခါပစ် ၅ လုံးထိ",
+
+                bring_nearest: "အနီးဆုံး", 
+                bring_hours: "တနင်္လာ-သောကြာ 8:30-16:30",
+                bring_recycle_title: "မလောင်ကျွမ်းနိုင်သော / အုတ်ခဲ",
+                bring_recycle_desc: "*သန့်ရှင်းရေးစင်တာ လက်မခံသောပစ္စည်းများ",
+                bring_fee_sticker: "တံဆိပ်/အိတ် ပါသည်", bring_free: "အခမဲ့",
+                bring_fee_no_sticker: "အိတ်မပါ", bring_paid: "၁၀ ကီလို / ၄၀ ယန်း",
+
+                ng_title: "မြို့တော်မှ မကောက်ပါ", 
+                ng_desc: "ဆိုင် သို့မဟုတ် ကျွမ်းကျင်သူကို မေးပါ -",
+                ng_list_1: "အိမ်သုံးလျှပ်စစ် (TV, AC)", ng_list_2: "ကွန်ပျူတာ",
+                ng_list_3: "တာယာ၊ စန္ဒရား", ng_list_4: "အန္တရာယ် (ဂတ်စ်၊ ဓာတု)",
+                ng_center_appliance: "လျှပ်စစ်ပစ္စည်း ပြန်လည်အသုံးပြု", ng_center_pc: "PC3R အသင်း"
+            },
+            vi: {
+                welcome: "Cài đặt", select_region: "Chọn khu vực",
+                confirm_region_title: "Xác nhận", confirm_region_body: "Khu vực: <br><br><b>{region}</b><br>Đúng không?",
+                today: "Hôm nay", tomorrow: "Ngày mai", weekly: "Hàng tuần", no_coll: "Không thu gom",
+                search_ph: "Tìm kiếm (vd: Pin)", search_res: "Kết quả", no_res: "Không tìm thấy",
+                alert_storm: "⚠️ Thu gom có thể hủy khi bão.",
+                settings_reset: "Đặt lại vùng", toast_copied: "Đã sao chép",
+                
+                call_title: "Gọi", call_msg: "Gọi {name} ({number})?", 
+                call_action: "Gọi", cancel: "Hủy", close: "Đóng",
+
+                guide_contact: "Hướng dẫn", contact_list: "Danh bạ", your_area: "Phụ trách khu vực",
+                guide_sodai: "Rác cồng kềnh", guide_sodai_sub: "Đặt lịch / Quy tắc",
+                guide_bring: "Tự mang đến", guide_bring_sub: "Trung tâm sạch",
+                guide_biz: "Rác KD", guide_biz_sub: "Cửa hàng / Nông nghiệp",
+                guide_ng: "Không thu", guide_ng_sub: "Đồ cấm",
+
+                sodai_step1: "Đặt lịch", sodai_step1_desc: "Gọi người phụ trách khu vực trước.",
+                sodai_step2: "Mua tem", 
+                sodai_carry_ok: "1 người bê được", sodai_carry_ng: "Không bê được",
+                sodai_step3: "Vứt rác (Giới hạn)",
+                sodai_rule_1: "300 yên: Tối đa 5", sodai_rule_2: "600 yên: Tối đa 3", sodai_rule_3: "Hỗn hợp: Tổng 5",
+
+                biz_title: "Cấm vứt tại trạm", 
+                biz_desc: "Rác kinh doanh (Cửa hàng, Nông nghiệp, Airbnb) phải tự chở hoặc thuê dịch vụ.",
+                biz_exception: "Ngoại lệ", 
+                biz_rule_1: "Dùng túi 45L quy định", biz_rule_2: "Tối đa 5 túi/lần",
+
+                bring_nearest: "Gần nhất", 
+                bring_hours: "Thứ 2-6 8:30-16:30 (Nghỉ 12-13h)",
+                bring_recycle_title: "Không cháy / Gạch đá",
+                bring_recycle_desc: "*Vật phẩm Trung tâm sạch không nhận.",
+                bring_fee_sticker: "Có tem/túi", bring_free: "Miễn phí",
+                bring_fee_no_sticker: "Không túi", bring_paid: "10kg / 40 yên",
+
+                ng_title: "TP không thu", 
+                ng_desc: "Hỏi người bán hoặc chuyên gia:",
+                ng_list_1: "Điện máy (TV, ĐH, Tủ lạnh)", ng_list_2: "Máy tính / Laptop",
+                ng_list_3: "Khó xử lý (Lốp xe, Piano)", ng_list_4: "Nguy hiểm (Gas, Hóa chất)",
+                ng_center_appliance: "TT Tái chế Điện máy", ng_center_pc: "Hiệp hội PC3R"
             }
+
         };
+
 
         // --- 6. STATE & LOGIC ---
         let state = { lang: 'ja', region: null, theme: 'light' };
@@ -1475,17 +1713,17 @@
             return CONTACTS[key] || CONTACTS.CENTER_FUKUE;
         }
 
-        function callNumber(number, name) {
-            showModal(t('call_confirm_title') || "発信確認", 
-                `${name} (${number}) に発信しますか？`,
-                `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold">キャンセル</button>
+      function callNumber(number, name) {
+            showModal(t('call_title'), 
+                t('call_msg', {name: name, number: number}),
+                `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold">${t('cancel')}</button>
                  <a href="tel:${number.replace(/-/g,'')}" onclick="closeModal()" class="px-4 py-2 rounded-lg bg-brand text-white font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-phone"></i> 発信
+                    <i class="fa-solid fa-phone"></i> ${t('call_action')}
                  </a>`
             );
         }
 
-        function showSodaiModal() {
+function showSodaiModal() {
             const contact = getCurrentSodaiContact();
             const contactName = contact.name[state.lang] || contact.name.ja;
             
@@ -1494,74 +1732,74 @@
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                         <div class="flex items-center gap-3 mb-2">
                             <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0">1</span>
-                            <h4 class="font-bold text-blue-900 dark:text-blue-100">電話予約</h4>
+                            <h4 class="font-bold text-blue-900 dark:text-blue-100">${t('sodai_step1')}</h4>
                         </div>
-                        <p class="text-xs text-blue-800 dark:text-blue-200 mb-3">お住まいの地域の担当へ予約してください。</p>
+                        <p class="text-xs text-blue-800 dark:text-blue-200 mb-3">${t('sodai_step1_desc')}</p>
                         <div class="text-center">
                             <div class="font-bold text-lg mb-1 dark:text-white">${contactName}</div>
                             <button onclick="callNumber('${contact.phone}', '${contactName}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-phone"></i> 予約 (${contact.phone})
+                                <i class="fa-solid fa-phone"></i> ${t('call_action')} (${contact.phone})
                             </button>
                         </div>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
                         <div class="flex items-center gap-3 mb-2">
                             <span class="bg-gray-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0">2</span>
-                            <h4 class="font-bold text-gray-800 dark:text-white">シール購入</h4>
+                            <h4 class="font-bold text-gray-800 dark:text-white">${t('sodai_step2')}</h4>
                         </div>
                         <div class="grid grid-cols-2 gap-2 text-center">
                             <div class="border border-dashed border-gray-300 rounded p-2">
-                                <div class="text-[10px] text-gray-500">1人で持てる</div>
-                                <div class="font-bold text-lg">300円</div>
+                                <div class="text-[10px] text-gray-500">${t('sodai_carry_ok')}</div>
+                                <div class="font-bold text-lg">300 JPY</div>
                             </div>
                             <div class="border border-dashed border-gray-300 rounded p-2">
-                                <div class="text-[10px] text-gray-500">持てない</div>
-                                <div class="font-bold text-lg">600円</div>
+                                <div class="text-[10px] text-gray-500">${t('sodai_carry_ng')}</div>
+                                <div class="font-bold text-lg">600 JPY</div>
                             </div>
                         </div>
                     </div>
                     <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-100 dark:border-yellow-800">
                          <div class="flex items-center gap-3 mb-2">
                             <span class="bg-yellow-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0">3</span>
-                            <h4 class="font-bold text-yellow-900 dark:text-yellow-100">排出 (制限あり)</h4>
+                            <h4 class="font-bold text-yellow-900 dark:text-yellow-100">${t('sodai_step3')}</h4>
                         </div>
                         <ul class="text-xs list-disc list-inside text-yellow-800 dark:text-yellow-200">
-                            <li>300円券: 5個まで</li>
-                            <li>600円券: 3個まで</li>
-                            <li>混在: 合計5個 (600円は3個まで)</li>
+                            <li>${t('sodai_rule_1')}</li>
+                            <li>${t('sodai_rule_2')}</li>
+                            <li>${t('sodai_rule_3')}</li>
                         </ul>
                     </div>
                 </div>
             `;
-            showModal(t('guide_sodai'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">閉じる</button>`);
+            showModal(t('guide_sodai'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
 
-        function showBizModal() {
+function showBizModal() {
             const html = `
                 <div class="space-y-4">
                      <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
-                        <p class="font-bold text-red-700 dark:text-red-300 mb-1">原則、ステーション排出禁止</p>
-                        <p class="text-xs text-red-600 dark:text-red-400">事業活動（店舗・事務所・農業・民泊等）のごみは、自己搬入か許可業者へ委託してください。</p>
+                        <p class="font-bold text-red-700 dark:text-red-300 mb-1">${t('biz_title')}</p>
+                        <p class="text-xs text-red-600 dark:text-red-400">${t('biz_desc')}</p>
                     </div>
                     <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl">
-                        <h4 class="font-bold text-green-800 dark:text-green-200 mb-2">例外 (定期収集)</h4>
+                        <h4 class="font-bold text-green-800 dark:text-green-200 mb-2">${t('biz_exception')}</h4>
                         <ul class="text-xs list-disc list-inside text-green-700 dark:text-green-300">
-                            <li>市指定の45L袋を使用</li>
-                            <li>1回につき <span class="font-bold text-red-500">5袋以内</span></li>
+                            <li>${t('biz_rule_1')}</li>
+                            <li><span class="font-bold text-red-500">${t('biz_rule_2')}</span></li>
                         </ul>
                     </div>
                 </div>
             `;
-            showModal(t('guide_biz'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">閉じる</button>`);
+            showModal(t('guide_biz'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
-        
-        function showBringModal() {
+
+
+ function showBringModal() {
             const region = SCHEDULES[state.region];
             const centerKey = region.center;
             const contact = CONTACTS[centerKey] || CONTACTS.CENTER_FUKUE;
             const cName = contact.name[state.lang] || contact.name.ja;
             
-            // [Ver 5.3 Enhancement] Fukue Recycle Center conditional logic
             let extraInfo = '';
             if (centerKey === 'CENTER_FUKUE') {
                 const rec = CONTACTS.CENTER_FUKUE_RECYCLE;
@@ -1570,14 +1808,14 @@
                     <div class="mt-3 bg-gray-100 dark:bg-gray-700 p-3 rounded-lg border-l-4 border-gray-400">
                         <div class="flex justify-between items-start mb-2">
                              <div>
-                                <h5 class="text-xs font-bold text-gray-700 dark:text-gray-200">不燃性粗大ごみ・ブロック等</h5>
+                                <h5 class="text-xs font-bold text-gray-700 dark:text-gray-200">${t('bring_recycle_title')}</h5>
                                 <div class="text-[10px] text-gray-500 dark:text-gray-400">${recName}</div>
                              </div>
                              <button onclick="callNumber('${rec.phone}', '${recName}')" class="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
-                                <i class="fa-solid fa-phone"></i> 発信
+                                <i class="fa-solid fa-phone"></i> ${t('call_action')}
                              </button>
                         </div>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">※五島市クリーンセンターで処理できない不燃物は、こちらへ案内される場合があります。</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">${t('bring_recycle_desc')}</p>
                     </div>
                 `;
             }
@@ -1587,53 +1825,53 @@
                     <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
                         <div class="flex items-center gap-2 mb-1">
                             <h4 class="font-bold text-orange-900 dark:text-orange-100 flex-1">${cName}</h4>
-                            <span class="text-[10px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">最寄り</span>
+                            <span class="text-[10px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">${t('bring_nearest')}</span>
                         </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">平日 8:30-16:30 (12-13時休み)</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">${t('bring_hours')}</div>
                         <button onclick="callNumber('${contact.phone}', '${cName}')" class="w-full bg-orange-500 text-white font-bold py-2 rounded-lg shadow flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-phone"></i> 電話 (${contact.phone})
+                            <i class="fa-solid fa-phone"></i> ${t('call_action')} (${contact.phone})
                         </button>
                     </div>
                     
                     ${extraInfo}
 
                     <table class="w-full text-xs text-left mt-2">
-                        <tr class="border-b dark:border-gray-700"><th class="py-2">指定袋・シールあり</th><td class="text-green-600 font-bold text-right">無料</td></tr>
-                        <tr class="border-b dark:border-gray-700"><th class="py-2">指定袋なし</th><td class="text-right">10kg / 40円</td></tr>
+                        <tr class="border-b dark:border-gray-700"><th class="py-2">${t('bring_fee_sticker')}</th><td class="text-green-600 font-bold text-right">${t('bring_free')}</td></tr>
+                        <tr class="border-b dark:border-gray-700"><th class="py-2">${t('bring_fee_no_sticker')}</th><td class="text-right">${t('bring_paid')}</td></tr>
                     </table>
                 </div>
             `;
-            showModal(t('guide_bring'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">閉じる</button>`);
+            showModal(t('guide_bring'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
 
         function showNgModal() {
              const html = `
                 <div class="space-y-4">
                     <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
-                        <h4 class="font-bold text-red-800 dark:text-red-100 mb-2">市では収集できません</h4>
-                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">以下の品目は、販売店または専門業者へ依頼してください。</p>
+                        <h4 class="font-bold text-red-800 dark:text-red-100 mb-2">${t('ng_title')}</h4>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">${t('ng_desc')}</p>
                         <ul class="text-xs list-disc list-inside space-y-1 mb-3 text-red-700 dark:text-red-300">
-                            <li>家電4品目 (エアコン、テレビ、冷蔵庫、洗濯機)</li>
-                            <li>パソコン</li>
-                            <li>適正処理困難物 (タイヤ、バッテリー、ピアノ等)</li>
-                            <li>危険物 (農薬、ガスボンベ、消火器等)</li>
+                            <li>${t('ng_list_1')}</li>
+                            <li>${t('ng_list_2')}</li>
+                            <li>${t('ng_list_3')}</li>
+                            <li>${t('ng_list_4')}</li>
                         </ul>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                         <button onclick="callNumber('${CONTACTS.APPLIANCE.phone}', '家電リサイクル券センター')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400">
-                            <div class="text-[10px] text-gray-500">家電4品目</div>
-                            <div class="font-bold text-sm text-blue-600 dark:text-blue-400">券センターへ</div>
+                         <button onclick="callNumber('${CONTACTS.APPLIANCE.phone}', '${t('ng_center_appliance')}')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400">
+                            <div class="text-[10px] text-gray-500">TV/AC/Fridge...</div>
+                            <div class="font-bold text-sm text-blue-600 dark:text-blue-400">${t('ng_center_appliance')}</div>
                             <div class="text-[10px] text-gray-400 mt-1">${CONTACTS.APPLIANCE.phone}</div>
                         </button>
-                        <button onclick="callNumber('${CONTACTS.PC3R.phone}', 'パソコン3R推進協会')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400">
-                            <div class="text-[10px] text-gray-500">パソコン</div>
-                            <div class="font-bold text-sm text-blue-600 dark:text-blue-400">3R推進協会へ</div>
+                        <button onclick="callNumber('${CONTACTS.PC3R.phone}', '${t('ng_center_pc')}')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400">
+                            <div class="text-[10px] text-gray-500">PC/Laptop</div>
+                            <div class="font-bold text-sm text-blue-600 dark:text-blue-400">${t('ng_center_pc')}</div>
                             <div class="text-[10px] text-gray-400 mt-1">${CONTACTS.PC3R.phone}</div>
                         </button>
                     </div>
                 </div>
             `;
-            showModal(t('guide_ng'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">閉じる</button>`);
+            showModal(t('guide_ng'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
 
         // --- RENDERERS ---
@@ -1862,12 +2100,10 @@
              </div>`;
         }
 
-        function renderGuide() {
-            // 現在の地区担当粗大ごみ連絡先
+    function renderGuide() {
             const sodaiContact = getCurrentSodaiContact();
             const sodaiName = sodaiContact.name[state.lang] || sodaiContact.name.ja;
             
-            // 現在の地区担当持ち込み先
             const centerContact = getCurrentCenterContact();
             const centerName = centerContact.name[state.lang] || centerContact.name.ja;
 
@@ -1877,26 +2113,26 @@
                         <button onclick="showSodaiModal()" class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-left hover:border-purple-400 transition-all group">
                             <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform"><i class="fa-solid fa-couch"></i></div>
                             <div class="font-bold text-gray-800 dark:text-gray-200">${t('guide_sodai')}</div>
-                            <div class="text-[10px] text-gray-400">予約・出し方</div>
+                            <div class="text-[10px] text-gray-400">${t('guide_sodai_sub')}</div>
                         </button>
                         <button onclick="showBringModal()" class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-left hover:border-orange-400 transition-all group">
                              <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform"><i class="fa-solid fa-truck"></i></div>
                             <div class="font-bold text-gray-800 dark:text-gray-200">${t('guide_bring')}</div>
-                            <div class="text-[10px] text-gray-400">${centerName}</div>
+                            <div class="text-[10px] text-gray-400">${t('guide_bring_sub')}</div>
                         </button>
                         <button onclick="showBizModal()" class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-left hover:border-blue-400 transition-all group">
                              <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform"><i class="fa-solid fa-briefcase"></i></div>
                             <div class="font-bold text-gray-800 dark:text-gray-200">${t('guide_biz')}</div>
-                            <div class="text-[10px] text-gray-400">事業系ごみ</div>
+                            <div class="text-[10px] text-gray-400">${t('guide_biz_sub')}</div>
                         </button>
                         <button onclick="showNgModal()" class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-left hover:border-red-400 transition-all group">
                              <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 flex items-center justify-center text-xl mb-2 group-hover:scale-110 transition-transform"><i class="fa-solid fa-ban"></i></div>
                             <div class="font-bold text-gray-800 dark:text-gray-200">${t('guide_ng')}</div>
-                            <div class="text-[10px] text-gray-400">収集不可品目</div>
+                            <div class="text-[10px] text-gray-400">${t('guide_ng_sub')}</div>
                         </button>
                     </div>
                     
-                    <h2 class="text-xl font-bold px-2 pt-2 text-gray-800 dark:text-gray-100">Contact List</h2>
+                    <h2 class="text-xl font-bold px-2 pt-2 text-gray-800 dark:text-gray-100">${t('contact_list')}</h2>
                     
                     <div class="grid grid-cols-1 gap-3">
                          <div class="bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-sm">
@@ -1913,7 +2149,7 @@
                                 <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-couch"></i></div>
                                 <div>
                                     <div class="font-bold text-gray-800 dark:text-gray-100">${sodaiName}</div>
-                                    <div class="text-xs text-purple-500 dark:text-purple-300 font-bold">あなたの地区の粗大ごみ担当</div>
+                                    <div class="text-xs text-purple-500 dark:text-purple-300 font-bold">${t('your_area')}</div>
                                 </div>
                             </button>
                         </div>
@@ -1921,6 +2157,7 @@
                 </div>
             `;
         }
+
 
         function renderSettings() {
             main.innerHTML = `
@@ -2025,12 +2262,13 @@
         document.addEventListener('DOMContentLoaded', init);
         
         // SOS
+
         document.getElementById('btn-emergency').onclick = () => {
-            showModal("Emergency / 緊急", `<div class="text-center text-gray-500 mb-4">緊急連絡先</div>`, `
+            showModal("Emergency / 緊急", `<div class="text-center text-gray-500 mb-4">Emergency Contact</div>`, `
                 <div class="grid w-full gap-3">
-                    <button onclick="callNumber('119', 'Fire/Ambulance')" class="bg-red-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-red-700 w-full">🚑 119 (救急・消防)</button>
-                    <button onclick="callNumber('110', 'Police')" class="bg-blue-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-blue-700 w-full">🚓 110 (警察)</button>
-                    <button onclick="closeModal()" class="py-2 text-gray-500 font-bold mt-2 w-full">閉じる</button>
+                    <button onclick="callNumber('119', 'Fire/Ambulance')" class="bg-red-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-red-700 w-full">🚑 119 (Fire/Amb)</button>
+                    <button onclick="callNumber('110', 'Police')" class="bg-blue-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-blue-700 w-full">🚓 110 (Police)</button>
+                    <button onclick="closeModal()" class="py-2 text-gray-500 font-bold mt-2 w-full">Close</button>
                 </div>
             `);
         };
@@ -2048,5 +2286,3 @@
 </script>
 </body>
 </html>
-
-
