@@ -2298,13 +2298,15 @@ function renderHome() {
                             </div>
                         </div>
                     </div>
-                    
+               
                     <div class="text-center mt-8 pb-8">
                          <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1 rounded-full hover:bg-brand/20 transition-colors">
-                            <i class="fa-solid fa-robot mr-1"></i> この予定をAIに聞く
+                            <i class="fa-solid fa-copy mr-1"></i> この予定のパターンをコピーする
                         </button>
+                        <div class="text-[10px] text-gray-400 mt-2 scale-90">
+                            ※コピーしたテキストをGeminiやChatGPT等に貼り付けてください
+                        </div>
                     </div>
-                </div>
             `;
             main.innerHTML = html;
             
@@ -2934,4 +2936,3 @@ async function sendImageToGas(base64) {
 </script>
 </body>
 </html>
-
