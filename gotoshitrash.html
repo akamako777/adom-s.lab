@@ -2233,7 +2233,7 @@ function showBizModal() {
             }, 3000);
         }
 
-        // AI Copy Logic
+     // AI Copy Logic (Updated: Human-friendly header)
         function copyScheduleForAI() {
             if(!state.region || !SCHEDULES[state.region]) {
                 showToast("地域設定が必要です");
@@ -2244,14 +2244,26 @@ function showBizModal() {
                 region: s.name.ja,
                 rules: s.rules
             };
+
+            // 【追加】人間向けの案内文
+            const intro = "【五島市ごみ分別ナビ：分別パターンデータ】\n" +
+                          "こちらはこの地域（" + s.name.ja + "）のごみ分別ルールです。\n" +
+                          "機種や契約されているAIサービス（ChatGPT, Gemini等）によっては、\n" +
+                          "このテキストを読み込ませることで、カレンダーへの予定追加やスケジュールの確認が可能です。\n" +
+                          "（以下のデータをそのままAIに貼り付けてください）\n\n" +
+                          "--- システム用データ ---\n";
+
+            // 案内文とデータを結合
+            const text = intro + JSON.stringify(data, null, 2);
+
             // Copy to clipboard safely
-            const text = JSON.stringify(data, null, 2);
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => showToast(t('toast_copied'))).catch(() => showCopyFallback(text));
             } else {
                 showCopyFallback(text);
             }
         }
+
 
         function showCopyFallback(text) {
              const html = `
