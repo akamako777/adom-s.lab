@@ -1,7 +1,7 @@
-// sw.js (Adom's Lab 統合版 v11: ハイブリッド完全版)
-// ローカルファイルとCDN、どちらを使っていてもキャッシュするように設定しています
+// sw.js (Adom's Lab 統合版 v12: FontAwesome JS対応ハイブリッド版)
+// ローカルファイル(JS)とCDN(CSS/Webfonts)、どちらを使っていてもキャッシュするように設定しています
 
-const CACHE_NAME = 'adom-lab-v11-hybrid-complete'; // ★更新のためバージョン名を変更
+const CACHE_NAME = 'adom-lab-v12-hybrid-fa'; // ★更新のためバージョン名を変更
 const INITIAL_ASSETS = [
     // ---------------------------
     // 1. アプリ本体 (HTML)
@@ -27,6 +27,7 @@ const INITIAL_ASSETS = [
     './react-dom.production.min.js',
     './babel.min.js',
     './tailwindcss.js',
+    './fontawesome.min.js', // ★追加！これでゴミ分別アプリのアイコンは完璧です
 
     // ---------------------------
     // 4. 【旧】CDN用ライブラリ
@@ -49,11 +50,12 @@ const INITIAL_ASSETS = [
 
     // ---------------------------
     // 5. 共通ツール・フォント・機能ライブラリ
+    // (他のアプリのためにCDN版FontAwesomeも残しておきます)
     // ---------------------------
-    // FontAwesome CSS
+    // FontAwesome CSS (CDN)
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     
-    // ★重要: FontAwesomeの実体ファイル (オフラインでアイコンを表示するために必須)
+    // FontAwesome Webfonts (CDN版を使っているアプリ用)
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2', 
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
@@ -65,7 +67,9 @@ const INITIAL_ASSETS = [
 
     // Google Fonts (日本語フォントなど)
     'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap',
-    'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap'
+    'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
+    // Trashアプリで使っているNoto Sans JP
+    'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap'
 ];
 
 // --- インストール処理 (登録時に全ファイルをキャッシュへ) ---
