@@ -56,6 +56,26 @@
     </script>
 
     <style>
+
+/* ----------------------------------------------------
+   Update: Clickable Header (日付クリック用スタイル)
+   ---------------------------------------------------- */
+#current-date-display { /* または該当するID/クラス名 */
+    cursor: pointer;
+    user-select: none; /* ダブルクリックによるテキスト選択を防止 */
+    transition: transform 0.1s ease, opacity 0.2s;
+}
+
+#current-date-display:active {
+    transform: scale(0.95); /* タップ時に少し縮む演出 */
+    opacity: 0.7;
+}
+
+#current-date-display:hover {
+    opacity: 0.8; /* ホバー時の演出（PC用） */
+}
+
+
         /* Aurora UI: Performance & Native Feel */
         body { -webkit-tap-highlight-color: transparent; }
         
@@ -110,6 +130,15 @@
                     <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
                     <span class="gemini-text text-[10px]">五島市HP</span>
                 </a>
+
+<button onclick="startCamSession()" class="bg-indigo-500 hover:bg-indigo-600 text-white w-8 h-8 rounded-full shadow-sm transition-transform active:scale-95 flex items-center justify-center mr-2 relative" title="オペレーター相談">
+    <i class="fa-solid fa-camera"></i>
+    <span id="cam-status-dot" class="hidden absolute -top-1 -right-1 flex h-3 w-3 pointer-events-none">
+    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+    <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+</span>
+</button>
+
                 <button id="btn-emergency" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full shadow-sm transition-transform active:scale-95 flex items-center justify-center">
                     <i class="fa-solid fa-phone"></i>
                 </button>
@@ -149,11 +178,13 @@
                 <div id="modal-actions" class="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl"></div>
             </div>
         </div>
-        
+        <div id="icon-tip" class="fixed z-50 px-3 py-1.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 text-xs font-bold rounded-lg shadow-xl pointer-events-none opacity-0 transition-all duration-300 transform -translate-x-1/2 -translate-y-2 mb-2 whitespace-nowrap hidden">
+            </div>
+
         <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white dark:bg-white/90 dark:text-gray-900 px-6 py-3 rounded-full shadow-xl text-sm font-bold opacity-0 transition-all duration-300 pointer-events-none z-50 translate-y-4 flex items-center gap-2">
-            <i class="fa-solid fa-check-circle"></i> <span id="toast-msg">Notification</span>
+            <i class="fa-solid fa-check-circle"></i> 
+            <span id="toast-msg">Notification</span>
         </div>
-    </div>
 
     <script>
         /**
@@ -163,24 +194,30 @@
          * - Data: Fact-checked against Source [1-282]
          */
         
-        // --- 🔑 API Key (Canvas Privilege) ---
-        const apiKey = ""; 
+// --- 🔑 API Key (Canvas Privilege) ---
+const apiKey = ""; 
+// ▼ GAS URL (Step 1で取得したURLをここに貼る) ▼
+// 両端に " をつけました
+const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIOH8ncVExeGoAyX-VRrqvSh16X387ZpUt_sxN5sJruOs6q/exec";
 
-// --- 1. CONSTANTS: Colors & Types ---
-        // Definition of waste categories, colors, and multilingual labels.
-        // This is the "Master Configuration" for the entire app.
+        // ▼ 追加: お知らせ配信システム (GAS) ▼
+        const NEWS_API = "https://script.google.com/macros/s/AKfycbw-7WJ27aQHW6mbxRNcgjyIZUIayslCdxbLIcjgYiPU8bNWHhY7z5IuYzqskMz50wKI-g/exec";
+
+
+// --- 1. CONSTANTS: Colors & Types五島市のリンク入り ---
         const TYPES = {
-            burnable:   { id: 'burnable',   label: { ja:'燃やすごみ', en:'Burnable', es:'Combustible', zh:'可燃垃圾', my:'လောင်ကျွမ်းနိုင်သော', vi:'Rác cháy được' }, color: 'bg-burnable', text: 'text-burnable', border: 'border-burnable', icon: 'fa-fire' },
-            unburnable: { id: 'unburnable', label: { ja:'燃やせないごみ', en:'Non-burnable', es:'No combustible', zh:'不可燃垃圾', my:'မလောင်ကျွမ်းနိုင်သော', vi:'Rác không cháy' }, color: 'bg-unburnable', text: 'text-unburnable', border: 'border-unburnable', icon: 'fa-box-open' },
-            plastic:    { id: 'plastic',    label: { ja:'プラ容器包装', en:'Plastic', es:'Plástico', zh:'塑膠容器', my:'ပလပ်စတစ်', vi:'Nhựa' }, color: 'bg-plastic', text: 'text-plastic', border: 'border-plastic', icon: 'fa-bottle-water' },
-            resource1:  { id: 'resource1',  label: { ja:'資源 (缶・びん・PET)', en:'Cans/Bottles/PET', es:'Latas/Botellas', zh:'資源 (罐/瓶)', my:'သတ္တု', vi:'Kim loại' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-recycle' },
-            resource2:  { id: 'resource2',  label: { ja:'資源 (発泡)', en:'Styrofoam', es:'Poliestireno', zh:'保麗龍', my:'ဖော့', vi:'Xốp' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-cube' },
-            resource3:  { id: 'resource3',  label: { ja:'資源 (古紙・古布)', en:'Paper/Cloth', es:'Papel/Tela', zh:'紙類/布類', my:'စက္ကူ', vi:'Giấy' }, color: 'bg-paper', text: 'text-paper', border: 'border-paper', icon: 'fa-newspaper' },
-            resource4:  { id: 'resource4',  label: { ja:'資源 (金属・家電)', en:'Metal/Small App', es:'Metal/Electro.', zh:'金屬/家電', my:'သတ္တု', vi:'Kim loại' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-plug' },
-            hazardous:  { id: 'hazardous',  label: { ja:'有害ごみ', en:'Hazardous', es:'Peligroso', zh:'有害垃圾', my:'အန္တရာယ်ရှိ', vi:'Độc hại' }, color: 'bg-hazardous', text: 'text-hazardous', border: 'border-hazardous', icon: 'fa-battery-full' },
-            large:      { id: 'large',      label: { ja:'粗大ごみ', en:'Large Waste', es:'Residuos grandes', zh:'大型垃圾', my:'အမှိုက်ကြီး', vi:'Rác lớn' }, color: 'bg-large', text: 'text-large', border: 'border-large', icon: 'fa-couch' },
-            none:       { id: 'none',       label: { ja:'収集なし', en:'No Collection', es:'Sin recogida', zh:'無收集', my:'မရှိ', vi:'Không thu gom' }, color: 'bg-gray-300 dark:bg-gray-700', text: 'text-gray-400', border: 'border-gray-300', icon: 'fa-ban' }
+            burnable:   { id: 'burnable',   pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_1.pdf', label: { ja:'燃やすごみ', en:'Burnable', es:'Combustible', zh:'可燃垃圾', my:'လောင်ကျွမ်းနိုင်သော', vi:'Rác cháy được' }, color: 'bg-burnable', text: 'text-burnable', border: 'border-burnable', icon: 'fa-fire' },
+            unburnable: { id: 'unburnable', pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_2.pdf', label: { ja:'燃やせないごみ', en:'Non-burnable', es:'No combustible', zh:'不可燃垃圾', my:'မလောင်ကျွမ်းနိုင်သော', vi:'Rác không cháy' }, color: 'bg-unburnable', text: 'text-unburnable', border: 'border-unburnable', icon: 'fa-box-open' },
+            plastic:    { id: 'plastic',    pdf: null, label: { ja:'プラ容器包装', en:'Plastic', es:'Plástico', zh:'塑膠容器', my:'ပလပ်စတစ်', vi:'Nhựa' }, color: 'bg-plastic', text: 'text-plastic', border: 'border-plastic', icon: 'fa-bottle-water' },
+            resource1:  { id: 'resource1',  pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_3.pdf', label: { ja:'資源 (缶・びん・PET)', en:'Cans/Bottles/PET', es:'Latas/Botellas', zh:'資源 (罐/瓶)', my:'သတ္တု', vi:'Kim loại' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-recycle' },
+            resource2:  { id: 'resource2',  pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_4.pdf', label: { ja:'資源 (発泡)', en:'Styrofoam', es:'Poliestireno', zh:'保麗龍', my:'ဖော့', vi:'Xốp' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-cube' },
+            resource3:  { id: 'resource3',  pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_5.pdf', label: { ja:'資源 (古紙・古布)', en:'Paper/Cloth', es:'Papel/Tela', zh:'紙類/布類', my:'စက္ကူ', vi:'Giấy' }, color: 'bg-paper', text: 'text-paper', border: 'border-paper', icon: 'fa-newspaper' },
+            resource4:  { id: 'resource4',  pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_6.pdf', label: { ja:'資源 (金属・家電)', en:'Metal/Small App', es:'Metal/Electro.', zh:'金屬/家電', my:'သတ္တု', vi:'Kim loại' }, color: 'bg-resource', text: 'text-resource', border: 'border-resource', icon: 'fa-plug' },
+            hazardous:  { id: 'hazardous',  pdf: 'https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_8.pdf', label: { ja:'有害ごみ', en:'Hazardous', es:'Peligroso', zh:'有害垃圾', my:'အန္တရာယ်ရှိ', vi:'Độc hại' }, color: 'bg-hazardous', text: 'text-hazardous', border: 'border-hazardous', icon: 'fa-battery-full' },
+            large:      { id: 'large',      pdf: null, label: { ja:'粗大ごみ', en:'Large Waste', es:'Residuos grandes', zh:'大型垃圾', my:'အမှိုက်ကြီး', vi:'Rác lớn' }, color: 'bg-large', text: 'text-large', border: 'border-large', icon: 'fa-couch' },
+            none:       { id: 'none',       pdf: null, label: { ja:'収集なし', en:'No Collection', es:'Sin recogida', zh:'無收集', my:'မရှိ', vi:'Không thu gom' }, color: 'bg-gray-300 dark:bg-gray-700', text: 'text-gray-400', border: 'border-gray-300', icon: 'fa-ban' }
         };
+
 
         // --- 2. MASTER DATA: Contacts (Fact-Checked) ---
         // Source [86-91] (Sodai) & [124-134] (Centers)
@@ -428,6 +465,7 @@
                 ]
             }
         };
+
 
         // --- 4. TRASH DICTIONARY (Stubbed for future expansion) ---
         const TRASH_DB = [
@@ -1341,6 +1379,7 @@
 
         ];
 
+
      // --- 5. DATA: Translations (Refined for Native Japanese Nuance) ---
         const LANGS = { ja: "日本語", en: "English", es: "Español", zh: "繁體中文", my: "မြန်မာ", vi: "Tiếng Việt" };
         const TRANSLATIONS = {
@@ -1609,22 +1648,36 @@ es: {
 
 
         // --- 6. STATE & LOGIC ---
-        let state = { lang: 'ja', region: null, theme: 'light' };
+        // viewMode: 'week' | 'month'
+        // viewDate: カレンダーが表示している基準日
+        let state = { lang: 'ja', region: null, theme: 'light', viewMode: 'week', viewDate: new Date() };
 
         function init() {
             try {
                 const s = localStorage.getItem('goto_navi_v5');
-                if(s) state = { ...state, ...JSON.parse(s) };
+                // viewDate等は保存せず、毎回リセットするために除外してマージ
+                if(s) {
+                    const saved = JSON.parse(s);
+                    state = { ...state, lang: saved.lang, region: saved.region, theme: saved.theme };
+                }
             } catch(e) { console.error("Storage Error"); }
 
             applyTheme();
             
-            if(!state.region) renderWizard();
-            else renderHome();
+            if(!state.region) {
+                renderWizard();
+            } else {
+                renderHome();
+                // ▼ 追加: 裏でこっそり相談受付中か確認して、ONなら点滅させる ▼
+                syncIndicator();
+            }
         }
 
+
         function save() {
-            localStorage.setItem('goto_navi_v5', JSON.stringify(state));
+            // viewModeなどは保存せず、設定値のみ保存
+            const toSave = { lang: state.lang, region: state.region, theme: state.theme };
+            localStorage.setItem('goto_navi_v5', JSON.stringify(toSave));
         }
 
         function t(k, p={}) {
@@ -1641,22 +1694,53 @@ es: {
         }
 
         // --- CALENDAR LOGIC (Robust) ---
+        
+        // 【拡張】将来のための祝日ロジック（現在は空実装）
+        // 担当者がここに戻り値を設定すれば、カレンダーの日付が赤くなります
+        function isHoliday(date) {
+            // const y = date.getFullYear();
+            // const m = date.getMonth() + 1;
+            // const d = date.getDate();
+            // 例: 元旦のみ判定する場合
+            // if (m === 1 && d === 1) return true;
+            return false;
+        }
+
+        // 日付の色判定（日曜・祝日は赤、土曜は青）
+        function getDateColorClass(date) {
+            const day = date.getDay();
+            if (day === 0 || isHoliday(date)) return "text-red-500 dark:text-red-400";
+            if (day === 6) return "text-blue-500 dark:text-blue-400";
+            return "text-gray-700 dark:text-gray-200";
+        }
+
         function getWeekNum(date) {
             const d = date.getDate();
+            // シンプルかつ確実な第n週計算
             return Math.ceil(d / 7);
         }
 
-        function getGarbage(date, rKey) {
+     function getGarbage(date, rKey) {
             if(!rKey || !SCHEDULES[rKey]) return TYPES.none;
+
+            const m = date.getMonth() + 1;
+            const d = date.getDate();
+
+            // 【緊急追加】年末年始の運休ロジック (12/31 ～ 1/4)
+            // この期間は曜日に関わらず、すべての収集を停止します。
+            if (m === 12 && d >= 31) return TYPES.none;
+            if (m === 1 && d <= 4)   return TYPES.none;
             
+            // 年末年始・お盆などの特別期間判定 (isSeasonal: 黄島・赤島など)
             if (SCHEDULES[rKey].isSeasonal) {
-                const m = date.getMonth() + 1;
-                const d = date.getDay();
+                const day = date.getDay();
+                // 夏(7-9月)の月・木
                 const isSummer = (m >= 7 && m <= 9);
                 if (isSummer) {
-                    if (d === 1 || d === 4) return { ...TYPES.burnable, label: { ja:'全回収(夏)', en:'All(Summer)'}, color: 'bg-brand' }; 
+                    if (day === 1 || day === 4) return { ...TYPES.burnable, label: { ja:'全回収(夏)', en:'All(Summer)'}, color: 'bg-brand' }; 
                 } else {
-                    if (d === 1) return { ...TYPES.burnable, label: { ja:'全回収', en:'All Types'}, color: 'bg-brand' };
+                    // 通常期の月曜
+                    if (day === 1) return { ...TYPES.burnable, label: { ja:'全回収', en:'All Types'}, color: 'bg-brand' };
                 }
                 return TYPES.none;
             }
@@ -1665,6 +1749,7 @@ es: {
             const week = getWeekNum(date);
             const rules = SCHEDULES[rKey].rules;
             
+            // 半泊地区の特例
             if (rKey === 'handomari' && day === 1) {
                  return { ...TYPES.burnable, label: { ja:'全回収', en:'All Types'}, color: 'bg-brand' };
             }
@@ -1677,16 +1762,57 @@ es: {
             return match ? TYPES[match.type] : TYPES.none;
         }
 
-        function getWeeklySchedule() {
+
+        // 汎用スケジュール取得（指定日からN日分）
+        function getScheduleRange(startDate, days) {
             const arr = [];
-            const now = new Date();
-            for(let i=0; i<7; i++) {
-                const d = new Date();
-                d.setDate(now.getDate() + i);
+            for(let i=0; i<days; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
                 arr.push({ date: d, type: getGarbage(d, state.region) });
             }
             return arr;
         }
+
+// --- CALENDAR ACTIONS ---
+        function switchCalendarMode(mode) {
+            state.viewMode = mode;
+            // モード切替時は、日付を「今日」に戻すか、現在のviewDateを維持するか。
+            // ここでは混乱を防ぐため、今日を含む月/週にリセットせず、
+            // 「見ている日付」を維持するスタイルにします。
+            renderHome();
+        }
+
+       function moveCalendar(amount) {
+            const d = new Date(state.viewDate);
+            if (state.viewMode === 'week') {
+                d.setDate(d.getDate() + (amount * 7));
+            } else {
+                // ▼ 修正: 月末ジャンプバグ回避のため、一時的に1日にセットしてから月を動かす
+                d.setDate(1); 
+                d.setMonth(d.getMonth() + amount);
+            }
+            state.viewDate = d;
+            renderHome();
+        }
+
+     function resetCalendar() {
+            // ▼ あなたのコードのロジックをここに統合しました ▼
+            
+            // A. 振動 (モバイル向け)
+            if (navigator.vibrate) navigator.vibrate(10);
+
+            // B. 日付を今日に戻す
+            state.viewDate = new Date();
+            
+            // C. 再描画 (renderCalendarの代わり)
+            renderHome();
+            
+            // D. メッセージ表示
+            showToast("今日に戻りました");
+        }
+
+
 
         // --- NAVIGATION ---
         function navTo(page) {
@@ -1734,6 +1860,14 @@ function showSodaiModal() {
             
             const html = `
                 <div class="space-y-4">
+                    <a href="https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/016_10_7.pdf" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3 rounded-xl bg-purple-500 text-white shadow-md active:scale-95 transition-transform mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-file-pdf text-sm"></i></div>
+                            <div class="text-xs font-bold">公式ガイド (粗大ごみ)</div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square opacity-70 text-xs"></i>
+                    </a>
+
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                         <div class="flex items-center gap-3 mb-2">
                             <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0">1</span>
@@ -1779,9 +1913,18 @@ function showSodaiModal() {
             showModal(t('guide_sodai'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
 
+
 function showBizModal() {
             const html = `
                 <div class="space-y-4">
+                     <a href="https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/tebiki4.pdf" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3 rounded-xl bg-blue-500 text-white shadow-md active:scale-95 transition-transform mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-file-pdf text-sm"></i></div>
+                            <div class="text-xs font-bold">公式ガイド (事業系ごみ)</div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square opacity-70 text-xs"></i>
+                    </a>
+
                      <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r">
                         <p class="font-bold text-red-700 dark:text-red-300 mb-1">${t('biz_title')}</p>
                         <p class="text-xs text-red-600 dark:text-red-400">${t('biz_desc')}</p>
@@ -1799,7 +1942,7 @@ function showBizModal() {
         }
 
 
- function showBringModal() {
+function showBringModal() {
             const region = SCHEDULES[state.region];
             const centerKey = region.center;
             const contact = CONTACTS[centerKey] || CONTACTS.CENTER_FUKUE;
@@ -1827,6 +1970,14 @@ function showBizModal() {
 
              const html = `
                 <div class="space-y-4">
+                    <a href="https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/tebiki3.pdf" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3 rounded-xl bg-orange-500 text-white shadow-md active:scale-95 transition-transform mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-file-pdf text-sm"></i></div>
+                            <div class="text-xs font-bold">公式ガイド (持ち込み)</div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square opacity-70 text-xs"></i>
+                    </a>
+
                     <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
                         <div class="flex items-center gap-2 mb-1">
                             <h4 class="font-bold text-orange-900 dark:text-orange-100 flex-1">${cName}</h4>
@@ -1849,9 +2000,18 @@ function showBizModal() {
             showModal(t('guide_bring'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
 
-        function showNgModal() {
+
+function showNgModal() {
              const html = `
                 <div class="space-y-4">
+                    <a href="https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/tebiki13.pdf" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3 rounded-xl bg-red-500 text-white shadow-md active:scale-95 transition-transform mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-file-pdf text-sm"></i></div>
+                            <div class="text-xs font-bold">公式ガイド (収集不可品)</div>
+                        </div>
+                        <i class="fa-solid fa-arrow-up-right-from-square opacity-70 text-xs"></i>
+                    </a>
+
                     <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
                         <h4 class="font-bold text-red-800 dark:text-red-100 mb-2">${t('ng_title')}</h4>
                         <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">${t('ng_desc')}</p>
@@ -1868,16 +2028,23 @@ function showBizModal() {
                             <div class="font-bold text-sm text-blue-600 dark:text-blue-400">${t('ng_center_appliance')}</div>
                             <div class="text-[10px] text-gray-400 mt-1">${CONTACTS.APPLIANCE.phone}</div>
                         </button>
-                        <button onclick="callNumber('${CONTACTS.PC3R.phone}', '${t('ng_center_pc')}')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400">
-                            <div class="text-[10px] text-gray-500">PC/Laptop</div>
-                            <div class="font-bold text-sm text-blue-600 dark:text-blue-400">${t('ng_center_pc')}</div>
-                            <div class="text-[10px] text-gray-400 mt-1">${CONTACTS.PC3R.phone}</div>
-                        </button>
+                        
+                        <div class="flex flex-col gap-2">
+                            <button onclick="callNumber('${CONTACTS.PC3R.phone}', '${t('ng_center_pc')}')" class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-left hover:border-blue-400 flex-1">
+                                <div class="text-[10px] text-gray-500">PC/Laptop</div>
+                                <div class="font-bold text-sm text-blue-600 dark:text-blue-400">${t('ng_center_pc')}</div>
+                                <div class="text-[10px] text-gray-400 mt-1">${CONTACTS.PC3R.phone}</div>
+                            </button>
+                            <a href="https://www.city.goto.nagasaki.jp/s038/020/010/010/010/170/tebiki15.pdf" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center p-2 rounded-lg bg-gray-500 text-white text-[10px] font-bold shadow-sm hover:bg-gray-600">
+                                <i class="fa-solid fa-file-pdf mr-1"></i> PC回収ガイド
+                            </a>
+                        </div>
                     </div>
                 </div>
             `;
             showModal(t('guide_ng'), html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 font-bold text-sm">${t('close')}</button>`);
         }
+
 
         // --- RENDERERS ---
         const main = document.getElementById('main-content');
@@ -1940,13 +2107,131 @@ function showBizModal() {
             navTo('home');
         }
 
-        function renderHome() {
-            const schedule = getWeeklySchedule();
-            const today = schedule[0];
-            const tmrw = schedule[1];
+function renderHome() {
+            const todayDate = new Date();
+            // Dashboard用: 今日のデータ
+            const todayData = { date: todayDate, type: getGarbage(todayDate, state.region) };
+            
+            // Dashboard用: 明日のデータ
+            const tmrwDate = new Date();
+            tmrwDate.setDate(todayDate.getDate() + 1);
+            const tmrwData = { date: tmrwDate, type: getGarbage(tmrwDate, state.region) };
             
             const rName = SCHEDULES[state.region].name[state.lang]||SCHEDULES[state.region].name.ja;
             
+            // --- カレンダーデータの生成 ---
+            const vDate = new Date(state.viewDate);
+            let calendarTitle = "";
+            let calendarContent = "";
+
+            if (state.viewMode === 'week') {
+                // 週表示: viewDateが含まれる週の日曜〜土曜を計算
+                const day = vDate.getDay(); // 0(Sun) - 6(Sat)
+                const startOfWeek = new Date(vDate);
+                startOfWeek.setDate(vDate.getDate() - day); // 日曜に合わせる
+                
+                // タイトル生成 (例: 1月25日 - 1月31日)
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                calendarTitle = `${startOfWeek.getMonth()+1}/${startOfWeek.getDate()} - ${endOfWeek.getMonth()+1}/${endOfWeek.getDate()}`;
+
+                // データ取得 (7日分)
+                const weeklyData = getScheduleRange(startOfWeek, 7);
+
+                // リストレンダリング (既存のデザインを踏襲)
+                calendarContent = `
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                         ${weeklyData.map(d => {
+                             const isToday = d.date.toDateString() === todayDate.toDateString();
+                             const colorClass = getDateColorClass(d.date);
+                             const dateStr = d.date.getDate();
+                             const wStr = d.date.toLocaleDateString(state.lang, {weekday:'short'});
+                             
+                             return `
+                                <div class="flex items-center justify-between p-4 ${isToday ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex flex-col items-center justify-center w-10">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider ${colorClass} opacity-70">${wStr}</span>
+                                            <span class="text-xl font-bold ${colorClass}">${dateStr}</span>
+                                        </div>
+                                        ${isToday ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">TODAY</span>' : ''}
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold ${d.type.text} text-right">${d.type.label[state.lang]||d.type.label.ja}</span>
+                                        ${d.type.icon ? `<i class="fa-solid ${d.type.icon} ${d.type.text} text-lg w-6 text-center"></i>` : ''}
+                                    </div>
+                                </div>
+                             `;
+                         }).join('')}
+                    </div>
+                `;
+
+            } else {
+                // 月表示: 月の1日〜末日、かつグリッドを埋めるためのパディング
+                const year = vDate.getFullYear();
+                const month = vDate.getMonth(); // 0-11
+                
+                calendarTitle = `${year}.${month + 1}`; // Header Title
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                
+                // カレンダー開始日（最初のマスの日付）: 1日の曜日分だけ戻る
+                const startDate = new Date(firstDay);
+                startDate.setDate(1 - firstDay.getDay());
+
+                // カレンダー終了日: 5週間分(35マス)確保
+                // const endDate = new Date(startDate);
+                // endDate.setDate(startDate.getDate() + 35);
+
+                // グリッド生成
+                let gridHtml = "";
+                // 曜日ヘッダー
+                const weeks = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                const weekHeader = weeks.map((w,i) => {
+                    const c = i===0 ? 'text-red-500' : (i===6 ? 'text-blue-500' : 'text-gray-400');
+                    return `<div class="text-[10px] font-bold text-center py-1 ${c}">${w}</div>`;
+                }).join('');
+
+                // 日付セル生成
+                let daysHtml = "";
+                // 5週間(35日)ループ
+                const iterDate = new Date(startDate);
+                for(let i=0; i<35; i++) {
+                    const isCurrentMonth = iterDate.getMonth() === month;
+                    const isToday = iterDate.toDateString() === todayDate.toDateString();
+                    const dType = getGarbage(iterDate, state.region);
+                    const colorClass = getDateColorClass(iterDate);
+                    
+                    // 月外の日付は薄くする
+                    const opacity = isCurrentMonth ? 'opacity-100' : 'opacity-30 grayscale';
+                    const bgToday = isToday ? 'ring-2 ring-brand ring-inset rounded-lg' : '';
+
+                    daysHtml += `
+                        <div class="min-h-[60px] border-t border-r border-gray-100 dark:border-gray-700 p-1 flex flex-col items-center ${opacity} ${bgToday} relative">
+                            <span class="text-[10px] font-bold ${colorClass} mb-1">${iterDate.getDate()}</span>
+                           ${dType.id !== 'none' 
+    ? `<div class="w-8 h-8 rounded-full ${dType.color} text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90 transition-transform" onclick="showIconTip(event, '${dType.id}')">
+         <i class="fa-solid ${dType.icon} text-sm"></i>
+       </div>` 
+    : ''}
+                        </div>
+                    `;
+                    iterDate.setDate(iterDate.getDate() + 1);
+                }
+
+                calendarContent = `
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="grid grid-cols-7 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            ${weekHeader}
+                        </div>
+                        <div class="grid grid-cols-7 border-l border-gray-100 dark:border-gray-700">
+                            ${daysHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
             let html = `
                 <div class="fade-in pb-4">
                     <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-3 mb-6 flex items-start gap-3 rounded-r-lg">
@@ -1956,70 +2241,77 @@ function showBizModal() {
 
                     <div class="flex justify-between items-end px-2 mb-2">
                         <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">${rName}</span>
-                        <span class="text-xs font-bold text-brand">${new Date().toLocaleDateString(state.lang)}</span>
+                        <span class="text-xs font-bold text-brand">${todayDate.toLocaleDateString(state.lang)}</span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div class="relative overflow-hidden rounded-3xl shadow-xl ${today.type.color} text-white transition-transform active:scale-[0.98] md:col-span-1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div id="current-date-panel" class="relative overflow-hidden rounded-3xl shadow-xl ${todayData.type.color} text-white transition-transform active:scale-[0.98] md:col-span-1 cursor-pointer hover:opacity-90" 
+                             onclick="resetCalendar(); showToast('今日に戻りました');">
                             <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
                             <div class="p-6 relative z-10 flex flex-col items-center text-center h-full justify-center">
                                 <span class="text-sm font-bold opacity-80 mb-1 tracking-widest uppercase">${t('today')}</span>
                                 <div class="flex items-center gap-2 py-2">
-                                    ${today.type.icon ? `<i class="fa-solid ${today.type.icon} text-3xl opacity-80"></i>` : ''}
-                                    <h2 class="text-4xl font-black leading-tight drop-shadow-md">${today.type.label[state.lang]||today.type.label.ja}</h2>
+                                    ${todayData.type.icon ? `<i class="fa-solid ${todayData.type.icon} text-3xl opacity-80"></i>` : ''}
+                                    <h2 class="text-4xl font-black leading-tight drop-shadow-md">${todayData.type.label[state.lang]||todayData.type.label.ja}</h2>
                                 </div>
-                                ${today.type.id !== 'none' ? '<div class="mt-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">8:30 AM</div>' : ''}
+                                ${todayData.type.id !== 'none' ? '<div class="mt-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">8:30 AM</div>' : ''}
                             </div>
                         </div>
-
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center md:col-span-1">
                             <span class="font-bold text-gray-500 text-sm mb-2">${t('tomorrow')}</span>
                             <div class="flex items-center gap-3">
-                                <span class="w-4 h-4 rounded-full ${tmrw.type.color}"></span>
-                                <span class="text-xl font-bold text-gray-800 dark:text-gray-200">${tmrw.type.label[state.lang]||tmrw.type.label.ja}</span>
+                                <span class="w-4 h-4 rounded-full ${tmrwData.type.color}"></span>
+                                <span class="text-xl font-bold text-gray-800 dark:text-gray-200">${tmrwData.type.label[state.lang]||tmrwData.type.label.ja}</span>
                             </div>
                         </div>
                     </div>
 
-                    <h3 class="font-bold text-gray-400 text-xs px-2 mb-3 uppercase tracking-wider">${t('weekly')}</h3>
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
-                         <div class="grid grid-cols-1 md:grid-cols-2 md:divide-x divide-gray-100 dark:divide-gray-700">
-                             <div>
-                                ${schedule.slice(2, 5).map(d => `
-                                    <div class="flex items-center justify-between p-4 border-b md:border-b-0 border-gray-100 dark:border-gray-700 last:border-0">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xs font-bold text-gray-400 w-8 text-center bg-gray-100 dark:bg-gray-700 rounded p-1">
-                                                ${d.date.toLocaleDateString(state.lang, {weekday:'short'})}
-                                            </span>
-                                            <span class="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                                ${d.date.getDate()}
-                                            </span>
-                                        </div>
-                                        <span class="text-sm font-bold ${d.type.text} text-right">${d.type.label[state.lang]||d.type.label.ja}</span>
-                                    </div>
-                                `).join('')}
-                             </div>
-                             <div>
-                                ${schedule.slice(5).map(d => `
-                                    <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xs font-bold text-gray-400 w-8 text-center bg-gray-100 dark:bg-gray-700 rounded p-1">
-                                                ${d.date.toLocaleDateString(state.lang, {weekday:'short'})}
-                                            </span>
-                                            <span class="text-sm font-bold text-gray-700 dark:text-gray-200">
-                                                ${d.date.getDate()}
-                                            </span>
-                                        </div>
-                                        <span class="text-sm font-bold ${d.type.text} text-right">${d.type.label[state.lang]||d.type.label.ja}</span>
-                                    </div>
-                                `).join('')}
-                             </div>
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm border border-gray-100 dark:border-gray-700">
+                             <button onclick="moveCalendar(-1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
+                                <i class="fa-solid fa-chevron-left"></i>
+                             </button>
+                             <button onclick="resetCalendar()" class="px-2 text-sm font-bold text-gray-700 dark:text-gray-200 min-w-[100px] text-center hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
+                                ${calendarTitle}
+                             </button>
+                             <button onclick="moveCalendar(1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
+                                <i class="fa-solid fa-chevron-right"></i>
+                             </button>
                         </div>
+
+                        <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+                            <button onclick="switchCalendarMode('week')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='week' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">週</button>
+                            <button onclick="switchCalendarMode('month')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='month' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">月</button>
+                        </div>
+                    </div>
+
+                   ${calendarContent}
+
+                    <div class="mt-8 mb-4">
+                        <div class="flex items-center gap-2 mb-3 px-1">
+                            <i class="fa-solid fa-bullhorn text-brand"></i>
+                            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">市からのお知らせ</h3>
+                        </div>
+                        <div id="news-feed" class="min-h-[100px]">
+                            <div class="flex justify-center py-6">
+                                <i class="fa-solid fa-circle-notch fa-spin text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-8 pb-8">
+                         <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1 rounded-full hover:bg-brand/20 transition-colors">
+                            <i class="fa-solid fa-robot mr-1"></i> この予定をAIに聞く
+                        </button>
                     </div>
                 </div>
             `;
             main.innerHTML = html;
+            
+            // 画面描画後にニュースを読みに行く
+            setTimeout(loadNews, 0);
         }
+
 
         function renderSearch() {
             let html = `
@@ -2091,19 +2383,42 @@ function showBizModal() {
             `;
         }
         
-        function filter(type) {
+       function filter(type) {
+             const T = TYPES[type];
              const el = document.getElementById('sInput');
-             el.value = TYPES[type].label[state.lang] || TYPES[type].label.ja;
+             el.value = T.label[state.lang] || T.label.ja;
+             
              const hits = TRASH_DB.filter(i => i.k === type);
              const resEl = document.getElementById('sResults');
-             resEl.innerHTML = `<div class="space-y-3 max-w-3xl mx-auto">
-                <div class="text-xs text-gray-400 mb-2 font-bold uppercase">Filter: ${TYPES[type].label[state.lang]}</div>
+
+             // PDFボタンの生成（URLがある場合のみ）
+             let pdfBtn = '';
+             if (T.pdf) {
+                 pdfBtn = `
+                 <a href="${T.pdf}" target="_blank" rel="noopener noreferrer" class="mb-4 w-full flex items-center justify-between p-4 rounded-xl ${T.color} text-white shadow-md active:scale-95 transition-transform group">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-file-pdf text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold text-sm">公式ガイドブック (PDF)</div>
+                            <div class="text-[10px] opacity-90">五島市HPを開きます</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square opacity-70"></i>
+                 </a>`;
+             }
+
+             resEl.innerHTML = `<div class="space-y-3 max-w-3xl mx-auto pb-24">
+                ${pdfBtn}
+                <div class="text-xs text-gray-400 mb-2 font-bold uppercase">Filter: ${T.label[state.lang]}</div>
                 ${hits.map(h => {
                     const dispName = h[state.lang] || h.n;
-                    return `<div class="bg-white dark:bg-gray-800 p-3 rounded-xl border-l-4 ${TYPES[type].border} border-gray-100 dark:border-gray-700 font-bold text-gray-700 dark:text-gray-200 text-sm">${dispName}</div>`
+                    return `<div class="bg-white dark:bg-gray-800 p-3 rounded-xl border-l-4 ${T.border} border-gray-100 dark:border-gray-700 font-bold text-gray-700 dark:text-gray-200 text-sm">${dispName}</div>`
                 }).join('')}
              </div>`;
         }
+
 
     function renderGuide() {
             const sodaiContact = getCurrentSodaiContact();
@@ -2233,6 +2548,48 @@ function showBizModal() {
             }, 3000);
         }
 
+// ▼ 追加: アイコンタップ時にチップを表示する関数 ▼
+        let tipTimer = null;
+        function showIconTip(e, typeId) {
+            e.stopPropagation(); // 日付クリック等がもしあれば、それを防ぐ
+            const type = TYPES[typeId];
+            if (!type) return;
+
+            // 多言語対応でラベルを取得
+            const label = type.label[state.lang] || type.label.ja;
+            
+            const tip = document.getElementById('icon-tip');
+            const rect = e.currentTarget.getBoundingClientRect(); // タップしたアイコンの位置
+
+            // チップに文字セット
+            tip.innerText = label;
+            
+            // 位置合わせ（アイコンの真上・中央）
+            // left: アイコンの左端 + 幅の半分
+            // top: アイコンの上端
+            tip.style.left = (rect.left + rect.width / 2) + 'px';
+            tip.style.top = rect.top + 'px';
+
+            // 表示アニメーション
+            tip.classList.remove('hidden');
+            // 少し待ってからopacityを変えないとアニメーションしないため
+            requestAnimationFrame(() => {
+                tip.classList.remove('opacity-0', '-translate-y-2');
+                tip.classList.add('opacity-100', '-translate-y-full'); // 真上に移動
+            });
+
+            // 以前のタイマーがあれば消す（連打対策）
+            if (tipTimer) clearTimeout(tipTimer);
+
+            // 2秒後に消す
+            tipTimer = setTimeout(() => {
+                tip.classList.remove('opacity-100', '-translate-y-full');
+                tip.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => tip.classList.add('hidden'), 300);
+            }, 2000);
+        }
+
+
      // AI Copy Logic (Updated: Human-friendly header)
         function copyScheduleForAI() {
             if(!state.region || !SCHEDULES[state.region]) {
@@ -2275,20 +2632,294 @@ function showBizModal() {
             showModal("AI用パターンデータ", html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-brand text-white font-bold text-sm">閉じる</button>`);
         }
 
+// --- NEWS SYSTEM (Gomi-News) ---
+        async function loadNews() {
+            const container = document.getElementById('news-feed');
+            if(!container) return;
+
+            // 1. まずキャッシュを表示 (オフライン対策)
+            const cached = localStorage.getItem('news_cache');
+            if (cached) renderNewsList(JSON.parse(cached), container);
+
+            // 2. 最新データを取得
+            try {
+                // ?t=... でキャッシュ回避
+                const res = await fetch(NEWS_API + '?t=' + new Date().getTime());
+                const data = await res.json();
+                
+                // 3. データが「配列」なら処理する（0件でもOKにする）
+                if (Array.isArray(data)) {
+                    // キャッシュを最新状態（0件なら空）に上書き
+                    localStorage.setItem('news_cache', JSON.stringify(data));
+
+                    if (data.length === 0) {
+                        // ▼ データが0件なら、画面のお知らせも消す
+                        container.innerHTML = ''; 
+                    } else {
+                        // ▼ データがあるなら描画する
+                        renderNewsList(data, container);
+                    }
+                }
+            } catch (e) {
+                // オフライン時はキャッシュのみで静かに耐える
+                if (!cached) container.innerHTML = `<div class="text-center text-xs text-gray-400 py-4">お知らせの読み込みに失敗しました</div>`;
+            }
+        }
+
+        function renderNewsList(data, container) {
+            if(!data.length) return;
+            
+            const html = data.slice(0, 5).map((item, index) => { // 最新5件のみ
+                // カテゴリ別色分け
+                let badgeColor = "bg-gray-100 text-gray-600";
+                if(item.category.includes("重要")) badgeColor = "bg-red-100 text-red-600";
+                if(item.category.includes("イベント")) badgeColor = "bg-green-100 text-green-600";
+                if(item.category.includes("お知らせ")) badgeColor = "bg-blue-100 text-blue-600";
+
+                return `
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:border-brand">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor}">${item.category}</span>
+                        <span class="text-xs text-gray-400 font-mono">${item.date}</span>
+                    </div>
+                    <div class="font-bold text-sm text-gray-800 dark:text-gray-200 mb-1">${item.title}</div>
+                    ${item.body ? `<div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 hidden" id="news-${index}">${item.body}</div>
+                    <button onclick="document.getElementById('news-${index}').classList.toggle('hidden')" class="text-[10px] text-brand font-bold mt-1 w-full text-right">詳細を見る ▼</button>` : ''}
+                </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="space-y-3">${html}</div>`;
+        }
+
+
         // --- BOOT ---
         document.addEventListener('DOMContentLoaded', init);
         
-        // SOS
-
+        // SOS (Emergency) - Internationalized
         document.getElementById('btn-emergency').onclick = () => {
-            showModal("Emergency / 緊急", `<div class="text-center text-gray-500 mb-4">Emergency Contact</div>`, `
+            // このモーダル専用の翻訳定義 (安全のためここに集約)
+            const SOS_TEXTS = {
+                ja: { title: "緊急連絡", desc: "緊急時の連絡先", fire: "🚑 119 (救急・消防)", police: "🚓 110 (警察)", close: "閉じる" },
+                en: { title: "Emergency", desc: "Emergency Contact", fire: "🚑 119 (Fire/Amb)", police: "🚓 110 (Police)", close: "Close" },
+                es: { title: "Emergencia", desc: "Contacto de emergencia", fire: "🚑 119 (Bomberos)", police: "🚓 110 (Policía)", close: "Cerrar" },
+                zh: { title: "緊急聯絡", desc: "緊急聯絡電話", fire: "🚑 119 (火警/救護車)", police: "🚓 110 (報警)", close: "關閉" },
+                my: { title: "အရေးပေါ်", desc: "အရေးပေါ် ဖုန်းနံပါတ်များ", fire: "🚑 119 (မီးသတ်/လူနာတင်)", police: "🚓 110 (ရဲ)", close: "ပိတ်မည်" },
+                vi: { title: "Khẩn cấp", desc: "Liên hệ khẩn cấp", fire: "🚑 119 (Cứu hỏa)", police: "🚓 110 (Cảnh sát)", close: "Đóng" }
+            };
+
+            // 現在の言語設定を取得（なければ日本語）
+            const txt = SOS_TEXTS[state.lang] || SOS_TEXTS.ja;
+
+            showModal(`<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation"></i> ${txt.title}</span>`, 
+                `<div class="text-center text-gray-500 mb-4 font-bold">${txt.desc}</div>`, 
+                `
                 <div class="grid w-full gap-3">
-                    <button onclick="callNumber('119', 'Fire/Ambulance')" class="bg-red-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-red-700 w-full">🚑 119 (Fire/Amb)</button>
-                    <button onclick="callNumber('110', 'Police')" class="bg-blue-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-blue-700 w-full">🚓 110 (Police)</button>
-                    <button onclick="closeModal()" class="py-2 text-gray-500 font-bold mt-2 w-full">Close</button>
+                    <button onclick="callNumber('119', '119')" class="bg-red-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-red-700 active:scale-95 transition-transform w-full">
+                        ${txt.fire}
+                    </button>
+                    <button onclick="callNumber('110', '110')" class="bg-blue-600 text-white font-bold p-4 rounded-xl text-center text-lg shadow-lg hover:bg-blue-700 active:scale-95 transition-transform w-full">
+                        ${txt.police}
+                    </button>
+                    <button onclick="closeModal()" class="py-3 text-gray-500 font-bold mt-2 w-full bg-gray-100 dark:bg-gray-700 rounded-lg">${txt.close}</button>
                 </div>
             `);
         };
+
+// ----------------------------------------------------
+// 🛡️ GOTO BARRIER CAM (Logic)
+// ----------------------------------------------------
+
+// 五島列島バリア（ジオフェンス定義）
+const GOTO_BARRIER = {
+    N: 33.35, // 宇久島以北
+    S: 32.50, // 黄島以南
+    E: 129.20, // 椛島以東
+    W: 128.50  // 嵯峨島以西
+};
+
+async function startCamSession() {
+    // 1. 職員さんへの確認アラート
+    showModal("オペレーター相談", 
+        `<div class="text-center space-y-4">
+            <div class="text-4xl">👩‍💻</div>
+            <p class="font-bold text-gray-800 dark:text-white">職員と通話中ですか？</p>
+            <p class="text-xs text-gray-500">この機能は、五島市役所の職員と電話がつながっている時のみ利用できます。</p>
+            <div class="bg-yellow-50 p-3 rounded text-left text-xs text-yellow-800 border border-yellow-200">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                位置情報（GPS）を確認します。「許可」を押してください。
+            </div>
+         </div>`,
+        `<button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm font-bold">いいえ</button>
+         <button onclick="closeModal(); verifyLocation();" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg">はい（通話中）</button>`
+    );
+}
+
+function verifyLocation() {
+    if (!navigator.geolocation) {
+        showToast("GPS非対応端末です");
+        return;
+    }
+
+    showToast("位置情報を確認中...");
+
+    navigator.geolocation.getCurrentPosition(
+        // Success
+        async (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            
+            // 2. 五島バリア判定
+            const isInside = (lat <= GOTO_BARRIER.N && lat >= GOTO_BARRIER.S && 
+                              lon <= GOTO_BARRIER.E && lon >= GOTO_BARRIER.W);
+            
+            if (!isInside) {
+                // バリア発動！
+                showModal("利用できません", 
+                    `<div class="text-center text-red-500 font-bold">
+                        <i class="fa-solid fa-ban text-4xl mb-2"></i><br>五島市外からは利用できません
+                     </div>`, 
+                    `<button onclick="closeModal()" class="w-full bg-gray-200 py-2 rounded font-bold">閉じる</button>`
+                );
+                return;
+            }
+
+            // 3. 信号機チェック (GASへ問い合わせ)
+            checkReceptionStatus();
+        },
+        // Error
+        (err) => {
+            console.error(err);
+            // GPSエラー時の救済（今回は厳しめにエラー表示のみ）
+            showToast("位置情報が取得できませんでした");
+        },
+        { timeout: 10000, highAccuracy: false } // 10秒タイムアウト
+    );
+}
+
+async function checkReceptionStatus() {
+    showToast("受付状態を確認中...");
+    try {
+        const res = await fetch(CAM_API); // GAS doGet
+        const data = await res.json();
+
+        if (data.accepting) {
+            // 受付ON -> カメラ起動
+            launchCamera();
+        } else {
+            // 受付OFF
+            showModal("受付時間外", 
+                `<div class="text-center">
+                    <p class="text-gray-800 dark:text-white font-bold mb-2">現在は受付していません</p>
+                    <p class="text-xs text-gray-500">職員の指示があるまでお待ちください。</p>
+                 </div>`, 
+                `<button onclick="closeModal()" class="w-full bg-gray-200 py-2 rounded font-bold">閉じる</button>`
+            );
+        }
+    } catch (e) {
+        showToast("通信エラーが発生しました");
+    }
+}
+
+// ▼ 新規追加: 起動時にアイコンの点滅を制御する関数 ▼
+async function syncIndicator() {
+    const dot = document.getElementById('cam-status-dot');
+    if (!dot) return;
+
+    try {
+        // GASにこっそり問い合わせ（キャッシュ回避付き）
+        const res = await fetch(CAM_API + '?check=init&t=' + new Date().getTime());
+        const data = await res.json();
+
+        if (data.accepting) {
+            // ONなら点滅を表示
+            dot.classList.remove('hidden');
+        } else {
+            // OFFなら隠す（念のため）
+            dot.classList.add('hidden');
+        }
+    } catch (e) {
+        // エラー時は静かに隠しておく
+        dot.classList.add('hidden');
+    }
+}
+
+
+function launchCamera() {
+    // 隠しinputを作成してクリック
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // 外カメラ指定
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        showToast("画像を送信準備中...");
+        
+        // 画像圧縮処理
+        const compressedBase64 = await compressImage(file);
+        
+        // 送信
+        sendImageToGas(compressedBase64);
+    };
+    
+    input.click();
+}
+
+function compressImage(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // リサイズ (長辺800px)
+                const MAX_SIZE = 800;
+                let w = img.width;
+                let h = img.height;
+                
+                if (w > h) {
+                    if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+                } else {
+                    if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+                }
+                
+                canvas.width = w;
+                canvas.height = h;
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // JPEG圧縮 (品質0.6)
+                resolve(canvas.toDataURL('image/jpeg', 0.6));
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function sendImageToGas(base64) {
+    showToast("送信中...");
+    try {
+        await fetch(CAM_API, {
+            method: 'POST',
+            body: JSON.stringify({ image: base64 })
+        });
+        
+        showModal("送信完了", 
+            `<div class="text-center text-green-600 font-bold py-4">
+                <i class="fa-solid fa-check-circle text-4xl mb-2"></i><br>画像を送りました
+             </div>`,
+            `<button onclick="closeModal()" class="w-full bg-brand text-white py-2 rounded font-bold">OK</button>`
+        );
+    } catch (e) {
+        showToast("送信に失敗しました");
+    }
+}
+
 
     </script>
 <script>
