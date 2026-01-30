@@ -2903,24 +2903,48 @@ function compressImage(file) {
     });
 }
 
+// ▼ 写真送信関係の機能の一部
 async function sendImageToGas(base64) {
     showToast("送信中...");
     try {
-        await fetch(CAM_API, {
+        const res = await fetch(CAM_API, {
             method: 'POST',
             body: JSON.stringify({ image: base64 })
         });
         
-        showModal("送信完了", 
-            `<div class="text-center text-green-600 font-bold py-4">
-                <i class="fa-solid fa-check-circle text-4xl mb-2"></i><br>画像を送りました
-             </div>`,
-            `<button onclick="closeModal()" class="w-full bg-brand text-white py-2 rounded font-bold">OK</button>`
-        );
+        // ▼ 修正点: サーバーからの返事(JSON)をちゃんと開けて読む
+        const data = await res.json();
+
+        if (data.success) {
+            // ① 成功した場合 (A1がON)
+            showModal("送信完了", 
+                `<div class="text-center text-green-600 font-bold py-4">
+                    <i class="fa-solid fa-check-circle text-4xl mb-2"></i><br>画像を送りました
+                 </div>`,
+                `<button onclick="closeModal()" class="w-full bg-brand text-white py-2 rounded font-bold">OK</button>`
+            );
+        } else {
+            // ② 拒否された場合 (A1がOFF)
+            // GASから返ってきた "受付時間外です..." というメッセージを表示します
+            showModal("送信できません", 
+                `<div class="text-center text-red-500 font-bold py-4">
+                    <i class="fa-solid fa-ban text-4xl mb-2"></i><br>
+                    受け付けられませんでした
+                 </div>
+                 <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-600 dark:text-gray-300 text-center">
+                    理由: ${data.error}
+                 </div>`,
+                `<button onclick="closeModal()" class="w-full bg-gray-200 dark:bg-gray-600 py-2 rounded font-bold">閉じる</button>`
+            );
+        }
+
     } catch (e) {
-        showToast("送信に失敗しました");
+        // ③ 通信エラー (ネットが切れているなど)
+        showToast("送信に失敗しました (通信エラー)");
+        console.error(e);
     }
 }
+
 
 
     </script>
@@ -2936,3 +2960,4 @@ async function sendImageToGas(base64) {
 </script>
 </body>
 </html>
+
