@@ -2627,7 +2627,7 @@ function renderHome() {
         }
 
 
-       function renderSettings() {
+      function renderSettings() {
             main.innerHTML = `
                 <div class="fade-in space-y-6 max-w-lg mx-auto pb-10">
                     <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">${t('nav_settings')}</h2>
@@ -2652,22 +2652,34 @@ function renderHome() {
                                 ${t('cal_desc')}
                             </p>
                             
-                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                                <input type="checkbox" id="cal-notify-18" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
-                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_18')}</span>
-                            </label>
-                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                                <input type="checkbox" id="cal-notify-0700" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
-                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_0700')}</span>
-                            </label>
-                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                                <input type="checkbox" id="cal-notify-0730" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
-                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_0730')}</span>
-                            </label>
+                            <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl mb-4">
+                                <div class="text-[10px] font-bold text-gray-400 mb-2">通知タイミング</div>
+                                <label class="flex items-center gap-3 p-1 cursor-pointer">
+                                    <input type="checkbox" id="cal-notify-18" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_18')}</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-1 cursor-pointer">
+                                    <input type="checkbox" id="cal-notify-0700" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0700')}</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-1 cursor-pointer">
+                                    <input type="checkbox" id="cal-notify-0730" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0730')}</span>
+                                </label>
+                            </div>
 
-                            <button onclick="exportCalendar()" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                            <button onclick="exportCalendar()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-file-export"></i> ${t('cal_export')}
                             </button>
+
+                            <hr class="border-gray-100 dark:border-gray-700 my-2">
+
+                            <div class="text-center">
+                                <p class="text-[10px] text-gray-400 mb-2">間違えて登録した場合や、予定を消したい場合</p>
+                                <button onclick="showCancelMenu()" class="text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-full transition-colors border border-red-100 dark:border-red-900">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> カレンダーから削除する (解除用)
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -2676,12 +2688,38 @@ function renderHome() {
                     </button>
 
                     <div class="text-center text-xs text-gray-300 pt-8 font-mono">
-                        GOTO GOMI-NAVI Ver 5.3 Final<br>
-                        Aurora Integrated
+                        GOTO GOMI-NAVI Ver 5.4<br>
+                        Aurora Architecture
                     </div>
                 </div>
             `;
         }
+
+        function showCancelMenu() {
+            const html = `
+                <div class="space-y-3">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        カレンダーアプリに登録した予定を削除するための「解除ファイル」を作成します。<br>
+                        <span class="text-red-500 font-bold">※このアプリで登録した予定だけが消えます。</span>
+                    </p>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="downloadCancelFile('all')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bomb"></i> 全て削除する
+                        </button>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="downloadCancelFile('burnable')" class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold py-2 rounded-lg text-xs">
+                                🔥 燃やすごみのみ
+                            </button>
+                            <button onclick="downloadCancelFile('unburnable')" class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold py-2 rounded-lg text-xs">
+                                🔹 燃やせないごみのみ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showModal("カレンダー削除 (Undo)", html, `<button onclick="closeModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded font-bold text-sm">閉じる</button>`);
+        }
+
 
 
         function setLang(l) {
@@ -3145,11 +3183,19 @@ async function sendImageToGas(base64) {
     }
 }
 
-// --- CALENDAR EXPORT LOGIC (iCal) ---
+// --- CALENDAR EXPORT LOGIC (iCal) - RFC 5545 Compliant & Undo Support ---
+        
+        // 日付文字列生成ヘルパー (ローカル時間基準 YYYYMMDD)
+        const toIcalDate = (date) => {
+            const y = date.getFullYear();
+            const m = ('0' + (date.getMonth() + 1)).slice(-2);
+            const d = ('0' + date.getDate()).slice(-2);
+            return `${y}${m}${d}`;
+        };
+
         function exportCalendar() {
             if (!state.region) return showToast("地域設定が必要です");
 
-            // 通知設定の取得
             const n18 = document.getElementById('cal-notify-18')?.checked;
             const n0700 = document.getElementById('cal-notify-0700')?.checked;
             const n0730 = document.getElementById('cal-notify-0730')?.checked;
@@ -3157,52 +3203,122 @@ async function sendImageToGas(base64) {
             let events = [];
             const startDate = new Date();
             const endDate = new Date();
-            endDate.setFullYear(startDate.getFullYear() + 1); // 1年分
+            endDate.setFullYear(startDate.getFullYear() + 1); 
 
-            // 日付を回してデータを生成
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 const type = getGarbage(d, state.region);
                 if (type.id === 'none') continue;
 
-                const dateStr = d.toISOString().replace(/[-:]/g, '').split('T')[0]; // YYYYMMDD
-                const label = type.label[state.lang] || type.label.ja;
+                const dateStrStart = toIcalDate(d);
+                const nextDay = new Date(d);
+                nextDay.setDate(d.getDate() + 1);
+                const dateStrEnd = toIcalDate(nextDay);
                 
-                // UID生成 (日付 + 種類 + アプリ名 で一意にする -> 重複防止の鍵)
-                const uid = `${dateStr}-${type.id}@goto-gomi-navi`;
+                const label = type.label[state.lang] || type.label.ja;
+                const uid = `${dateStrStart}-${type.id}@goto-gomi-navi`;
 
                 let valarms = '';
-                
-                // iCalのアラーム設定 (TRIGGERはイベント開始(0:00)からの相対時間)
-                // 前日18:00 -> イベント開始(0:00)の6時間前 -> -PT6H
-                if (n18) {
-                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:-PT6H\nEND:VALARM\n`;
-                }
-                // 当日07:00 -> イベント開始(0:00)の7時間後 -> PT7H
-                if (n0700) {
-                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H\nEND:VALARM\n`;
-                }
-                // 当日07:30 -> イベント開始(0:00)の7時間30分後 -> PT7H30M
-                if (n0730) {
-                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H30M\nEND:VALARM\n`;
-                }
+                if (n18) valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:-PT6H\nEND:VALARM\n`;
+                if (n0700) valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H\nEND:VALARM\n`;
+                if (n0730) valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H30M\nEND:VALARM\n`;
 
-                const eventBlock = 
+                events.push(
 `BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTSTART;VALUE=DATE:${dateStr}
-DTEND;VALUE=DATE:${dateStr}
+DTSTART;VALUE=DATE:${dateStrStart}
+DTEND;VALUE=DATE:${dateStrEnd}
 SUMMARY:🗑️ ${label} (五島市)
 DESCRIPTION:五島市ごみ分別ナビからの登録
 TRANSP:TRANSPARENT
-${valarms}END:VEVENT`;
-
-                events.push(eventBlock);
+${valarms}END:VEVENT`
+                );
             }
 
             if (events.length === 0) return showToast("登録対象がありません");
+            downloadIcs(events.join('\n'), 'goto_garbage_schedule.ics', t('cal_done_msg'));
+        }
 
-            // .icsファイルの中身を作成
+        // 解除用ファイル生成 (METHOD:CANCELを使用)
+        function downloadCancelFile(targetType) {
+            if (!state.region) return;
+
+            let events = [];
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setFullYear(startDate.getFullYear() + 1); 
+
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const type = getGarbage(d, state.region);
+                if (type.id === 'none') continue;
+                
+                // ターゲット指定があればフィルタリング (allなら全種類)
+                if (targetType !== 'all' && type.id !== targetType) continue;
+
+                const dateStrStart = toIcalDate(d);
+                const uid = `${dateStrStart}-${type.id}@goto-gomi-navi`;
+
+                // キャンセル命令ブロック
+                // SEQUENCE:1 (更新版であることを示す)
+                // STATUS:CANCELLED (中止)
+                events.push(
+`BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DTSTART;VALUE=DATE:${dateStrStart}
+SUMMARY:Cancelled
+STATUS:CANCELLED
+SEQUENCE:1
+END:VEVENT`
+                );
+            }
+
+            if (events.length === 0) {
+                showToast("削除対象が見つかりません");
+                return;
+            }
+
+            // METHOD:CANCEL が重要
+            const content = events.join('\n');
+            const icsContent = 
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Goto Gomi-Navi//Ver 5.3//EN
+CALSCALE:GREGORIAN
+METHOD:CANCEL
+X-WR-CALNAME:五島市ごみ収集
+${content}
+END:VCALENDAR`;
+
+            const fileName = targetType === 'all' ? 'REMOVE_ALL_schedule.ics' : `REMOVE_${targetType}.ics`;
+            
+            // ダウンロード処理
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            closeModal();
+            
+            // 案内表示
+            setTimeout(() => {
+                showModal("削除ファイルのダウンロード", 
+                    `<div class="text-sm text-gray-600 dark:text-gray-300">
+                        <p class="mb-2 font-bold text-red-500">🗑️ ${fileName}</p>
+                        <p>このファイルを開いてカレンダーに取り込むと、該当する予定が削除されます。</p>
+                        <p class="text-xs mt-2 text-gray-400">※スマホのカレンダーアプリの仕様によっては、取り込み時に「削除しますか？」と聞かれず、静かに消える場合があります。</p>
+                     </div>`,
+                    `<button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded font-bold">OK</button>`
+                );
+            }, 500);
+        }
+
+        // 共通ダウンロードヘルパー
+        function downloadIcs(eventsStr, fileName, msg) {
             const icsContent = 
 `BEGIN:VCALENDAR
 VERSION:2.0
@@ -3210,26 +3326,24 @@ PRODID:-//Goto Gomi-Navi//Ver 5.3//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:五島市ごみ収集
-${events.join('\n')}
+${eventsStr}
 END:VCALENDAR`;
 
-            // ダウンロード発火
             const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'goto_garbage_schedule.ics');
+            link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
             showToast(t('cal_toast'));
             
-            // 案内モーダル (多言語対応済)
             setTimeout(() => {
                 showModal(t('cal_done_title'), 
                     `<div class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                        ${t('cal_done_msg')}
+                        ${msg}
                         <ul class="list-disc list-inside text-xs mt-2 bg-gray-100 dark:bg-gray-700 p-2 rounded">
                             <li>iPhone: ファイルをタップ → 「カレンダーに追加」</li>
                             <li>Android: ファイルを開く → Googleカレンダー等でインポート</li>
@@ -3240,6 +3354,7 @@ END:VCALENDAR`;
                 );
             }, 1000);
         }
+
 
 
     </script>
@@ -3255,3 +3370,4 @@ END:VCALENDAR`;
 </script>
 </body>
 </html>
+
