@@ -1793,47 +1793,72 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
             return Math.ceil(d / 7);
         }
 
-     function getGarbage(date, rKey) {
-            if(!rKey || !SCHEDULES[rKey]) return TYPES.none;
+   // --- 🏆 最終完成版：セット回収対応・安全装置付き ---
+function getGarbage(date, rKey) {
+    // 1. 基本チェック
+    if(!rKey || !SCHEDULES[rKey]) return TYPES.none;
 
-            const m = date.getMonth() + 1;
-            const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const day = date.getDay(); 
+    const week = getWeekNum(date);
 
-            // 【緊急追加】年末年始の運休ロジック (12/31 ～ 1/4)
-            // この期間は曜日に関わらず、すべての収集を停止します。
-            if (m === 12 && d >= 31) return TYPES.none;
-            if (m === 1 && d <= 4)   return TYPES.none;
-            
-            // 年末年始・お盆などの特別期間判定 (isSeasonal: 黄島・赤島など)
-            if (SCHEDULES[rKey].isSeasonal) {
-                const day = date.getDay();
-                // 夏(7-9月)の月・木
-                const isSummer = (m >= 7 && m <= 9);
-                if (isSummer) {
-                    if (day === 1 || day === 4) return { ...TYPES.burnable, label: { ja:'全回収(夏)', en:'All(Summer)'}, color: 'bg-brand' }; 
-                } else {
-                    // 通常期の月曜
-                    if (day === 1) return { ...TYPES.burnable, label: { ja:'全回収', en:'All Types'}, color: 'bg-brand' };
-                }
-                return TYPES.none;
-            }
+    // 2. 年末年始 (12/31 ～ 1/4)
+    if (m === 12 && d >= 31) return TYPES.none;
+    if (m === 1 && d <= 4)   return TYPES.none;
 
-            const day = date.getDay();
-            const week = getWeekNum(date);
-            const rules = SCHEDULES[rKey].rules;
-            
-            // 半泊地区の特例
-            if (rKey === 'handomari' && day === 1) {
-                 return { ...TYPES.burnable, label: { ja:'全回収', en:'All Types'}, color: 'bg-brand' };
-            }
-            
-            const match = rules.find(r => {
-                if(!r.days.includes(day)) return false;
-                if(r.weekNums && !r.weekNums.includes(week)) return false;
-                return true;
-            });
-            return match ? TYPES[match.type] : TYPES.none;
+    // 3. 特殊な全回収日の判定 (黄島・赤島・半泊)
+    if (SCHEDULES[rKey].isSeasonal) {
+        const isSummer = (m >= 7 && m <= 9);
+        if (isSummer && (day === 1 || day === 4)) {
+            return { ...TYPES.burnable, id: 'all', label: { ja:'全種類回収', en:'All Types'}, color: 'bg-brand', icon: 'fa-star' };
+        } else if (!isSummer && day === 1) {
+            return { ...TYPES.burnable, id: 'all', label: { ja:'全種類回収', en:'All Types'}, color: 'bg-brand', icon: 'fa-star' };
         }
+    }
+    if (rKey === 'handomari' && day === 1) {
+        return { ...TYPES.burnable, id: 'all', label: { ja:'全種類回収', en:'All Types'}, color: 'bg-brand', icon: 'fa-star' };
+    }
+
+    // 4. 通常スケジュールの判定
+    const rules = SCHEDULES[rKey].rules;
+    
+    // ★【ここがエアバッグ！】rulesが無い地域でもクラッシュさせない
+    if (!rules || !Array.isArray(rules)) return TYPES.none; 
+    
+    const matches = rules.filter(r => {
+        if(!r.days.includes(day)) return false;
+        if(r.weekNums && !r.weekNums.includes(week)) return false;
+        return true;
+    });
+
+    if (matches.length === 0) return TYPES.none;
+
+    // 1つだけならそのまま返す
+    if (matches.length === 1) return TYPES[matches[0].type];
+
+    // 5. セット回収 (2つ以上) の合体処理
+    // ★【ここもエアバッグ！】万が一データ欠損があっても表示を止めない
+    const combinedLabel = {
+        ja: matches.map(m => TYPES[m.type]?.label?.ja || '').join('・'),
+        en: matches.map(m => TYPES[m.type]?.label?.en || '').join(' / '),
+        es: matches.map(m => TYPES[m.type]?.label?.es || '').join(' / '),
+        zh: matches.map(m => TYPES[m.type]?.label?.zh || '').join('・'),
+        my: matches.map(m => TYPES[m.type]?.label?.my || '').join(' / '),
+        vi: matches.map(m => TYPES[m.type]?.label?.vi || '').join(' / ')
+    };
+
+    return {
+        id: 'mixed',
+        label: combinedLabel,
+        color: 'bg-slate-500', 
+        text: 'text-slate-600',
+        border: 'border-slate-500',
+        icon: 'fa-layer-group',
+        pdf: null 
+    };
+}
+
 
 
         // 汎用スケジュール取得（指定日からN日分）
@@ -2181,211 +2206,210 @@ function showNgModal() {
         }
 
 function renderHome() {
-            const todayDate = new Date();
-            // Dashboard用: 今日のデータ
-            const todayData = { date: todayDate, type: getGarbage(todayDate, state.region) };
-            
-            // Dashboard用: 明日のデータ
-            const tmrwDate = new Date();
-            tmrwDate.setDate(todayDate.getDate() + 1);
-            const tmrwData = { date: tmrwDate, type: getGarbage(tmrwDate, state.region) };
-            
-            const rName = SCHEDULES[state.region].name[state.lang]||SCHEDULES[state.region].name.ja;
-            
-            // --- カレンダーデータの生成 ---
-            const vDate = new Date(state.viewDate);
-            let calendarTitle = "";
-            let calendarContent = "";
+    const todayDate = new Date();
+    // Dashboard用: 今日のデータ
+    const todayData = { date: todayDate, type: getGarbage(todayDate, state.region) };
+    
+    // Dashboard用: 明日のデータ
+    const tmrwDate = new Date();
+    tmrwDate.setDate(todayDate.getDate() + 1);
+    const tmrwData = { date: tmrwDate, type: getGarbage(tmrwDate, state.region) };
+    
+    const rName = SCHEDULES[state.region].name[state.lang]||SCHEDULES[state.region].name.ja;
+    
+    // --- カレンダーデータの生成 ---
+    const vDate = new Date(state.viewDate);
+    let calendarTitle = "";
+    let calendarContent = "";
 
-            if (state.viewMode === 'week') {
-                // 週表示: viewDateが含まれる週の日曜〜土曜を計算
-                const day = vDate.getDay(); // 0(Sun) - 6(Sat)
-                const startOfWeek = new Date(vDate);
-                startOfWeek.setDate(vDate.getDate() - day); // 日曜に合わせる
-                
-                // タイトル生成 (例: 1月25日 - 1月31日)
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                calendarTitle = `${startOfWeek.getMonth()+1}/${startOfWeek.getDate()} - ${endOfWeek.getMonth()+1}/${endOfWeek.getDate()}`;
+    if (state.viewMode === 'week') {
+        // 週表示: viewDateが含まれる週の日曜〜土曜を計算
+        const day = vDate.getDay(); // 0(Sun) - 6(Sat)
+        const startOfWeek = new Date(vDate);
+        startOfWeek.setDate(vDate.getDate() - day); // 日曜に合わせる
+        
+        // タイトル生成 (例: 1月25日 - 1月31日)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        calendarTitle = `${startOfWeek.getMonth()+1}/${startOfWeek.getDate()} - ${endOfWeek.getMonth()+1}/${endOfWeek.getDate()}`;
 
-                // データ取得 (7日分)
-                const weeklyData = getScheduleRange(startOfWeek, 7);
+        // データ取得 (7日分)
+        const weeklyData = getScheduleRange(startOfWeek, 7);
 
-                // リストレンダリング (既存のデザインを踏襲)
-                calendarContent = `
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
-                         ${weeklyData.map(d => {
-                             const isToday = d.date.toDateString() === todayDate.toDateString();
-                             const colorClass = getDateColorClass(d.date);
-                             const dateStr = d.date.getDate();
-                             const wStr = d.date.toLocaleDateString(state.lang, {weekday:'short'});
-                             
-                             return `
-                                <div class="flex items-center justify-between p-4 ${isToday ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}">
-                                    <div class="flex items-center gap-4">
-                                        <div class="flex flex-col items-center justify-center w-10">
-                                            <span class="text-[10px] font-bold uppercase tracking-wider ${colorClass} opacity-70">${wStr}</span>
-                                            <span class="text-xl font-bold ${colorClass}">${dateStr}</span>
-                                        </div>
-                                        ${isToday ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">TODAY</span>' : ''}
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm font-bold ${d.type.text} text-right">${d.type.label[state.lang]||d.type.label.ja}</span>
-                                        ${d.type.icon ? `<i class="fa-solid ${d.type.icon} ${d.type.text} text-lg w-6 text-center"></i>` : ''}
-                                    </div>
+        // リストレンダリング (既存のデザインを踏襲)
+        calendarContent = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                 ${weeklyData.map(d => {
+                     const isToday = d.date.toDateString() === todayDate.toDateString();
+                     const colorClass = getDateColorClass(d.date);
+                     const dateStr = d.date.getDate();
+                     const wStr = d.date.toLocaleDateString(state.lang, {weekday:'short'});
+                     
+                     return `
+                        <div class="flex items-center justify-between p-4 ${isToday ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-10">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider ${colorClass} opacity-70">${wStr}</span>
+                                    <span class="text-xl font-bold ${colorClass}">${dateStr}</span>
                                 </div>
-                             `;
-                         }).join('')}
-                    </div>
-                `;
-
-            } else {
-                // 月表示: 月の1日〜末日、かつグリッドを埋めるためのパディング
-                const year = vDate.getFullYear();
-                const month = vDate.getMonth(); // 0-11
-                
-                calendarTitle = `${year}.${month + 1}`; // Header Title
-
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                
-                // カレンダー開始日（最初のマスの日付）: 1日の曜日分だけ戻る
-                const startDate = new Date(firstDay);
-                startDate.setDate(1 - firstDay.getDay());
-
-                // カレンダー終了日: 5週間分(35マス)確保
-                // const endDate = new Date(startDate);
-                // endDate.setDate(startDate.getDate() + 35);
-
-                // グリッド生成
-                let gridHtml = "";
-                // 曜日ヘッダー
-                const weeks = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-                const weekHeader = weeks.map((w,i) => {
-                    const c = i===0 ? 'text-red-500' : (i===6 ? 'text-blue-500' : 'text-gray-400');
-                    return `<div class="text-[10px] font-bold text-center py-1 ${c}">${w}</div>`;
-                }).join('');
-
-                // 日付セル生成
-                let daysHtml = "";
-                // 5週間(35日)ループ
-                const iterDate = new Date(startDate);
-                for(let i=0; i<35; i++) {
-                    const isCurrentMonth = iterDate.getMonth() === month;
-                    const isToday = iterDate.toDateString() === todayDate.toDateString();
-                    const dType = getGarbage(iterDate, state.region);
-                    const colorClass = getDateColorClass(iterDate);
-                    
-                    // 月外の日付は薄くする
-                    const opacity = isCurrentMonth ? 'opacity-100' : 'opacity-30 grayscale';
-                    const bgToday = isToday ? 'ring-2 ring-brand ring-inset rounded-lg' : '';
-
-                    daysHtml += `
-                        <div class="min-h-[60px] border-t border-r border-gray-100 dark:border-gray-700 p-1 flex flex-col items-center ${opacity} ${bgToday} relative">
-                            <span class="text-[10px] font-bold ${colorClass} mb-1">${iterDate.getDate()}</span>
-                           ${dType.id !== 'none' 
-    ? `<div class="w-8 h-8 rounded-full ${dType.color} text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90 transition-transform" onclick="showIconTip(event, '${dType.id}')">
-         <i class="fa-solid ${dType.icon} text-sm"></i>
-       </div>` 
-    : ''}
-                        </div>
-                    `;
-                    iterDate.setDate(iterDate.getDate() + 1);
-                }
-
-                calendarContent = `
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="grid grid-cols-7 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                            ${weekHeader}
-                        </div>
-                        <div class="grid grid-cols-7 border-l border-gray-100 dark:border-gray-700">
-                            ${daysHtml}
-                        </div>
-                    </div>
-                `;
-            }
-
-            let html = `
-                <div class="fade-in pb-4">
-                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-3 mb-6 flex items-start gap-3 rounded-r-lg">
-                        <span class="text-xl">🌬️</span>
-                        <p class="text-xs text-yellow-800 dark:text-yellow-100 font-medium leading-tight pt-1">${t('alert_storm')}</p>
-                    </div>
-
-                    <div class="flex justify-between items-end px-2 mb-2">
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">${rName}</span>
-                        <span class="text-xs font-bold text-brand">${todayDate.toLocaleDateString(state.lang)}</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div id="current-date-panel" class="relative overflow-hidden rounded-3xl shadow-xl ${todayData.type.color} text-white transition-transform active:scale-[0.98] md:col-span-1 cursor-pointer hover:opacity-90" 
-                             onclick="resetCalendar(); showToast('今日に戻りました');">
-                            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
-                            <div class="p-6 relative z-10 flex flex-col items-center text-center h-full justify-center">
-                                <span class="text-sm font-bold opacity-80 mb-1 tracking-widest uppercase">${t('today')}</span>
-                                <div class="flex items-center gap-2 py-2">
-                                    ${todayData.type.icon ? `<i class="fa-solid ${todayData.type.icon} text-3xl opacity-80"></i>` : ''}
-                                    <h2 class="text-4xl font-black leading-tight drop-shadow-md">${todayData.type.label[state.lang]||todayData.type.label.ja}</h2>
-                                </div>
-                                ${todayData.type.id !== 'none' ? '<div class="mt-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">8:30 AM</div>' : ''}
+                                ${isToday ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">TODAY</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold ${d.type.text} text-right">${d.type.label[state.lang]||d.type.label.ja}</span>
+                                ${d.type.icon ? `<i class="fa-solid ${d.type.icon} ${d.type.text} text-lg w-6 text-center"></i>` : ''}
                             </div>
                         </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center md:col-span-1">
-                            <span class="font-bold text-gray-500 text-sm mb-2">${t('tomorrow')}</span>
-                            <div class="flex items-center gap-3">
-                                <span class="w-4 h-4 rounded-full ${tmrwData.type.color}"></span>
-                                <span class="text-xl font-bold text-gray-800 dark:text-gray-200">${tmrwData.type.label[state.lang]||tmrwData.type.label.ja}</span>
-                            </div>
-                        </div>
-                    </div>
+                     `;
+                 }).join('')}
+            </div>
+        `;
 
-                    <div class="flex items-center justify-between mb-3 px-1">
-                        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm border border-gray-100 dark:border-gray-700">
-                             <button onclick="moveCalendar(-1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
-                                <i class="fa-solid fa-chevron-left"></i>
-                             </button>
-                             <button onclick="resetCalendar()" class="px-2 text-sm font-bold text-gray-700 dark:text-gray-200 min-w-[100px] text-center hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
-                                ${calendarTitle}
-                             </button>
-                             <button onclick="moveCalendar(1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
-                                <i class="fa-solid fa-chevron-right"></i>
-                             </button>
-                        </div>
+    } else {
+        // --- 月表示モード ---
+        const year = vDate.getFullYear();
+        const month = vDate.getMonth(); // 0-11
+        
+        calendarTitle = `${year}.${month + 1}`; // Header Title
 
-                        <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
-                            <button onclick="switchCalendarMode('week')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='week' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">週</button>
-                            <button onclick="switchCalendarMode('month')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='month' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">月</button>
-                        </div>
-                    </div>
+        const firstDay = new Date(year, month, 1);
+        
+        // カレンダー開始日（最初のマスの日付）: 1日の曜日分だけ戻る
+        const startDate = new Date(firstDay);
+        startDate.setDate(1 - firstDay.getDay());
 
-                   ${calendarContent}
+        // グリッド生成
+        let gridHtml = "";
+        // 曜日ヘッダー
+        const weeks = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const weekHeader = weeks.map((w,i) => {
+            const c = i===0 ? 'text-red-500' : (i===6 ? 'text-blue-500' : 'text-gray-400');
+            return `<div class="text-[10px] font-bold text-center py-1 ${c}">${w}</div>`;
+        }).join('');
 
-                    <div class="mt-8 mb-4">
-                        <div class="flex items-center gap-2 mb-3 px-1">
-                            <i class="fa-solid fa-bullhorn text-brand"></i>
-                            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">市からのお知らせ</h3>
-                        </div>
-                        <div id="news-feed" class="min-h-[100px]">
-                            <div class="flex justify-center py-6">
-                                <i class="fa-solid fa-circle-notch fa-spin text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-               
-                    <div class="text-center mt-8 pb-8">
-                         <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1 rounded-full hover:bg-brand/20 transition-colors">
-                            <i class="fa-solid fa-copy mr-1"></i> この予定のパターンをコピーする
-                        </button>
-                        <div class="text-[10px] text-gray-400 mt-2 scale-90">
-                            ※コピーしたテキストをGeminiやChatGPT等に貼り付けてください
-                        </div>
-                    </div>
+        // 日付セル生成
+        let daysHtml = "";
+        // 5週間(35日)ループ
+        const iterDate = new Date(startDate);
+        for(let i=0; i<35; i++) {
+            const isCurrentMonth = iterDate.getMonth() === month;
+            const isToday = iterDate.toDateString() === todayDate.toDateString();
+            const dType = getGarbage(iterDate, state.region);
+            const colorClass = getDateColorClass(iterDate);
+            
+            // ★★★【ここが修正点！】IDではなく、表示用の名前をここで作る ★★★
+            const tipLabel = (dType.id !== 'none') ? (dType.label[state.lang] || dType.label.ja) : '';
+
+            // 月外の日付は薄くする
+            const opacity = isCurrentMonth ? 'opacity-100' : 'opacity-30 grayscale';
+            const bgToday = isToday ? 'ring-2 ring-brand ring-inset rounded-lg' : '';
+
+            daysHtml += `
+                <div class="min-h-[60px] border-t border-r border-gray-100 dark:border-gray-700 p-1 flex flex-col items-center ${opacity} ${bgToday} relative">
+                    <span class="text-[10px] font-bold ${colorClass} mb-1">${iterDate.getDate()}</span>
+                   ${dType.id !== 'none' 
+                    ? `<div class="w-8 h-8 rounded-full ${dType.color} text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90 transition-transform" 
+                            onclick="showIconTip(event, '${tipLabel}')"> <i class="fa-solid ${dType.icon} text-sm"></i>
+                       </div>` 
+                    : ''}
+                </div>
             `;
-            main.innerHTML = html;
-            
-            // 画面描画後にニュースを読みに行く
-            setTimeout(loadNews, 0);
+            iterDate.setDate(iterDate.getDate() + 1);
         }
+
+        calendarContent = `
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="grid grid-cols-7 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                    ${weekHeader}
+                </div>
+                <div class="grid grid-cols-7 border-l border-gray-100 dark:border-gray-700">
+                    ${daysHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    let html = `
+        <div class="fade-in pb-4">
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-3 mb-6 flex items-start gap-3 rounded-r-lg">
+                <span class="text-xl">🌬️</span>
+                <p class="text-xs text-yellow-800 dark:text-yellow-100 font-medium leading-tight pt-1">${t('alert_storm')}</p>
+            </div>
+
+            <div class="flex justify-between items-end px-2 mb-2">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">${rName}</span>
+                <span class="text-xs font-bold text-brand">${todayDate.toLocaleDateString(state.lang)}</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div id="current-date-panel" class="relative overflow-hidden rounded-3xl shadow-xl ${todayData.type.color} text-white transition-transform active:scale-[0.98] md:col-span-1 cursor-pointer hover:opacity-90" 
+                     onclick="resetCalendar(); showToast('今日に戻りました');">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
+                    <div class="p-6 relative z-10 flex flex-col items-center text-center h-full justify-center">
+                        <span class="text-sm font-bold opacity-80 mb-1 tracking-widest uppercase">${t('today')}</span>
+                        <div class="flex items-center gap-2 py-2">
+                            ${todayData.type.icon ? `<i class="fa-solid ${todayData.type.icon} text-3xl opacity-80"></i>` : ''}
+                            <h2 class="text-4xl font-black leading-tight drop-shadow-md">${todayData.type.label[state.lang]||todayData.type.label.ja}</h2>
+                        </div>
+                        ${todayData.type.id !== 'none' ? '<div class="mt-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">8:30 AM</div>' : ''}
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center md:col-span-1">
+                    <span class="font-bold text-gray-500 text-sm mb-2">${t('tomorrow')}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="w-4 h-4 rounded-full ${tmrwData.type.color}"></span>
+                        <span class="text-xl font-bold text-gray-800 dark:text-gray-200">${tmrwData.type.label[state.lang]||tmrwData.type.label.ja}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div class="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm border border-gray-100 dark:border-gray-700">
+                     <button onclick="moveCalendar(-1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
+                        <i class="fa-solid fa-chevron-left"></i>
+                     </button>
+                     <button onclick="resetCalendar()" class="px-2 text-sm font-bold text-gray-700 dark:text-gray-200 min-w-[100px] text-center hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
+                        ${calendarTitle}
+                     </button>
+                     <button onclick="moveCalendar(1)" class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
+                        <i class="fa-solid fa-chevron-right"></i>
+                     </button>
+                </div>
+
+                <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+                    <button onclick="switchCalendarMode('week')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='week' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">週</button>
+                    <button onclick="switchCalendarMode('month')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='month' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">月</button>
+                </div>
+            </div>
+
+           ${calendarContent}
+
+            <div class="mt-8 mb-4">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <i class="fa-solid fa-bullhorn text-brand"></i>
+                    <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">市からのお知らせ</h3>
+                </div>
+                <div id="news-feed" class="min-h-[100px]">
+                    <div class="flex justify-center py-6">
+                        <i class="fa-solid fa-circle-notch fa-spin text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+       
+            <div class="text-center mt-8 pb-8">
+                 <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1 rounded-full hover:bg-brand/20 transition-colors">
+                    <i class="fa-solid fa-copy mr-1"></i> この予定のパターンをコピーする
+                </button>
+                <div class="text-[10px] text-gray-400 mt-2 scale-90">
+                    ※コピーしたテキストをGeminiやChatGPT等に貼り付けてください
+                </div>
+            </div>
+        </div>
+    `;
+    main.innerHTML = html;
+    
+    // 画面描画後にニュースを読みに行く
+    setTimeout(loadNews, 0);
+}
 
 
       function renderSearch() {
@@ -2704,45 +2728,40 @@ function renderHome() {
         }
 
 // ▼ 追加: アイコンタップ時にチップを表示する関数 ▼
-        let tipTimer = null;
-        function showIconTip(e, typeId) {
-            e.stopPropagation(); // 日付クリック等がもしあれば、それを防ぐ
-            const type = TYPES[typeId];
-            if (!type) return;
+      // ▼ 修正版: showIconTip (テキストを直接受け取るように変更) ▼
+let tipTimer = null;
+function showIconTip(e, labelText) {
+    e.stopPropagation(); 
+    if (!labelText) return;
 
-            // 多言語対応でラベルを取得
-            const label = type.label[state.lang] || type.label.ja;
-            
-            const tip = document.getElementById('icon-tip');
-            const rect = e.currentTarget.getBoundingClientRect(); // タップしたアイコンの位置
+    const tip = document.getElementById('icon-tip');
+    const rect = e.currentTarget.getBoundingClientRect(); 
 
-            // チップに文字セット
-            tip.innerText = label;
-            
-            // 位置合わせ（アイコンの真上・中央）
-            // left: アイコンの左端 + 幅の半分
-            // top: アイコンの上端
-            tip.style.left = (rect.left + rect.width / 2) + 'px';
-            tip.style.top = rect.top + 'px';
+    // チップに文字セット (ID検索ではなく、渡された文字をそのまま使う)
+    tip.innerText = labelText;
+    
+    // 位置合わせ（アイコンの真上・中央）
+    tip.style.left = (rect.left + rect.width / 2) + 'px';
+    tip.style.top = rect.top + 'px';
 
-            // 表示アニメーション
-            tip.classList.remove('hidden');
-            // 少し待ってからopacityを変えないとアニメーションしないため
-            requestAnimationFrame(() => {
-                tip.classList.remove('opacity-0', '-translate-y-2');
-                tip.classList.add('opacity-100', '-translate-y-full'); // 真上に移動
-            });
+    // 表示アニメーション
+    tip.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        tip.classList.remove('opacity-0', '-translate-y-2');
+        tip.classList.add('opacity-100', '-translate-y-full'); 
+    });
 
-            // 以前のタイマーがあれば消す（連打対策）
-            if (tipTimer) clearTimeout(tipTimer);
+    // 以前のタイマーがあれば消す
+    if (tipTimer) clearTimeout(tipTimer);
 
-            // 2秒後に消す
-            tipTimer = setTimeout(() => {
-                tip.classList.remove('opacity-100', '-translate-y-full');
-                tip.classList.add('opacity-0', '-translate-y-2');
-                setTimeout(() => tip.classList.add('hidden'), 300);
-            }, 2000);
-        }
+    // 2秒後に消す
+    tipTimer = setTimeout(() => {
+        tip.classList.remove('opacity-100', '-translate-y-full');
+        tip.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => tip.classList.add('hidden'), 300);
+    }, 2000);
+}
+
 
 
      // AI Copy Logic (Updated: Human-friendly header)
@@ -3236,4 +3255,3 @@ END:VCALENDAR`;
 </script>
 </body>
 </html>
-
