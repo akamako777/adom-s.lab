@@ -8,10 +8,6 @@
     <title>五島市ごみ分別ナビ | Goto Gomi-Navi</title>
     
     <script src="./tailwindcss.js"></script>
-    <script src="./react.production.min.js"></script>
-    <script src="./react-dom.production.min.js"></script>
-    <script src="./babel.min.js"></script>
-    
     <script src="./fontawesome.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -53,6 +49,9 @@
                 }
             }
         }
+        
+        // 音声認識APIのサポート確認
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     </script>
 
     <style>
@@ -121,9 +120,7 @@
                     <i id="theme-icon" class="fa-solid fa-moon"></i>
                 </button>
 
-                <button onclick="copyScheduleForAI()" class="bg-white hover:bg-gray-50 text-gray-800 px-2 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5 ring-2 ring-blue-300 ring-opacity-50" title="AI用パターンコピー">
-                    <i class="fa-solid fa-clipboard text-blue-600"></i>
-                </button>
+
 
                 <a href="https://www.city.goto.nagasaki.jp/li/070/090/010/index.html" target="_blank" rel="noopener noreferrer" 
                    class="bg-white hover:bg-gray-50 text-gray-800 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5 animate-sparkle ring-2 ring-purple-300 ring-opacity-50">
@@ -465,6 +462,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 ]
             }
         };
+
 
 
         // --- 4. TRASH DICTIONARY (Stubbed for future expansion) ---
@@ -1380,7 +1378,8 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
         ];
 
 
-     // --- 5. DATA: Translations (Refined for Native Japanese Nuance) ---
+
+    // --- 5. DATA: Translations (Updated for Calendar) ---
         const LANGS = { ja: "日本語", en: "English", es: "Español", zh: "繁體中文", my: "မြန်မာ", vi: "Tiếng Việt" };
         const TRANSLATIONS = {
             ja: {
@@ -1398,7 +1397,20 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 call_title: "発信確認", call_msg: "{name} ({number}) に発信しますか？", 
                 call_action: "発信", cancel: "キャンセル", close: "閉じる",
 
-                // Guide Menu (Original Nuance)
+                // Settings & Calendar
+                nav_home: "ホーム", nav_search: "分別検索", nav_guide: "ガイド", nav_settings: "設定",
+                cal_title: "カレンダー連携 (通知設定)",
+                cal_desc: "向こう1年間の収集日を、スマホのカレンダーに取り込みます。<br>通知が欲しい時間を選択してください。",
+                cal_opt_18: "前日の 18:00",
+                cal_opt_0700: "当日の 07:00",
+                cal_opt_0730: "当日の 07:30",
+                cal_export: "カレンダーに書き出す",
+                cal_done_title: "カレンダー連携",
+                cal_done_msg: "<p><b>「goto_garbage_schedule.ics」</b>をダウンロードしました。</p><p>ファイルを開いて、カレンダーに追加してください。</p>",
+                cal_done_note: "※何度追加しても、重複は自動的に防止されます。",
+                cal_toast: "カレンダーファイルを保存しました",
+
+                // Guide Menu
                 guide_contact: "ガイド・連絡先",
                 contact_list: "連絡先リスト", your_area: "あなたの地区の粗大ごみ担当",
                 
@@ -1407,7 +1419,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 guide_biz: "事業系", guide_biz_sub: "事業所・民泊など",
                 guide_ng: "収集不可", guide_ng_sub: "適正処理困難物",
 
-                // Sodai Modal (Detailed)
+                // Sodai Modal
                 sodai_step1: "電話予約", sodai_step1_desc: "お住まいの地域の担当へ予約してください。",
                 sodai_step2: "シール購入", 
                 sodai_carry_ok: "1人で持てる", sodai_carry_ng: "持てない",
@@ -1449,6 +1461,18 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 call_title: "Call", call_msg: "Call {name} ({number})?", 
                 call_action: "Call", cancel: "Cancel", close: "Close",
 
+                nav_home: "Home", nav_search: "Search", nav_guide: "Guide", nav_settings: "Settings",
+                cal_title: "Calendar Sync (Notification)",
+                cal_desc: "Import the schedule for the next year to your phone calendar.<br>Select notification times.",
+                cal_opt_18: "Day before 18:00",
+                cal_opt_0700: "Morning 07:00",
+                cal_opt_0730: "Morning 07:30",
+                cal_export: "Export to Calendar",
+                cal_done_title: "Calendar Sync",
+                cal_done_msg: "<p>Downloaded <b>'goto_garbage_schedule.ics'</b>.</p><p>Open the file to add to your calendar.</p>",
+                cal_done_note: "*Duplicates are automatically prevented.",
+                cal_toast: "Calendar file saved",
+
                 guide_contact: "Guide", contact_list: "Contacts", your_area: "Your Area Contact",
                 guide_sodai: "Large Waste", guide_sodai_sub: "Booking/Rules",
                 guide_bring: "Bring-in", guide_bring_sub: "Clean Center",
@@ -1479,7 +1503,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 ng_list_3: "Hard-to-process (Tire, Piano)", ng_list_4: "Dangerous (Gas, Chemicals)",
                 ng_center_appliance: "Appliance Recycle Ctr", ng_center_pc: "PC3R Association"
             },
-es: {
+            es: {
                 welcome: "Configuración", select_region: "Seleccionar área",
                 confirm_region_title: "Confirmar", confirm_region_body: "Región: <br><br><b>{region}</b><br>¿Es correcto?",
                 today: "Hoy", tomorrow: "Mañana", weekly: "Semanal", no_coll: "Sin recogida",
@@ -1489,6 +1513,18 @@ es: {
                 
                 call_title: "Llamar", call_msg: "¿Llamar a {name} ({number})?", 
                 call_action: "Llamar", cancel: "Cancelar", close: "Cerrar",
+
+                nav_home: "Inicio", nav_search: "Buscar", nav_guide: "Guía", nav_settings: "Ajustes",
+                cal_title: "Sinc. Calendario (Notificación)",
+                cal_desc: "Importa el horario del próximo año a tu calendario.<br>Selecciona las horas de notificación.",
+                cal_opt_18: "Día anterior 18:00",
+                cal_opt_0700: "Mañana 07:00",
+                cal_opt_0730: "Mañana 07:30",
+                cal_export: "Exportar a Calendario",
+                cal_done_title: "Sinc. Calendario",
+                cal_done_msg: "<p>Descargado <b>'goto_garbage_schedule.ics'</b>.</p><p>Abre el archivo para añadirlo a tu calendario.</p>",
+                cal_done_note: "*Los duplicados se evitan automáticamente.",
+                cal_toast: "Archivo guardado",
 
                 guide_contact: "Guía", contact_list: "Contactos", your_area: "Contacto de su área",
                 guide_sodai: "Basura grande", guide_sodai_sub: "Reserva / Reglas",
@@ -1531,6 +1567,18 @@ es: {
                 call_title: "撥號", call_msg: "撥打給 {name} ({number}) 嗎？", 
                 call_action: "撥打", cancel: "取消", close: "關閉",
 
+                nav_home: "首頁", nav_search: "搜尋", nav_guide: "指南", nav_settings: "設定",
+                cal_title: "行事曆同步 (通知設定)",
+                cal_desc: "將未來一年的收集日程匯入手機行事曆。<br>請選擇需要通知的時間。",
+                cal_opt_18: "前一天 18:00",
+                cal_opt_0700: "當天 07:00",
+                cal_opt_0730: "當天 07:30",
+                cal_export: "匯出至行事曆",
+                cal_done_title: "行事曆同步",
+                cal_done_msg: "<p>已下載 <b>'goto_garbage_schedule.ics'</b>。</p><p>請開啟檔案以加入行事曆。</p>",
+                cal_done_note: "*系統會自動防止重複加入。",
+                cal_toast: "已儲存行事曆檔案",
+
                 guide_contact: "指南", contact_list: "聯絡人", your_area: "您所屬地區的窗口",
                 guide_sodai: "大型垃圾", guide_sodai_sub: "預約 / 規則",
                 guide_bring: "自行搬入", guide_bring_sub: "清潔中心",
@@ -1571,6 +1619,18 @@ es: {
                 
                 call_title: "ခေါ်ဆိုရန်", call_msg: "{name} ({number}) သို့ ခေါ်ဆိုမလား?", 
                 call_action: "ခေါ်ဆို", cancel: "မလုပ်ပါ", close: "ပိတ်မည်",
+
+                nav_home: "အိမ်", nav_search: "ရှာဖွေ", nav_guide: "လမ်းညွှန်", nav_settings: "ဆက်တင်",
+                cal_title: "ပြက္ခဒိန် ချိတ်ဆက်မှု (အသိပေးချက်)",
+                cal_desc: "လာမည့်နှစ်အတွက် အမှိုက်သိမ်းရက်များကို ဖုန်းပြက္ခဒိန်ထဲ ထည့်သွင်းပါ။<br>အသိပေးစေလိုသောအချိန်ကို ရွေးပါ။",
+                cal_opt_18: "မတိုင်ခင်နေ့ 18:00",
+                cal_opt_0700: "ထိုနေ့မနက် 07:00",
+                cal_opt_0730: "ထိုနေ့မနက် 07:30",
+                cal_export: "ပြက္ခဒိန်သို့ ပို့ရန်",
+                cal_done_title: "ပြက္ခဒိန် ချိတ်ဆက်မှု",
+                cal_done_msg: "<p><b>'goto_garbage_schedule.ics'</b> ကို ဒေါင်းလုဒ်လုပ်ပြီးပါပြီ။</p><p>ပြက္ခဒိန်ထဲထည့်ရန် ဖိုင်ကိုဖွင့်ပါ။</p>",
+                cal_done_note: "*ထပ်မံထည့်သွင်းခြင်းကို အလိုအလျောက် တားဆီးပေးသည်။",
+                cal_toast: "ဖိုင်သိမ်းဆည်းပြီးပါပြီ",
 
                 guide_contact: "လမ်းညွှန်", contact_list: "ဖုန်းနံပါတ်များ", your_area: "သင့်ဒေသတာဝန်ခံ",
                 guide_sodai: "အမှိုက်ကြီး", guide_sodai_sub: "ဘွတ်ကင် / စည်းကမ်း",
@@ -1613,6 +1673,18 @@ es: {
                 call_title: "Gọi", call_msg: "Gọi {name} ({number})?", 
                 call_action: "Gọi", cancel: "Hủy", close: "Đóng",
 
+                nav_home: "Trang chủ", nav_search: "Tìm kiếm", nav_guide: "Hướng dẫn", nav_settings: "Cài đặt",
+                cal_title: "Đồng bộ lịch (Thông báo)",
+                cal_desc: "Nhập lịch thu gom 1 năm tới vào lịch điện thoại.<br>Chọn thời gian thông báo.",
+                cal_opt_18: "Ngày trước đó 18:00",
+                cal_opt_0700: "Sáng hôm đó 07:00",
+                cal_opt_0730: "Sáng hôm đó 07:30",
+                cal_export: "Xuất ra lịch",
+                cal_done_title: "Đồng bộ lịch",
+                cal_done_msg: "<p>Đã tải <b>'goto_garbage_schedule.ics'</b>.</p><p>Mở tệp để thêm vào lịch của bạn.</p>",
+                cal_done_note: "*Hệ thống tự động ngăn chặn trùng lặp.",
+                cal_toast: "Đã lưu tệp lịch",
+
                 guide_contact: "Hướng dẫn", contact_list: "Danh bạ", your_area: "Phụ trách khu vực",
                 guide_sodai: "Rác cồng kềnh", guide_sodai_sub: "Đặt lịch / Quy tắc",
                 guide_bring: "Tự mang đến", guide_bring_sub: "Trung tâm sạch",
@@ -1645,6 +1717,7 @@ es: {
             }
 
         };
+
 
 
         // --- 6. STATE & LOGIC ---
@@ -2315,15 +2388,25 @@ function renderHome() {
         }
 
 
-        function renderSearch() {
+      function renderSearch() {
+            const hasSpeech = !!SpeechRecognition;
+            
             let html = `
                 <div class="fade-in h-full flex flex-col">
                     <div class="sticky top-0 bg-gray-50 dark:bg-gray-900 pb-4 z-20">
-                        <div class="relative group max-w-2xl mx-auto w-full">
-                            <input type="search" id="sInput" placeholder="${t('search_ph')}" 
-                                class="w-full bg-white dark:bg-gray-800 border-none shadow-sm rounded-2xl p-4 pl-12 text-base font-bold focus:ring-2 focus:ring-brand outline-none transition-shadow"
-                                oninput="doSearch(this.value)">
-                            <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-brand"></i>
+                        <div class="relative group max-w-2xl mx-auto w-full flex gap-2">
+                            <div class="relative flex-1">
+                                <input type="search" id="sInput" placeholder="${t('search_ph')}" 
+                                    class="w-full bg-white dark:bg-gray-800 border-none shadow-sm rounded-2xl p-4 pl-12 text-base font-bold focus:ring-2 focus:ring-brand outline-none transition-shadow"
+                                    oninput="doSearch(this.value)">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-brand"></i>
+                            </div>
+                            
+                            ${hasSpeech ? `
+                            <button onclick="startVoiceSearch()" id="btn-mic" class="bg-white dark:bg-gray-800 w-14 rounded-2xl shadow-sm text-gray-500 hover:text-brand active:scale-95 transition-all flex items-center justify-center border border-gray-100 dark:border-gray-700">
+                                <i class="fa-solid fa-microphone text-lg"></i>
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
 
@@ -2341,12 +2424,51 @@ function renderHome() {
                                 `;
                             }).join('')}
                         </div>
-                        <div class="text-center text-xs text-gray-400 mt-8">Dictionary v5.3 (Ready for Import)</div>
+                        <div class="text-center text-xs text-gray-400 mt-8">Dictionary v5.3 (Voice Enabled)</div>
                     </div>
                 </div>
             `;
             main.innerHTML = html;
         }
+
+        // ▼ 音声検索ロジック (新規追加) ▼
+        function startVoiceSearch() {
+            if (!SpeechRecognition) return;
+            
+            const recognition = new SpeechRecognition();
+            recognition.lang = state.lang === 'en' ? 'en-US' : 'ja-JP';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            const btn = document.getElementById('btn-mic');
+            const originalIcon = btn.innerHTML;
+            
+            // 録音中演出
+            btn.innerHTML = '<i class="fa-solid fa-circle text-red-500 animate-pulse"></i>';
+            btn.classList.add('ring-2', 'ring-red-200');
+
+            recognition.start();
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                const input = document.getElementById('sInput');
+                input.value = transcript;
+                doSearch(transcript);
+                showToast(`音声入力: "${transcript}"`);
+            };
+
+            recognition.onend = () => {
+                btn.innerHTML = originalIcon;
+                btn.classList.remove('ring-2', 'ring-red-200');
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                btn.innerHTML = originalIcon;
+                showToast("音声認識できませんでした");
+            };
+        }
+
 
         function doSearch(q) {
             const el = document.getElementById('sResults');
@@ -2481,12 +2603,13 @@ function renderHome() {
         }
 
 
-        function renderSettings() {
+       function renderSettings() {
             main.innerHTML = `
-                <div class="fade-in space-y-6 max-w-lg mx-auto">
-                    <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">Settings</h2>
+                <div class="fade-in space-y-6 max-w-lg mx-auto pb-10">
+                    <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">${t('nav_settings')}</h2>
                     
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 font-bold text-xs text-gray-500">Language</div>
                         ${Object.keys(LANGS).map(k => `
                             <button onclick="setLang('${k}')" class="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
                                 <span class="font-bold text-sm text-gray-700 dark:text-gray-200">${LANGS[k]}</span>
@@ -2495,17 +2618,47 @@ function renderHome() {
                         `).join('')}
                     </div>
 
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center gap-2">
+                            <i class="fa-regular fa-calendar-check text-blue-500"></i>
+                            <span class="font-bold text-xs text-blue-700 dark:text-blue-300">${t('cal_title')}</span>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                ${t('cal_desc')}
+                            </p>
+                            
+                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" id="cal-notify-18" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
+                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_18')}</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" id="cal-notify-0700" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
+                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_0700')}</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" id="cal-notify-0730" checked class="w-5 h-5 text-brand rounded focus:ring-brand">
+                                <span class="text-sm font-bold text-gray-700 dark:text-gray-200">${t('cal_opt_0730')}</span>
+                            </label>
+
+                            <button onclick="exportCalendar()" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-file-export"></i> ${t('cal_export')}
+                            </button>
+                        </div>
+                    </div>
+
                     <button onclick="state.region=null;save();location.reload()" class="w-full py-4 text-red-500 font-bold bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-sm hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700">
                         ${t('settings_reset')}
                     </button>
 
                     <div class="text-center text-xs text-gray-300 pt-8 font-mono">
-                        GOTO GOMI-NAVI Ver 5.3<br>
+                        GOTO GOMI-NAVI Ver 5.3 Final<br>
                         Aurora Integrated
                     </div>
                 </div>
             `;
         }
+
 
         function setLang(l) {
             state.lang = l;
@@ -2945,6 +3098,101 @@ async function sendImageToGas(base64) {
     }
 }
 
+// --- CALENDAR EXPORT LOGIC (iCal) ---
+        function exportCalendar() {
+            if (!state.region) return showToast("地域設定が必要です");
+
+            // 通知設定の取得
+            const n18 = document.getElementById('cal-notify-18')?.checked;
+            const n0700 = document.getElementById('cal-notify-0700')?.checked;
+            const n0730 = document.getElementById('cal-notify-0730')?.checked;
+
+            let events = [];
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setFullYear(startDate.getFullYear() + 1); // 1年分
+
+            // 日付を回してデータを生成
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const type = getGarbage(d, state.region);
+                if (type.id === 'none') continue;
+
+                const dateStr = d.toISOString().replace(/[-:]/g, '').split('T')[0]; // YYYYMMDD
+                const label = type.label[state.lang] || type.label.ja;
+                
+                // UID生成 (日付 + 種類 + アプリ名 で一意にする -> 重複防止の鍵)
+                const uid = `${dateStr}-${type.id}@goto-gomi-navi`;
+
+                let valarms = '';
+                
+                // iCalのアラーム設定 (TRIGGERはイベント開始(0:00)からの相対時間)
+                // 前日18:00 -> イベント開始(0:00)の6時間前 -> -PT6H
+                if (n18) {
+                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:-PT6H\nEND:VALARM\n`;
+                }
+                // 当日07:00 -> イベント開始(0:00)の7時間後 -> PT7H
+                if (n0700) {
+                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H\nEND:VALARM\n`;
+                }
+                // 当日07:30 -> イベント開始(0:00)の7時間30分後 -> PT7H30M
+                if (n0730) {
+                    valarms += `BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\nTRIGGER:PT7H30M\nEND:VALARM\n`;
+                }
+
+                const eventBlock = 
+`BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DTSTART;VALUE=DATE:${dateStr}
+DTEND;VALUE=DATE:${dateStr}
+SUMMARY:🗑️ ${label} (五島市)
+DESCRIPTION:五島市ごみ分別ナビからの登録
+TRANSP:TRANSPARENT
+${valarms}END:VEVENT`;
+
+                events.push(eventBlock);
+            }
+
+            if (events.length === 0) return showToast("登録対象がありません");
+
+            // .icsファイルの中身を作成
+            const icsContent = 
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Goto Gomi-Navi//Ver 5.3//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:五島市ごみ収集
+${events.join('\n')}
+END:VCALENDAR`;
+
+            // ダウンロード発火
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'goto_garbage_schedule.ics');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(t('cal_toast'));
+            
+            // 案内モーダル (多言語対応済)
+            setTimeout(() => {
+                showModal(t('cal_done_title'), 
+                    `<div class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                        ${t('cal_done_msg')}
+                        <ul class="list-disc list-inside text-xs mt-2 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            <li>iPhone: ファイルをタップ → 「カレンダーに追加」</li>
+                            <li>Android: ファイルを開く → Googleカレンダー等でインポート</li>
+                        </ul>
+                        <p class="text-xs text-red-500 mt-2">${t('cal_done_note')}</p>
+                     </div>`,
+                    `<button onclick="closeModal()" class="px-4 py-2 bg-brand text-white rounded font-bold">OK</button>`
+                );
+            }, 1000);
+        }
 
 
     </script>
@@ -2960,4 +3208,3 @@ async function sendImageToGas(base64) {
 </script>
 </body>
 </html>
-
