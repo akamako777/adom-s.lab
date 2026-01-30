@@ -2882,7 +2882,7 @@ function renderHome() {
         };
 
 // ----------------------------------------------------
-// 🛡️ GOTO BARRIER CAM (Logic)
+// 🛡️ GOTO BARRIER CAM (Logic / Indoor Optimized)
 // ----------------------------------------------------
 
 // 五島列島バリア（ジオフェンス定義）
@@ -2893,8 +2893,8 @@ const GOTO_BARRIER = {
     W: 128.50  // 嵯峨島以西
 };
 
+// 1. セッション開始（ここはAdomさんの元のコードのまま！）
 async function startCamSession() {
-    // 1. 職員さんへの確認アラート
     showModal("オペレーター相談", 
         `<div class="text-center space-y-4">
             <div class="text-4xl">👩‍💻</div>
@@ -2910,46 +2910,74 @@ async function startCamSession() {
     );
 }
 
+// 2. 位置情報チェック（ここを屋内対策版にパワーアップ）
 function verifyLocation() {
     if (!navigator.geolocation) {
-        showToast("GPS非対応端末です");
+        // GPS非対応端末の場合は、自己申告に回す（救済措置）
+        askSelfDeclaration("端末が位置情報に対応していません。");
         return;
     }
 
     showToast("位置情報を確認中...");
 
     navigator.geolocation.getCurrentPosition(
-        // Success
+        // Success: 位置取得成功
         async (pos) => {
             const { latitude: lat, longitude: lon } = pos.coords;
             
-            // 2. 五島バリア判定
+            // バリア判定
             const isInside = (lat <= GOTO_BARRIER.N && lat >= GOTO_BARRIER.S && 
                               lon <= GOTO_BARRIER.E && lon >= GOTO_BARRIER.W);
             
             if (!isInside) {
-                // バリア発動！
+                // バリア発動（エリア外）
                 showModal("利用できません", 
                     `<div class="text-center text-red-500 font-bold">
-                        <i class="fa-solid fa-ban text-4xl mb-2"></i><br>五島市外からは利用できません
+                        <i class="fa-solid fa-ban text-4xl mb-2"></i><br>
+                        五島市外と判定されました。<br>
+                        <span class="text-xs text-gray-500">現在地: ${lat.toFixed(3)}, ${lon.toFixed(3)}</span>
                      </div>`, 
                     `<button onclick="closeModal()" class="w-full bg-gray-200 py-2 rounded font-bold">閉じる</button>`
                 );
                 return;
             }
 
-            // 3. 信号機チェック (GASへ問い合わせ)
+            // エリア内ならOK → 次のステップ（GAS通信）へ
+            // ★ここで元の処理につなぎます！
             checkReceptionStatus();
         },
-        // Error
+        // Error: 取得失敗（屋内でタイムアウト等）
         (err) => {
             console.error(err);
-            // GPSエラー時の救済（今回は厳しめにエラー表示のみ）
-            showToast("位置情報が取得できませんでした");
+            // 【重要】エラーだけで終わらせず、自己申告モーダルを出す
+            askSelfDeclaration("現在地を取得できませんでした。<br>(屋内にいる場合など)");
         },
-        { timeout: 10000, highAccuracy: false } // 10秒タイムアウト
+        // Options: 屋内最適化設定
+        { 
+            enableHighAccuracy: false, // ★重要: GPS衛星よりWi-Fi/基地局を優先（屋内対策）
+            timeout: 10000,            // 10秒待つ
+            maximumAge: 60000          // 過去1分以内のキャッシュがあればそれを使う
+        } 
     );
 }
+
+// 3. 【新規追加】最終手段：自己申告モーダル
+function askSelfDeclaration(reason) {
+    showModal("位置情報の確認", 
+        `<div class="text-center space-y-3">
+            <p class="text-sm font-bold text-red-500">${reason}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-300">
+                GPSの電波が届きにくい場所にいるようです。<br>
+                あなたは現在、<strong>五島市内</strong>にいらっしゃいますか？
+            </p>
+         </div>`,
+        `<div class="grid grid-cols-2 gap-3 w-full">
+            <button onclick="closeModal()" class="bg-gray-200 py-2 rounded font-bold text-xs">いいえ</button>
+            <button onclick="closeModal(); checkReceptionStatus();" class="bg-brand text-white py-2 rounded font-bold text-xs shadow-lg">はい（五島市内です）</button>
+         </div>`
+    );
+}
+
 
 async function checkReceptionStatus() {
     showToast("受付状態を確認中...");
@@ -3208,3 +3236,4 @@ END:VCALENDAR`;
 </script>
 </body>
 </html>
+
