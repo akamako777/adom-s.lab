@@ -115,12 +115,15 @@
                 <span class="hidden sm:inline">Goto Gomi-Navi</span>
                 <span class="sm:hidden">Gomi-Navi</span>
             </h1>
-            <div class="flex items-center gap-2">
-                 <button onclick="toggleTheme()" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center" title="テーマ切替">
+           <div class="flex items-center gap-2">
+                <a href="https://gemini.google.com/gem/15Gkw-McQdmGYmMBgRJXyruIjhGoZBBOT?usp=sharing" target="_blank" rel="noopener noreferrer" 
+                   class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center group" title="AI写真相談">
+                    <i class="fa-solid fa-wand-magic-sparkles group-hover:animate-sparkle"></i>
+                </a>
+
+                <button onclick="toggleTheme()" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center" title="テーマ切替">
                     <i id="theme-icon" class="fa-solid fa-moon"></i>
                 </button>
-
-
 
                 <a href="https://www.city.goto.nagasaki.jp/li/070/090/010/index.html" target="_blank" rel="noopener noreferrer" 
                    class="bg-white hover:bg-gray-50 text-gray-800 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-1.5 animate-sparkle ring-2 ring-purple-300 ring-opacity-50">
@@ -128,13 +131,13 @@
                     <span class="gemini-text text-[10px]">五島市HP</span>
                 </a>
 
-<button onclick="startCamSession()" class="bg-indigo-500 hover:bg-indigo-600 text-white w-8 h-8 rounded-full shadow-sm transition-transform active:scale-95 flex items-center justify-center mr-2 relative" title="オペレーター相談">
-    <i class="fa-solid fa-camera"></i>
-    <span id="cam-status-dot" class="hidden absolute -top-1 -right-1 flex h-3 w-3 pointer-events-none">
-    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-    <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-</span>
-</button>
+                <button onclick="startCamSession()" class="bg-indigo-500 hover:bg-indigo-600 text-white w-8 h-8 rounded-full shadow-sm transition-transform active:scale-95 flex items-center justify-center mr-2 relative" title="オペレーター相談">
+                    <i class="fa-solid fa-camera"></i>
+                    <span id="cam-status-dot" class="hidden absolute -top-1 -right-1 flex h-3 w-3 pointer-events-none">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                    </span>
+                </button>
 
                 <button id="btn-emergency" class="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full shadow-sm transition-transform active:scale-95 flex items-center justify-center">
                     <i class="fa-solid fa-phone"></i>
@@ -465,6 +468,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
 
 
 
+      
         // --- 4. TRASH DICTIONARY (Stubbed for future expansion) ---
         const TRASH_DB = [
             // Standard
@@ -1379,6 +1383,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
 
 
 
+
     // --- 5. DATA: Translations (Updated for Calendar) ---
         const LANGS = { ja: "日本語", en: "English", es: "Español", zh: "繁體中文", my: "မြန်မာ", vi: "Tiếng Việt" };
         const TRANSLATIONS = {
@@ -2205,7 +2210,13 @@ function showNgModal() {
             navTo('home');
         }
 
-function renderHome() {
+async function renderHome() {
+    // ▼ Sky-Link: 天気データの読み込み (非同期)
+    let weatherData = null;
+    try {
+        weatherData = await fetchWeather();
+    } catch(e) {}
+
     const todayDate = new Date();
     // Dashboard用: 今日のデータ
     const todayData = { date: todayDate, type: getGarbage(todayDate, state.region) };
@@ -2223,20 +2234,16 @@ function renderHome() {
     let calendarContent = "";
 
     if (state.viewMode === 'week') {
-        // 週表示: viewDateが含まれる週の日曜〜土曜を計算
-        const day = vDate.getDay(); // 0(Sun) - 6(Sat)
+        const day = vDate.getDay(); 
         const startOfWeek = new Date(vDate);
-        startOfWeek.setDate(vDate.getDate() - day); // 日曜に合わせる
+        startOfWeek.setDate(vDate.getDate() - day); 
         
-        // タイトル生成 (例: 1月25日 - 1月31日)
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         calendarTitle = `${startOfWeek.getMonth()+1}/${startOfWeek.getDate()} - ${endOfWeek.getMonth()+1}/${endOfWeek.getDate()}`;
 
-        // データ取得 (7日分)
         const weeklyData = getScheduleRange(startOfWeek, 7);
 
-        // リストレンダリング (既存のデザインを踏襲)
         calendarContent = `
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
                  ${weeklyData.map(d => {
@@ -2265,41 +2272,26 @@ function renderHome() {
         `;
 
     } else {
-        // --- 月表示モード ---
         const year = vDate.getFullYear();
-        const month = vDate.getMonth(); // 0-11
-        
-        calendarTitle = `${year}.${month + 1}`; // Header Title
-
+        const month = vDate.getMonth(); 
+        calendarTitle = `${year}.${month + 1}`; 
         const firstDay = new Date(year, month, 1);
-        
-        // カレンダー開始日（最初のマスの日付）: 1日の曜日分だけ戻る
         const startDate = new Date(firstDay);
         startDate.setDate(1 - firstDay.getDay());
-
-        // グリッド生成
-        let gridHtml = "";
-        // 曜日ヘッダー
         const weeks = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         const weekHeader = weeks.map((w,i) => {
             const c = i===0 ? 'text-red-500' : (i===6 ? 'text-blue-500' : 'text-gray-400');
             return `<div class="text-[10px] font-bold text-center py-1 ${c}">${w}</div>`;
         }).join('');
 
-        // 日付セル生成
         let daysHtml = "";
-        // 5週間(35日)ループ
         const iterDate = new Date(startDate);
         for(let i=0; i<35; i++) {
             const isCurrentMonth = iterDate.getMonth() === month;
             const isToday = iterDate.toDateString() === todayDate.toDateString();
             const dType = getGarbage(iterDate, state.region);
             const colorClass = getDateColorClass(iterDate);
-            
-            // ★★★【ここが修正点！】IDではなく、表示用の名前をここで作る ★★★
             const tipLabel = (dType.id !== 'none') ? (dType.label[state.lang] || dType.label.ja) : '';
-
-            // 月外の日付は薄くする
             const opacity = isCurrentMonth ? 'opacity-100' : 'opacity-30 grayscale';
             const bgToday = isToday ? 'ring-2 ring-brand ring-inset rounded-lg' : '';
 
@@ -2328,6 +2320,44 @@ function renderHome() {
         `;
     }
 
+    // ▼ Sky-Link: 天気HTML生成 (Today & Tomorrow)
+    let weatherHtmlToday = '';
+    let weatherHtmlTmrw = '';
+
+    if (weatherData) {
+        // Today (Index 0)
+        const wToday = getWeatherInfo(weatherData[0].code);
+        const advToday = getWeatherAdvice(weatherData[0]);
+        weatherHtmlToday = `
+            <div class="absolute top-4 left-4 flex items-start gap-2 animate-fade-in">
+                <div class="flex flex-col items-center">
+                    <i class="fa-solid ${wToday.icon} text-white/90 text-2xl drop-shadow-md"></i>
+                    <span class="text-[10px] text-white/90 font-bold drop-shadow-md mt-1">${weatherData[0].rainProb}%</span>
+                </div>
+                <div class="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white font-bold border border-white/10">
+                    ${advToday.alert ? '<i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i>' : ''}
+                    ${advToday.text}
+                </div>
+            </div>
+        `;
+
+        // Tomorrow (Index 1)
+        const wTmrw = getWeatherInfo(weatherData[1].code);
+        const advTmrw = getWeatherAdvice(weatherData[1]);
+        weatherHtmlTmrw = `
+            <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 w-full flex justify-between items-center text-xs animate-fade-in">
+                <div class="flex items-center gap-1.5 ${wTmrw.color}">
+                    <i class="fa-solid ${wTmrw.icon}"></i>
+                    <span class="font-bold">${wTmrw.label}</span>
+                    <span class="text-gray-400 text-[10px]">(${weatherData[1].rainProb}%)</span>
+                </div>
+                 <div class="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                    ${advTmrw.text}
+                </div>
+            </div>
+        `;
+    }
+
     let html = `
         <div class="fade-in pb-4">
             <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-3 mb-6 flex items-start gap-3 rounded-r-lg">
@@ -2343,9 +2373,10 @@ function renderHome() {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div id="current-date-panel" class="relative overflow-hidden rounded-3xl shadow-xl ${todayData.type.color} text-white transition-transform active:scale-[0.98] md:col-span-1 cursor-pointer hover:opacity-90" 
                      onclick="resetCalendar(); showToast('今日に戻りました');">
+                    ${weatherHtmlToday}
+                    
                     <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
-                    <div class="p-6 relative z-10 flex flex-col items-center text-center h-full justify-center">
-                        <span class="text-sm font-bold opacity-80 mb-1 tracking-widest uppercase">${t('today')}</span>
+                    <div class="p-6 relative z-10 flex flex-col items-center text-center h-full justify-center pt-8"> <span class="text-sm font-bold opacity-80 mb-1 tracking-widest uppercase">${t('today')}</span>
                         <div class="flex items-center gap-2 py-2">
                             ${todayData.type.icon ? `<i class="fa-solid ${todayData.type.icon} text-3xl opacity-80"></i>` : ''}
                             <h2 class="text-4xl font-black leading-tight drop-shadow-md">${todayData.type.label[state.lang]||todayData.type.label.ja}</h2>
@@ -2359,6 +2390,7 @@ function renderHome() {
                         <span class="w-4 h-4 rounded-full ${tmrwData.type.color}"></span>
                         <span class="text-xl font-bold text-gray-800 dark:text-gray-200">${tmrwData.type.label[state.lang]||tmrwData.type.label.ja}</span>
                     </div>
+                    ${weatherHtmlTmrw}
                 </div>
             </div>
 
@@ -2407,9 +2439,9 @@ function renderHome() {
     `;
     main.innerHTML = html;
     
-    // 画面描画後にニュースを読みに行く
     setTimeout(loadNews, 0);
 }
+
 
 
       function renderSearch() {
@@ -3355,6 +3387,90 @@ END:VCALENDAR`;
             }, 1000);
         }
 
+// ----------------------------------------------------
+        // 🌤️ Sky-Link: Weather Integration (Open-Meteo)
+        // ----------------------------------------------------
+        
+        // 五島市（福江）の座標
+        const GOTO_COORDS = { lat: 32.696, long: 128.841 };
+
+        // 天気コード変換 (WMO Code -> Icon/Label)
+        function getWeatherInfo(code) {
+            // 0:快晴, 1-3:晴/曇, 45-48:霧, 51-67:雨, 71-77:雪, 80-82:夕立, 95-99:雷雨
+            if (code === 0) return { icon: 'fa-sun', label: '快晴', color: 'text-orange-500' };
+            if (code <= 3) return { icon: 'fa-cloud-sun', label: '晴れ/曇り', color: 'text-orange-400' };
+            if (code <= 48) return { icon: 'fa-smog', label: '霧', color: 'text-gray-400' };
+            if (code <= 67) return { icon: 'fa-umbrella', label: '雨', color: 'text-blue-500' };
+            if (code <= 77) return { icon: 'fa-snowflake', label: '雪', color: 'text-cyan-400' };
+            if (code <= 82) return { icon: 'fa-cloud-showers-heavy', label: '強い雨', color: 'text-blue-600' };
+            return { icon: 'fa-bolt', label: '雷雨', color: 'text-purple-500' };
+        }
+
+        // 天気データ取得とキャッシュ管理
+        async function fetchWeather() {
+            const CACHE_KEY = 'goto_weather_cache_v1';
+            const CACHE_DURATION = 60 * 60 * 1000; // 1時間
+
+            // 1. キャッシュチェック
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const data = JSON.parse(cached);
+                if (new Date().getTime() - data.timestamp < CACHE_DURATION) {
+                    return data.forecast;
+                }
+            }
+
+            // 2. API取得 (五島市福江)
+            // daily: 天気コード, 最高/最低気温, 降水確率, 最大風速
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${GOTO_COORDS.lat}&longitude=${GOTO_COORDS.long}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max&timezone=Asia%2FTokyo&forecast_days=3`;
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                
+                // 扱いやすい形に整形
+                const forecast = json.daily.time.map((t, i) => ({
+                    date: t,
+                    code: json.daily.weathercode[i],
+                    tempMax: Math.round(json.daily.temperature_2m_max[i]),
+                    tempMin: Math.round(json.daily.temperature_2m_min[i]),
+                    rainProb: json.daily.precipitation_probability_max[i],
+                    windSpeed: json.daily.windspeed_10m_max[i] // km/h
+                }));
+
+                // 3. 保存
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    timestamp: new Date().getTime(),
+                    forecast: forecast
+                }));
+
+                return forecast;
+
+            } catch (e) {
+                console.error("Weather fetch failed", e);
+                return null; // エラー時はnullを返してUI側で非表示にする
+            }
+        }
+
+        // ごみ出しアドバイス生成
+        function getWeatherAdvice(dayData) {
+            if (!dayData) return null;
+            
+            // 優先度1: 強風 (五島は風が強い)
+            // ボックスがあっても風で煽られる危険はあるので注意喚起のみ残します
+            if (dayData.windSpeed >= 20) {
+                return { text: "強風注意", icon: "fa-wind", alert: true };
+            }
+            // 優先度2: 雨 (40%以上または雨コード)
+            const isRainCode = (dayData.code >= 51 && dayData.code <= 67) || (dayData.code >= 80);
+            if (dayData.rainProb >= 40 || isRainCode) {
+                // 【修正】ネット不要のため、足元の安全への配慮に変更
+                return { text: "雨: 足元注意", icon: "fa-umbrella", alert: false };
+            }
+            
+            // 何もなければ気温表示
+            return { text: `${dayData.tempMin}°C / ${dayData.tempMax}°C`, icon: "fa-temperature-half", alert: false };
+        }
 
 
     </script>
