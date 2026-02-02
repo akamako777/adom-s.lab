@@ -116,10 +116,12 @@
                 <span class="sm:hidden">Gomi-Navi</span>
             </h1>
            <div class="flex items-center gap-2">
-                <a href="https://gemini.google.com/gem/15Gkw-McQdmGYmMBgRJXyruIjhGoZBBOT?usp=sharing" target="_blank" rel="noopener noreferrer" 
-                   class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center group" title="AI写真相談">
-                    <i class="fa-solid fa-wand-magic-sparkles group-hover:animate-sparkle"></i>
-                </a>
+                <button onclick="showGeminiConsent()" 
+                   class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center group relative overflow-hidden" title="AI写真相談">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white group-hover:animate-sparkle drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12,2 L14.5,9.5 L22,12 L14.5,14.5 L12,22 L9.5,14.5 L2,12 L9.5,9.5 Z" />
+                    </svg>
+                </button>
 
                 <button onclick="toggleTheme()" class="bg-white/20 hover:bg-white/30 text-white w-8 h-8 rounded-full transition flex items-center justify-center" title="テーマ切替">
                     <i id="theme-icon" class="fa-solid fa-moon"></i>
@@ -144,6 +146,7 @@
                 </button>
             </div>
         </header>
+
 
         <main id="main-content" class="flex-1 overflow-y-auto overflow-x-hidden p-4 relative scroll-smooth pb-24 w-full">
             </main>
@@ -194,6 +197,9 @@
          * - Data: Fact-checked against Source [1-282]
          */
         
+// 🖥️ System Signature
+console.log("%c GOTO GOMI-NAVI Ver 5.4 %c Developed by Adom's Lab ", "background:#22c55e; color:white; padding:4px; border-radius:4px; font-weight:bold;", "color:#22c55e; font-weight:bold;");
+
 // --- 🔑 API Key (Canvas Privilege) ---
 const apiKey = ""; 
 // ▼ GAS URL (Step 1で取得したURLをここに貼る) ▼
@@ -202,6 +208,9 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
 
         // ▼ 追加: お知らせ配信システム (GAS) ▼
         const NEWS_API = "https://script.google.com/macros/s/AKfycbw-7WJ27aQHW6mbxRNcgjyIZUIayslCdxbLIcjgYiPU8bNWHhY7z5IuYzqskMz50wKI-g/exec";
+
+
+const GEMINI_LINK = "https://gemini.google.com/gem/15Gkw-McQdmGYmMBgRJXyruIjhGoZBBOT?usp=sharing"; // 💎 Link
 
 
 // --- 1. CONSTANTS: Colors & Types五島市のリンク入り ---
@@ -1382,8 +1391,6 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
         ];
 
 
-
-
     // --- 5. DATA: Translations (Updated for Calendar) ---
         const LANGS = { ja: "日本語", en: "English", es: "Español", zh: "繁體中文", my: "မြန်မာ", vi: "Tiếng Việt" };
         const TRANSLATIONS = {
@@ -1748,6 +1755,7 @@ const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIO
                 renderHome();
                 // ▼ 追加: 裏でこっそり相談受付中か確認して、ONなら点滅させる ▼
                 syncIndicator();
+	updateNavLabels(); // ★これを追加
             }
         }
 
@@ -2211,6 +2219,20 @@ function showNgModal() {
         }
 
 async function renderHome() {
+
+// ▼ Local Dictionary for Home UI (Updated with Calendar Terms) ▼
+    const HOME_TXT = {
+        ja: { news: "市からのお知らせ", copyBtn: "この予定のパターンをコピーする", copyNote: "※コピーしたテキストをGeminiやChatGPT等に貼り付けてください", week: "週", month: "月" },
+        en: { news: "City News", copyBtn: "Copy Pattern", copyNote: "*Paste to Gemini/ChatGPT", week: "Wk", month: "Mo" },
+        es: { news: "Noticias", copyBtn: "Copiar patrón", copyNote: "*Pegar en Gemini/ChatGPT", week: "Sem", month: "Mes" },
+        zh: { news: "市政通知", copyBtn: "複製行程", copyNote: "※請貼上至 Gemini/ChatGPT", week: "週", month: "月" },
+        my: { news: "မြို့တော်သတင်း", copyBtn: "အချိန်ဇယားကူးရန်", copyNote: "*Gemini/ChatGPT တွင်ထည့်ပါ", week: "အပတ်", month: "လ" },
+        vi: { news: "Tin tức", copyBtn: "Sao chép mẫu", copyNote: "*Dán vào Gemini/ChatGPT", week: "Tuần", month: "Tháng" }
+    };
+    const ht = HOME_TXT[state.lang] || HOME_TXT.ja;
+    // ▲ End Dictionary ▲
+
+
     // ▼ Sky-Link: 天気データの読み込み (非同期)
     let weatherData = null;
     try {
@@ -2408,33 +2430,37 @@ async function renderHome() {
                 </div>
 
                 <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
-                    <button onclick="switchCalendarMode('week')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='week' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">週</button>
-                    <button onclick="switchCalendarMode('month')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='month' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">月</button>
+                    <button onclick="switchCalendarMode('week')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='week' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">${ht.week}</button>
+                    <button onclick="switchCalendarMode('month')" class="px-3 py-1 text-xs font-bold rounded-md transition-all ${state.viewMode==='month' ? 'bg-white dark:bg-gray-600 text-brand shadow-sm' : 'text-gray-500 dark:text-gray-400'}">${ht.month}</button>
                 </div>
+
             </div>
 
            ${calendarContent}
 
             <div class="mt-8 mb-4">
+              <div class="mt-8 mb-4">
                 <div class="flex items-center gap-2 mb-3 px-1">
                     <i class="fa-solid fa-bullhorn text-brand"></i>
-                    <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">市からのお知らせ</h3>
+                    <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">${ht.news}</h3>
                 </div>
                 <div id="news-feed" class="min-h-[100px]">
+
                     <div class="flex justify-center py-6">
                         <i class="fa-solid fa-circle-notch fa-spin text-gray-300"></i>
                     </div>
                 </div>
             </div>
        
-            <div class="text-center mt-8 pb-8">
-                 <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1 rounded-full hover:bg-brand/20 transition-colors">
-                    <i class="fa-solid fa-copy mr-1"></i> この予定のパターンをコピーする
+           <div class="text-center mt-8 pb-8">
+                 <button onclick="copyScheduleForAI()" class="text-[10px] text-brand font-bold bg-brand/10 px-3 py-1.5 rounded-full hover:bg-brand/20 transition-colors active:scale-95">
+                    <i class="fa-solid fa-copy mr-1"></i> ${ht.copyBtn}
                 </button>
                 <div class="text-[10px] text-gray-400 mt-2 scale-90">
-                    ※コピーしたテキストをGeminiやChatGPT等に貼り付けてください
+                    ${ht.copyNote}
                 </div>
             </div>
+
         </div>
     `;
     main.innerHTML = html;
@@ -2660,6 +2686,18 @@ async function renderHome() {
 
 
       function renderSettings() {
+// ▼ Local Dictionary for Settings UI ▼
+    const SET_TXT = {
+        ja: { undoMsg: "間違えて登録した場合や、予定を消したい場合", undoBtn: "カレンダーから削除する (解除用)" },
+        en: { undoMsg: "Mistake or want to delete?", undoBtn: "Remove from Calendar (Undo)" },
+        es: { undoMsg: "¿Error o desea eliminar?", undoBtn: "Eliminar del calendario (Deshacer)" },
+        zh: { undoMsg: "如果註冊錯誤或想刪除", undoBtn: "從行事曆刪除 (解除用)" },
+        my: { undoMsg: "မှားယွင်းထည့်သွင်းမိပါက (သို့) ဖျက်လိုပါက", undoBtn: "ပြက္ခဒိန်မှဖယ်ရှားမည် (Undo)" },
+        vi: { undoMsg: "Nếu nhầm hoặc muốn xóa", undoBtn: "Xóa khỏi lịch (Hoàn tác)" }
+    };
+    const st = SET_TXT[state.lang] || SET_TXT.ja;
+    // ▲ End Dictionary ▲
+
             main.innerHTML = `
                 <div class="fade-in space-y-6 max-w-lg mx-auto pb-10">
                     <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">${t('nav_settings')}</h2>
@@ -2707,11 +2745,12 @@ async function renderHome() {
                             <hr class="border-gray-100 dark:border-gray-700 my-2">
 
                             <div class="text-center">
-                                <p class="text-[10px] text-gray-400 mb-2">間違えて登録した場合や、予定を消したい場合</p>
-                                <button onclick="showCancelMenu()" class="text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-full transition-colors border border-red-100 dark:border-red-900">
-                                    <i class="fa-solid fa-trash-can mr-1"></i> カレンダーから削除する (解除用)
+                                <p class="text-[10px] text-gray-400 mb-2">${st.undoMsg}</p>
+                                <button onclick="showCancelMenu()" class="text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-full transition-colors border border-red-100 dark:border-red-900 active:scale-95">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> ${st.undoBtn}
                                 </button>
                             </div>
+
                         </div>
                     </div>
 
@@ -2719,8 +2758,15 @@ async function renderHome() {
                         ${t('settings_reset')}
                     </button>
 
-                    <div class="text-center text-xs text-gray-300 pt-8 font-mono">
+                    <div class="text-center mt-6">
+                        <button onclick="showPrivacyPolicy()" class="text-xs text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors">
+                            プライバシーポリシー (Privacy Policy)
+                        </button>
+		<span class="text-gray-300">|</span> <button onclick="showCredits()" class="text-[10px] text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors"> ライセンス・謝辞 </button>
+                    </div>
+                    <div class="text-center text-xs text-gray-300 pt-4 font-mono">
                         GOTO GOMI-NAVI Ver 5.4<br>
+
                         Aurora Architecture
                     </div>
                 </div>
@@ -2758,6 +2804,7 @@ async function renderHome() {
             state.lang = l;
             save();
             renderSettings();
+	updateNavLabels(); // ★これを追加
             navTo('settings');
         }
 
@@ -2937,6 +2984,307 @@ function showIconTip(e, labelText) {
         }
 
 
+// --- Gemini Gate (Safety Modal: Multi-Language Edition) ---
+        function showGeminiConsent() {
+            // このモーダル専用の翻訳辞書 (Capsulated i18n)
+            const TXT = {
+                ja: {
+                    title: "AIごみ分別相談",
+                    head: "「これ、何ゴミ？」",
+                    desc: "判断に迷うゴミの写真を撮って送るだけ。<br>五島市専用のAI (Gemini) が分別をサポートします！",
+                    hintTitle: "ご利用のヒント",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>【Proモード推奨】</span>より正確な回答が得られます。",
+                    hint2: "個人情報（顔や名前）は写さないようご注意ください。",
+                    hint3: "会話データはGoogleの規約に基づいて処理されます。",
+                    btnCancel: "キャンセル",
+                    btnGo: "AIに写真で聞く"
+                },
+                en: {
+                    title: "AI Waste Sorting Help",
+                    head: "What trash is this?",
+                    desc: "Just take a photo of the item.<br>Goto City's AI (Gemini) will help you sort it!",
+                    hintTitle: "Usage Hints",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> Recommended for better accuracy.",
+                    hint2: "Please avoid including faces or names in the photo.",
+                    hint3: "Data is processed based on Google's terms.",
+                    btnCancel: "Cancel",
+                    btnGo: "Ask AI with Photo"
+                },
+                es: {
+                    title: "Consulta con IA",
+                    head: "¿Qué basura es?",
+                    desc: "Simplemente tome una foto.<br>¡La IA de Goto (Gemini) le ayudará a clasificarla!",
+                    hintTitle: "Consejos",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Modo Pro]</span> Recomendado para mayor precisión.",
+                    hint2: "Evite incluir caras o nombres en la foto.",
+                    hint3: "Los datos se procesan según los términos de Google.",
+                    btnCancel: "Cancelar",
+                    btnGo: "Preguntar con foto"
+                },
+                zh: {
+                    title: "AI 垃圾分類諮詢",
+                    head: "這是什麼垃圾？",
+                    desc: "只需拍照上傳。<br>五島市專用 AI (Gemini) 將協助您分類！",
+                    hintTitle: "使用提示",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>【推薦 Pro 模式】</span>可獲得更準確的回答。",
+                    hint2: "請勿拍攝臉部或姓名等個人資訊。",
+                    hint3: "對話數據將根據 Google 條款處理。",
+                    btnCancel: "取消",
+                    btnGo: "拍照詢問 AI"
+                },
+                my: {
+                    title: "AI အမှိုက်ခွဲခြင်း",
+                    head: "ဒါ ဘာအမှိုက်လဲ။",
+                    desc: "ဓာတ်ပုံရိုက်ပြီး ပို့လိုက်ရုံပါပဲ။<br>Goto City AI (Gemini) က ကူညီပါလိမ့်မယ်။",
+                    hintTitle: "အကြံပြုချက်",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> ပိုမိုတိကျသော အဖြေများရနိုင်သည်",
+                    hint2: "မျက်နှာနှင့် အမည်များ မပါဝင်ပါစေနှင့်။",
+                    hint3: "Google ၏ စည်းကမ်းချက်များနှင့်အညီ ဆောင်ရွက်ပါသည်။",
+                    btnCancel: "မလုပ်ပါ",
+                    btnGo: "ဓာတ်ပုံဖြင့်မေးမည်"
+                },
+                vi: {
+                    title: "Tư vấn rác AI",
+                    head: "Đây là rác gì?",
+                    desc: "Chỉ cần chụp ảnh.<br>AI của Goto (Gemini) sẽ giúp bạn phân loại!",
+                    hintTitle: "Mẹo sử dụng",
+                    hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> Khuyên dùng để chính xác hơn.",
+                    hint2: "Tránh chụp khuôn mặt hoặc tên riêng.",
+                    hint3: "Dữ liệu được xử lý theo điều khoản Google.",
+                    btnCancel: "Hủy",
+                    btnGo: "Hỏi AI bằng ảnh"
+                }
+            };
+
+            // 現在の言語設定を取得（未定義なら日本語）
+            const t = TXT[state.lang] || TXT.ja;
+
+            showModal(
+                // ヘッダー
+                `<div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> ${t.title}
+                </div>`,
+                
+                // 本文
+                `<div class="space-y-4 text-left">
+                    <div class="text-center py-2">
+                        <p class="font-bold text-gray-800 dark:text-white text-base mb-2">
+                            ${t.head}
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                            ${t.desc}
+                        </p>
+                    </div>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                        <div class="flex items-center gap-2 mb-2">
+                             <i class="fa-solid fa-circle-check text-indigo-500"></i>
+                             <h4 class="font-bold text-sm text-indigo-800 dark:text-indigo-200">${t.hintTitle}</h4>
+                        </div>
+                        <ul class="text-xs text-gray-600 dark:text-gray-300 space-y-2 list-disc list-inside">
+                            <li>${t.hint1}</li>
+                            <li>${t.hint2}</li>
+                            <li>${t.hint3}</li>
+                        </ul>
+                    </div>
+                </div>`,
+
+                // ボタンエリア
+                `<button onclick="closeModal()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-bold text-xs text-gray-500 hover:bg-gray-200 transition-colors">${t.btnCancel}</button>
+                 <a href="${GEMINI_LINK}" target="_blank" rel="noopener noreferrer" onclick="closeModal()" 
+                    class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 hover:opacity-90">
+                    <i class="fa-solid fa-camera"></i> ${t.btnGo}
+                 </a>`
+            );
+        }
+
+// --- Navigation Bar Localization ---
+        function updateNavLabels() {
+            // 省スペース最適化された翻訳
+            const NAV_TXT = {
+                ja: ["ホーム", "分別検索", "ガイド", "設定"],
+                en: ["Home", "Search", "Guide", "Set."],    // Settings -> Set.
+                es: ["Inicio", "Buscar", "Guía", "Conf."],   // Configuración -> Conf.
+                zh: ["首頁", "搜尋", "指南", "設定"],
+                my: ["အိမ်", "ရှာဖွေ", "လမ်းညွှန်", "ပြင်ဆင်"], // 短縮表現
+                vi: ["Home", "Tìm kiếm", "Guide", "Cài đặt"] // Home/Guideは英語のままの方が短く直感的
+            };
+            const labels = NAV_TXT[state.lang] || NAV_TXT.ja;
+            
+            // ナビボタンのテキストを一括更新
+            const spans = document.querySelectorAll('nav .nav-btn span');
+            if(spans.length >= 4) {
+                spans[0].innerText = labels[0];
+                spans[1].innerText = labels[1];
+                spans[2].innerText = labels[2];
+                spans[3].innerText = labels[3];
+            }
+        }
+
+// --- Privacy Policy Modal (Multi-Language & Future Proof) ---
+        function showPrivacyPolicy() {
+            // ▼ 五島市公式版へ移行時の修正ポイントメモ ▼
+            // 1. "Adom's Lab" -> "五島市 (Goto City)" へ変更
+            // 2. "当ラボ (This Lab)" -> "本市 (This City)" へ変更
+            // 3. 第3条の免責事項から「試験的に提供」の文言を削除
+            
+            const TXT = {
+                ja: {
+                    title: "プライバシーポリシー",
+                    intro: "Adom's Lab（以下「当ラボ」）は、本アプリにおける利用者情報の取り扱いについて、以下の通り定めます。",
+                    h1: "1. 取得する情報とその利用目的",
+                    li1: "<strong>地域設定・利用設定:</strong> 利用者のブラウザ内 (LocalStorage) にのみ保存され、外部サーバーへは送信されません。",
+                    li2: "<strong>位置情報 (GPS):</strong> 「オペレーター相談」機能利用時のみ取得します。五島市内からのアクセス確認のために利用され、保存はされません。",
+                    li3: "<strong>画像データ:</strong> 「オペレーター相談」で撮影された画像は、五島市役所への状況伝達のためにGoogleサーバーを経由して送信されます。",
+                    h2: "2. 外部サービスの利用",
+                    p2: "本アプリは以下の第三者サービスを利用しています。",
+                    h3: "3. 免責事項",
+                    p3: "本アプリは五島市の分別区分に基づき開発されていますが、現状においてAdom's Labが試験的に提供するものであり、将来的に運営主体が変更される場合があります。",
+                    btn: "閉じる"
+                },
+                en: {
+                    title: "Privacy Policy",
+                    intro: "Adom's Lab (hereinafter \"the Lab\") sets forth the handling of user information in this app as follows.",
+                    h1: "1. Information Collection & Purpose",
+                    li1: "<strong>Settings:</strong> Saved only in your browser (LocalStorage). Not sent to external servers.",
+                    li2: "<strong>Location (GPS):</strong> Used only for 'Operator Consultation' to verify access from Goto City. Not saved.",
+                    li3: "<strong>Images:</strong> Photos taken for 'Operator Consultation' are sent via Google servers to notify City Hall.",
+                    h2: "2. External Services",
+                    p2: "This app uses: Google Gemini, Google Apps Script, Open-Meteo.",
+                    h3: "3. Disclaimer",
+                    p3: "Developed based on Goto City rules, but currently provided experimentally by Adom's Lab. The operator may change in the future.",
+                    btn: "Close"
+                },
+                es: {
+                    title: "Política de Privacidad",
+                    intro: "Adom's Lab establece el manejo de la información del usuario de la siguiente manera.",
+                    h1: "1. Recopilación y Uso",
+                    li1: "<strong>Ajustes:</strong> Se guardan solo en su navegador. No se envían a servidores externos.",
+                    li2: "<strong>GPS:</strong> Se usa solo para 'Consulta con Operador' para verificar acceso desde Goto. No se guarda.",
+                    li3: "<strong>Imágenes:</strong> Las fotos de consulta se envían a través de servidores de Google al Ayuntamiento.",
+                    h2: "2. Servicios Externos",
+                    p2: "Usa: Google Gemini, Google Apps Script, Open-Meteo.",
+                    h3: "3. Descargo de responsabilidad",
+                    p3: "Desarrollado según reglas de Goto, pero provisto experimentalmente por Adom's Lab.",
+                    btn: "Cerrar"
+                },
+                zh: {
+                    title: "隱私權政策",
+                    intro: "Adom's Lab（以下稱「本實驗室」）針對本應用程式的使用者資訊處理規定如下。",
+                    h1: "1. 資訊取得與用途",
+                    li1: "<strong>設定資訊:</strong> 僅儲存於您的瀏覽器 (LocalStorage)，不會傳送至外部伺服器。",
+                    li2: "<strong>位置資訊 (GPS):</strong> 僅於「接線員諮詢」時使用，確認是否從五島市內存取。不會儲存。",
+                    li3: "<strong>影像資料:</strong> 諮詢時拍攝的照片將經由 Google 伺服器傳送至市公所。",
+                    h2: "2. 外部服務",
+                    p2: "本應用程式使用：Google Gemini, Google Apps Script, Open-Meteo。",
+                    h3: "3. 免責聲明",
+                    p3: "本應用程式依據五島市規則開發，但目前由 Adom's Lab 實驗性提供。",
+                    btn: "關閉"
+                },
+                my: {
+                    title: "ကိုယ်ရေးအချက်အလက်မူဝါဒ",
+                    intro: "Adom's Lab သည် အသုံးပြုသူအချက်အလက်များကို အောက်ပါအတိုင်း စီမံခန့်ခွဲပါသည်။",
+                    h1: "1. သတင်းအချက်အလက် ရယူခြင်း",
+                    li1: "<strong>ဆက်တင်များ:</strong> သင့်ဖုန်းတွင်သာ သိမ်းဆည်းထားသည်။ ပြင်ပဆာဗာသို့ မပို့ပါ။",
+                    li2: "<strong>GPS:</strong> 'အော်ပရေတာနှင့်တိုင်ပင်ရန်' အတွက်သာ အသုံးပြုသည်။ သိမ်းဆည်းထားခြင်းမရှိပါ။",
+                    li3: "<strong>ဓာတ်ပုံများ:</strong> မြို့တော်ခန်းမသို့ အကြောင်းကြားရန် Google ဆာဗာမှတဆင့် ပေးပို့ပါသည်။",
+                    h2: "2. ပြင်ပဝန်ဆောင်မှုများ",
+                    p2: "အသုံးပြုသည်- Google Gemini, Google Apps Script, Open-Meteo",
+                    h3: "3. ရှင်းလင်းချက်",
+                    p3: "Goto City စည်းမျဉ်းများအပေါ် အခြေခံထားသော်လည်း Adom's Lab မှ စမ်းသပ် ဝန်ဆောင်မှုပေးနေသည်။",
+                    btn: "ပိတ်မည်"
+                },
+                vi: {
+                    title: "Chính sách bảo mật",
+                    intro: "Adom's Lab quy định việc xử lý thông tin người dùng như sau.",
+                    h1: "1. Thu thập thông tin",
+                    li1: "<strong>Cài đặt:</strong> Chỉ lưu trong trình duyệt của bạn. Không gửi đến máy chủ bên ngoài.",
+                    li2: "<strong>Vị trí (GPS):</strong> Chỉ dùng cho 'Tư vấn tổng đài' để xác thực truy cập từ Goto. Không lưu.",
+                    li3: "<strong>Hình ảnh:</strong> Ảnh chụp tư vấn được gửi qua máy chủ Google đến Tòa thị chính.",
+                    h2: "2. Dịch vụ bên ngoài",
+                    p2: "Sử dụng: Google Gemini, Google Apps Script, Open-Meteo.",
+                    h3: "3. Miễn trừ trách nhiệm",
+                    p3: "Phát triển dựa trên quy định Goto, nhưng hiện được Adom's Lab cung cấp thử nghiệm.",
+                    btn: "Đóng"
+                }
+            };
+            
+            const t = TXT[state.lang] || TXT.ja;
+
+            showModal(
+                `<i class="fa-solid fa-shield-halved text-brand"></i> ${t.title}`,
+                `<div class="text-left space-y-4 text-xs text-gray-600 dark:text-gray-300 leading-relaxed max-h-[60vh] overflow-y-auto pr-2">
+                    <p class="font-bold">${t.intro}</p>
+                    
+                    <h4 class="font-bold text-gray-800 dark:text-gray-100 mt-3">${t.h1}</h4>
+                    <ul class="list-disc list-inside pl-2 space-y-1">
+                        <li>${t.li1}</li>
+                        <li>${t.li2}</li>
+                        <li>${t.li3}</li>
+                    </ul>
+
+                    <h4 class="font-bold text-gray-800 dark:text-gray-100 mt-3">${t.h2}</h4>
+                    <p>${t.p2}</p>
+                    <ul class="list-disc list-inside pl-2 text-[10px] text-gray-400">
+                        <li>Google Gemini / Google Apps Script / Open-Meteo</li>
+                    </ul>
+
+                    <h4 class="font-bold text-gray-800 dark:text-gray-100 mt-3">${t.h3}</h4>
+                    <p>${t.p3}</p>
+                </div>`,
+                `<button onclick="closeModal()" class="w-full bg-brand text-white py-2 rounded-lg font-bold shadow-sm">${t.btn}</button>`
+            );
+        }
+
+        // --- Credits & License Modal ---
+        function showCredits() {
+            const TXT = {
+                ja: { title: "ライセンス・謝辞", data: "データ保存について", dataDesc: "本アプリは設定をブラウザ内に保存します。ブラウザの「履歴/キャッシュ削除」を行うと、設定が初期化されますのでご注意ください。", weather: "天気予報データ", lib: "使用ライブラリ" },
+                en: { title: "Credits & License", data: "Data Storage", dataDesc: "Settings are saved in your browser. Clearing browser cache/history will reset your settings.", weather: "Weather Data", lib: "Libraries" },
+                es: { title: "Créditos y Licencia", data: "Almacenamiento", dataDesc: "Los ajustes se guardan en el navegador. Borrar la caché restablecerá la configuración.", weather: "Datos del tiempo", lib: "Bibliotecas" },
+                zh: { title: "授權與致謝", data: "關於數據儲存", dataDesc: "設定儲存於瀏覽器中。清除瀏覽器快取將會重置設定，敬請注意。", weather: "天氣數據", lib: "使用函式庫" },
+                my: { title: "ခရက်ဒစ်များ", data: "အချက်အလက်သိမ်းဆည်းခြင်း", dataDesc: "Browser တွင်သိမ်းဆည်းသည်။ Cache ရှင်းပါက ပျက်သွားမည်။", weather: "မိုးလေဝသ", lib: "စာကြည့်တိုက်များ" },
+                vi: { title: "Tín dụng & Giấy phép", data: "Lưu trữ dữ liệu", dataDesc: "Cài đặt lưu trong trình duyệt. Xóa bộ nhớ đệm sẽ đặt lại cài đặt.", weather: "Dữ liệu thời tiết", lib: "Thư viện" }
+            };
+            const t = TXT[state.lang] || TXT.ja;
+
+            showModal(
+                `<i class="fa-solid fa-file-contract text-brand"></i> ${t.title}`,
+                `<div class="text-left space-y-4 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                    
+                    <div class="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border border-orange-100 dark:border-orange-800">
+                        <h4 class="font-bold text-orange-600 dark:text-orange-400 mb-1">
+                            <i class="fa-solid fa-database mr-1"></i> ${t.data}
+                        </h4>
+                        <p class="text-[10px]">${t.dataDesc}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-gray-100 mb-1">${t.weather}</h4>
+                        <a href="https://open-meteo.com/" target="_blank" class="text-brand hover:underline">
+                            Weather data by Open-Meteo.com
+                        </a>
+                        <p class="text-[10px] text-gray-400 mt-1">(CC BY 4.0 License)</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-gray-100 mb-1">${t.lib}</h4>
+                        <ul class="list-disc list-inside space-y-1 text-[10px]">
+                            <li>FontAwesome Free (Icons)</li>
+                            <li>Tailwind CSS (Styling)</li>
+                            <li>Google Fonts (Noto Sans JP)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-2 text-[10px] text-gray-400 text-center border-t dark:border-gray-700">
+                        &copy; 2025-2027 Goto Gomi-Navi Project
+                    </div>
+                </div>`,
+                `<button onclick="closeModal()" class="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 rounded-lg font-bold text-xs">OK</button>`
+            );
+        }
+
+
         // --- BOOT ---
         document.addEventListener('DOMContentLoaded', init);
         
@@ -2983,21 +3331,36 @@ const GOTO_BARRIER = {
 };
 
 // 1. セッション開始（ここはAdomさんの元のコードのまま！）
-async function startCamSession() {
-    showModal("オペレーター相談", 
+// --- 🛡️ Operator Gate (Multi-Language) ---
+function startCamSession() {
+    // 1. このモーダル専用の辞書
+    const TXT = {
+        ja: { title: "オペレーター相談", q: "職員と通話中ですか？", note: "この機能は、五島市役所の職員と電話がつながっている時のみ利用できます。", alert: "位置情報 (GPS) を確認します。「許可」を押してください。", btnNo: "いいえ", btnYes: "はい (通話中)" },
+        en: { title: "Operator Consultation", q: "Are you talking to staff?", note: "Only available when on the phone with Goto City Hall staff.", alert: "Checking GPS. Please allow access.", btnNo: "No", btnYes: "Yes (On Phone)" },
+        es: { title: "Consulta con operador", q: "¿Está hablando con el personal?", note: "Solo disponible durante una llamada con el personal del ayuntamiento.", alert: "Comprobando GPS. Permita el acceso.", btnNo: "No", btnYes: "Sí (En llamada)" },
+        zh: { title: "接線員諮詢", q: "您正在與職員通話嗎？", note: "此功能僅限於與五島市政府職員通話時使用。", alert: "正在確認 GPS 位置。請點擊「允許」。", btnNo: "取消", btnYes: "是 (通話中)" },
+        my: { title: "အော်ပရေတာနှင့်တိုင်ပင်ရန်", q: "ဝန်ထမ်းနှင့် ဖုန်းပြောနေပါသလား", note: "မြို့တော်ခန်းမဝန်ထမ်းများနှင့် ဖုန်းပြောနေချိန်မှသာ ရရှိနိုင်သည်။", alert: "GPS စစ်ဆေးနေသည်။ ကျေးဇူးပြု၍ ခွင့်ပြုပေးပါ။", btnNo: "မဟုတ်ပါ", btnYes: "ဟုတ်ကဲ့" },
+        vi: { title: "Tư vấn tổng đài", q: "Bạn đang gọi điện với nhân viên?", note: "Chỉ khả dụng khi đang gọi điện với nhân viên tòa thị chính.", alert: "Đang kiểm tra GPS. Vui lòng cho phép.", btnNo: "Không", btnYes: "Có (Đang gọi)" }
+    };
+    const t = TXT[state.lang] || TXT.ja;
+
+    // 2. モーダル表示
+    showModal(
+        t.title, 
         `<div class="text-center space-y-4">
-            <div class="text-4xl">👩‍💻</div>
-            <p class="font-bold text-gray-800 dark:text-white">職員と通話中ですか？</p>
-            <p class="text-xs text-gray-500">この機能は、五島市役所の職員と電話がつながっている時のみ利用できます。</p>
-            <div class="bg-yellow-50 p-3 rounded text-left text-xs text-yellow-800 border border-yellow-200">
+            <div class="text-4xl animate-pulse">👩‍💻</div>
+            <p class="font-bold text-gray-800 dark:text-white">${t.q}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${t.note}</p>
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded text-left text-xs text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">
                 <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                位置情報（GPS）を確認します。「許可」を押してください。
+                ${t.alert}
             </div>
          </div>`,
-        `<button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm font-bold">いいえ</button>
-         <button onclick="closeModal(); verifyLocation();" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg">はい（通話中）</button>`
+        `<button onclick="closeModal()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm font-bold text-gray-600 dark:text-gray-300">${t.btnNo}</button>
+         <button onclick="closeModal(); verifyLocation();" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition-transform">${t.btnYes}</button>`
     );
 }
+
 
 // 2. 位置情報チェック（ここを屋内対策版にパワーアップ）
 function verifyLocation() {
