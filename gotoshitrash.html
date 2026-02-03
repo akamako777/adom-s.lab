@@ -2342,43 +2342,59 @@ async function renderHome() {
         `;
     }
 
-    // ▼ Sky-Link: 天気HTML生成 (Today & Tomorrow)
+  // ▼ Sky-Link: 天気HTML生成 (Today & Tomorrow)
     let weatherHtmlToday = '';
     let weatherHtmlTmrw = '';
 
     if (weatherData) {
-        // Today (Index 0)
-        const wToday = getWeatherInfo(weatherData[0].code);
-        const advToday = getWeatherAdvice(weatherData[0]);
-        weatherHtmlToday = `
-            <div class="absolute top-4 left-4 flex items-start gap-2 animate-fade-in">
-                <div class="flex flex-col items-center">
-                    <i class="fa-solid ${wToday.icon} text-white/90 text-2xl drop-shadow-md"></i>
-                    <span class="text-[10px] text-white/90 font-bold drop-shadow-md mt-1">${weatherData[0].rainProb}%</span>
-                </div>
-                <div class="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white font-bold border border-white/10">
-                    ${advToday.alert ? '<i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i>' : ''}
-                    ${advToday.text}
-                </div>
-            </div>
-        `;
+        // ★修正: 日付マッチングでデータを特定
+        // 元のコードにある 'now' を使用して今日の日付文字列を作る
+        const y = now.getFullYear();
+        const m = ('0' + (now.getMonth() + 1)).slice(-2);
+        const d = ('0' + now.getDate()).slice(-2);
+        const todayStr = `${y}-${m}-${d}`;
 
-        // Tomorrow (Index 1)
-        const wTmrw = getWeatherInfo(weatherData[1].code);
-        const advTmrw = getWeatherAdvice(weatherData[1]);
-        weatherHtmlTmrw = `
-            <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 w-full flex justify-between items-center text-xs animate-fade-in">
-                <div class="flex items-center gap-1.5 ${wTmrw.color}">
-                    <i class="fa-solid ${wTmrw.icon}"></i>
-                    <span class="font-bold">${wTmrw.label}</span>
-                    <span class="text-gray-400 text-[10px]">(${weatherData[1].rainProb}%)</span>
+        // 配列の中から「今日の日付」を持つデータを探す
+        const idx = weatherData.findIndex(w => w.date === todayStr);
+
+        // 今日 (データが見つかった場合のみ生成)
+        if (idx >= 0) {
+            const wToday = getWeatherInfo(weatherData[idx].code);
+            const advToday = getWeatherAdvice(weatherData[idx]);
+            weatherHtmlToday = `
+                <div class="absolute top-4 left-4 flex items-start gap-2 animate-fade-in">
+                    <div class="flex flex-col items-center">
+                        <i class="fa-solid ${wToday.icon} text-white/90 text-2xl drop-shadow-md"></i>
+                        <span class="text-[10px] text-white/90 font-bold drop-shadow-md mt-1">${weatherData[idx].rainProb}%</span>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white font-bold border border-white/10">
+                        ${advToday.alert ? '<i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i>' : ''}
+                        ${advToday.text}
+                    </div>
                 </div>
-                 <div class="text-[10px] font-bold text-gray-500 dark:text-gray-400">
-                    ${advTmrw.text}
+            `;
+        }
+
+        // 明日 (今日の次のデータが存在する場合のみ生成)
+        if (idx >= 0 && weatherData[idx + 1]) {
+            const wTmrw = getWeatherInfo(weatherData[idx + 1].code);
+            const advTmrw = getWeatherAdvice(weatherData[idx + 1]);
+            weatherHtmlTmrw = `
+                <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 w-full flex justify-between items-center text-xs animate-fade-in">
+                    <div class="flex items-center gap-1.5 ${wTmrw.color}">
+                        <i class="fa-solid ${wTmrw.icon}"></i>
+                        <span class="font-bold">${wTmrw.label}</span>
+                        <span class="text-gray-400 text-[10px]">(${weatherData[idx + 1].rainProb}%)</span>
+                    </div>
+                    <div class="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                        ${advTmrw.text}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
+
+
 
     let html = `
         <div class="fade-in pb-4">
