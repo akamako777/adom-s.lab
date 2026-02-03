@@ -2349,9 +2349,10 @@ async function renderHome() {
     if (weatherData) {
         // ★修正: 日付マッチングでデータを特定
         // 元のコードにある 'now' を使用して今日の日付文字列を作る
-        const y = now.getFullYear();
-        const m = ('0' + (now.getMonth() + 1)).slice(-2);
-        const d = ('0' + now.getDate()).slice(-2);
+const y = todayDate.getFullYear();
+const m = ('0' + (todayDate.getMonth() + 1)).slice(-2);
+const d = ('0' + todayDate.getDate()).slice(-2);
+
         const todayStr = `${y}-${m}-${d}`;
 
         // 配列の中から「今日の日付」を持つデータを探す
@@ -3865,4 +3866,3 @@ END:VCALENDAR`;
 </script>
 </body>
 </html>
-
