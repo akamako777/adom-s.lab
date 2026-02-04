@@ -1041,7 +1041,8 @@ function runPersonalAnalysis() {
   } else {
     Browser.msgBox("対象者が0名でした。");
   }
-
+    }
+    
   } catch (e) {
     Browser.msgBox("⚠️ エラーが発生しました:\n" + e.message + "\n\n(設定を確認するか、管理者に問い合わせてください)");
     console.error(e.stack);
@@ -1982,10 +1983,11 @@ function updateQuestionDropdowns_(configSheet) {
       });
 
       if (isDate) {
-         // ★v10.21: 「回」も許可
-         const datePattern = /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|回/i;
-         candidates = candidates.filter(h => datePattern.test(h));
-      } else if (isRadar) {
+      // ★v10.46: 「回」に加え「月」「年」単体も時系列キーとして許可
+      const datePattern = /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|年|月|回/i;
+      candidates = candidates.filter(h => datePattern.test(h));
+    } else if (isRadar) {
+
          const excludePattern = /氏名|名前|出席番号|番号|ID|Key|Email|メール|mail|address|Timestamp|タイムスタンプ|日付|Date|Time|学年|組|クラス|性別|Gender|作成|感想|自由|記述|コメント/i;
          candidates = candidates.filter(h => !excludePattern.test(h));
       }
@@ -2315,9 +2317,11 @@ function detectAnswerSheetColumns_(configSheet, startRow) {
         else keyMsg = "⚠️見当たりません"; 
 
         // 日付(回)列 (Row 28)
-        const dateIndex = headers.findIndex(h => /日付|日時|Date|Time|Timestamp|タイムスタンプ|回/i.test(String(h)));
-        if (dateIndex > -1) dateCol = headers[dateIndex];
-        else dateCol = headers[0]; 
+      // ★v10.46: 「月」「年」も自動判定対象に追加
+      const dateIndex = headers.findIndex(h => /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|年|月|回/i.test(String(h)));
+      if (dateIndex > -1) dateCol = headers[dateIndex];
+      else dateCol = headers[0];
+
       }
     }
   }
@@ -2587,4 +2591,5 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     }
   }
 }
+
 
