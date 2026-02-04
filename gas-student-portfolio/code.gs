@@ -339,7 +339,7 @@ function enableSchoolMode() {
     
     if (!masterSheet) {
       masterSheet = ss.insertSheet(MASTER_SHEET_NAME);
-      const headers = [["Account(Email/ID)", "学年", "組", "番号", "氏名", "ふりがな", "性別"]];
+      const headers = [["Account(Email/ID)", "学年", "組", "番号", "氏名", "ふりがな（任意）", "性別（任意）"]];
       masterSheet.getRange("A1:G1").setValues(headers).setFontWeight("bold").setBackground("#FFF2CC");
       masterSheet.setFrozenRows(1);
       
