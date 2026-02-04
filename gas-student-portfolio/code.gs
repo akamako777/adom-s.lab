@@ -261,7 +261,7 @@ function initSchoolConfigArea_(sheet) {
   sheet.getRange(startRow, 1, 60, 2).clear(); 
 
   const schoolLayout = [
-    ["🏫 学校・個人カルテ設定", ""], // 25
+    ["🏫 学校・クラス・個人カルテ設定", ""], // 25
     ["対象クラス", "▼名簿から自動生成"], // 26
     ["回答シートの「Key(ID/Email)」列", ""], // 27
     ["回答シートの「日付・回」列", "▼自動判定"], // 28 (Updated)
@@ -604,17 +604,18 @@ function runUniversalAnalysis() {
 
 
 // ==================================================
-// 🖨️ 5. 個人カルテ・SOS作成 (v10.33 Series)
+// 🖨️ 5. 個人カルテ・SOS作成 (v10.46 High-Speed Batch Edition)
 // ==================================================
 
 function runPersonalAnalysis() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const config = ss.getSheetByName(CONFIG_SHEET_NAME);
   const master = ss.getSheetByName(MASTER_SHEET_NAME);
-  
+
   try {
     if (!config) throw new Error("設定パネルが見つかりません。初期設定を実行してください。");
-    
+
+    // --- 1. 設定情報の取得 ---
     const targetSheetName = config.getRange("B3").getValue();
     const targetClass = config.getRange(SCHOOL_CONFIG_START_ROW + 1, 2).getValue();
     const ansKeyCol = config.getRange(SCHOOL_CONFIG_START_ROW + 2, 2).getValue(); // Row 27
@@ -622,45 +623,38 @@ function runPersonalAnalysis() {
 
     const sosColName = config.getRange(SCHOOL_CONFIG_START_ROW + 6, 2).getValue(); // Row 31
     const sosValue = config.getRange(SCHOOL_CONFIG_START_ROW + 7, 2).getValue(); // Row 32
-    
+
     const timeUnit = config.getRange(SCHOOL_DATE_COMPARE_START_ROW - 1, 2).getValue(); // Row 43
 
     // レーダー項目取得
     const radarCols = [];
     for (let i = 0; i < 8; i++) {
-       const val = config.getRange(SCHOOL_CONFIG_START_ROW + 10 + i, 2).getValue(); // Row 35-42
-       if (val) radarCols.push(val);
+      const val = config.getRange(SCHOOL_CONFIG_START_ROW + 10 + i, 2).getValue(); // Row 35-42
+      if (val) radarCols.push(val);
     }
-    
+
     if (radarCols.length === 0) {
       Browser.msgBox("⚠️ 設定エラー: レーダーチャートの項目が1つも選択されていません。");
       return;
     }
 
     // 比較対象ポイントリストの取得 (B44～B55)
+    // ★Fix: .getDisplayValues() を使用して「見た目の文字」をそのまま取得する
+    // これにより「10月」が勝手に日付型変換されて不一致になる問題を回避
+    const comparePointsRaw = config.getRange(SCHOOL_DATE_COMPARE_START_ROW, 2, 12, 1).getDisplayValues().flat();
+    const comparePoints = comparePointsRaw.filter(s => s !== "");
+
     const isDateMode = ["【日付別】", "【月別】", "【年別】"].includes(timeUnit);
-    const comparePoints = [];
-    
-    for (let i = 1; i < 12; i++) {
-      const d = config.getRange(SCHOOL_DATE_COMPARE_START_ROW + i, 2).getValue();
-      if (d) {
-         if (d instanceof Date && isDateMode) {
-             const fmt = timeUnit === "【月別】" ? "yyyy/MM" : (timeUnit === "【年別】" ? "yyyy" : "yyyy/MM/dd");
-             comparePoints.push(Utilities.formatDate(d, Session.getScriptTimeZone(), fmt));
-         } else {
-             comparePoints.push(String(d).trim());
-         }
-      }
-    }
 
     if (!master || !targetClass || !ansKeyCol || String(ansKeyCol).startsWith("▼")) {
       Browser.msgBox("⚠️ 設定エラー:\n学校・カルテ設定の必須項目（対象クラス、Key列など）が正しく選択されていません。");
       return;
     }
 
-    const masterData = master.getDataRange().getValues(); 
+    // --- 2. 生徒データの抽出 ---
+    const masterData = master.getDataRange().getValues();
     const mGradeIdx = 1, mClassIdx = 2, mNumIdx = 3, mNameIdx = 4, mKeyIdx = 0, mGenderIdx = 6;
-    
+
     let targetStudents = [];
     if (targetClass.startsWith("(全学年)")) {
       const tClass = targetClass.replace("(全学年)", "");
@@ -672,17 +666,18 @@ function runPersonalAnalysis() {
       }
     }
 
-    if (targetStudents.length === 0) { 
-      Browser.msgBox(`クラス「${targetClass}」の生徒が見つかりません。`); 
-      return; 
+    if (targetStudents.length === 0) {
+      Browser.msgBox(`クラス「${targetClass}」の生徒が見つかりません。`);
+      return;
     }
 
+    // --- 3. 回答データのマッピング ---
     const dataSheet = ss.getSheetByName(targetSheetName);
     if (!dataSheet) throw new Error(`回答シート「${targetSheetName}」が見つかりません。`);
-    
+
     const dHeaders = dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0];
     const allResponses = dataSheet.getDataRange().getValues().slice(1);
-    
+
     let ansKeyColIdx = -1;
     const kIdx = dHeaders.indexOf(ansKeyCol);
     if (kIdx > -1) ansKeyColIdx = kIdx;
@@ -693,17 +688,17 @@ function runPersonalAnalysis() {
     // 日付(時系列)列の特定
     let dateColIdx = 0; // デフォルトはA列
     if (dateColStr && !String(dateColStr).startsWith("▼")) {
-        const idx = dHeaders.indexOf(dateColStr);
-        if (idx > -1) dateColIdx = idx;
-        else dateColIdx = letterToColumn_(dateColStr) - 1; 
+      const idx = dHeaders.indexOf(dateColStr);
+      if (idx > -1) dateColIdx = idx;
+      else dateColIdx = letterToColumn_(dateColStr) - 1;
     }
     if (dateColIdx < 0) dateColIdx = 0;
 
     let sosIdx = sosColName ? dHeaders.indexOf(sosColName) : -1;
     const radarIndices = radarCols.map(name => dHeaders.indexOf(name));
-    
+
     if (radarIndices.some(idx => idx === -1)) {
-       throw new Error("選択されたレーダー項目の一部が、回答シート内に見つかりません。");
+      throw new Error("選択されたレーダー項目の一部が、回答シート内に見つかりません。");
     }
 
     let responseMap = {};
@@ -718,331 +713,292 @@ function runPersonalAnalysis() {
       responseMap[key].push(row);
     });
 
+    // --- 4. シート初期化 (高速化のため一度削除して作り直す) ---
     let pSheet = ss.getSheetByName(PERSONAL_SHEET_NAME);
-    if (pSheet) {
-      ss.deleteSheet(pSheet);
-    }
+    if (pSheet) ss.deleteSheet(pSheet);
     pSheet = ss.insertSheet(PERSONAL_SHEET_NAME);
 
-    let currentRow = 1, printedCount = 0, chartQueue = [];
+    // --- 5. バッチ処理用メモリ確保 ---
+    // 生徒数 × 1人あたりの行数 = 全体の行数
+    const totalRows = targetStudents.length * PAGE_BREAK_ROWS;
+    const maxCols = 30; // 安全のため多めに確保
 
-    // 生徒ループ
-    for (const student of targetStudents) {
+    // 全セルの値を格納する巨大な配列
+    const allValues = new Array(totalRows).fill(null).map(() => new Array(maxCols).fill(""));
+    // 書式情報の配列
+    const allBackgrounds = new Array(totalRows).fill(null).map(() => new Array(maxCols).fill(null));
+    const allFontWeights = new Array(totalRows).fill(null).map(() => new Array(maxCols).fill("normal"));
+    const allFontColors = new Array(totalRows).fill(null).map(() => new Array(maxCols).fill("black"));
+    const allBorders = []; // 枠線適用箇所リスト {r, c, h, w, color}
+    const allMerges = [];  // セル結合リスト range string
+
+    const chartQueue = [];
+    let printedCount = 0;
+
+    ss.toast(`${targetStudents.length}名分のデータを処理中...`, "高速生成モード", 60);
+
+    // --- 6. 生徒ループ (メモリ内処理) ---
+    targetStudents.forEach((student, sIndex) => {
+      const startRowIdx = sIndex * PAGE_BREAK_ROWS; // 0始まりの配列インデックス
+      const currentRowNum = startRowIdx + 1; // 1始まりのシート行番号
+
       const acct = student[mKeyIdx], name = student[mNameIdx];
       const grade = student[mGradeIdx], cls = student[mClassIdx], num = student[mNumIdx], gender = student[mGenderIdx];
-      
+
       let myResponses = responseMap[String(acct).trim()] || [];
-      
-      // ソートロジック分岐
+
+      // ソートロジック
       if (isDateMode) {
-          myResponses.sort((a, b) => new Date(a[dateColIdx]) - new Date(b[dateColIdx]));
+        myResponses.sort((a, b) => new Date(a[dateColIdx]) - new Date(b[dateColIdx]));
       } else {
-          myResponses.sort((a, b) => String(a[dateColIdx]).localeCompare(String(b[dateColIdx]), undefined, {numeric: true}));
+        myResponses.sort((a, b) => String(a[dateColIdx]).localeCompare(String(b[dateColIdx]), undefined, { numeric: true }));
       }
-
-      const startRowForStudent = currentRow; // 開始行を保存
-
-      // ★v10.31: 鉄壁のレイアウト固定 & リセット
-      // 1. エリア完全リセット (書式消毒)
-      const sanitizeRange = pSheet.getRange(startRowForStudent, 1, PAGE_BREAK_ROWS, 20);
-      sanitizeRange.setFontColor("black").setFontWeight("normal").setBackground(null);
-      // 2. 行の高さ強制固定 (Automatic Height Kill Switch)
-      //    ループで行高さを固定 (例: 22px)
-      //    これにより文字が多くても行が膨らまず、物理的にレイアウトがズレなくなる
-      //    長文対策: CLIP戦略 (文字がセル幅を超えたら切る)
-      sanitizeRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-      // ※ここで行の高さを調整
-      pSheet.setRowHeights(startRowForStudent, PAGE_BREAK_ROWS, ROW_HEIGHT_PX); 
 
       // SOSチェック
       let isSos = false;
       if (sosIdx !== -1 && sosValue && myResponses.length > 0) {
         if (String(myResponses[myResponses.length - 1][sosIdx]) === String(sosValue)) {
-           isSos = true;
+          isSos = true;
         }
       }
-      
+
       printedCount++;
-      
-      const titleRange = pSheet.getRange(currentRow, 1);
+
+      // --- A. ヘッダー情報 (配列へ書き込み) ---
       const genderText = gender ? `(${gender})` : "";
+      const titleText = `【カルテ】${grade}年${cls}組${num}番 氏名: ${name} ${genderText}` + (isSos ? " ⚠️SOS" : "");
       
-      // ★v10.32: タイトル行結合 (1行目:名前)
-      titleRange.setValue(`【カルテ】${grade}年${cls}組${num}番 氏名: ${name} ${genderText}`)
-                .setFontSize(14).setFontWeight("bold").setBackground(isSos ? "#FCE8E6" : "#E8F0FE");
-      pSheet.getRange(currentRow, 1, 1, 14).merge(); // A〜N列結合
+      allValues[startRowIdx][0] = titleText;
+      allFontWeights[startRowIdx][0] = "bold";
+      // ※フォントサイズ変更は後で一括で行うか、標準のままにする（高速化のため標準推奨だが、最後に範囲指定で変更可）
+      
+      // 背景色設定 (SOSなら赤)
+      const headerBg = isSos ? "#FCE8E6" : "#E8F0FE";
+      for(let c=0; c<14; c++) allBackgrounds[startRowIdx][c] = headerBg;
+
+      // 結合予約
+      allMerges.push(pSheet.getRange(currentRowNum, 1, 1, 14)); // A~N
 
       if (isSos) {
-           pSheet.getRange(currentRow, 1, 2, 8).setBorder(true, true, true, true, null, null, "red", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
-           titleRange.setValue(titleRange.getValue() + " ⚠️SOS");
+        // 枠線予約
+        allBorders.push({ r: currentRowNum, c: 1, h: 2, w: 8, color: "red" });
       }
 
       const countText = myResponses.length > 0 ? `${myResponses.length}回` : "なし";
       let lastDateStr = "-";
       if (myResponses.length > 0) {
-         const rawD = myResponses[myResponses.length-1][dateColIdx];
-         if (rawD instanceof Date) {
-            lastDateStr = Utilities.formatDate(rawD, Session.getScriptTimeZone(), "yyyy/MM/dd");
-         } else {
-            lastDateStr = String(rawD);
-         }
+        const rawD = myResponses[myResponses.length - 1][dateColIdx];
+        if (rawD instanceof Date) {
+          lastDateStr = Utilities.formatDate(rawD, Session.getScriptTimeZone(), "yyyy/MM/dd");
+        } else {
+          lastDateStr = String(rawD);
+        }
       }
-      // ★v10.32: タイトル行結合 (2行目:更新日)
-      pSheet.getRange(currentRow + 1, 1).setValue(`最終更新: ${lastDateStr} / ${countText}`);
-      pSheet.getRange(currentRow + 1, 1, 1, 14).merge(); // A〜N列結合
+      allValues[startRowIdx + 1][0] = `最終更新: ${lastDateStr} / ${countText}`;
+      allMerges.push(pSheet.getRange(currentRowNum + 1, 1, 1, 14));
 
-      let chartBaseRow = currentRow + 3;
-
-      // --- Chart 1: レーダーチャート (最新3世代表示) ---
+      // --- B. レーダーチャート用データ ---
+      const chartBaseRelRow = 3; // 相対行 3 (currentRowNum + 3)
+      
       if (myResponses.length > 0 && radarCols.length > 0) {
-          // 末尾から最大3つ取得
-          const generations = myResponses.slice(-3).reverse(); // [最新, 前回, 前々回]
-          
-          const shortRadarCols = radarCols.map(c => c.length > 9 ? c.substring(0, 9) : c);
-          const headerRowValues = [""].concat(shortRadarCols); 
-          const tableColCount = headerRowValues.length;
-          
-          pSheet.getRange(chartBaseRow, 1, 1, tableColCount).setValues([headerRowValues]).setBackground("#eee").setFontSize(8);
-          
-          let radarDataRows = [];
-          
-          generations.forEach((gen, idx) => {
-             const rawDate = gen[dateColIdx];
-             let dateLabel = "回不明";
-             if (rawDate instanceof Date) {
-                 dateLabel = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "MM/dd");
-             } else if (rawDate) {
-                 dateLabel = String(rawDate);
+        const generations = myResponses.slice(-3).reverse();
+        const shortRadarCols = radarCols.map(c => c.length > 9 ? c.substring(0, 9) : c);
+        
+        // ヘッダー
+        allValues[startRowIdx + chartBaseRelRow][0] = "";
+        shortRadarCols.forEach((colName, idx) => {
+           allValues[startRowIdx + chartBaseRelRow][idx + 1] = colName;
+           allBackgrounds[startRowIdx + chartBaseRelRow][idx + 1] = "#eee";
+        });
+
+        // データ行
+        generations.forEach((gen, gIdx) => {
+           const rowPos = startRowIdx + chartBaseRelRow + 1 + gIdx;
+           
+           const rawDate = gen[dateColIdx];
+           let dateLabel = "回不明";
+           if (rawDate instanceof Date) {
+             dateLabel = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), "MM/dd");
+           } else if (rawDate) {
+             dateLabel = String(rawDate);
+           }
+           const genLabel = gIdx === 0 ? `最新(${dateLabel})` : (gIdx === 1 ? `前回(${dateLabel})` : `前々回(${dateLabel})`);
+           
+           allValues[rowPos][0] = genLabel;
+
+           radarIndices.forEach((rIdx, rColPos) => {
+             const vRaw = gen[rIdx];
+             const vNum = Number(vRaw);
+             const vClean = (typeof vRaw === 'string') ? vRaw.replace(/[\r\n]+/g, ' ') : vRaw;
+             
+             // 値セット
+             const finalVal = isNaN(vNum) || String(vRaw).trim() === "" ? vClean : vNum;
+             allValues[rowPos][rColPos + 1] = finalVal;
+
+             // SOSハイライト (メモリ上)
+             if (sosIdx !== -1 && sosValue && rIdx === sosIdx) {
+               if (String(vRaw).includes(String(sosValue))) {
+                 allFontColors[rowPos][rColPos + 1] = "red";
+                 allFontWeights[rowPos][rColPos + 1] = "bold";
+               }
              }
-             
-             // 世代ラベル付与
-             const genLabel = idx === 0 ? `最新(${dateLabel})` : (idx === 1 ? `前回(${dateLabel})` : `前々回(${dateLabel})`);
-             
-             const vals = radarIndices.map((rIdx, colPos) => {
-                const vRaw = gen[rIdx];
-                const vNum = Number(vRaw); 
+           });
+        });
 
-                // ★v10.36 Fix: 改行コードを除去して1行化
-                const vClean = (typeof vRaw === 'string') ? vRaw.replace(/[\r\n]+/g, ' ') : vRaw;
-
-                return isNaN(vNum) || String(vRaw).trim() === "" ? vClean : vNum;
-             });
-             
-             radarDataRows.push([genLabel].concat(vals));
-          });
-
-         // データ行書き込み & SOS高速化 (Batch Operation)
-      if (radarDataRows.length > 0) {
-          const writeRange = pSheet.getRange(chartBaseRow + 1, 1, radarDataRows.length, tableColCount);
-          
-          // 1. メモリ上でスタイル定義（初期値：黒・標準）
-          // 通信回数を減らすため、全てのセル色情報を配列で作っておく
-          const fontColors = Array(radarDataRows.length).fill(null).map(() => Array(tableColCount).fill("black"));
-          const fontWeights = Array(radarDataRows.length).fill(null).map(() => Array(tableColCount).fill("normal"));
-          
-          // 2. SOS判定（メモリ操作のみ）
-          // ★v10.29 logic optimized: APIを叩かず配列を書き換える
-          if (sosIdx !== -1 && sosValue) {
-              radarDataRows.forEach((rowVals, rIndex) => {
-                  // generations[rIndex] が元の行データ
-                  const gen = generations[rIndex];
-                  radarIndices.forEach((rIdx, cIndex) => {
-                      // もしこの列がSOS列と一致し、かつ値がSOSワードを含む場合
-                      if (rIdx === sosIdx) {
-                          const cellValue = String(gen[rIdx]);
-                          if (cellValue.includes(String(sosValue))) {
-                              // 配列の位置: 行=rIndex, 列=cIndex + 1 (0列目はラベルなので+1)
-                              if (cIndex + 1 < tableColCount) {
-                                  fontColors[rIndex][cIndex + 1] = "red";
-                                  fontWeights[rIndex][cIndex + 1] = "bold";
-                              }
-                          }
-                      }
-                  });
-              });
-          }
-
-          // 3. 一括書き込み (通信はここでまとめて行う)
-          writeRange.setValues(radarDataRows);
-          writeRange.setFontColors(fontColors);
-          writeRange.setFontWeights(fontWeights);
-          
-          // ★v10.34 Fix: 書き込み直後に「切り詰め」を強制
-          writeRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-          
-          // チャート用範囲定義
-          const rRange = pSheet.getRange(chartBaseRow, 1, 1 + radarDataRows.length, tableColCount);
-          
-          // チャート配置予約
-          chartQueue.push({ 
-             type: "RADAR", 
-             range: rRange, 
-             posRow: chartBaseRow, 
-             posCol: tableColCount + 1, 
-             title: `直近バランス推移` 
-          });
+        // チャート予約
+        const rRange = pSheet.getRange(currentRowNum + chartBaseRelRow, 1, 1 + generations.length, shortRadarCols.length + 1);
+        chartQueue.push({
+          type: "RADAR",
+          range: rRange,
+          posRow: currentRowNum + chartBaseRelRow,
+          posCol: shortRadarCols.length + 2,
+          title: `直近バランス推移`
+        });
       }
 
-      
-      // --- Chart 2: 比較推移グラフ (折れ線) ---
+      // --- C. 推移表 & 推移グラフ用データ ---
       if (comparePoints.length > 0 && myResponses.length > 0) {
-          const compareRows = [];
-          // ★修正: 推移表のヘッダーにも9文字制限を適用
-          const shortRadarColsForTrend = radarCols.map(c => c.length > 9 ? c.substring(0, 9) : c);
-          const header = [timeUnit, ...shortRadarColsForTrend]; 
-          compareRows.push(header);
+        const trendBaseRelRow = chartBaseRelRow + 18; // 相対行 21
+        const shortRadarColsForTrend = radarCols.map(c => c.length > 9 ? c.substring(0, 9) : c);
+        
+        // ヘッダー行
+        allValues[startRowIdx + trendBaseRelRow][0] = timeUnit;
+        shortRadarColsForTrend.forEach((c, idx) => {
+          allValues[startRowIdx + trendBaseRelRow][idx + 1] = c;
+          allBackgrounds[startRowIdx + trendBaseRelRow][idx + 1] = "#fafafa";
+        });
 
-          const dateFormat = timeUnit === "【月別】" ? "yyyy/MM" : (timeUnit === "【年別】" ? "yyyy" : "yyyy/MM/dd");
+        const dateFormat = timeUnit === "【月別】" ? "yyyy/MM" : (timeUnit === "【年別】" ? "yyyy" : "yyyy/MM/dd");
+        let colSums = new Array(radarCols.length).fill(0);
+        let colCounts = new Array(radarCols.length).fill(0);
+        let validRowsCount = 0;
 
-          // データ集計用
-          let colSums = new Array(radarCols.length).fill(0);
-          let colCounts = new Array(radarCols.length).fill(0);
-          
-          // SOSハイライト用座標リスト {row, col}
-          let sosHighlights = [];
+        comparePoints.forEach((pt, ptIdx) => {
+          const matched = myResponses.filter(r => {
+            const val = r[dateColIdx];
+            // ★Fix: 文字列同士の比較を優先（設定パネルの「10月」とデータ側の「10月」を一致させる）
+            const strVal = String(val).trim();
+            const strPt = String(pt).trim();
+            if (strVal === strPt) return true;
 
-          comparePoints.forEach((pt, ptIndex) => {
-             const matched = myResponses.filter(r => {
-                const val = r[dateColIdx];
-                if (isDateMode) {
-                    const rd = new Date(val);
-                    if (isNaN(rd)) return false;
-                    return Utilities.formatDate(rd, Session.getScriptTimeZone(), dateFormat) === pt;
-                } else {
-                    return String(val).trim() === String(pt).trim();
-                }
-             });
-
-             if (matched.length > 0) {
-                 const targetRow = matched[matched.length - 1];
-                 const rowVals = radarIndices.map((rIdx, i) => {
-                    const vRaw = targetRow[rIdx];
-                    const vNum = Number(vRaw);
-                    
-                    // ★SOSチェック (推移表)
-                    if (sosIdx !== -1 && sosValue && rIdx === sosIdx) {
-                        if (String(vRaw).includes(String(sosValue))) {
-                            // 行: ヘッダ(1) + これまでのデータ行数 + 1(1始まり)
-                            sosHighlights.push({ r: compareRows.length + 1, c: i + 2 }); 
-                        }
-                    }
-
-                    if (!isNaN(vNum) && String(vRaw).trim() !== "") {
-                        colSums[i] += vNum;
-                        colCounts[i]++;
-                        return vNum;
-                    }
-                    
-                    // ★v10.36 Fix: 推移表も改行コードを除去して1行化
-                    return (typeof vRaw === 'string') ? vRaw.replace(/[\r\n]+/g, ' ') : vRaw;
-                 });
-                 
-                 let label = pt;
-                 if (timeUnit === "【日付別】" && targetRow[dateColIdx] instanceof Date) {
-                    const dObj = new Date(targetRow[dateColIdx]);
-                    label = `${dObj.getMonth()+1}/${dObj.getDate()}`;
-                 }
-                 
-                 compareRows.push([label, ...rowVals]);
-             }
-          });
-
-          if (compareRows.length > 1) {
-             const trendStartRow = chartBaseRow + 18; 
-             const trendStartCol = 1;
-
-             // 平均行
-             const emptyRow = new Array(header.length).fill("");
-             const avgRow = ["平均"];
-             for(let i=0; i<radarCols.length; i++) {
-                 if (colCounts[i] > 0) {
-                     avgRow.push(parseFloat((colSums[i] / colCounts[i]).toFixed(1)));
-                 } else {
-                     avgRow.push("-");
-                 }
-             }
-             
-             const outputRows = [...compareRows, emptyRow, avgRow];
-             
-             const dataRange = pSheet.getRange(trendStartRow, trendStartCol, outputRows.length, outputRows[0].length);
-             // 書式リセット(黒文字)はsanitizeRangeで実施済み
-             
-             dataRange.setValues(outputRows).setFontSize(8).setBackground("#fafafa");
-             // ★v10.34 Fix: 推移表データの書き込み直後に「切り詰め」を強制（自動折り返し防止）
-             dataRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-             
-             // 平均行太字
-             pSheet.getRange(trendStartRow + outputRows.length - 1, 1, 1, outputRows[0].length).setFontWeight("bold").setBackground("#e6e6e6");
-
-
-            // --- [修正版] SOSハイライト高速化 (推移表) ---
-      if (sosHighlights.length > 0) {
-          // 範囲: trendStartRow から outputRows.length 行, outputRows[0].length 列
-          const trendRange = pSheet.getRange(trendStartRow, trendStartCol, outputRows.length, outputRows[0].length);
-          
-          // 現在の背景色・文字色を取得してベースにする（平均行のグレーなどを維持するため）
-          const bgMatrix = trendRange.getBackgrounds();
-          const colorMatrix = trendRange.getFontColors();
-          const weightMatrix = trendRange.getFontWeights();
-
-          sosHighlights.forEach(h => {
-              // h.r は表内での行番号(1始まり), h.c は表内での列番号(1始まり)
-              const rIdx = h.r - 1;
-              const cIdx = h.c - 1;
-              
-              if (rIdx < outputRows.length && cIdx < outputRows[0].length) {
-                  colorMatrix[rIdx][cIdx] = "red";
-                  weightMatrix[rIdx][cIdx] = "bold";
-                  // 必要なら背景色も変更可能
-                  // bgMatrix[rIdx][cIdx] = "#FFCCCC"; 
+            // 日付比較フォールバック
+            if (isDateMode) {
+              const rd = new Date(val);
+              if (!isNaN(rd)) {
+                return Utilities.formatDate(rd, Session.getScriptTimeZone(), dateFormat) === pt;
               }
+            }
+            return false;
           });
 
-          // 一括適用 (通信回数を1回に削減)
-          trendRange.setFontColors(colorMatrix);
-          trendRange.setFontWeights(weightMatrix);
-      }
+          if (matched.length > 0) {
+            const targetRow = matched[matched.length - 1];
+            const rowPos = startRowIdx + trendBaseRelRow + 1 + validRowsCount;
+            validRowsCount++;
 
-             const chartRange = pSheet.getRange(trendStartRow, trendStartCol, compareRows.length, compareRows[0].length);
+            // ラベル
+            let label = pt;
+             if (timeUnit === "【日付別】" && targetRow[dateColIdx] instanceof Date) {
+               const dObj = new Date(targetRow[dateColIdx]);
+               label = `${dObj.getMonth() + 1}/${dObj.getDate()}`;
+             }
+            allValues[rowPos][0] = label;
+            allBackgrounds[rowPos][0] = "#fafafa";
 
-             chartQueue.push({ 
-               type: "MULTI_LINE", 
-               range: chartRange, 
-               posRow: trendStartRow, 
-               posCol: compareRows[0].length + 1, 
-               title: "パラメータ比較推移" 
-             });
+            radarIndices.forEach((rIdx, i) => {
+              const vRaw = targetRow[rIdx];
+              const vNum = Number(vRaw);
+              
+              if (!isNaN(vNum) && String(vRaw).trim() !== "") {
+                colSums[i] += vNum;
+                colCounts[i]++;
+                allValues[rowPos][i + 1] = vNum;
+              } else {
+                const vClean = (typeof vRaw === 'string') ? vRaw.replace(/[\r\n]+/g, ' ') : vRaw;
+                allValues[rowPos][i + 1] = vClean;
+              }
+              allBackgrounds[rowPos][i + 1] = "#fafafa";
+
+              // SOS Check
+              if (sosIdx !== -1 && sosValue && rIdx === sosIdx) {
+                if (String(vRaw).includes(String(sosValue))) {
+                   allFontColors[rowPos][i + 1] = "red";
+                   allFontWeights[rowPos][i + 1] = "bold";
+                }
+              }
+            });
           }
-      }
+        });
 
-      // ★v10.31: 印刷レイアウト修正 (空白アンカー)
-      // 次の生徒へ移る前に、必ず「開始行+40行目」のA列に空白を入れる
-      const anchorRow = startRowForStudent + PAGE_BREAK_ROWS - 1;
-      pSheet.getRange(anchorRow, 1).setValue(" "); 
+        if (validRowsCount > 0) {
+           // 平均行
+           const avgRowPos = startRowIdx + trendBaseRelRow + 1 + validRowsCount;
+           allValues[avgRowPos][0] = "平均";
+           allBackgrounds[avgRowPos][0] = "#e6e6e6";
+           allFontWeights[avgRowPos][0] = "bold";
+
+           for(let i=0; i<radarCols.length; i++) {
+             const val = colCounts[i] > 0 ? parseFloat((colSums[i] / colCounts[i]).toFixed(1)) : "-";
+             allValues[avgRowPos][i + 1] = val;
+             allBackgrounds[avgRowPos][i + 1] = "#e6e6e6";
+             allFontWeights[avgRowPos][i + 1] = "bold";
+           }
+
+           // チャート予約
+           const chartRange = pSheet.getRange(currentRowNum + trendBaseRelRow, 1, validRowsCount + 1, shortRadarColsForTrend.length + 1);
+           chartQueue.push({
+             type: "MULTI_LINE",
+             range: chartRange,
+             posRow: currentRowNum + trendBaseRelRow,
+             posCol: shortRadarColsForTrend.length + 2,
+             title: "パラメータ比較推移"
+           });
+        }
+      }
       
-      // ★v10.33: 完全強制整形 (Ultimate Height Fix)
-      // 列範囲を安全圏(30列)まで広げ、まず「切り詰め(CLIP)」を適用して強制的に描画モードを変更
-      const finalFixRange = pSheet.getRange(startRowForStudent, 1, PAGE_BREAK_ROWS, 30);
-      finalFixRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+      // 空白アンカー (ページ区切り用)
+      const anchorRowIdx = startRowIdx + PAGE_BREAK_ROWS - 1;
+      allValues[anchorRowIdx][0] = " ";
       
-      // ★重要: ここで一度設定を確定させる（おまじない）
+    }); // End Student Loop
+
+    // --- 7. 一括書き込み (The Batch Write) ---
+    if (printedCount > 0) {
+      ss.toast("シートへの書き込みを開始します...", "出力中");
+      
+      const fullRange = pSheet.getRange(1, 1, totalRows, maxCols);
+      
+      // 値、背景、文字色、太字を一気に適用
+      fullRange.setValues(allValues);
+      fullRange.setBackgrounds(allBackgrounds);
+      fullRange.setFontColors(allFontColors);
+      fullRange.setFontWeights(allFontWeights);
+      
+      // 折り返し設定と行の高さ設定
+      fullRange.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+      pSheet.setRowHeights(1, totalRows, ROW_HEIGHT_PX);
+
+      // 結合処理 (ここはループが必要だがAPIコールは軽い)
+      allMerges.forEach(rng => rng.merge());
+
+      // 枠線処理
+      allBorders.forEach(b => {
+        pSheet.getRange(b.r, b.c, b.h, b.w).setBorder(true, true, true, true, null, null, b.color, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+      });
+
+      // 最後に一度だけFlush
       SpreadsheetApp.flush();
 
-      // その後、行の高さをピクセル単位で強制指定
-      pSheet.setRowHeights(startRowForStudent, PAGE_BREAK_ROWS, ROW_HEIGHT_PX);
+      // --- 8. チャート生成 (一括) ---
+      ss.toast("グラフを生成しています...", "仕上げ");
+      generatePersonalCharts_(pSheet, chartQueue);
 
-      currentRow += PAGE_BREAK_ROWS;
-  }
-
-  if (printedCount > 0) {
-    generatePersonalCharts_(pSheet, chartQueue);
-    pSheet.activate();
-    Browser.msgBox(`${printedCount}名分のカルテを作成しました。`);
-  } else {
-    Browser.msgBox("対象者が0名でした。");
-  }
+      pSheet.activate();
+      Browser.msgBox(`${printedCount}名分のカルテを高速作成しました。`);
+    } else {
+      Browser.msgBox("対象者が0名でした。");
     }
-    
+
   } catch (e) {
     Browser.msgBox("⚠️ エラーが発生しました:\n" + e.message + "\n\n(設定を確認するか、管理者に問い合わせてください)");
     console.error(e.stack);
@@ -1050,8 +1006,9 @@ function runPersonalAnalysis() {
 }
 
 
+
 // ==================================================
-// 🏫 5. クラス集計 (Class Matrix & Chrono-Graph) ★New
+// 🏫 5. クラス集計 (Class Matrix & Chrono-Graph) ★Fix
 // ==================================================
 
 function runClassMatrixAnalysis() {
@@ -1075,20 +1032,12 @@ function runClassMatrixAnalysis() {
     if (!ansKeyCol || String(ansKeyCol).startsWith("▼")) { Browser.msgBox("Key列が正しく設定されていません。"); return; }
 
     // 2. 比較ポイント取得 (B44:B55)
-    const comparePoints = [];
+    // ★Fix: getDisplayValues() で見た目の文字列（"10月"など）をそのまま取得
+    const comparePointsRaw = config.getRange(SCHOOL_DATE_COMPARE_START_ROW, 2, 12, 1).getDisplayValues().flat();
+    const comparePoints = comparePointsRaw.filter(s => s !== "");
+
     const isDateMode = ["【日付別】", "【月別】", "【年別】"].includes(timeUnit);
     const fmt = timeUnit === "【月別】" ? "yyyy/MM" : (timeUnit === "【年別】" ? "yyyy" : "yyyy/MM/dd");
-
-    for (let i = 1; i < 12; i++) {
-      const d = config.getRange(SCHOOL_DATE_COMPARE_START_ROW + i, 2).getValue();
-      if (d) {
-        if (d instanceof Date && isDateMode) {
-          comparePoints.push(Utilities.formatDate(d, Session.getScriptTimeZone(), fmt));
-        } else {
-          comparePoints.push(String(d).trim());
-        }
-      }
-    }
 
     const isTimelineMode = comparePoints.length > 0;
     const modeName = isTimelineMode ? "時系列比較モード" : "最新スナップショットモード";
@@ -1203,12 +1152,17 @@ function runClassMatrixAnalysis() {
 
           let targetRow = null;
           if (isTimelineMode) {
+            // ★Fix: ハイブリッド比較ロジック（文字列一致優先）
             targetRow = history.find(r => {
               const val = r[dateColIdx];
+              const strVal = String(val).trim();
+              const strPt = String(pt).trim();
+              if (strVal === strPt) return true; // 文字列として一致
+
               if (isDateMode && val instanceof Date) {
-                return Utilities.formatDate(val, Session.getScriptTimeZone(), fmt) === pt;
+                 return Utilities.formatDate(val, Session.getScriptTimeZone(), fmt) === pt;
               }
-              return String(val).trim() === String(pt).trim();
+              return false;
             });
           } else {
             targetRow = history[history.length - 1]; // Latest
@@ -1297,24 +1251,23 @@ function runClassMatrixAnalysis() {
     pointsToRender.forEach(pt => {
       const headerLabel = isTimelineMode ? `📅 ${pt} の記録` : pt;
       cSheet.getRange(matrixCurrentRow, MATRIX_START_COL).setValue(headerLabel)
-            .setFontSize(11).setFontWeight("bold").setBackground("#34A853").setFontColor("white");
+        .setFontSize(11).setFontWeight("bold").setBackground("#34A853").setFontColor("white");
       cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, 1, targetStudents.length + 1).merge();
       matrixCurrentRow++;
 
-      // ★Fix: 生徒名の改行ハックを削除し、標準の水平表示にする
+      // 生徒名の標準表示
       const stuNames = targetStudents.map(s => `${s[mNumIdx]}.${s[mNameIdx]}`);
 
       const matrixHeader = ["質問項目", ...stuNames];
       const headerRange = cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, 1, matrixHeader.length);
       headerRange.setValues([matrixHeader])
         .setBackground("#E6F4EA").setFontWeight("bold").setBorder(true, true, true, true, true, true)
-        .setVerticalAlignment("top") // 上詰め
+        .setVerticalAlignment("top")
         .setFontSize(9);
 
-      // ★Fix: 回転なし(0°)を明示
+      // 回転なし(0°)を明示
       cSheet.getRange(matrixCurrentRow, MATRIX_START_COL + 1, 1, targetStudents.length).setTextRotation(0);
-      
-      // ★Fix: 列幅を 50px に拡張
+      // 列幅を 50px に拡張
       cSheet.setColumnWidths(MATRIX_START_COL + 1, targetStudents.length, 50);
 
       matrixCurrentRow++;
@@ -1333,10 +1286,15 @@ function runClassMatrixAnalysis() {
           if (history.length > 0) {
             let targetRow = null;
             if (isTimelineMode) {
+              // ★Fix: ハイブリッド比較ロジック（マトリクス用）
               targetRow = history.find(r => {
-                const v = r[dateColIdx];
-                if (isDateMode && v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), fmt) === pt;
-                return String(v).trim() === String(pt).trim();
+                 const v = r[dateColIdx];
+                 const strVal = String(v).trim();
+                 const strPt = String(pt).trim();
+                 if (strVal === strPt) return true;
+
+                 if (isDateMode && v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), fmt) === pt;
+                 return false;
               });
             } else {
               targetRow = history[history.length - 1];
@@ -1359,46 +1317,164 @@ function runClassMatrixAnalysis() {
       if (matrixRows.length > 0) {
         const r = cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, matrixRows.length, matrixHeader.length);
         r.setValues(matrixRows).setBorder(true, true, true, true, true, true);
-        
-        // ★Fix: 回答エリアの書式設定 (Clip, Left, Middle)
+
+        // 回答エリアの書式設定 (Clip, Left, Middle)
         r.setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
          .setHorizontalAlignment("left")
          .setVerticalAlignment("middle");
 
         if (matrixRows.length > 1) r.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY);
-       // 1. デフォルトのスタイル定義（黒文字・背景なし）
-const numRows = matrixRows.length;
-const numCols = matrixHeader.length;
-// 色と太さの配列を初期化（全てデフォルト値で埋める）
-const fontColors = Array(numRows).fill(null).map(() => Array(numCols).fill("black"));
-const fontWeights = Array(numRows).fill(null).map(() => Array(numCols).fill("normal"));
-const backgrounds = Array(numRows).fill(null).map(() => Array(numCols).fill(null));
+        // 1. デフォルトのスタイル定義（黒文字・背景なし）
+        const numRows = matrixRows.length;
+        const numCols = matrixHeader.length;
+        const fontColors = Array(numRows).fill(null).map(() => Array(numCols).fill("black"));
+        const fontWeights = Array(numRows).fill(null).map(() => Array(numCols).fill("normal"));
+        const backgrounds = Array(numRows).fill(null).map(() => Array(numCols).fill(null));
 
-// 2. SOS座標の箇所だけスタイルを上書き (メモリ上の操作なので一瞬)
-sosCoords.forEach(coord => {
-  // coord.r は行インデックス, coord.c は列インデックス (matrixRows内での位置)
-  // ※元のコードの coord.c は `stuIdx + 1` (名前列スキップ) なので、配列インデックスとしてもそのまま使えるか要確認
-  // matrixRowsは [質問名, 生徒1, 生徒2...] という構造
-  
-  if (coord.r < numRows && coord.c < numCols) {
-    fontColors[coord.r][coord.c] = "red";
-    fontWeights[coord.r][coord.c] = "bold";
-    backgrounds[coord.r][coord.c] = "#FFCCCC";
-  }
-});
+        // 2. SOS座標の箇所だけスタイルを上書き
+        sosCoords.forEach(coord => {
+          if (coord.r < numRows && coord.c < numCols) {
+            fontColors[coord.r][coord.c] = "red";
+            fontWeights[coord.r][coord.c] = "bold";
+            backgrounds[coord.r][coord.c] = "#FFCCCC";
+          }
+        });
 
-// 3. 対象範囲を取得
-const targetRange = cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, numRows, numCols);
-
-// 4. APIを叩いて一括適用 (通信は3回だけ)
-targetRange.setFontColors(fontColors);
-targetRange.setFontWeights(fontWeights);
-targetRange.setBackgrounds(backgrounds);
+        // 3. 対象範囲を取得してAPIを叩いて一括適用
+        const targetRange = cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, numRows, numCols);
+        targetRange.setFontColors(fontColors);
+        targetRange.setFontWeights(fontWeights);
+        targetRange.setBackgrounds(backgrounds);
 
         matrixCurrentRow += matrixRows.length;
       }
       matrixCurrentRow += 2;
     });
+
+// =================================================================
+    // ★機能追加: 項目別・時系列変化マトリクス (Item-Centric Evolution)
+    // 概要: 比較ポイントがある場合のみ、項目を主軸にした時系列表を追加出力
+    // =================================================================
+    if (isTimelineMode && comparePoints.length > 0) {
+      // 1. 比較対象リスト構築 (最新 + 過去)
+      const chronoPoints = [
+        { label: "今回 (最新)", val: "LATEST" }, // マーカー
+        ...comparePoints.map(p => ({ label: p, val: p }))
+      ];
+
+      // 2. セクション区切り
+      matrixCurrentRow += 3;
+      cSheet.getRange(matrixCurrentRow, MATRIX_START_COL).setValue("▼ 項目別 時系列変化 (Item Evolution Mode)");
+      cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, 1, targetStudents.length + 1)
+            .setBackground("#4285F4") // Google Blue
+            .setFontColor("white")
+            .setFontWeight("bold");
+      matrixCurrentRow += 2;
+
+      // 3. 質問項目ごとにループ
+      questionIndices.forEach(q => {
+        // 見出し (Q. 質問文)
+        cSheet.getRange(matrixCurrentRow, MATRIX_START_COL).setValue(`Q. ${q.title}`);
+        cSheet.getRange(matrixCurrentRow, MATRIX_START_COL)
+              .setFontWeight("bold")
+              .setFontColor("#1a73e8")
+              .setFontSize(10);
+        matrixCurrentRow++;
+
+        // データ準備
+        const tableData = [];
+        const sosHighlightCoords = []; // SOSハイライト用座標
+
+        // [A] ヘッダー行: [ "時期", 生徒名... ]
+        const tableHeader = ["時期"];
+        targetStudents.forEach(s => tableHeader.push(`${s[mNumIdx]}.${s[mNameIdx]}`));
+        tableData.push(tableHeader);
+
+        // [B] データ行: 時期ごとにループ
+        chronoPoints.forEach((point, pIdx) => {
+          const row = [point.label];
+
+          targetStudents.forEach((stu, sIdx) => {
+            const key = String(stu[mKeyIdx]).trim();
+            const history = responseMap[key] || [];
+            
+            let val = "-";
+            let targetRow = null;
+
+            if (history.length > 0) {
+              if (point.val === "LATEST") {
+                targetRow = history[history.length - 1];
+              } else {
+                // ハイブリッド比較ロジック (既存処理を流用)
+                targetRow = history.find(r => {
+                  const v = r[dateColIdx];
+                  const strVal = String(v).trim();
+                  const strPt = String(point.val).trim();
+                  if (strVal === strPt) return true;
+                  if (isDateMode && v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), fmt) === point.val;
+                  return false;
+                });
+              }
+
+              if (targetRow) {
+                val = targetRow[q.index];
+                if (val === "" || val == null) val = " - ";
+
+                // SOS判定 (該当する場合、座標を記憶)
+                if (sosIdx !== -1 && sosValue && q.index === sosIdx) {
+                  if (String(val).includes(String(sosValue))) {
+                    // ヘッダーが1行あるので +1
+                    sosHighlightCoords.push({ r: pIdx + 1, c: sIdx + 1 });
+                  }
+                }
+              }
+            }
+            row.push(val);
+          });
+          tableData.push(row);
+        });
+
+        // [C] 書き込み
+        if (tableData.length > 0) {
+          const numRows = tableData.length;
+          const numCols = tableData[0].length;
+          const range = cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, numRows, numCols);
+          
+          range.setValues(tableData)
+               .setBorder(true, true, true, true, true, true)
+               .setVerticalAlignment("middle")
+               .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP); // はみ出し防止
+
+          // スタイル: ヘッダー
+          cSheet.getRange(matrixCurrentRow, MATRIX_START_COL, 1, numCols)
+                .setBackground("#E8F0FE").setFontWeight("bold").setHorizontalAlignment("center");
+          // スタイル: 左端(時期)
+          cSheet.getRange(matrixCurrentRow + 1, MATRIX_START_COL, numRows - 1, 1)
+                .setBackground("#F1F3F4").setFontWeight("bold");
+
+          // [D] SOSハイライト適用
+          if (sosHighlightCoords.length > 0) {
+            const fontColors = range.getFontColors();
+            const fontWeights = range.getFontWeights();
+            const bgColors = range.getBackgrounds();
+            
+            sosHighlightCoords.forEach(coord => {
+              if(coord.r < numRows && coord.c < numCols) {
+                fontColors[coord.r][coord.c] = "red";
+                fontWeights[coord.r][coord.c] = "bold";
+                bgColors[coord.r][coord.c] = "#FFCCCC";
+              }
+            });
+            range.setFontColors(fontColors).setFontWeights(fontWeights).setBackgrounds(bgColors);
+          }
+
+          matrixCurrentRow += numRows + 1; // 間隔
+        }
+      });
+      
+      // 最後に余白
+      matrixCurrentRow += 1;
+    }
 
     chartQueue.forEach(cq => {
       let builder = cSheet.newChart()
@@ -1425,9 +1501,8 @@ targetRange.setBackgrounds(backgrounds);
   }
 }
 
-
 // ==================================================
-// 🏫 6. 全校集計実行 (All School Analysis) ★New v10.39
+// 🏫 6. 全校集計実行 (All School Analysis) ★Fix
 // ==================================================
 
 function runAllSchoolAnalysis() {
@@ -1589,7 +1664,14 @@ function runAllSchoolAnalysis() {
          const v = row[col];
          if (v !== "" && v != null) {
             totalCount++;
-            if (!isNaN(parseFloat(v))) numericCount++;
+            
+            // ★Fix: 厳格な数値判定 (単位付き数値を弾く)
+            // 以前: if (!isNaN(parseFloat(v))) numericCount++;
+            // 変更: Number()を使用して "4回" などをNaNとして扱う
+            const vStr = String(v).trim();
+            if (!isNaN(Number(vStr)) && vStr !== "") {
+                numericCount++;
+            }
             
             // 時期判定
             let timeLabel = "ALL"; // Default
@@ -1611,7 +1693,7 @@ function runAllSchoolAnalysis() {
       
       if (totalCount === 0) continue;
 
-      // 記述式分岐
+      // 記述式分岐 (数値回答率8割未満)
       if ((numericCount / totalCount) < 0.8) {
          // ★v10.44: カウントアップ
          countTextOnly++;
@@ -1631,8 +1713,6 @@ function runAllSchoolAnalysis() {
              targetRange.setValues(textRows);
 
              // --- ★v10.45: SOSハイライト処理 ---
-             // 条件1: 現在の列名(qTitle)がSOS列名(sosColName)と一致
-             // 条件2: 設定されたSOSワード(sosWord)が存在する
              if (sosColName && sosWord && qTitle === sosColName) {
                  const sosKeyword = String(sosWord).trim();
                  if (sosKeyword) {
@@ -1642,7 +1722,6 @@ function runAllSchoolAnalysis() {
                      
                      textRows.forEach(row => {
                          const cellText = String(row[0]);
-                         // 条件3: テキスト内にSOSワードが含まれているか
                          if (cellText.includes(sosKeyword)) {
                              fontColors.push(["red"]);
                              fontWeights.push(["bold"]);
@@ -1660,6 +1739,17 @@ function runAllSchoolAnalysis() {
          }
          textSheet.setColumnWidth(textSheetCol, 300);
          textSheetCol++;
+         
+         // ★Fix: 全校集計レポート側にも「移動案内」看板を設置
+         reportSheet.getRange(currentOutputRow, 1).setValue(`Q. ${qTitle}`)
+           .setFontWeight("bold").setFontColor("#333333");
+         currentOutputRow++;
+         
+         reportSheet.getRange(currentOutputRow, 1).setValue("➡ この項目の回答（回数・年月・自由記述等）は「📝記述回答まとめ」シートに集約しました。")
+           .setFontSize(10).setFontColor("gray").setFontStyle("italic");
+         
+         currentOutputRow += 2; // 行間を空ける
+
          continue; 
       }
 
@@ -1829,8 +1919,8 @@ function runAllSchoolAnalysis() {
                 // ★修正: 行列入れ替えとテキストラベル強制
                 .setTransposeRowsAndColumns(true) 
                 .setOption('treatLabelsAsText', true) 
-                // ----------------------------------
                 .setOption('useFirstColumnAsDomain', true)
+                // ----------------------------------
                 .setNumHeaders(1)
                 .setOption('legend', {position: 'right'})
                 .setOption('hAxis', {title: '時期'})
@@ -1856,6 +1946,8 @@ function runAllSchoolAnalysis() {
     console.error(e.stack);
   }
 }
+
+
 
 // ==================================================
 // 🧩 Helper: All Functions (Reorganized)
@@ -2269,12 +2361,15 @@ function generatePersonalCharts_(sheet, queue) {
       .setOption('title', q.title)
       .setPosition(q.posRow, q.posCol, 0, 0); 
       
-    if (q.type === "RADAR") { 
-      builder = builder.setChartType(Charts.ChartType.RADAR)
-         .setTransposeRowsAndColumns(true) 
-         .setOption('width', 400) 
-         .setOption('height', 350);
-    } else if (q.type === "MULTI_LINE") {
+    if (q.type === "RADAR") {
+        builder = builder.setChartType(Charts.ChartType.RADAR)
+          .setTransposeRowsAndColumns(true)
+          .setNumHeaders(1) // ★追加: これで「列Aを見出し」として認識させます
+          .setOption('useFirstColumnAsDomain', true) // ★念のため: これも合わせ技で入れると完璧です
+          .setOption('width', 400)
+          .setOption('height', 350);
+      }
+else if (q.type === "MULTI_LINE") {
       // ★折れ線グラフの設定強化 (行ヘッダーの強制認識)
       builder = builder.setChartType(Charts.ChartType.LINE)
          .setTransposeRowsAndColumns(false) // 行と列を入れ替えない（通常）
@@ -2591,5 +2686,3 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     }
   }
 }
-
-
