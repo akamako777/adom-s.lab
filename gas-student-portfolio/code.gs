@@ -2985,8 +2985,8 @@ function generateCorrelationMatrix_(sheet, headers, body, startRow) {
   // ★修正: 幅を自動調整ではなく、指定サイズ（広め）に固定
   // 数値: 150px, 意味: 150px, 色: 150px
   sheet.setColumnWidth(guideStartCol, 150);     // 数値列
-  sheet.setColumnWidth(guideStartCol + 1, 300); // 意味列（ここを大きく）
-  sheet.setColumnWidth(guideStartCol + 2, 100); // 色列
+  sheet.setColumnWidth(guideStartCol + 1, 150); // 意味列（ここを大きく）
+  sheet.setColumnWidth(guideStartCol + 2, 150); // 色列
 
   return currentRow + size + 4;
 }
@@ -3044,4 +3044,3 @@ function calculateCorrelation_(x, y) {
   if (denominator === 0) return 0;
   return numerator / denominator;
 }
-
