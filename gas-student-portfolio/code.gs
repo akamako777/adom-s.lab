@@ -13,7 +13,7 @@ const TEXT_SHEET_NAME = "📝記述回答まとめ";
 const PERSONAL_SHEET_NAME = "🖨️個人カルテ";
 const ALL_SCHOOL_SHEET_NAME = "🏫全校集計レポート";
 const MASTER_SHEET_NAME = "名簿マスタ";
-const APP_TITLE = "📊 フォーム集計システム v12";
+const APP_TITLE = "📊 フォーム集計システム v15";
 
 // ★設定: 履歴参照リミット
 const MAX_RECORDS = 50000; 
@@ -584,16 +584,39 @@ function runUniversalAnalysis() {
     
     if (crossAxisColName && !String(crossAxisColName).startsWith("▼")) {
       const crossIdx = headers.indexOf(crossAxisColName);
+     // 既存のクロス集計呼び出し（そのまま維持または以下の形を確認）
       if (crossIdx !== -1) {
         const isTimestamp = /タイムスタンプ|Timestamp|日時|Date/i.test(crossAxisColName);
         const modeMsg = isTimestamp ? "【月別推移モード】" : "";
         ss.toast(`詳細クロス集計を作成中... ${modeMsg}`, "分析中", 20);
         Utilities.sleep(100); 
+        // ★修正: 戻り値(行番号)を受け取る形に変更しても良いが、
+        // renderCrossTabulation_ 内部で完結しているため、
+        // 単純に次の行を取得して続行します。
         renderCrossTabulation_(resultSheet, headers, targetRows, crossIdx, crossAxisColName, 8, isTimestamp);
       }
     }
 
-    resultSheet.activate();
+    // ==========================================
+    // ▼ ここから新規追加ブロック (相関 & 生データ) ▼
+    // ==========================================
+    let finalRow = resultSheet.getLastRow() + 3;
+
+    // 1. 相関分析マトリクス実行
+    try {
+      finalRow = generateCorrelationMatrix_(resultSheet, headers, targetRows, finalRow);
+    } catch (e) { console.warn("Correlation Error", e); }
+
+    // 2. 抽出生データテーブル出力
+    try {
+      renderRawDataTable_(resultSheet, headers, targetRows, finalRow);
+    } catch (e) { console.warn("RawData Error", e); }
+    // ==========================================
+    // ▲ ここまで新規追加ブロック ▲
+    // ==========================================
+
+    resultSheet.activate(); // 既存コード：108行目
+
     ss.toast("集計完了！記述回答は別シートにまとめました。", "完了", 5);
     Browser.msgBox(`全体集計完了！\n記述回答は「${TEXT_SHEET_NAME}」を確認してください。`);
 
@@ -2682,7 +2705,256 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
                 .build();
             
             sheet.insertChart(trendChart);
+
+// (直前のコード: sheet.insertChart(trendChart); の直後に挿入)
+
+       // ==========================================
+        // ▼ ここから新規追加: GAP分析グラフ ▼
+        // ==========================================
+        // 1. 全体平均の算出 (単純平均)
+        // 平均データから再計算するのではなく、平均の平均を取る(簡易)
+        const validAvgs = Object.values(item.averages).filter(v => v !== null);
+        
+        if (validAvgs.length > 0) {
+           const globalAvg = validAvgs.reduce((a,b) => a+b, 0) / validAvgs.length;
+           
+           // 2. GAPデータ作成 [Group, GapValue]
+           const gapData = [["Group", "GAP (vs Avg)"]];
+           groups.forEach(g => {
+             const val = item.averages[g];
+             gapData.push([g, val !== null ? (val - globalAvg) : 0]);
+           });
+
+           // 3. GAPグラフ描画 (棒グラフ)
+           // グラフ位置は、折れ線グラフの下 (chartRow + 25行分下)
+           const gapChartRow = chartRow + 23;
+
+           // 一時的にデータをグラフの裏(右側)に書き出す
+           const gapDataCol = startCol + summaryHeader.length + 2;
+           const gapDataRange = sheet.getRange(chartRow, gapDataCol, gapData.length, 2);
+           gapDataRange.setValues(gapData); 
+           // データは見えないように隠しても良いが、分析用に残す
+
+           const gapChart = sheet.newChart()
+              .setChartType(Charts.ChartType.COLUMN)
+              .addRange(gapDataRange)
+              .setPosition(gapChartRow, startCol, 0, 0)
+              .setOption('title', `GAP分析: 全体平均(${globalAvg.toFixed(2)})との乖離`)
+              .setOption('width', 1150)
+              .setOption('height', 300)
+              .setOption('legend', {position: 'none'}) // 凡例不要
+              .setOption('colors', ['#FF5722']) // GAPは目立つ色で
+              .build();
+           sheet.insertChart(gapChart);
+           
+           // 次のループのために行を進める場合は調整(今回はループ最後なので影響少)
+        }
+        // ==========================================
+        // ▲ ここまで GAP分析グラフ ▲
+        // ==========================================
+
         }
     }
   }
 }
+
+// ==================================================
+// 🆕 拡張機能: 相関分析 & 生データ出力 & GAP計算
+// ==================================================
+
+/**
+ * 拡張機能: 相関分析マトリクス生成 (v10.46 Modified)
+ * - ヘッダー: 0度/折り返し
+ * - 除外: メールアドレス等を強化
+ * - UI: ガイドパネル追加
+ */
+function generateCorrelationMatrix_(sheet, headers, body, startRow) {
+  // 1. 数値列の特定とデータ抽出
+  const numericData = []; // [{title: "Q1...", values: [1, 5, 3...]}]
+  const numRows = body.length;
+  if (numRows < 2) return startRow;
+
+  headers.forEach((h, colIdx) => {
+    // ★除外リスト強化: メール、ID、属性情報は除外
+    // メールアドレス同士の相関などは無意味なため弾く
+    if (/氏名|名前|出席番号|番号|No\.|ID|コード|Timestamp|タイムスタンプ|メール|Email|address|account/i.test(h)) return;
+    
+    const rawVals = body.map(r => r[colIdx]);
+    
+    // 数値判定 (8割以上が数値なら採用)
+    let nCnt = 0;
+    const nVals = [];
+    rawVals.forEach(v => {
+      const n = parseFloat(v);
+      if (!isNaN(n)) { nCnt++; nVals.push(n); } else { nVals.push(null); }
+    });
+
+    if (nCnt / numRows > 0.8) {
+      numericData.push({ title: h, values: nVals });
+    }
+  });
+
+  // 比較対象が2つ未満なら作成しない
+  if (numericData.length < 2) return startRow;
+
+  // 2. マトリクス計算 (Pearson)
+  const size = numericData.length;
+  const matrix = Array(size).fill(null).map(() => Array(size).fill(""));
+
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j < size; j++) {
+      if (i === j) {
+        matrix[i][j] = "-";
+      } else {
+        const r = calculateCorrelation_(numericData[i].values, numericData[j].values);
+        matrix[i][j] = r !== null ? parseFloat(r.toFixed(2)) : "";
+      }
+    }
+  }
+
+  // 3. 出力処理
+  let currentRow = startRow;
+  sheet.getRange(currentRow, 1).setValue("📈 相関分析マトリクス (相関係数)")
+       .setFontSize(12).setFontWeight("bold").setFontColor("#673AB7");
+  currentRow += 2;
+
+  // ヘッダー (横)
+  const titles = numericData.map(d => d.title);
+  
+  // ★Fix: 0度回転 & 折り返し設定 & 列幅固定
+  const headerRange = sheet.getRange(currentRow, 2, 1, size);
+  headerRange.setValues([titles])
+       .setBackground("#EDE7F6")
+       .setFontWeight("bold")
+       .setTextRotation(0) // 0度に戻す
+       .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP) // 折り返し
+       .setVerticalAlignment("middle")
+       .setHorizontalAlignment("center")
+       .setBorder(true, true, true, true, true, true);
+  
+  // 列幅を適度なサイズ(100px)に固定して見やすくする
+  sheet.setColumnWidths(2, size, 100);
+
+  // データ本体出力
+  const outRows = [];
+  for(let i=0; i<size; i++){
+    outRows.push([titles[i], ...matrix[i]]);
+  }
+  
+  sheet.getRange(currentRow + 1, 1, size, size + 1)
+       .setValues(outRows)
+       .setBorder(true, true, true, true, true, true)
+       .setHorizontalAlignment("center")
+       .setVerticalAlignment("middle");
+       
+  // 左端列(項目名)も折り返し設定
+  sheet.getRange(currentRow + 1, 1, size, 1).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+
+  // 4. 条件付き書式 (ヒートマップ)
+  const dataRange = sheet.getRange(currentRow + 1, 2, size, size);
+  const rules = sheet.getConditionalFormatRules();
+
+  // 正の相関 (赤)
+  rules.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberGreaterThan(0.4)
+    .setBackground("#FFCDD2") // 薄い赤
+    .setFontColor("#B71C1C")
+    .setRanges([dataRange])
+    .build());
+
+  // 負の相関 (青)
+  rules.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberLessThan(-0.4)
+    .setBackground("#BBDEFB") // 薄い青
+    .setFontColor("#0D47A1")
+    .setRanges([dataRange])
+    .build());
+
+  sheet.setConditionalFormatRules(rules);
+
+ // 5. ★New: 「見方」ガイドパネルの作成 (表の右側に配置)
+  const guideStartCol = 2 + size + 1; // 表の右隣+1列空ける
+  const guideRange = sheet.getRange(currentRow, guideStartCol, 7, 3);
+  
+  // ガイド用データ
+  const guideData = [
+    ["💡 相関係数の見方", "", ""],
+    ["数値", "意味", "色"],
+    ["0.7 ～ 1.0", "強い正の相関 (比例)", "赤"],
+    ["0.4 ～ 0.7", "正の相関あり", "薄赤"],
+    ["-0.4 ～ 0.4", "相関なし", "白"],
+    ["-0.7 ～ -0.4", "負の相関あり (反比例)", "薄青"],
+    ["-1.0 ～ -0.7", "強い負の相関", "青"]
+  ];
+  
+  // ガイド書き込み & 書式
+  guideRange.setValues(guideData);
+  sheet.getRange(currentRow, guideStartCol, 1, 3).merge().setFontWeight("bold").setBackground("#f3f3f3");
+  sheet.getRange(currentRow + 1, guideStartCol, 1, 3).setFontWeight("bold").setBackground("#e0e0e0");
+  
+  // 枠線
+  guideRange.setBorder(true, true, true, true, true, true);
+
+  // ★修正: 幅を自動調整ではなく、指定サイズ（広め）に固定
+  // 数値: 150px, 意味: 300px, 色: 100px
+  sheet.setColumnWidth(guideStartCol, 150);     // 数値列
+  sheet.setColumnWidth(guideStartCol + 1, 300); // 意味列（ここを大きく）
+  sheet.setColumnWidth(guideStartCol + 2, 100); // 色列
+
+  return currentRow + size + 4;
+}
+
+
+
+/**
+ * 拡張B: 抽出生データテーブル出力
+ */
+function renderRawDataTable_(sheet, headers, body, startRow) {
+  if (!body || body.length === 0) return startRow;
+
+  let currentRow = startRow;
+  sheet.getRange(currentRow, 1).setValue("🔍 抽出データ・ローデータ一覧 (フィルタ適用済)")
+       .setFontSize(12).setFontWeight("bold").setFontColor("#333333");
+  currentRow += 1;
+
+  // ヘッダー出力
+  sheet.getRange(currentRow, 1, 1, headers.length).setValues([headers])
+       .setBackground("#666666").setFontColor("white").setFontWeight("bold");
+  
+  // データ出力 (最大10000行まで安全策)
+  const safeRows = body.length > 10000 ? 10000 : body.length;
+  if (safeRows > 0) {
+    sheet.getRange(currentRow + 1, 1, safeRows, headers.length).setValues(body.slice(0, safeRows))
+         .setBorder(true, true, true, true, true, true);
+  }
+
+  if (body.length > 10000) {
+    sheet.getRange(currentRow + 1 + safeRows, 1).setValue("※表示制限: 10,000件までを表示しています");
+  }
+
+  return currentRow + safeRows + 3;
+}
+
+/**
+ * Helper: ピアソンの積率相関係数算出
+ */
+function calculateCorrelation_(x, y) {
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+  let n = 0;
+  for (let i = 0; i < x.length; i++) {
+    if (x[i] !== null && y[i] !== null) {
+      sumX += x[i];
+      sumY += y[i];
+      sumXY += x[i] * y[i];
+      sumX2 += x[i] * x[i];
+      sumY2 += y[i] * y[i];
+      n++;
+    }
+  }
+  if (n === 0) return null;
+  const numerator = (n * sumXY) - (sumX * sumY);
+  const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+  if (denominator === 0) return 0;
+  return numerator / denominator;
+}
+
