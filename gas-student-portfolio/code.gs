@@ -148,7 +148,7 @@ function onEdit(e) {
 }
 
 // ==================================================
-// ⚙️ 2. 初期設定 (Hybrid UI)
+// ⚙️ 2. 初期設定 (Hybrid UI) - Revised v10.46
 // ==================================================
 
 function initConfiguration() {
@@ -185,10 +185,10 @@ function initConfiguration() {
       ["条件C (列名)", "▼質問を選択"], // 13
       ["　値 (一致)", "-"], // 14
       ["", ""], // 15
-      ["【全体集計: 詳細比較分析】", ""], // 16
+      ["【全体集計: 詳細設定】", ""], // 16
       ["比較分析する列 (横軸)", "▼質問を選択"], // 17
       ["※選択すると右側に詳細表を作成", ""], // 18
-      ["", ""], // 19
+      ["全体集計:タイムスタンプ単位", "▼自動(しない)"], // 19 ★New: 日付集計設定
       ["", ""]  // 20
     ];
     
@@ -205,6 +205,10 @@ function initConfiguration() {
     configSheet.getRange("A2").setFontWeight("bold").setBackground("#EFEFEF");
     configSheet.getRange("A6").setFontWeight("bold").setBackground("#EFEFEF");
     configSheet.getRange(16, 1).setFontWeight("bold").setBackground("#D9EAD3"); 
+// A19:B19を黒い太枠で囲む
+    configSheet.getRange("A19:B19")
+      .setBorder(true, true, true, true, true, true, "black", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+
 
     // ★UI: B6の案内文を目立たない色に
     configSheet.getRange("B6").setFontColor("gray").setFontSize(8);
@@ -218,6 +222,14 @@ function initConfiguration() {
     }); 
 
     configSheet.getRange(18, 1).setFontSize(8).setFontColor("gray");
+
+    // ★行19: 日付単位プルダウン (New)
+    const dateUnitCell = configSheet.getRange(19, 2);
+    const dateRule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(["▼自動(しない)", "【年別】", "【月別】", "【日付別】"])
+        .build();
+    dateUnitCell.setDataValidation(dateRule).setBackground("#FFF2CC");
+
     configSheet.setColumnWidth(1, 200);
     configSheet.setColumnWidth(2, 400);
 
@@ -383,7 +395,7 @@ function enableSchoolMode() {
 
 
 // ==================================================
-// 📊 4. 全体集計実行 (Universal Analysis)
+// 📊 4. 全体集計実行 (Universal Analysis) - Revised v10.46
 // ==================================================
 
 function runUniversalAnalysis() {
@@ -396,6 +408,13 @@ function runUniversalAnalysis() {
     const targetSheetName = configSheet.getRange("B3").getValue();
     const dataSheet = ss.getSheetByName(targetSheetName);
     if (!dataSheet) { Browser.msgBox(`エラー: 対象シート「${targetSheetName}」が見つかりません。`); return; }
+
+    // ★New: 日付チャート単位の取得 (B19)
+    const dateUnitVal = configSheet.getRange(19, 2).getValue();
+    const isDateChartEnabled = dateUnitVal && dateUnitVal !== "▼自動(しない)" && !String(dateUnitVal).startsWith("▼");
+    let dateFormat = "yyyy/MM/dd";
+    if (dateUnitVal === "【年別】") dateFormat = "yyyy";
+    if (dateUnitVal === "【月別】") dateFormat = "yyyy/MM";
 
     const totalLastRow = dataSheet.getLastRow();
     const lastCol = dataSheet.getLastColumn();
@@ -488,10 +507,10 @@ function runUniversalAnalysis() {
 
       const colType = analyzeColumnType_(colValues, question);
 
-      // ★日付型(TIMESTAMP)も集計対象からスキップ (グラフ化しない)
-      if (colType === 'SKIP' || colType === 'TIMESTAMP') {
-        continue;
-      }
+      // ★Modified: 日付(TIMESTAMP)の扱い変更
+      // 設定がOFFならスキップ、ONなら通過させる
+      if (colType === 'SKIP') continue;
+      if (colType === 'TIMESTAMP' && !isDateChartEnabled) continue;
 
       if (colType === 'FREE_TEXT') {
         textSheet.getRange(3, textSheetCurrentCol).setValue(question)
@@ -517,14 +536,19 @@ function runUniversalAnalysis() {
       let numericCount = 0;
 
       colValues.forEach(val => {
-        // ★集計時の日付フォーマット統一
         let strVal = String(val);
+
+        // ★Modified: 日付フォーマットの適用
         if (val instanceof Date) {
-            strVal = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy/MM/dd");
+            strVal = Utilities.formatDate(val, Session.getScriptTimeZone(), dateFormat);
+        } else if (colType === 'TIMESTAMP') {
+            const d = new Date(val);
+            if(!isNaN(d)) strVal = Utilities.formatDate(d, Session.getScriptTimeZone(), dateFormat);
         }
 
-        const num = parseFloat(strVal);
-        if (!isNaN(num)) { 
+        // ★Strict Fix: 数値判定の厳格化 (parseFloat -> Number)
+        const num = Number(strVal);
+        if (!isNaN(num) && strVal.trim() !== "") { 
           totalScore += num; 
           numericCount++; 
         }
@@ -543,7 +567,33 @@ function runUniversalAnalysis() {
       }
 
       const uniqueKeys = Object.keys(counts);
-      const sortedKeys = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
+
+      // ★Safety: 項目が多すぎる場合の集約処理 (Top 20 + Others)
+      let finalKeys = [];
+      let finalCounts = {};
+      
+      if (uniqueKeys.length > 20) {
+        // カウント順にソート
+        const sortedAll = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
+        const top19 = sortedAll.slice(0, 19);
+        const others = sortedAll.slice(19);
+        
+        top19.forEach(k => {
+           finalKeys.push(k);
+           finalCounts[k] = counts[k];
+        });
+        
+        let otherSum = 0;
+        others.forEach(k => otherSum += counts[k]);
+        if (otherSum > 0) {
+          finalKeys.push("その他");
+          finalCounts["その他"] = otherSum;
+        }
+      } else {
+        // 通常ソート
+        finalKeys = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
+        finalCounts = counts;
+      }
 
       resultSheet.getRange(currentRow, 1).setValue(`Q${col}. ${question}`).setFontWeight("bold");
       currentRow++;
@@ -553,8 +603,8 @@ function runUniversalAnalysis() {
       currentRow++;
 
       const startDataRow = currentRow;
-      sortedKeys.forEach(key => {
-          const cnt = counts[key];
+      finalKeys.forEach(key => {
+          const cnt = finalCounts[key];
           let pct = targetRows.length > 0 ? Math.round((cnt / targetRows.length) * 100) + "%" : "0%";
           resultSheet.getRange(currentRow, 1, 1, 3).setValues([[key, cnt, pct]]);
           currentRow++;
@@ -563,8 +613,8 @@ function runUniversalAnalysis() {
       chartConfigs.push({
           title: `Q${col}. ${question}`,
           startRow: startDataRow, 
-          rowCount: sortedKeys.length,
-          type: sortedKeys.length <= 6 ? "PIE" : "BAR",
+          rowCount: finalKeys.length,
+          type: finalKeys.length <= 6 ? "PIE" : "BAR",
           anchorRow: startDataRow - 2
       });
 
@@ -574,56 +624,91 @@ function runUniversalAnalysis() {
     resultSheet.setColumnWidth(1, 300);
     resultSheet.setColumnWidth(4, 400); 
 
+   // ... (runUniversalAnalysisの前半部分はそのまま) ...
+
     try { 
-      generateUniversalCharts_(resultSheet, chartConfigs); 
+      generateUniversalCharts_(resultSheet, chartConfigs);
     } catch (e) { 
-      console.error(e); 
+      console.error(e);
     }
 
+    // ==========================================
+    // ▼▼▼ ここからロジック修正 (Fix for Issue ① & ②) ▼▼▼
+    // ==========================================
+    
+    // 1. 次の開始行を現在の最終行から安全に取得
+    let nextStartRow = resultSheet.getLastRow() + 3;
+
+    // 2. 詳細クロス集計 (B17設定ありの場合)
     const crossAxisColName = configSheet.getRange(CROSS_AXIS_LABEL_ROW, 2).getValue();
     
     if (crossAxisColName && !String(crossAxisColName).startsWith("▼")) {
       const crossIdx = headers.indexOf(crossAxisColName);
-     // 既存のクロス集計呼び出し（そのまま維持または以下の形を確認）
       if (crossIdx !== -1) {
         const isTimestamp = /タイムスタンプ|Timestamp|日時|Date/i.test(crossAxisColName);
-        const modeMsg = isTimestamp ? "【月別推移モード】" : "";
+        let modeMsg = "";
+        if (isTimestamp) {
+             if(dateFormat === "yyyy") modeMsg = "【年別推移モード】";
+             else if(dateFormat === "yyyy/MM") modeMsg = "【月別推移モード】";
+             else modeMsg = "【日別推移モード】";
+        }
+        
         ss.toast(`詳細クロス集計を作成中... ${modeMsg}`, "分析中", 20);
-        Utilities.sleep(100); 
-        // ★修正: 戻り値(行番号)を受け取る形に変更しても良いが、
-        // renderCrossTabulation_ 内部で完結しているため、
-        // 単純に次の行を取得して続行します。
-        renderCrossTabulation_(resultSheet, headers, targetRows, crossIdx, crossAxisColName, 8, isTimestamp);
+        Utilities.sleep(100);
+
+        // ★修正: 戻り値を確実に受け取り、かつエラー時も停止させない
+        try {
+          const crossResultRow = renderCrossTabulation_(resultSheet, headers, targetRows, crossIdx, crossAxisColName, 8, isTimestamp, dateFormat);
+          // もし有効な行数が返ってきたら更新、そうでなければ元のまま
+          if (crossResultRow && crossResultRow > nextStartRow) {
+            nextStartRow = crossResultRow;
+          }
+        } catch (e) {
+          console.warn("CrossTab Error: " + e.message);
+          // エラーが出ても次の処理に進むため、行だけ少し空ける
+          nextStartRow = resultSheet.getLastRow() + 5;
+        }
       }
     }
 
-    // ==========================================
-    // ▼ ここから新規追加ブロック (相関 & 生データ) ▼
-    // ==========================================
-    let finalRow = resultSheet.getLastRow() + 3;
+    // 安全マージン（グラフ重複防止のため念のため空ける）
+    nextStartRow += 2;
 
-    // 1. 相関分析マトリクス実行
+    // 3. 相関分析マトリクス実行
     try {
-      finalRow = generateCorrelationMatrix_(resultSheet, headers, targetRows, finalRow);
-    } catch (e) { console.warn("Correlation Error", e); }
+      // 念のため再度最終行チェック（グラフ等の浮動要素対策）
+      const checkRow = resultSheet.getLastRow() + 3;
+      if (checkRow > nextStartRow) nextStartRow = checkRow;
 
-    // 2. 抽出生データテーブル出力
+      const corrResultRow = generateCorrelationMatrix_(resultSheet, headers, targetRows, nextStartRow);
+      if (corrResultRow) nextStartRow = corrResultRow;
+    } catch (e) { 
+      console.warn("Correlation Error", e); 
+      // エラー表示をシートに出す（デバッグ用）
+      resultSheet.getRange(nextStartRow, 1).setValue("⚠️ 相関分析エラー: データ不足または形式不一致");
+      nextStartRow += 2;
+    }
+
+    // 4. 抽出生データテーブル出力
     try {
-      renderRawDataTable_(resultSheet, headers, targetRows, finalRow);
-    } catch (e) { console.warn("RawData Error", e); }
-    // ==========================================
-    // ▲ ここまで新規追加ブロック ▲
+      renderRawDataTable_(resultSheet, headers, targetRows, nextStartRow);
+    } catch (e) { 
+      console.warn("RawData Error", e); 
+    }
+
+    // ▲▲▲ ロジック修正ここまで ▲▲▲
     // ==========================================
 
-    resultSheet.activate(); // 既存コード：108行目
-
+    resultSheet.activate();
     ss.toast("集計完了！記述回答は別シートにまとめました。", "完了", 5);
     Browser.msgBox(`全体集計完了！\n記述回答は「${TEXT_SHEET_NAME}」を確認してください。`);
 
   } catch (e) {
+
     Browser.msgBox("⚠️ 全体集計中にエラーが発生しました:\n" + e.message);
   }
 }
+
 
 
 // ==================================================
@@ -1995,6 +2080,7 @@ function columnToLetter_(column) {
   return letter;
 }
 
+// 
 function updateQuestionDropdowns_(configSheet) {
   try {
     const targetSheetName = configSheet.getRange("B3").getValue();
@@ -2006,7 +2092,6 @@ function updateQuestionDropdowns_(configSheet) {
     
     const headers = targetSheet.getRange(1, 1, 1, targetSheet.getLastColumn()).getValues()[0];
     const lastRow = targetSheet.getLastRow();
-    
     let columnTypes = [];
     if (lastRow > 1) {
       const sampleData = targetSheet.getRange(2, 1, Math.min(lastRow - 1, 50), headers.length).getValues();
@@ -2018,6 +2103,7 @@ function updateQuestionDropdowns_(configSheet) {
        columnTypes = new Array(headers.length).fill('CATEGORY');
     }
 
+    // 現在選択されている値を全て取得（排他制御用）
     const currentSelections = {};
     [FILTER_ROW_A, FILTER_ROW_B, FILTER_ROW_C, CROSS_AXIS_LABEL_ROW].forEach(r => {
       const val = configSheet.getRange(r, 2).getValue();
@@ -2035,54 +2121,44 @@ function updateQuestionDropdowns_(configSheet) {
       if (val) currentRadarSelections[row] = val;
     }
 
-    const setupFilterDropdown = (targetRow, allowTimestamp, allowNumberSkip) => {
+    // ★修正: allowTimestamp引数を削除し、常にTIMESTAMPを含めるように変更
+    const setupFilterDropdown = (targetRow, allowNumberSkip) => {
       let candidates = [];
       headers.forEach((h, i) => {
+        // SKIPタイプ（IDや個人名など）の処理
         if (columnTypes[i] === 'SKIP') {
             if (allowNumberSkip && /番号|出席番号|No\.|ナンバー|number|ID/i.test(h)) {
                 candidates.push(h);
             }
-        } else if (columnTypes[i] !== 'FREE_TEXT') {
+        } 
+        // 記述回答(FREE_TEXT)以外は追加（TIMESTAMPもCATEGORYもここに含まれる）
+        else if (columnTypes[i] !== 'FREE_TEXT') {
             candidates.push(h);
         }
       });
-      
-      // ★フィルタプルダウンから日付(TIMESTAMP)列を確実に除外する
-      if (!allowTimestamp) {
-        // analyzeColumnType_ で TIMESTAMP と判定された列を除外リストに追加
-        headers.forEach((h, i) => {
-             if (columnTypes[i] === 'TIMESTAMP') {
-                 const idx = candidates.indexOf(h);
-                 if (idx > -1) candidates.splice(idx, 1);
-             }
-        });
-      }
 
-      // ★v10.24 Fix: B17 (横軸) の厳格化
+      // ★修正: B17(横軸)での「記述回答」除外のみ残し、タイムスタンプ除外ロジックを削除
       if (targetRow === CROSS_AXIS_LABEL_ROW) {
-         // 1. FREE_TEXT(記述)列は除外
          headers.forEach((h, i) => {
              if (columnTypes[i] === 'FREE_TEXT') {
                  const idx = candidates.indexOf(h);
                  if (idx > -1) candidates.splice(idx, 1);
              }
          });
-         // 2. 「タイムスタンプ」等の自動付与列も除外（手動日付はOK）
-         candidates = candidates.filter(h => !/タイムスタンプ|Timestamp/i.test(h));
+         // ※ここで以前あった「タイムスタンプ除外」コードを削除しました
       }
 
+      // 排他制御: 他のフィルタや軸で選ばれている項目を除外
       const others = Object.keys(currentSelections)
         .filter(r => Number(r) !== targetRow)
         .map(r => currentSelections[r]);
-      
       candidates = candidates.filter(h => !others.includes(h));
 
       if (candidates.length > 0) {
-        // ★UI Improvement: 不正な入力も許可（警告のみ）し、ヘルプテキストで案内
         const rule = SpreadsheetApp.newDataValidation()
              .requireValueInList(candidates)
-             .setAllowInvalid(true) // ★無効データ入力許可（警告のみ）
-             .setHelpText("リストから選択するか、空白のままにしてください。") // ★ヘルプテキスト設定
+             .setAllowInvalid(true)
+             .setHelpText("リストから選択するか、空白のままにしてください。")
              .build();
         configSheet.getRange(targetRow, 2).setDataValidation(rule);
       } else {
@@ -2092,23 +2168,18 @@ function updateQuestionDropdowns_(configSheet) {
 
     const setupSchoolDropdown = (targetRows, isRadar = false, isDate = false) => {
       let candidates = [];
-      
       headers.forEach((h, i) => {
           candidates.push(h); 
       });
-
       if (isDate) {
-      // ★v10.46: 「回」に加え「月」「年」単体も時系列キーとして許可
-      const datePattern = /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|年|月|回/i;
-      candidates = candidates.filter(h => datePattern.test(h));
-    } else if (isRadar) {
-
+        const datePattern = /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|年|月|回/i;
+        candidates = candidates.filter(h => datePattern.test(h));
+      } else if (isRadar) {
          const excludePattern = /氏名|名前|出席番号|番号|ID|Key|Email|メール|mail|address|Timestamp|タイムスタンプ|日付|Date|Time|学年|組|クラス|性別|Gender|作成|感想|自由|記述|コメント/i;
          candidates = candidates.filter(h => !excludePattern.test(h));
       }
 
       const ruleBuilder = SpreadsheetApp.newDataValidation();
-
       targetRows.forEach(r => {
         let myCandidates = [...candidates];
         if (isRadar) {
@@ -2117,9 +2188,8 @@ function updateQuestionDropdowns_(configSheet) {
              .map(rowKey => currentRadarSelections[rowKey]);
            myCandidates = myCandidates.filter(h => !others.includes(h));
         }
-
+        
         if (myCandidates.length > 0) {
-          // ★SOS設定などでマイルドな入力規則を適用
           const rule = ruleBuilder.requireValueInList(myCandidates)
              .setAllowInvalid(true)
              .setHelpText("リストから選択するか、直接入力してください。")
@@ -2131,23 +2201,23 @@ function updateQuestionDropdowns_(configSheet) {
       });
     };
 
-    // フィルタ設定: 日付列は除外 (allowTimestamp = false)
-    setupFilterDropdown(FILTER_ROW_A, false, false); 
-    setupFilterDropdown(FILTER_ROW_B, false, false); 
-    setupFilterDropdown(FILTER_ROW_C, false, false); 
-    
-    // クロス集計軸: 日付列OK (allowTimestamp = true)
-    setupFilterDropdown(CROSS_AXIS_LABEL_ROW, true, true); 
+    // ★修正: 引数を減らして呼び出し（タイムスタンプは常に許可されるため）
+    // フィルタ設定 (B7, B10, B13)
+    setupFilterDropdown(FILTER_ROW_A, false); 
+    setupFilterDropdown(FILTER_ROW_B, false); 
+    setupFilterDropdown(FILTER_ROW_C, false);
+    // クロス集計軸 (B17)
+    setupFilterDropdown(CROSS_AXIS_LABEL_ROW, true); 
 
     const schoolTargetRows = [];
-    schoolTargetRows.push(SCHOOL_CONFIG_START_ROW + 6); // SOS (31)
+    schoolTargetRows.push(SCHOOL_CONFIG_START_ROW + 6);
+    // SOS (31)
     setupSchoolDropdown(schoolTargetRows, false); 
     
     // Radar 1-8 (35-42)
     const radarTargetRows = [];
     for(let k=0; k<8; k++) radarTargetRows.push(SCHOOL_CONFIG_START_ROW + 10 + k); 
-    setupSchoolDropdown(radarTargetRows, true, false); 
-    
+    setupSchoolDropdown(radarTargetRows, true, false);
     // Date Col (28)
     const dateRow = SCHOOL_CONFIG_START_ROW + 3;
     setupSchoolDropdown([dateRow], false, true);
@@ -2156,6 +2226,7 @@ function updateQuestionDropdowns_(configSheet) {
     console.error("updateQuestionDropdowns_ Error: " + err.message);
   }
 }
+
 
 // ★日付選択プルダウン更新 (v10.24: 型一致ロジック追加)
 function updateDateDropdown_(configSheet) {
@@ -2320,28 +2391,39 @@ function updateValueDropdown_(configSheet, activeRow) {
 
   const dataSheet = ss.getSheetByName(targetSheetName);
   if (!dataSheet) return;
-  
   const headers = dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0];
   const colIndex = headers.indexOf(targetColName);
   if (colIndex === -1) return;
+
+  // ★追加: B19(時系列単位)の設定を取得してフォーマットを決定
+  const dateUnitVal = configSheet.getRange(19, 2).getValue();
+  let dateFormat = "yyyy/MM/dd";
+  if (dateUnitVal === "【年別】") dateFormat = "yyyy";
+  if (dateUnitVal === "【月別】") dateFormat = "yyyy/MM";
 
   const lastRow = dataSheet.getLastRow();
   let startRow = 2;
   let numRows = lastRow - 1;
   if (numRows > MAX_RECORDS) { 
     startRow = lastRow - MAX_RECORDS + 1; 
-    numRows = MAX_RECORDS; 
+    numRows = MAX_RECORDS;
   }
 
   const colValues = dataSheet.getRange(startRow, colIndex+1, numRows, 1).getValues().flat();
+  
+  // ★修正: Date型の場合、設定したフォーマットで文字列化してからリストにする
   const uniqueValues = [...new Set(colValues)]
     .filter(v => v !== "" && v != null)
-    .map(String)
+    .map(v => {
+        if (v instanceof Date) {
+            return Utilities.formatDate(v, Session.getScriptTimeZone(), dateFormat);
+        }
+        return String(v);
+    })
     .sort()
     .slice(0, 500);
-  
+
   if (uniqueValues.length > 0) {
-    // ★値のプルダウンも警告のみに設定
     const rule = SpreadsheetApp.newDataValidation()
         .requireValueInList(uniqueValues)
         .setAllowInvalid(true)
@@ -2352,6 +2434,7 @@ function updateValueDropdown_(configSheet, activeRow) {
     valueCell.setNote("⚠️ 候補なし");
   }
 }
+
 
 function generateUniversalCharts_(sheet, chartConfigs) {
   if (!chartConfigs || chartConfigs.length === 0) return;
@@ -2493,19 +2576,24 @@ function analyzeColumnType_(values, headerName) {
   return 'CATEGORY';
 }
 
-function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, startCol, isTimestamp) {
+// ★引数 dateFormat を末尾に追加
+function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, startCol, isTimestamp, dateFormat) {
+  // フォーマットのデフォルト値設定
+  const fmt = dateFormat || "yyyy/MM/dd";
+
   // --- A. 横軸（グループ）のキー生成 ---
   const getGroupKey = (row) => {
     const val = row[crossIdx];
     if (!val) return null;
-    // クロス集計でも日付フォーマット統一
+    
+    // ★修正: 固定の"yyyy/MM"ではなく、受け取ったfmtを使用する
     if (val instanceof Date) {
-      const fmt = isTimestamp ? "yyyy/MM" : "yyyy/MM/dd";
       return Utilities.formatDate(val, Session.getScriptTimeZone(), fmt);
     }
     return String(val);
   };
-
+  
+  // ソートロジック
   const groups = [...new Set(data.map(row => getGroupKey(row)).filter(v => v))].sort((a, b) => {
     return String(a).localeCompare(String(b), undefined, {numeric: true, sensitivity: 'base'});
   });
@@ -2513,35 +2601,32 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
   if (groups.length === 0) return;
 
   const output = [];
-  const headerRow = [`【詳細比較${isTimestamp ? ":月別" : ""}】質問項目`, "選択肢", ...groups];
+  // ヘッダー生成 (フォーマットに合わせてラベルを変える)
+  let modeLabel = "";
+  if (isTimestamp) {
+     if (fmt === "yyyy") modeLabel = ":年別";
+     else if (fmt === "yyyy/MM") modeLabel = ":月別";
+     else modeLabel = ":日別";
+  }
+  
+  const headerRow = [`【詳細比較${modeLabel}】質問項目`, "選択肢", ...groups];
   output.push(headerRow);
 
-  // ★v10.43: 数値厳格判定関数 (内部ヘルパー)
-  // "1. 満足" や "No.1" のような文字列混じりは除外し、"5" や "3.5" のみ通す
-  // さらに、2026/2/3のような日付や、12:00のような時刻も除外する
   const isStrictNumber = (val) => {
       if (val === "" || val === null) return false;
-      if (val instanceof Date) return false; // Dateオブジェクトは除外
-      
+      if (val instanceof Date) return false; 
       const s = String(val).trim();
       if (s === "") return false;
-      
-      // 日付スラッシュ、時刻コロン、ハイフン日付などが含まれていたら数値扱いしない
-      if (s.includes('/') || s.includes(':') || s.includes('-')) {
-          return false;
-      }
-
-      // JSのNumber()コンストラクタは、"1. abc" を NaN にするが、" 5 " は 5 にする
+      if (s.includes('/') || s.includes(':') || s.includes('-')) return false;
       const n = Number(s);
       return !isNaN(n);
   };
 
-  // ★v10.41: 平均値推移用データ配列 [{title, averages:{ group1: 4.5, ... }}]
   const averageTrendData = [];
 
   // --- B. 各質問についてループ ---
   for (let i = 1; i < headers.length; i++) {
-    if (i === crossIdx) continue; 
+    if (i === crossIdx) continue;
     const qTitle = headers[i];
     if (!qTitle) continue;
     
@@ -2549,67 +2634,48 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     if (colValues.length === 0) continue;
     
     const colType = analyzeColumnType_(colValues, qTitle);
-    
-    // TIMESTAMP型はスキップ
-    if (colType === 'SKIP' || colType === 'FREE_TEXT' || colType === 'TIMESTAMP') {
-      continue;
-    }
+    if (colType === 'SKIP' || colType === 'FREE_TEXT' || colType === 'TIMESTAMP') continue;
 
-    // ★v10.43: 属性カラム（学年、クラス、番号など）は平均値計算から除外するためのフラグ
     const isAttributeCol = /学年|組|クラス|番号|出席番号|No\.|ID|コード|性別|Gender|氏名|名前|Name/i.test(qTitle);
 
-    // --- C. ペアデータ作成 (回答, グループ) ---
     const pairs = data.map(row => ({
-      val: row[i], // raw value
-      ans: String(row[i]), // string for counting
+      val: row[i], 
+      ans: String(row[i]), 
       group: getGroupKey(row)
     })).filter(p => p.ans && p.group && p.ans !== "");
 
     if (pairs.length === 0) continue;
 
-    // --- D. 数値判定ロジック (for Average Trend) ---
-    // ★v10.43: isStrictNumber を使用して厳格にチェック
     let numericCount = 0;
-    pairs.forEach(p => {
-       if (isStrictNumber(p.val)) numericCount++;
-    });
-    
-    // 属性カラムでなく、かつ8割以上が「厳格な数値」の場合のみ平均値を出す
+    pairs.forEach(p => { if (isStrictNumber(p.val)) numericCount++; });
     const isNumericQuestion = !isAttributeCol && (numericCount / pairs.length) > 0.8;
 
-    // 数値質問なら平均値集計を実行
     if (isNumericQuestion) {
-        const stats = {}; // { group: {sum, count} }
+        const stats = {};
         groups.forEach(g => stats[g] = {sum: 0, count: 0});
-        
         pairs.forEach(p => {
-            // ★v10.43: ここでも isStrictNumber でガード
             if (isStrictNumber(p.val) && stats[p.group]) {
-                const vNum = Number(String(p.val).trim()); // Number()で変換
+                const vNum = Number(String(p.val).trim()); 
                 stats[p.group].sum += vNum;
                 stats[p.group].count++;
             }
         });
-        
         const averages = {};
         groups.forEach(g => {
             const s = stats[g];
             averages[g] = s.count > 0 ? parseFloat((s.sum / s.count).toFixed(2)) : null;
         });
-        
         averageTrendData.push({ title: qTitle, averages: averages });
     }
 
-    // --- E. 従来のクロス集計 (件数) ---
     const uniqueAnswers = [...new Set(pairs.map(p => p.ans))].sort();
-    if (uniqueAnswers.length > 50) continue; // 多すぎる選択肢はスキップ
+    if (uniqueAnswers.length > 50) continue; 
 
     const counts = {};
     uniqueAnswers.forEach(ans => {
       counts[ans] = {};
       groups.forEach(g => counts[ans][g] = 0);
     });
-
     pairs.forEach(p => {
       if (counts[p.ans] && counts[p.ans][p.group] !== undefined) {
         counts[p.ans][p.group]++;
@@ -2625,38 +2691,45 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
       output.push(rowData);
       isFirst = false;
     });
-
     output.push(new Array(headerRow.length).fill(""));
   }
 
-  // --- F. 出力処理 (件数表) ---
+  // --- F. 出力処理 ---
   if (output.length > 0) {
     const maxRows = sheet.getMaxRows();
     const maxCols = sheet.getMaxColumns();
+    // 既存データのクリア (ヘッダーより下、開始列より右をクリア)
     if (maxCols >= startCol) {
-      sheet.getRange(1, startCol, maxRows, maxCols - startCol + 1).clearContent().clearFormat();
+      // 安全策: 行数が少ない場合はクリア範囲を調整
+      const clearRows = maxRows > 1 ? maxRows - 1 : 1;
+      try {
+        sheet.getRange(1, startCol, clearRows, maxCols - startCol + 1).clearContent().clearFormat();
+      } catch (e) { /* 範囲外エラー抑制 */ }
     }
 
+    // クロス集計表の出力
     sheet.getRange(1, startCol).setValue(`🔍 詳細クロス集計（軸: ${crossName}）`)
          .setFontSize(12).setFontWeight("bold").setFontColor("#0b5394");
-
+    
     const range = sheet.getRange(4, startCol, output.length, output[0].length);
     range.setValues(output);
     range.setBorder(true, true, true, true, true, true);
     
+    // スタイル適用
     sheet.getRange(4, startCol, 1, output[0].length).setBackground("#c9daf8").setFontWeight("bold").setHorizontalAlignment("center");
     sheet.getRange(4, startCol, output.length, 1).setBackground("#f3f3f3").setFontWeight("bold");
     
+    // 列幅調整
     sheet.setColumnWidth(startCol, 200); 
-    sheet.setColumnWidth(startCol + 1, 150); 
+    sheet.setColumnWidth(startCol + 1, 150);
     for (let k = 0; k < groups.length; k++) {
       sheet.setColumnWidth(startCol + 2 + k, 70);
     }
     
-    // 現在の最終行を記録
     let currentOutputRow = 4 + output.length + 2;
 
-    // --- G. ★v10.41 New: 平均値推移表 & グラフ生成 ---
+    // --- G. 平均値推移表 & グラフ (Trend & GAP Analysis) ---
+    // ここでグラフ描画と、次の開始行の計算を行う
     if (averageTrendData.length > 0) {
         sheet.getRange(currentOutputRow, startCol).setValue(`📈 平均値比較推移（軸: ${crossName}）`)
              .setFontSize(12).setFontWeight("bold").setFontColor("#E91E63");
@@ -2678,12 +2751,12 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
             });
             avgRows.push(rowVals);
         });
-        
+
         if (avgRows.length > 0) {
             const avgRange = sheet.getRange(currentOutputRow, startCol, avgRows.length, avgRows[0].length);
             avgRange.setValues(avgRows).setBorder(true, true, true, true, true, true);
             
-            // グラフ生成 (チャートは表の下に配置)
+            // 1. 折れ線グラフ (Trend Chart)
             const chartRow = currentOutputRow + avgRows.length + 2;
             const chartDataRange = sheet.getRange(startAvgRow - 1, startCol, avgRows.length + 1, summaryHeader.length);
             
@@ -2692,10 +2765,8 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
                 .addRange(chartDataRange)
                 .setPosition(chartRow, startCol, 0, 0)
                 .setOption('title', `詳細クロス集計: 平均値推移 (${crossName})`)
-                // ★v10.42 Fix: グラフ幅を1150pxに拡大 (H列〜R列末相当)
-                .setOption('width', 1150) 
-                .setOption('height', 450)
-                // ★v10.40準拠: 行列入れ替えとテキストラベル強制で見やすく
+                .setOption('width', 1000) 
+                .setOption('height', 400)
                 .setTransposeRowsAndColumns(true) 
                 .setOption('treatLabelsAsText', true) 
                 .setOption('useFirstColumnAsDomain', true)
@@ -2703,60 +2774,69 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
                 .setOption('legend', {position: 'right'})
                 .setOption('vAxis', {title: '平均スコア'})
                 .build();
-            
             sheet.insertChart(trendChart);
 
-// (直前のコード: sheet.insertChart(trendChart); の直後に挿入)
+            // 2. GAP分析グラフ (Gap Chart)
+            // 全項目の平均値に対するGAPを可視化
+            const validAvgs = Object.values(averageTrendData[0].averages).filter(v => v !== null); // 簡易的に最初の項目のデータ構造を利用
+            if (validAvgs.length > 0) {
+               // 全体平均算出 (単純平均)
+               let globalSum = 0, globalCnt = 0;
+               averageTrendData.forEach(d => {
+                   Object.values(d.averages).forEach(v => { if(v!==null){ globalSum+=v; globalCnt++; }});
+               });
+               const globalAvg = globalCnt > 0 ? globalSum / globalCnt : 0;
 
-       // ==========================================
-        // ▼ ここから新規追加: GAP分析グラフ ▼
-        // ==========================================
-        // 1. 全体平均の算出 (単純平均)
-        // 平均データから再計算するのではなく、平均の平均を取る(簡易)
-        const validAvgs = Object.values(item.averages).filter(v => v !== null);
-        
-        if (validAvgs.length > 0) {
-           const globalAvg = validAvgs.reduce((a,b) => a+b, 0) / validAvgs.length;
-           
-           // 2. GAPデータ作成 [Group, GapValue]
-           const gapData = [["Group", "GAP (vs Avg)"]];
-           groups.forEach(g => {
-             const val = item.averages[g];
-             gapData.push([g, val !== null ? (val - globalAvg) : 0]);
-           });
+               // GAPデータ作成
+               const gapData = [["Group", "GAP (vs Total Avg)"]];
+               groups.forEach(g => {
+                   let gSum = 0, gCnt = 0;
+                   averageTrendData.forEach(d => {
+                       if(d.averages[g] !== null) { gSum += d.averages[g]; gCnt++; }
+                   });
+                   const gAvg = gCnt > 0 ? gSum / gCnt : 0;
+                   gapData.push([g, parseFloat((gAvg - globalAvg).toFixed(2))]);
+               });
 
-           // 3. GAPグラフ描画 (棒グラフ)
-           // グラフ位置は、折れ線グラフの下 (chartRow + 25行分下)
-           const gapChartRow = chartRow + 23;
+               // データ書き出し (グラフの裏側エリアを使用)
+               const gapDataRow = chartRow;
+               const gapDataCol = startCol + summaryHeader.length + 2; 
+               const gapRange = sheet.getRange(gapDataRow, gapDataCol, gapData.length, 2);
+               gapRange.setValues(gapData);
 
-           // 一時的にデータをグラフの裏(右側)に書き出す
-           const gapDataCol = startCol + summaryHeader.length + 2;
-           const gapDataRange = sheet.getRange(chartRow, gapDataCol, gapData.length, 2);
-           gapDataRange.setValues(gapData); 
-           // データは見えないように隠しても良いが、分析用に残す
-
-           const gapChart = sheet.newChart()
-              .setChartType(Charts.ChartType.COLUMN)
-              .addRange(gapDataRange)
-              .setPosition(gapChartRow, startCol, 0, 0)
-              .setOption('title', `GAP分析: 全体平均(${globalAvg.toFixed(2)})との乖離`)
-              .setOption('width', 1150)
-              .setOption('height', 300)
-              .setOption('legend', {position: 'none'}) // 凡例不要
-              .setOption('colors', ['#FF5722']) // GAPは目立つ色で
-              .build();
-           sheet.insertChart(gapChart);
-           
-           // 次のループのために行を進める場合は調整(今回はループ最後なので影響少)
-        }
-        // ==========================================
-        // ▲ ここまで GAP分析グラフ ▲
-        // ==========================================
-
+               const gapChartRow = chartRow + 21; // 折れ線グラフの下
+               const gapChart = sheet.newChart()
+                  .setChartType(Charts.ChartType.COLUMN)
+                  .addRange(gapRange)
+                  .setPosition(gapChartRow, startCol, 0, 0)
+                  .setOption('title', `GAP分析: 全体平均(${globalAvg.toFixed(2)})との乖離`)
+                  .setOption('width', 1000)
+                  .setOption('height', 300)
+                  .setOption('legend', {position: 'none'})
+                  .setOption('colors', ['#FF5722'])
+                  .build();
+               sheet.insertChart(gapChart);
+            }
         }
     }
+
+    // ★修正ポイント: グラフを描画した場合、その高さを考慮して次の開始位置を決定する
+    // これにより、後続の「相関分析」などがグラフと重なるのを防ぐ
+    let nextStartRow = currentOutputRow;
+    if (averageTrendData.length > 0) {
+        // ヒートマップ + 折れ線(20行) + GAP(15行) + 余白
+        nextStartRow = currentOutputRow + 45; 
+    }
+    
+    return nextStartRow;
+
+  } else {
+    // ★修正ポイント: データがなく出力しなかった場合でも、有効な行番号を返す
+    // これを返さないと呼び出し元で undefined になりエラー停止する
+    return Math.max(4, sheet.getLastRow() + 2);
   }
-}
+} // End function
+
 
 // ==================================================
 // 🆕 拡張機能: 相関分析 & 生データ出力 & GAP計算
@@ -2775,24 +2855,31 @@ function generateCorrelationMatrix_(sheet, headers, body, startRow) {
   if (numRows < 2) return startRow;
 
   headers.forEach((h, colIdx) => {
-    // ★除外リスト強化: メール、ID、属性情報は除外
-    // メールアドレス同士の相関などは無意味なため弾く
-    if (/氏名|名前|出席番号|番号|No\.|ID|コード|Timestamp|タイムスタンプ|メール|Email|address|account/i.test(h)) return;
+    // 【修正】除外キーワードを強化（学年、組、HR、Class等を追加）
+    if (/学年|組|クラス|HR|Grade|Class|氏名|名前|出席番号|番号|No\.|ID|コード|Timestamp|タイムスタンプ|メール|Email|address|account/i.test(h)) return;
     
     const rawVals = body.map(r => r[colIdx]);
     
-    // 数値判定 (8割以上が数値なら採用)
+    // 【修正】数値判定の厳格化 (parseFloatをやめ、Numberを使用)
     let nCnt = 0;
     const nVals = [];
     rawVals.forEach(v => {
-      const n = parseFloat(v);
-      if (!isNaN(n)) { nCnt++; nVals.push(n); } else { nVals.push(null); }
+      const s = String(v).trim();
+      // 日付スラッシュや時刻コロンが含まれる場合は数値扱いしない
+      if (s === "" || s.includes('/') || s.includes(':')) {
+          nVals.push(null);
+      } else {
+          const n = Number(s);
+          if (!isNaN(n)) { nCnt++; nVals.push(n); } else { nVals.push(null); }
+      }
     });
 
+    // 8割以上が数値の場合のみ採用
     if (nCnt / numRows > 0.8) {
       numericData.push({ title: h, values: nVals });
     }
   });
+
 
   // 比較対象が2つ未満なら作成しない
   if (numericData.length < 2) return startRow;
@@ -2896,7 +2983,7 @@ function generateCorrelationMatrix_(sheet, headers, body, startRow) {
   guideRange.setBorder(true, true, true, true, true, true);
 
   // ★修正: 幅を自動調整ではなく、指定サイズ（広め）に固定
-  // 数値: 150px, 意味: 300px, 色: 100px
+  // 数値: 150px, 意味: 150px, 色: 150px
   sheet.setColumnWidth(guideStartCol, 150);     // 数値列
   sheet.setColumnWidth(guideStartCol + 1, 300); // 意味列（ここを大きく）
   sheet.setColumnWidth(guideStartCol + 2, 100); // 色列
