@@ -2586,7 +2586,6 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     const val = row[crossIdx];
     if (!val) return null;
     
-    // ★修正: 固定の"yyyy/MM"ではなく、受け取ったfmtを使用する
     if (val instanceof Date) {
       return Utilities.formatDate(val, Session.getScriptTimeZone(), fmt);
     }
@@ -2601,7 +2600,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
   if (groups.length === 0) return;
 
   const output = [];
-  // ヘッダー生成 (フォーマットに合わせてラベルを変える)
+  // ヘッダー生成
   let modeLabel = "";
   if (isTimestamp) {
      if (fmt === "yyyy") modeLabel = ":年別";
@@ -2623,6 +2622,10 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
   };
 
   const averageTrendData = [];
+  // ★グラフ生成用の設定リスト
+  const stackChartConfigs = [];
+  // output配列内での現在の行インデックス（0はヘッダー）
+  let currentOutputIndex = 1; 
 
   // --- B. 各質問についてループ ---
   for (let i = 1; i < headers.length; i++) {
@@ -2676,13 +2679,17 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
       counts[ans] = {};
       groups.forEach(g => counts[ans][g] = 0);
     });
+
     pairs.forEach(p => {
       if (counts[p.ans] && counts[p.ans][p.group] !== undefined) {
         counts[p.ans][p.group]++;
       }
     });
 
+    // --- データ行の作成 ---
     let isFirst = true;
+    const startRowIndex = currentOutputIndex; 
+
     uniqueAnswers.forEach(ans => {
       const rowData = [isFirst ? qTitle : "", ans];
       groups.forEach(g => {
@@ -2690,17 +2697,43 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
       });
       output.push(rowData);
       isFirst = false;
+      currentOutputIndex++;
     });
+
+    // ★グラフ生成予約 (選択肢が2〜15個の場合のみ)
+    if (uniqueAnswers.length >= 2 && uniqueAnswers.length <= 15) {
+       stackChartConfigs.push({
+          title: qTitle,
+          startRowRel: startRowIndex, // output配列内での開始位置
+          numRows: uniqueAnswers.length
+       });
+    }
+
+    // 空行挿入
     output.push(new Array(headerRow.length).fill(""));
+    currentOutputIndex++;
   }
 
-  // --- F. 出力処理 ---
+// --- F. 出力処理 ---
   if (output.length > 0) {
+    
+    // ▼▼▼ 追加コード: 列数が足りない場合に自動拡張する ▼▼▼
+    const currentMaxCols = sheet.getMaxColumns();
+    // 必要な列数 = 開始列(startCol) + データ列数 + 余白(グラフ/GAP分析エリア用として20列確保)
+    const requiredCols = startCol + output[0].length + 20;
+
+    if (requiredCols > currentMaxCols) {
+      sheet.insertColumnsAfter(currentMaxCols, requiredCols - currentMaxCols);
+    }
+    // ▲▲▲ 追加コードここまで ▲▲▲
+
     const maxRows = sheet.getMaxRows();
-    const maxCols = sheet.getMaxColumns();
-    // 既存データのクリア (ヘッダーより下、開始列より右をクリア)
+    // ※ ここで再取得しないと古い列数のまま認識されることがあるため
+    const maxCols = sheet.getMaxColumns(); 
+
+    // 既存データのクリア
     if (maxCols >= startCol) {
-      // 安全策: 行数が少ない場合はクリア範囲を調整
+
       const clearRows = maxRows > 1 ? maxRows - 1 : 1;
       try {
         sheet.getRange(1, startCol, clearRows, maxCols - startCol + 1).clearContent().clearFormat();
@@ -2710,7 +2743,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     // クロス集計表の出力
     sheet.getRange(1, startCol).setValue(`🔍 詳細クロス集計（軸: ${crossName}）`)
          .setFontSize(12).setFontWeight("bold").setFontColor("#0b5394");
-    
+
     const range = sheet.getRange(4, startCol, output.length, output[0].length);
     range.setValues(output);
     range.setBorder(true, true, true, true, true, true);
@@ -2720,16 +2753,54 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     sheet.getRange(4, startCol, output.length, 1).setBackground("#f3f3f3").setFontWeight("bold");
     
     // 列幅調整
-    sheet.setColumnWidth(startCol, 200); 
+    sheet.setColumnWidth(startCol, 200);
     sheet.setColumnWidth(startCol + 1, 150);
     for (let k = 0; k < groups.length; k++) {
       sheet.setColumnWidth(startCol + 2 + k, 70);
     }
     
+ // --- ★New: 100%積み上げ縦棒グラフの生成 (Final Fix + MergeStrategy) ---
+    // 配置列: 表の右端から2列空けたところ
+    const graphLeftCol = startCol + output[0].length + 2; 
+    const baseRow = 4; // 表の開始行
+
+    stackChartConfigs.forEach(cfg => {
+       try {
+         // ヘッダー範囲: I列(選択肢)〜最終列
+         const headerRange = sheet.getRange(baseRow, startCol + 1, 1, groups.length + 1);
+         
+         // データ範囲: I列(選択肢)〜最終列 × 行数
+         const dataRowStart = baseRow + cfg.startRowRel;
+         const dataRange = sheet.getRange(dataRowStart, startCol + 1, cfg.numRows, groups.length + 1);
+         
+         const chart = sheet.newChart()
+           .setChartType(Charts.ChartType.COLUMN)
+           .addRange(headerRange) 
+           .addRange(dataRange)
+           .setPosition(dataRowStart, graphLeftCol, 0, 0)
+           .setOption('title', cfg.title)
+           .setOption('isStacked', 'percent')
+           .setOption('width', 1000)
+           .setOption('height', 300)
+           // ▼▼▼ 修正箇所（MERGE_COLUMNS -> MERGE_ROWS） ▼▼▼
+           .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_ROWS)
+           // ▲▲▲ これで「範囲を結合: 上下」になります ▲▲▲
+           .setNumHeaders(1)
+           .setTransposeRowsAndColumns(true)
+           .setOption('useFirstColumnAsDomain', true) 
+           .build();
+           
+         sheet.insertChart(chart);
+
+       } catch (e) {
+         console.warn(`Graph Error: ${cfg.title}`, e);
+       }
+    });
+
+
     let currentOutputRow = 4 + output.length + 2;
 
     // --- G. 平均値推移表 & グラフ (Trend & GAP Analysis) ---
-    // ここでグラフ描画と、次の開始行の計算を行う
     if (averageTrendData.length > 0) {
         sheet.getRange(currentOutputRow, startCol).setValue(`📈 平均値比較推移（軸: ${crossName}）`)
              .setFontSize(12).setFontWeight("bold").setFontColor("#E91E63");
@@ -2777,10 +2848,9 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
             sheet.insertChart(trendChart);
 
             // 2. GAP分析グラフ (Gap Chart)
-            // 全項目の平均値に対するGAPを可視化
-            const validAvgs = Object.values(averageTrendData[0].averages).filter(v => v !== null); // 簡易的に最初の項目のデータ構造を利用
+            const validAvgs = Object.values(averageTrendData[0].averages).filter(v => v !== null);
             if (validAvgs.length > 0) {
-               // 全体平均算出 (単純平均)
+               // 全体平均算出
                let globalSum = 0, globalCnt = 0;
                averageTrendData.forEach(d => {
                    Object.values(d.averages).forEach(v => { if(v!==null){ globalSum+=v; globalCnt++; }});
@@ -2798,7 +2868,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
                    gapData.push([g, parseFloat((gAvg - globalAvg).toFixed(2))]);
                });
 
-               // データ書き出し (グラフの裏側エリアを使用)
+               // データ書き出し
                const gapDataRow = chartRow;
                const gapDataCol = startCol + summaryHeader.length + 2; 
                const gapRange = sheet.getRange(gapDataRow, gapDataCol, gapData.length, 2);
@@ -2820,19 +2890,15 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
         }
     }
 
-    // ★修正ポイント: グラフを描画した場合、その高さを考慮して次の開始位置を決定する
-    // これにより、後続の「相関分析」などがグラフと重なるのを防ぐ
     let nextStartRow = currentOutputRow;
     if (averageTrendData.length > 0) {
-        // ヒートマップ + 折れ線(20行) + GAP(15行) + 余白
-        nextStartRow = currentOutputRow + 45; 
+        nextStartRow = currentOutputRow + 45;
     }
     
     return nextStartRow;
 
   } else {
-    // ★修正ポイント: データがなく出力しなかった場合でも、有効な行番号を返す
-    // これを返さないと呼び出し元で undefined になりエラー停止する
+    // データがない場合
     return Math.max(4, sheet.getLastRow() + 2);
   }
 } // End function
@@ -3044,3 +3110,4 @@ function calculateCorrelation_(x, y) {
   if (denominator === 0) return 0;
   return numerator / denominator;
 }
+
