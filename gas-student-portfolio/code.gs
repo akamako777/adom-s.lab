@@ -13,7 +13,7 @@ const TEXT_SHEET_NAME = "📝記述回答まとめ";
 const PERSONAL_SHEET_NAME = "🖨️個人カルテ";
 const ALL_SCHOOL_SHEET_NAME = "🏫全校集計レポート";
 const MASTER_SHEET_NAME = "名簿マスタ";
-const APP_TITLE = "📊 フォーム集計システム v15";
+const APP_TITLE = "📊 フォーム集計システム VX";
 
 // ★設定: 履歴参照リミット
 const MAX_RECORDS = 50000; 
@@ -393,9 +393,8 @@ function enableSchoolMode() {
   }
 }
 
-
 // ==================================================
-// 📊 4. 全体集計実行 (Universal Analysis) - Revised v10.46
+// 📊 4. 全体集計実行 (Universal Analysis) - BI-Edition Complete
 // ==================================================
 
 function runUniversalAnalysis() {
@@ -409,18 +408,33 @@ function runUniversalAnalysis() {
     const dataSheet = ss.getSheetByName(targetSheetName);
     if (!dataSheet) { Browser.msgBox(`エラー: 対象シート「${targetSheetName}」が見つかりません。`); return; }
 
-    // ★New: 日付チャート単位の取得 (B19)
+    // --- 日付・時系列設定の取得 (B19) ---
     const dateUnitVal = configSheet.getRange(19, 2).getValue();
     const isDateChartEnabled = dateUnitVal && dateUnitVal !== "▼自動(しない)" && !String(dateUnitVal).startsWith("▼");
+    
+    // ★重要: フィルタリング時の「翻訳」に使うフォーマットを定義
     let dateFormat = "yyyy/MM/dd";
     if (dateUnitVal === "【年別】") dateFormat = "yyyy";
     if (dateUnitVal === "【月別】") dateFormat = "yyyy/MM";
 
+    // --- データ読み込み ---
     const totalLastRow = dataSheet.getLastRow();
     const lastCol = dataSheet.getLastColumn();
     if (totalLastRow < 2) { Browser.msgBox("データがありません。"); return; }
 
     const headers = dataSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    
+    // ★BI機能: 時系列集計用に「日付列」のインデックスを自動特定
+    let dateColIdx = -1;
+    const configDateColName = configSheet.getRange(SCHOOL_CONFIG_START_ROW + 3, 2).getValue(); 
+    if (configDateColName && !String(configDateColName).startsWith("▼")) {
+        dateColIdx = headers.indexOf(configDateColName);
+    }
+    if (dateColIdx === -1) {
+        dateColIdx = headers.findIndex(h => /日付|日時|Date|Time|Timestamp|タイムスタンプ|年月|実施日/i.test(String(h)));
+    }
+    if (dateColIdx === -1) dateColIdx = 0;
+
     let startRow = 2;
     let numRows = totalLastRow - 1;
     if (numRows > MAX_RECORDS) {
@@ -429,14 +443,26 @@ function runUniversalAnalysis() {
     }
     const body = dataSheet.getRange(startRow, 1, numRows, lastCol).getValues();
 
+   // --- フィルタリング処理 ---
     let filters = [];
     [FILTER_ROW_A, FILTER_ROW_B, FILTER_ROW_C].forEach(r => {
       let cName = configSheet.getRange(r, 2).getValue();
       let cVal = configSheet.getRange(r+1, 2).getValue();
-      if (cName && cVal !== "" && !String(cName).startsWith("▼")) {
-        filters.push({ name: cName, value: String(cVal) });
+      
+      // 条件値が存在する場合のみ処理
+      if (cName && cVal !== "" && cVal != null && !String(cName).startsWith("▼")) {
+        let valStr = String(cVal);
+        
+        // ★修正: 条件値(cVal)が自動的に日付型になっていた場合、設定に合わせて翻訳する
+        // (これをしないと "Thu Dec 04..." と "2025/12/04" の比較になり不一致になる)
+        if (cVal instanceof Date) {
+            valStr = Utilities.formatDate(cVal, Session.getScriptTimeZone(), dateFormat);
+        }
+        
+        filters.push({ name: cName, value: valStr });
       }
     });
+
 
     const uniqueFilterNames = new Set(filters.map(f => f.name));
     if (uniqueFilterNames.size !== filters.length) {
@@ -447,35 +473,54 @@ function runUniversalAnalysis() {
     let targetRows = body;
     let filterLogArr = [];
 
-    if (filters.length > 0) {
+   if (filters.length > 0) {
       const validFilters = filters.map(f => {
         const idx = headers.indexOf(f.name);
         return { index: idx, value: f.value, name: f.name };
-      }).filter(f => f.index !== -1); 
+      }).filter(f => f.index !== -1);
 
       if (validFilters.length > 0) {
+          // ★修正: データ(row)と条件(f.value)を比較する際、日付型なら「翻訳」してから比較する
           targetRows = body.filter(row => {
-            return validFilters.every(f => String(row[f.index]) === f.value);
+            return validFilters.every(f => {
+                const rawVal = row[f.index];
+                let compareVal = String(rawVal); // 通常は文字として比較
+
+                // データが日付型の場合、設定(B19)に合わせて翻訳 (例: 2025/12/04 10:00 → 2025/12/04)
+                if (rawVal instanceof Date) {
+                     compareVal = Utilities.formatDate(rawVal, Session.getScriptTimeZone(), dateFormat);
+                } 
+                // データが文字列だが、中身が日付っぽい場合もケア（念のため）
+                else if (typeof rawVal === 'string' && !isNaN(Date.parse(rawVal)) && (rawVal.includes('/') || rawVal.includes('-'))) {
+                     const d = new Date(rawVal);
+                     // 有効な日付なら翻訳
+                     if (!isNaN(d.getTime())) {
+                        compareVal = Utilities.formatDate(d, Session.getScriptTimeZone(), dateFormat);
+                     }
+                }
+
+                // 翻訳後の値で比較 (例: "2025/12/04" === "2025/12/04")
+                return compareVal === f.value;
+            });
           });
           filterLogArr = validFilters.map(f => `${f.name}=${f.value}`);
       }
     }
+
 
     if (targetRows.length === 0) {
       Browser.msgBox(`条件に一致するデータはありませんでした。`);
       return;
     }
 
+    // --- 出力シート準備 ---
     ss.toast("集計を開始します...", "処理中", 10);
 
     let resultSheet = ss.getSheetByName(RESULT_SHEET_NAME);
     if (resultSheet) {
-      const existingCharts = resultSheet.getCharts();
-      existingCharts.forEach(c => resultSheet.removeChart(c));
-      resultSheet.clear();
-    } else {
-      resultSheet = ss.insertSheet(RESULT_SHEET_NAME);
+      ss.deleteSheet(resultSheet); 
     }
+    resultSheet = ss.insertSheet(RESULT_SHEET_NAME); 
 
     let textSheet = ss.getSheetByName(TEXT_SHEET_NAME);
     if (textSheet) {
@@ -488,7 +533,6 @@ function runUniversalAnalysis() {
     let textSheetCurrentCol = 1; 
 
     let currentRow = 1;
-
     resultSheet.getRange(currentRow, 1).setValue(`集計レポート: ${targetSheetName}`).setFontWeight("bold");
     currentRow++;
     resultSheet.getRange(currentRow, 1).setValue(`絞り込み: ${filterLogArr.join(" AND ") || "（全件）"}`);
@@ -498,133 +542,196 @@ function runUniversalAnalysis() {
 
     let chartConfigs = [];
 
+    // ==================================================
+    // 🔄 メイン集計ループ
+    // ==================================================
     for (let col = 1; col < headers.length; col++) {
       const question = headers[col];
       if (!question) continue;
 
-      const colValues = targetRows.map(r => r[col]).filter(v => v !== "" && v != null);
+      // 生データの抽出
+      const colRawValues = targetRows.map(r => r[col]);
+      const colValues = colRawValues.filter(v => v !== "" && v != null);
       if (colValues.length === 0) continue;
 
       const colType = analyzeColumnType_(colValues, question);
 
-      // ★Modified: 日付(TIMESTAMP)の扱い変更
-      // 設定がOFFならスキップ、ONなら通過させる
       if (colType === 'SKIP') continue;
       if (colType === 'TIMESTAMP' && !isDateChartEnabled) continue;
 
+      // A. 自由記述 (Free Text)
       if (colType === 'FREE_TEXT') {
         textSheet.getRange(3, textSheetCurrentCol).setValue(question)
           .setFontWeight("bold").setBackground("#f3f3f3").setBorder(true, true, true, true, null, null);
         
         const responses = colValues.reverse(); 
         if (responses.length > 0) {
-          // ★記述回答での日付フォーマット統一
           const formattedRes = responses.map(v => {
              if (v instanceof Date) return [Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy/MM/dd")];
              return [v];
           });
           textSheet.getRange(4, textSheetCurrentCol, formattedRes.length, 1).setValues(formattedRes);
         }
-        
         textSheet.setColumnWidth(textSheetCurrentCol, 300); 
         textSheetCurrentCol += 1; 
         continue;
       }
 
-      let counts = {};
-      let totalScore = 0;
+      // 📊 自動判別
       let numericCount = 0;
-
-      colValues.forEach(val => {
-        let strVal = String(val);
-
-        // ★Modified: 日付フォーマットの適用
-        if (val instanceof Date) {
-            strVal = Utilities.formatDate(val, Session.getScriptTimeZone(), dateFormat);
-        } else if (colType === 'TIMESTAMP') {
-            const d = new Date(val);
-            if(!isNaN(d)) strVal = Utilities.formatDate(d, Session.getScriptTimeZone(), dateFormat);
-        }
-
-        // ★Strict Fix: 数値判定の厳格化 (parseFloat -> Number)
-        const num = Number(strVal);
-        if (!isNaN(num) && strVal.trim() !== "") { 
-          totalScore += num; 
-          numericCount++; 
-        }
-
-        if (strVal.includes(',') && strVal.length > 2) {
-          strVal.split(',').map(s => s.trim()).forEach(p => { 
-            if(p) counts[p] = (counts[p] || 0) + 1; 
-          });
-        } else {
-          counts[strVal] = (counts[strVal] || 0) + 1;
-        }
+      let numericSum = 0;
+      let minVal = Infinity;
+      let maxVal = -Infinity;
+      
+      colValues.forEach(v => {
+          const s = String(v).replace(/[,%％℃°度]/g, '').trim();
+          if (s !== "" && !isNaN(s)) {
+              const n = parseFloat(s);
+              numericCount++;
+              numericSum += n;
+              if(n < minVal) minVal = n;
+              if(n > maxVal) maxVal = n;
+          }
       });
 
-      if (numericCount > 0 && numericCount > (targetRows.length * 0.5)) {
-        resultSheet.getRange(currentRow, 1).setNote(`平均: ${(totalScore / numericCount).toFixed(2)}`);
-      }
-
-      const uniqueKeys = Object.keys(counts);
-
-      // ★Safety: 項目が多すぎる場合の集約処理 (Top 20 + Others)
-      let finalKeys = [];
-      let finalCounts = {};
-      
-      if (uniqueKeys.length > 20) {
-        // カウント順にソート
-        const sortedAll = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
-        const top19 = sortedAll.slice(0, 19);
-        const others = sortedAll.slice(19);
-        
-        top19.forEach(k => {
-           finalKeys.push(k);
-           finalCounts[k] = counts[k];
-        });
-        
-        let otherSum = 0;
-        others.forEach(k => otherSum += counts[k]);
-        if (otherSum > 0) {
-          finalKeys.push("その他");
-          finalCounts["その他"] = otherSum;
-        }
-      } else {
-        // 通常ソート
-        finalKeys = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
-        finalCounts = counts;
-      }
+      const numericRatio = colValues.length > 0 ? (numericCount / colValues.length) : 0;
+      const isMeasure = (numericRatio > 0.85);
 
       resultSheet.getRange(currentRow, 1).setValue(`Q${col}. ${question}`).setFontWeight("bold");
-      currentRow++;
-
-      resultSheet.getRange(currentRow, 1, 1, 3).setValues([["回答", "件数", "割合"]])
-        .setBackground("#e0e0e0").setFontWeight("bold");
-      currentRow++;
-
-      const startDataRow = currentRow;
-      finalKeys.forEach(key => {
-          const cnt = finalCounts[key];
-          let pct = targetRows.length > 0 ? Math.round((cnt / targetRows.length) * 100) + "%" : "0%";
-          resultSheet.getRange(currentRow, 1, 1, 3).setValues([[key, cnt, pct]]);
+      
+      // B. Measureモード
+      if (isMeasure) {
+          const avg = numericCount > 0 ? (numericSum / numericCount) : 0;
+          resultSheet.getRange(currentRow, 1).setValue(`Q${col}. ${question} (数値集計モード)`)
+              .setFontColor("#1a73e8").setFontWeight("bold");
           currentRow++;
-      });
 
-      chartConfigs.push({
-          title: `Q${col}. ${question}`,
-          startRow: startDataRow, 
-          rowCount: finalKeys.length,
-          type: finalKeys.length <= 6 ? "PIE" : "BAR",
-          anchorRow: startDataRow - 2
-      });
+          const statsHeader = [["合計", "平均", "最大", "最小", "データ数"]];
+          const statsData = [[numericSum, avg, maxVal, minVal, numericCount]];
+          
+          resultSheet.getRange(currentRow, 1, 1, 5).setValues(statsHeader)
+              .setBackground("#E8F0FE").setFontWeight("bold").setHorizontalAlignment("center");
+          resultSheet.getRange(currentRow + 1, 1, 1, 5).setValues(statsData)
+              .setHorizontalAlignment("center");
+          currentRow += 3;
 
-      currentRow += 2;
-    }
+          if (isDateChartEnabled && dateColIdx !== -1) {
+              const timeSeriesMap = {}; 
+              targetRows.forEach(row => {
+                  const valRaw = row[col];
+                  const dateRaw = row[dateColIdx]; 
+                  
+                  const valStr = String(valRaw).replace(/[,%％℃°度]/g, '').trim();
+                  if (valStr === "" || isNaN(valStr)) return;
+                  const valNum = parseFloat(valStr);
+
+                  let dateLabel = "不明";
+                  if (dateRaw instanceof Date) {
+                      dateLabel = Utilities.formatDate(dateRaw, Session.getScriptTimeZone(), dateFormat);
+                  } else {
+                      const d = new Date(dateRaw);
+                      if (!isNaN(d)) {
+                          dateLabel = Utilities.formatDate(d, Session.getScriptTimeZone(), dateFormat);
+                      } else {
+                          if(String(dateRaw).trim() !== "") {
+                             dateLabel = String(dateRaw).trim();
+                          } else {
+                             return;
+                          }
+                      }
+                  }
+
+                  if (!timeSeriesMap[dateLabel]) timeSeriesMap[dateLabel] = { sum: 0, count: 0 };
+                  timeSeriesMap[dateLabel].sum += valNum;
+                  timeSeriesMap[dateLabel].count += 1;
+              });
+
+              const timeKeys = Object.keys(timeSeriesMap).sort();
+              if (timeKeys.length > 0) {
+                  const chartData = [["時期", "合計", "平均"]];
+                  timeKeys.forEach(k => {
+                      const d = timeSeriesMap[k];
+                      const timeAvg = d.count > 0 ? d.sum / d.count : 0;
+                      chartData.push([k, d.sum, timeAvg]);
+                  });
+
+                  const startDataRow = currentRow;
+                  resultSheet.getRange(currentRow, 1, chartData.length, 3).setValues(chartData);
+                  
+                  chartConfigs.push({
+                      title: `${question} の推移 (単位:${dateUnitVal})`,
+                      startRow: startDataRow,
+                      rowCount: chartData.length,
+                      type: "LINE_DUAL",
+                      anchorRow: currentRow - 2
+                  });
+                  currentRow += chartData.length + 2;
+              }
+          }
+      
+      // C. Dimensionモード
+      } else {
+          let counts = {};
+          colValues.forEach(val => {
+              let strVal = String(val);
+              if (val instanceof Date) {
+                  strVal = Utilities.formatDate(val, Session.getScriptTimeZone(), dateFormat);
+              }
+              if (strVal.includes(',') && strVal.length > 2) {
+                  strVal.split(',').map(s => s.trim()).forEach(p => { 
+                      if(p) counts[p] = (counts[p] || 0) + 1; 
+                  });
+              } else {
+                  counts[strVal] = (counts[strVal] || 0) + 1;
+              }
+          });
+
+          if (numericCount > (targetRows.length * 0.5)) {
+               resultSheet.getRange(currentRow, 1).setNote(`平均: ${(numericSum / numericCount).toFixed(2)}`);
+          }
+
+          const uniqueKeys = Object.keys(counts);
+          let finalKeys = [];
+          let finalCounts = {};
+          if (uniqueKeys.length > 20) {
+              const sortedAll = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
+              const top19 = sortedAll.slice(0, 19);
+              const others = sortedAll.slice(19);
+              top19.forEach(k => { finalKeys.push(k); finalCounts[k] = counts[k]; });
+              let otherSum = 0;
+              others.forEach(k => otherSum += counts[k]);
+              if (otherSum > 0) { finalKeys.push("その他"); finalCounts["その他"] = otherSum; }
+          } else {
+              finalKeys = uniqueKeys.sort((a, b) => counts[b] - counts[a]);
+              finalCounts = counts;
+          }
+
+          currentRow++;
+          resultSheet.getRange(currentRow, 1, 1, 3).setValues([["回答", "件数", "割合"]])
+            .setBackground("#e0e0e0").setFontWeight("bold");
+          currentRow++;
+
+          const startDataRow = currentRow;
+          finalKeys.forEach(key => {
+              const cnt = finalCounts[key];
+              let pct = targetRows.length > 0 ? Math.round((cnt / targetRows.length) * 100) + "%" : "0%";
+              resultSheet.getRange(currentRow, 1, 1, 3).setValues([[key, cnt, pct]]);
+              currentRow++;
+          });
+
+          chartConfigs.push({
+              title: `Q${col}. ${question}`,
+              startRow: startDataRow, 
+              rowCount: finalKeys.length,
+              type: finalKeys.length <= 6 ? "PIE" : "BAR",
+              anchorRow: startDataRow - 2
+          });
+          currentRow += 2;
+      }
+    } 
 
     resultSheet.setColumnWidth(1, 300);
     resultSheet.setColumnWidth(4, 400); 
-
-   // ... (runUniversalAnalysisの前半部分はそのまま) ...
 
     try { 
       generateUniversalCharts_(resultSheet, chartConfigs);
@@ -632,16 +739,11 @@ function runUniversalAnalysis() {
       console.error(e);
     }
 
-    // ==========================================
-    // ▼▼▼ ここからロジック修正 (Fix for Issue ① & ②) ▼▼▼
-    // ==========================================
-    
-    // 1. 次の開始行を現在の最終行から安全に取得
+    // --- 既存機能の保持 (クロス集計・相関・生データ) ---
     let nextStartRow = resultSheet.getLastRow() + 3;
 
-    // 2. 詳細クロス集計 (B17設定ありの場合)
+    // 詳細クロス集計
     const crossAxisColName = configSheet.getRange(CROSS_AXIS_LABEL_ROW, 2).getValue();
-    
     if (crossAxisColName && !String(crossAxisColName).startsWith("▼")) {
       const crossIdx = headers.indexOf(crossAxisColName);
       if (crossIdx !== -1) {
@@ -656,27 +758,22 @@ function runUniversalAnalysis() {
         ss.toast(`詳細クロス集計を作成中... ${modeMsg}`, "分析中", 20);
         Utilities.sleep(100);
 
-        // ★修正: 戻り値を確実に受け取り、かつエラー時も停止させない
         try {
           const crossResultRow = renderCrossTabulation_(resultSheet, headers, targetRows, crossIdx, crossAxisColName, 8, isTimestamp, dateFormat);
-          // もし有効な行数が返ってきたら更新、そうでなければ元のまま
           if (crossResultRow && crossResultRow > nextStartRow) {
             nextStartRow = crossResultRow;
           }
         } catch (e) {
           console.warn("CrossTab Error: " + e.message);
-          // エラーが出ても次の処理に進むため、行だけ少し空ける
           nextStartRow = resultSheet.getLastRow() + 5;
         }
       }
     }
 
-    // 安全マージン（グラフ重複防止のため念のため空ける）
     nextStartRow += 2;
 
-    // 3. 相関分析マトリクス実行
+    // 相関分析マトリクス
     try {
-      // 念のため再度最終行チェック（グラフ等の浮動要素対策）
       const checkRow = resultSheet.getLastRow() + 3;
       if (checkRow > nextStartRow) nextStartRow = checkRow;
 
@@ -684,31 +781,26 @@ function runUniversalAnalysis() {
       if (corrResultRow) nextStartRow = corrResultRow;
     } catch (e) { 
       console.warn("Correlation Error", e); 
-      // エラー表示をシートに出す（デバッグ用）
       resultSheet.getRange(nextStartRow, 1).setValue("⚠️ 相関分析エラー: データ不足または形式不一致");
       nextStartRow += 2;
     }
 
-    // 4. 抽出生データテーブル出力
+    // 生データテーブル
     try {
       renderRawDataTable_(resultSheet, headers, targetRows, nextStartRow);
     } catch (e) { 
       console.warn("RawData Error", e); 
     }
 
-    // ▲▲▲ ロジック修正ここまで ▲▲▲
-    // ==========================================
-
     resultSheet.activate();
     ss.toast("集計完了！記述回答は別シートにまとめました。", "完了", 5);
     Browser.msgBox(`全体集計完了！\n記述回答は「${TEXT_SHEET_NAME}」を確認してください。`);
 
   } catch (e) {
-
     Browser.msgBox("⚠️ 全体集計中にエラーが発生しました:\n" + e.message);
+    console.error(e.stack);
   }
 }
-
 
 
 // ==================================================
@@ -2080,7 +2172,7 @@ function columnToLetter_(column) {
   return letter;
 }
 
-// 
+
 function updateQuestionDropdowns_(configSheet) {
   try {
     const targetSheetName = configSheet.getRange("B3").getValue();
@@ -2121,8 +2213,8 @@ function updateQuestionDropdowns_(configSheet) {
       if (val) currentRadarSelections[row] = val;
     }
 
-    // ★修正: allowTimestamp引数を削除し、常にTIMESTAMPを含めるように変更
-    const setupFilterDropdown = (targetRow, allowNumberSkip) => {
+    // ★修正: allowAllTypes引数を追加 (B17用)
+    const setupFilterDropdown = (targetRow, allowNumberSkip, allowAllTypes = false) => {
       let candidates = [];
       headers.forEach((h, i) => {
         // SKIPタイプ（IDや個人名など）の処理
@@ -2131,13 +2223,16 @@ function updateQuestionDropdowns_(configSheet) {
                 candidates.push(h);
             }
         } 
-        // 記述回答(FREE_TEXT)以外は追加（TIMESTAMPもCATEGORYもここに含まれる）
+        // 記述回答(FREE_TEXT)以外は追加
+        // ★修正: allowAllTypesがtrueならTIMESTAMPも許可、falseならTIMESTAMPは除外(以前の挙動維持)
         else if (columnTypes[i] !== 'FREE_TEXT') {
-            candidates.push(h);
+            if (allowAllTypes || columnTypes[i] !== 'TIMESTAMP') {
+                 candidates.push(h);
+            }
         }
       });
 
-      // ★修正: B17(横軸)での「記述回答」除外のみ残し、タイムスタンプ除外ロジックを削除
+      // B17(横軸)での「記述回答」除外 (念のため再確認)
       if (targetRow === CROSS_AXIS_LABEL_ROW) {
          headers.forEach((h, i) => {
              if (columnTypes[i] === 'FREE_TEXT') {
@@ -2145,7 +2240,6 @@ function updateQuestionDropdowns_(configSheet) {
                  if (idx > -1) candidates.splice(idx, 1);
              }
          });
-         // ※ここで以前あった「タイムスタンプ除外」コードを削除しました
       }
 
       // 排他制御: 他のフィルタや軸で選ばれている項目を除外
@@ -2201,13 +2295,13 @@ function updateQuestionDropdowns_(configSheet) {
       });
     };
 
-    // ★修正: 引数を減らして呼び出し（タイムスタンプは常に許可されるため）
-    // フィルタ設定 (B7, B10, B13)
-    setupFilterDropdown(FILTER_ROW_A, false); 
-    setupFilterDropdown(FILTER_ROW_B, false); 
-    setupFilterDropdown(FILTER_ROW_C, false);
-    // クロス集計軸 (B17)
-    setupFilterDropdown(CROSS_AXIS_LABEL_ROW, true); 
+    // ★変更箇所: フィルタ設定 (B7, B10, B13) -> 第3引数を true にしてTIMESTAMPを許可
+    setupFilterDropdown(FILTER_ROW_A, false, true); 
+    setupFilterDropdown(FILTER_ROW_B, false, true); 
+    setupFilterDropdown(FILTER_ROW_C, false, true);
+    
+    // クロス集計軸 (B17) -> ★TIMESTAMPも許可 (allowAllTypes=true)
+    setupFilterDropdown(CROSS_AXIS_LABEL_ROW, true, true); 
 
     const schoolTargetRows = [];
     schoolTargetRows.push(SCHOOL_CONFIG_START_ROW + 6);
@@ -2391,11 +2485,12 @@ function updateValueDropdown_(configSheet, activeRow) {
 
   const dataSheet = ss.getSheetByName(targetSheetName);
   if (!dataSheet) return;
+
   const headers = dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0];
   const colIndex = headers.indexOf(targetColName);
   if (colIndex === -1) return;
 
-  // ★追加: B19(時系列単位)の設定を取得してフォーマットを決定
+  // B19(時系列単位)の設定を取得してフォーマットを決定
   const dateUnitVal = configSheet.getRange(19, 2).getValue();
   let dateFormat = "yyyy/MM/dd";
   if (dateUnitVal === "【年別】") dateFormat = "yyyy";
@@ -2404,24 +2499,31 @@ function updateValueDropdown_(configSheet, activeRow) {
   const lastRow = dataSheet.getLastRow();
   let startRow = 2;
   let numRows = lastRow - 1;
+  // データが多い場合は最新(下)からではなく、全期間をカバーするために範囲調整
+  // ※ただしMAX_RECORDSを超えると物理的に読み込めないので制限はかけます
   if (numRows > MAX_RECORDS) { 
-    startRow = lastRow - MAX_RECORDS + 1; 
+    startRow = lastRow - MAX_RECORDS + 1;
     numRows = MAX_RECORDS;
   }
-
-  const colValues = dataSheet.getRange(startRow, colIndex+1, numRows, 1).getValues().flat();
   
-  // ★修正: Date型の場合、設定したフォーマットで文字列化してからリストにする
-  const uniqueValues = [...new Set(colValues)]
-    .filter(v => v !== "" && v != null)
-    .map(v => {
-        if (v instanceof Date) {
-            return Utilities.formatDate(v, Session.getScriptTimeZone(), dateFormat);
-        }
-        return String(v);
-    })
-    .sort()
-    .slice(0, 500);
+  if (numRows < 1) return;
+
+  // データ取得
+  const colValues = dataSheet.getRange(startRow, colIndex+1, numRows, 1).getValues().flat();
+
+  // ★修正: 先にフォーマット変換してから重複排除を行う（「1日の大量データ」を「1つの日付」にまとめるため）
+  const formattedValues = colValues.map(v => {
+      if (v === "" || v == null) return null;
+      // 日付型なら設定に合わせて文字列化
+      if (v instanceof Date) {
+          return Utilities.formatDate(v, Session.getScriptTimeZone(), dateFormat);
+      }
+      // 文字列の場合もトリム
+      return String(v).trim();
+  }).filter(v => v !== null && v !== "");
+
+  // 重複排除 (Set) & ソート & 上限カット
+  const uniqueValues = [...new Set(formattedValues)].sort().slice(0, 500);
 
   if (uniqueValues.length > 0) {
     const rule = SpreadsheetApp.newDataValidation()
@@ -2435,12 +2537,13 @@ function updateValueDropdown_(configSheet, activeRow) {
   }
 }
 
-
 function generateUniversalCharts_(sheet, chartConfigs) {
   if (!chartConfigs || chartConfigs.length === 0) return;
-  
+
   chartConfigs.forEach(cfg => {
+    // データ範囲の取得
     const range = sheet.getRange(cfg.startRow, 1, cfg.rowCount, 3);
+    
     let chartBuilder = sheet.newChart()
       .addRange(range)
       .setOption('title', cfg.title)
@@ -2450,6 +2553,15 @@ function generateUniversalCharts_(sheet, chartConfigs) {
       
     if (cfg.type === "PIE") { 
       chartBuilder = chartBuilder.setChartType(Charts.ChartType.PIE); 
+
+    } else if (cfg.type === "LINE_DUAL") {
+      // ★New: BIモード用（時系列推移）
+      // 軸ラベルの強制指定(hAxis, vAxis)を削除し、データ項目のラベルに任せる仕様に変更
+      chartBuilder = chartBuilder.setChartType(Charts.ChartType.LINE)
+          .setOption('legend', {position: 'top'})
+          .setOption('applyAggregateData', 1) // ★追加: X軸の「集計」チェックをONにする（これで表示が完璧になります）
+          .setNumHeaders(1); // ヘッダー行を認識させる
+
     } else { 
       chartBuilder = chartBuilder.setChartType(Charts.ChartType.BAR); 
     }
@@ -2457,6 +2569,7 @@ function generateUniversalCharts_(sheet, chartConfigs) {
     sheet.insertChart(chartBuilder.build());
   });
 }
+
 
 function generatePersonalCharts_(sheet, queue) {
   if (!queue || queue.length === 0) return;
@@ -2532,13 +2645,12 @@ function detectAnswerSheetColumns_(configSheet, startRow) {
 }
 
 function analyzeColumnType_(values, headerName) {
-  // ★日付判定ロジック強化 (Logic Hardening)
-  // ヘッダー名に「日付」「Date」「タイムスタンプ」が含まれていたら即TIMESTAMP認定
-  if (headerName && /日付|日時|Date|Time|Timestamp|タイムスタンプ/i.test(headerName)) {
+  // 1. ヘッダー名による強制判定
+  if (headerName && /日付|日時|Date|Time|Timestamp|タイムスタンプ|実施日/i.test(headerName)) {
       return 'TIMESTAMP';
   }
 
-  if (headerName && /氏名|名前|なまえ|Name|name|フルネーム|番号|出席番号|No\.|ナンバー|number|ID/i.test(headerName)) {
+  if (headerName && /氏名|名前|なまえ|Name|name|フルネーム|番号|出席番号|No\.|ナンバー|number|ID|コード/i.test(headerName)) {
     return 'SKIP';
   }
 
@@ -2546,54 +2658,77 @@ function analyzeColumnType_(values, headerName) {
   
   const sampleSize = Math.min(values.length, 100);
   const sample = values.slice(0, sampleSize).map(String);
-  
+
   let emailCount = 0;
-  let totalLen = 0;
-  const uniqueSet = new Set();
   let commaCount = 0;
   let dateCount = 0;
+  let numericCount = 0; // ★追加: 数値判定用
 
   sample.forEach(str => {
     if (str.includes('@')) emailCount++;
     if (str.includes(',') || str.includes('、')) commaCount++; 
     
-    // 中身による日付判定
+    // 日付判定
     if (!isNaN(Date.parse(str)) && (str.includes('/') || str.includes('-'))) {
         dateCount++;
     }
 
-    totalLen += str.length;
-    uniqueSet.add(str);
+    // ★追加: 単位を除去して数値かどうかチェック
+    const cleanStr = str.replace(/[,%％℃°度]/g, '').trim();
+    if (cleanStr !== "" && !isNaN(cleanStr)) {
+        numericCount++;
+    }
   });
 
   if (dateCount / sample.length > 0.8) return 'TIMESTAMP';
   if (emailCount / sample.length > 0.3) return 'SKIP';
   if (commaCount / sample.length > 0.3) return 'CATEGORY'; 
 
+  // ★修正: バラつき判定の前に「数値率が高ければカテゴリ(Measure候補)として通す」
+  // これにより、バラバラの値（気温など）が FREE_TEXT に吸われるのを防ぐ
+  if (numericCount / sample.length > 0.85) return 'CATEGORY';
+
+  // 従来のバラつき判定（数値以外でバラついていれば記述とみなす）
+  const uniqueSet = new Set(sample);
   const uniqueRatio = uniqueSet.size / sample.length;
-  if (uniqueRatio > 0.8) return 'FREE_TEXT'; 
-  
+  if (uniqueRatio > 0.8) return 'FREE_TEXT';
+
   return 'CATEGORY';
 }
 
-// ★引数 dateFormat を末尾に追加
+
 function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, startCol, isTimestamp, dateFormat) {
   // フォーマットのデフォルト値設定
   const fmt = dateFormat || "yyyy/MM/dd";
 
-  // --- A. 横軸（グループ）のキー生成 ---
+  // --- A. 横軸（グループ）のキー生成 [修正強化版] ---
   const getGroupKey = (row) => {
     const val = row[crossIdx];
-    if (!val) return null;
+    if (val === "" || val == null) return null;
     
+    // 1. すでに日付オブジェクトの場合（そのまま変換）
     if (val instanceof Date) {
       return Utilities.formatDate(val, Session.getScriptTimeZone(), fmt);
     }
-    return String(val);
+
+    // 2. 文字列の場合、日付として強制解析を試みる
+    const strVal = String(val).trim();
+    // ※数字だけの文字列("1"など)が日付誤認されるのを防ぐため、区切り文字(/, -, .)を含む場合のみ解析
+    if (/[\/\-\.]/.test(strVal)) {
+      const d = new Date(strVal);
+      // 有効な日付なら、設定された単位(月/年)に変換して返す
+      if (!isNaN(d.getTime())) {
+         return Utilities.formatDate(d, Session.getScriptTimeZone(), fmt);
+      }
+    }
+
+    // 3. それ以外はそのまま文字列として返す
+    return strVal;
   };
   
   // ソートロジック
   const groups = [...new Set(data.map(row => getGroupKey(row)).filter(v => v))].sort((a, b) => {
+    // 日付文字列同士の比較に強いロジック
     return String(a).localeCompare(String(b), undefined, {numeric: true, sensitivity: 'base'});
   });
 
@@ -2625,7 +2760,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
   // ★グラフ生成用の設定リスト
   const stackChartConfigs = [];
   // output配列内での現在の行インデックス（0はヘッダー）
-  let currentOutputIndex = 1; 
+  let currentOutputIndex = 1;
 
   // --- B. 各質問についてループ ---
   for (let i = 1; i < headers.length; i++) {
@@ -2651,6 +2786,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
 
     let numericCount = 0;
     pairs.forEach(p => { if (isStrictNumber(p.val)) numericCount++; });
+
     const isNumericQuestion = !isAttributeCol && (numericCount / pairs.length) > 0.8;
 
     if (isNumericQuestion) {
@@ -2688,7 +2824,7 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
 
     // --- データ行の作成 ---
     let isFirst = true;
-    const startRowIndex = currentOutputIndex; 
+    const startRowIndex = currentOutputIndex;
 
     uniqueAnswers.forEach(ans => {
       const rowData = [isFirst ? qTitle : "", ans];
@@ -2714,26 +2850,20 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     currentOutputIndex++;
   }
 
-// --- F. 出力処理 ---
+  // --- F. 出力処理 ---
   if (output.length > 0) {
-    
-    // ▼▼▼ 追加コード: 列数が足りない場合に自動拡張する ▼▼▼
+    // 列数が足りない場合に自動拡張する
     const currentMaxCols = sheet.getMaxColumns();
-    // 必要な列数 = 開始列(startCol) + データ列数 + 余白(グラフ/GAP分析エリア用として20列確保)
     const requiredCols = startCol + output[0].length + 20;
-
     if (requiredCols > currentMaxCols) {
       sheet.insertColumnsAfter(currentMaxCols, requiredCols - currentMaxCols);
     }
-    // ▲▲▲ 追加コードここまで ▲▲▲
 
     const maxRows = sheet.getMaxRows();
-    // ※ ここで再取得しないと古い列数のまま認識されることがあるため
-    const maxCols = sheet.getMaxColumns(); 
+    const maxCols = sheet.getMaxColumns();
 
     // 既存データのクリア
     if (maxCols >= startCol) {
-
       const clearRows = maxRows > 1 ? maxRows - 1 : 1;
       try {
         sheet.getRange(1, startCol, clearRows, maxCols - startCol + 1).clearContent().clearFormat();
@@ -2759,17 +2889,13 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
       sheet.setColumnWidth(startCol + 2 + k, 70);
     }
     
- // --- ★New: 100%積み上げ縦棒グラフの生成 (Final Fix + MergeStrategy) ---
-    // 配置列: 表の右端から2列空けたところ
-    const graphLeftCol = startCol + output[0].length + 2; 
+    // --- 100%積み上げ縦棒グラフの生成 ---
+    const graphLeftCol = startCol + output[0].length + 2;
     const baseRow = 4; // 表の開始行
 
     stackChartConfigs.forEach(cfg => {
        try {
-         // ヘッダー範囲: I列(選択肢)〜最終列
          const headerRange = sheet.getRange(baseRow, startCol + 1, 1, groups.length + 1);
-         
-         // データ範囲: I列(選択肢)〜最終列 × 行数
          const dataRowStart = baseRow + cfg.startRowRel;
          const dataRange = sheet.getRange(dataRowStart, startCol + 1, cfg.numRows, groups.length + 1);
          
@@ -2782,21 +2908,17 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
            .setOption('isStacked', 'percent')
            .setOption('width', 1000)
            .setOption('height', 300)
-           // ▼▼▼ 修正箇所（MERGE_COLUMNS -> MERGE_ROWS） ▼▼▼
            .setMergeStrategy(Charts.ChartMergeStrategy.MERGE_ROWS)
-           // ▲▲▲ これで「範囲を結合: 上下」になります ▲▲▲
            .setNumHeaders(1)
            .setTransposeRowsAndColumns(true)
            .setOption('useFirstColumnAsDomain', true) 
            .build();
            
          sheet.insertChart(chart);
-
        } catch (e) {
          console.warn(`Graph Error: ${cfg.title}`, e);
        }
     });
-
 
     let currentOutputRow = 4 + output.length + 2;
 
@@ -2850,14 +2972,12 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
             // 2. GAP分析グラフ (Gap Chart)
             const validAvgs = Object.values(averageTrendData[0].averages).filter(v => v !== null);
             if (validAvgs.length > 0) {
-               // 全体平均算出
                let globalSum = 0, globalCnt = 0;
                averageTrendData.forEach(d => {
                    Object.values(d.averages).forEach(v => { if(v!==null){ globalSum+=v; globalCnt++; }});
                });
                const globalAvg = globalCnt > 0 ? globalSum / globalCnt : 0;
-
-               // GAPデータ作成
+               
                const gapData = [["Group", "GAP (vs Total Avg)"]];
                groups.forEach(g => {
                    let gSum = 0, gCnt = 0;
@@ -2868,7 +2988,6 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
                    gapData.push([g, parseFloat((gAvg - globalAvg).toFixed(2))]);
                });
 
-               // データ書き出し
                const gapDataRow = chartRow;
                const gapDataCol = startCol + summaryHeader.length + 2; 
                const gapRange = sheet.getRange(gapDataRow, gapDataCol, gapData.length, 2);
@@ -2896,12 +3015,11 @@ function renderCrossTabulation_(sheet, headers, data, crossIdx, crossName, start
     }
     
     return nextStartRow;
-
   } else {
     // データがない場合
     return Math.max(4, sheet.getLastRow() + 2);
   }
-} // End function
+}
 
 
 // ==================================================
