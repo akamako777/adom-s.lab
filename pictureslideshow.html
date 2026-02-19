@@ -382,18 +382,40 @@
             resume() { if (this.ctx.state === 'suspended') this.ctx.resume(); }
         }
 
-        // --- Components ---
+      // --- Components (Toast 修正版) ---
         const Toast = ({ message, type, onClose }) => {
+            // 3秒で自動消去
             useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
-            const bg = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-indigo-500', wake: 'bg-amber-500' };
-            const iconName = { success: 'check-circle', error: 'alert-circle', info: 'info', wake: 'zap' }[type] || 'info';
+
+            // 背景色とアイコンの定義（視認性を高めるため少し濃い色に変更）
+            const getStyle = (t) => {
+                switch(t) {
+                    case 'success': return { bg: 'bg-green-600', icon: 'check-circle' };
+                    case 'error':   return { bg: 'bg-red-600',   icon: 'alert-circle' };
+                    case 'wake':    return { bg: 'bg-amber-600', icon: 'zap' };
+                    default:        return { bg: 'bg-indigo-600', icon: 'info' }; 
+                }
+            };
+            
+            const style = getStyle(type);
+
             return (
-                <div className={`relative ${bg[type] || 'bg-gray-800'} text-white px-5 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[200px] shadow-lg mb-2`}>
-                    <div className="shrink-0"><Icon name={iconName} size={20} /></div>
-                    <span className="font-bold text-sm leading-tight drop-shadow-sm">{message}</span>
+                <div className={`pointer-events-auto relative ${style.bg} text-white px-4 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[280px] max-w-sm mb-2`}>
+                    {/* アイコン部分: 縮小されないように shrink-0 を指定 */}
+                    <div className="shrink-0 flex items-center justify-center">
+                        <Icon name={style.icon} size={24} className="text-white drop-shadow-md" />
+                    </div>
+                    
+                    {/* テキスト部分: flex-1 で余白を埋めつつ、文字色を強制的に白にする */}
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm leading-snug text-white drop-shadow-md break-words" style={{color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.2)'}}>
+                            {message}
+                        </p>
+                    </div>
                 </div>
             );
         };
+
 
         const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, texts }) => {
             if (!isOpen) return null;
