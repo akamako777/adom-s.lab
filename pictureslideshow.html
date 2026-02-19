@@ -105,13 +105,14 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Translations (Updated with Duration Guide) ---
+        // --- Translations (Updated with DnD & Sort) ---
         const TRANSLATIONS = {
             ja: {
                 title: 'Simple Memories',
                 tabPhoto: '写真', tabAudio: '音楽', tabTheater: 'シアター',
                 addPhoto: '写真を追加', addMusic: '音楽を追加',
                 dragDrop: 'ドラッグ＆ドロップ可',
+                dropHere: 'ここにドロップ',
                 autoFitTitle: 'オートフィット',
                 autoFitDesc: '音楽の長さに合わせて、全ての写真の表示時間を自動で調整します。',
                 run: '実行する',
@@ -131,18 +132,25 @@
                 errNoBrowser: '録画非対応ブラウザです',
                 errNoData: '写真と音楽が必要です',
                 errNoPhoto: '写真がありません',
-                ver: 'ver 4.7 (Aurora Edition)',
+                ver: 'ver 4.8 (DnD + Sort)',
                 wakeLockActive: 'スリープ防止機能: ON',
                 guideTitle: '録画時間の目安',
                 guideMobile: '推奨 5-10分 (限界15分)',
                 guidePC: '推奨 20-30分 (限界60分)',
-                guideTip: 'Pro Tip: 長編は5分ごとに分割して保存し、後で結合するのが安全です。'
+                guideTip: 'Pro Tip: 長編は5分ごとに分割して保存し、後で結合するのが安全です。',
+                sortDate: '更新日時順',
+                sortName: '名前順',
+                sortReset: '元に戻す',
+                sortedDate: '更新日時順に並べ替えました',
+                sortedName: '名前順に並べ替えました',
+                sortedReset: '追加順に戻しました'
             },
             en: {
                 title: 'Simple Memories',
                 tabPhoto: 'Photos', tabAudio: 'Audio', tabTheater: 'Theater',
                 addPhoto: 'Add Photos', addMusic: 'Add Audio',
                 dragDrop: 'Drag & Drop available',
+                dropHere: 'Drop Here',
                 autoFitTitle: 'Auto Fit',
                 autoFitDesc: 'Automatically adjusts photo duration to match music length.',
                 run: 'Execute',
@@ -162,18 +170,25 @@
                 errNoBrowser: 'Browser not supported',
                 errNoData: 'Photos and Music required',
                 errNoPhoto: 'No photos added',
-                ver: 'ver 4.7 (Aurora Edition)',
+                ver: 'ver 4.8 (DnD + Sort)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Recording Duration',
                 guideMobile: 'Rec 5-10m (Limit 15m)',
                 guidePC: 'Rec 20-30m (Limit 60m)',
-                guideTip: 'Pro Tip: For long videos, save every 5 mins and merge later.'
+                guideTip: 'Pro Tip: For long videos, save every 5 mins and merge later.',
+                sortDate: 'Date',
+                sortName: 'Name',
+                sortReset: 'Reset',
+                sortedDate: 'Sorted by Date',
+                sortedName: 'Sorted by Name',
+                sortedReset: 'Reset Order'
             },
             es: {
                 title: 'Simple Memories',
                 tabPhoto: 'Fotos', tabAudio: 'Audio', tabTheater: 'Cine',
                 addPhoto: 'Añadir Fotos', addMusic: 'Añadir Audio',
                 dragDrop: 'Arrastrar y soltar',
+                dropHere: 'Soltar aquí',
                 autoFitTitle: 'Ajuste Auto',
                 autoFitDesc: 'Ajusta automáticamente la duración de las fotos a la música.',
                 run: 'Ejecutar',
@@ -193,18 +208,25 @@
                 errNoBrowser: 'Navegador no soportado',
                 errNoData: 'Se requieren fotos y música',
                 errNoPhoto: 'No hay fotos',
-                ver: 'ver 4.7 (Aurora Edition)',
+                ver: 'ver 4.8 (DnD + Sort)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Guía de Duración',
                 guideMobile: 'Rec 5-10m (Límite 15m)',
                 guidePC: 'Rec 20-30m (Límite 60m)',
-                guideTip: 'Consejo: Para videos largos, guarda cada 5 min y une después.'
+                guideTip: 'Consejo: Para videos largos, guarda cada 5 min y une después.',
+                sortDate: 'Fecha',
+                sortName: 'Nombre',
+                sortReset: 'Reiniciar',
+                sortedDate: 'Ordenado por Fecha',
+                sortedName: 'Ordenado por Nombre',
+                sortedReset: 'Orden Reiniciado'
             },
             tw: {
                 title: 'Simple Memories',
                 tabPhoto: '照片', tabAudio: '音樂', tabTheater: '影院',
                 addPhoto: '新增照片', addMusic: '新增音樂',
                 dragDrop: '可拖放上傳',
+                dropHere: '拖放到這裡',
                 autoFitTitle: '自動適配',
                 autoFitDesc: '根據音樂長度自動調整照片顯示時間。',
                 run: '執行',
@@ -224,18 +246,25 @@
                 errNoBrowser: '瀏覽器不支援',
                 errNoData: '需要照片和音樂',
                 errNoPhoto: '沒有照片',
-                ver: 'ver 4.7 (Aurora Edition)',
+                ver: 'ver 4.8 (DnD + Sort)',
                 wakeLockActive: '喚醒鎖定: ON',
                 guideTitle: '錄製時間指南',
                 guideMobile: '建議 5-10分 (極限15分)',
                 guidePC: '建議 20-30分 (極限60分)',
-                guideTip: '提示: 長影片請分段保存後再合併。'
+                guideTip: '提示: 長影片請分段保存後再合併。',
+                sortDate: '日期',
+                sortName: '名稱',
+                sortReset: '重置',
+                sortedDate: '已按日期排序',
+                sortedName: '已按名稱排序',
+                sortedReset: '已重置排序'
             },
             hi: {
                 title: 'Simple Memories',
                 tabPhoto: 'तस्वीरें', tabAudio: 'ऑडियो', tabTheater: 'थिएटर',
                 addPhoto: 'तस्वीरें जोड़ें', addMusic: 'संगीत जोड़ें',
                 dragDrop: 'ड्रैग एंड ड्रॉप उपलब्ध',
+                dropHere: 'यहाँ छोड़ें',
                 autoFitTitle: 'ऑटो फिट',
                 autoFitDesc: 'संगीत की लंबाई के अनुसार फोटो का समय समायोजित करें।',
                 run: 'चलाएं',
@@ -255,12 +284,18 @@
                 errNoBrowser: 'ब्राउज़र समर्थित नहीं है',
                 errNoData: 'तस्वीरें और संगीत आवश्यक हैं',
                 errNoPhoto: 'कोई तस्वीरें नहीं',
-                ver: 'ver 4.7 (Aurora Edition)',
+                ver: 'ver 4.8 (DnD + Sort)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'रिकॉर्डिंग समय',
                 guideMobile: '5-10 मिनट (सीमा 15 मिनट)',
                 guidePC: '20-30 मिनट (सीमा 60 मिनट)',
-                guideTip: 'सुझाव: लंबे वीडियो को भागों में सहेजें।'
+                guideTip: 'सुझाव: लंबे वीडियो को भागों में सहेजें।',
+                sortDate: 'तारीख',
+                sortName: 'नाम',
+                sortReset: 'रीसेट',
+                sortedDate: 'तारीख के अनुसार क्रमबद्ध',
+                sortedName: 'नाम के अनुसार क्रमबद्ध',
+                sortedReset: 'क्रम रीसेट किया गया'
             }
         };
 
@@ -397,7 +432,7 @@
                                 <h4 className="text-xs font-bold text-purple-500 uppercase mb-2">Audio</h4>
                                 <div className="flex flex-wrap gap-2">
                                     {['MP3', 'WAV', 'AAC', 'M4A', 'OGG'].map(ext => (
-                                        <span key={ext} className="px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md font-mono border border-purple-100 dark:border-purple-800">{ext}</span>
+                                        <span key={ext} className="px-2 py-1 bg-purple-5 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md font-mono border border-purple-100 dark:border-purple-800">{ext}</span>
                                     ))}
                                 </div>
                             </div>
@@ -456,8 +491,9 @@
             const [showStopConfirm, setShowStopConfirm] = useState(false);
             const [lang, setLang] = useState('ja');
             const [darkMode, setDarkMode] = useState(false);
-            const [showFileInfo, setShowFileInfo] = useState(false); // Restored State
-            const [showDurationGuide, setShowDurationGuide] = useState(false); // New State for Guide
+            const [showFileInfo, setShowFileInfo] = useState(false); 
+            const [showDurationGuide, setShowDurationGuide] = useState(false);
+            const [isDragging, setIsDragging] = useState(false); // New Drag State
 
             const canvasRef = useRef(null);
             const audioController = useRef(null);
@@ -466,7 +502,7 @@
             const mediaRecorderRef = useRef(null);
             const isPlayingRef = useRef(false);
             const isRecordingRef = useRef(false);
-            const wakeLockRef = useRef(null); // Wake Lock Reference
+            const wakeLockRef = useRef(null); 
 
             const t = TRANSLATIONS[lang] || TRANSLATIONS['ja'];
             const aspectConfig = ASPECT_RATIOS[settings.aspectRatio];
@@ -477,7 +513,7 @@
                 return () => { 
                     if(audioController.current) audioController.current.stopAll(); 
                     cancelAnimationFrame(requestRef.current);
-                    releaseWakeLock(); // Safety cleanup
+                    releaseWakeLock(); 
                 };
             }, []);
 
@@ -522,25 +558,76 @@
             };
             const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
-            const handlePhotoUpload = (e) => {
-                const files = Array.from(e.target.files);
-                const newPhotos = files.map(file => ({
-                    id: crypto.randomUUID(), file, url: URL.createObjectURL(file), rotation: 0, motion: { type: ['zoomIn','zoomOut','panRight','panLeft'][Math.floor(Math.random()*4)] }
-                }));
-                setPhotos(prev => [...prev, ...newPhotos]);
-                addToast(`${files.length} ${t.photos}`, 'success');
+            // --- DnD & File Handling ---
+            const onDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+            const onDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
+            
+            const processFiles = (files, type) => {
+                if (type === 'photo') {
+                    const newPhotos = files.filter(f => f.type.startsWith('image/')).map(file => ({
+                        id: crypto.randomUUID(), 
+                        file, 
+                        url: URL.createObjectURL(file), 
+                        rotation: 0, 
+                        motion: { type: ['zoomIn','zoomOut','panRight','panLeft'][Math.floor(Math.random()*4)] },
+                        addedAt: Date.now() // Track added time for reset sort
+                    }));
+                    if(newPhotos.length > 0) {
+                        setPhotos(prev => [...prev, ...newPhotos]);
+                        addToast(`${newPhotos.length} ${t.photos}`, 'success');
+                    }
+                } else if (type === 'music') {
+                    addToast('Loading...', 'info');
+                    const audioFiles = files.filter(f => f.type.startsWith('audio/'));
+                    const loadAudio = async () => {
+                        for (const file of audioFiles) {
+                            try {
+                                const buffer = await audioController.current.decodeFile(file);
+                                setMusic(prev => [...prev, { id: crypto.randomUUID(), name: file.name, buffer, duration: buffer.duration }]);
+                            } catch (err) { addToast('Error', 'error'); }
+                        }
+                        if(audioFiles.length > 0) addToast(t.tabAudio, 'success');
+                    };
+                    loadAudio();
+                }
             };
 
-            const handleMusicUpload = async (e) => {
+            const handleDrop = (e, type) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const files = Array.from(e.dataTransfer.files);
+                processFiles(files, type);
+            };
+
+            const handlePhotoUpload = (e) => {
                 const files = Array.from(e.target.files);
-                addToast('Loading...', 'info');
-                for (const file of files) {
-                    try {
-                        const buffer = await audioController.current.decodeFile(file);
-                        setMusic(prev => [...prev, { id: crypto.randomUUID(), name: file.name, buffer, duration: buffer.duration }]);
-                    } catch (err) { addToast('Error', 'error'); }
-                }
-                addToast(t.tabAudio, 'success');
+                processFiles(files, 'photo');
+            };
+
+            const handleMusicUpload = (e) => {
+                const files = Array.from(e.target.files);
+                processFiles(files, 'music');
+            };
+
+            // --- Sorting Logic ---
+            const sortPhotos = (type) => {
+                setPhotos(prev => {
+                    const sorted = [...prev];
+                    if (type === 'date') {
+                        // Sort by lastModified (oldest to newest)
+                        sorted.sort((a, b) => a.file.lastModified - b.file.lastModified);
+                        addToast(t.sortedDate, 'success');
+                    } else if (type === 'name') {
+                        // Sort by name A-Z naturally
+                        sorted.sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, {numeric: true, sensitivity: 'base'}));
+                        addToast(t.sortedName, 'success');
+                    } else if (type === 'reset') {
+                        // Sort by addedAt
+                        sorted.sort((a, b) => a.addedAt - b.addedAt);
+                        addToast(t.sortedReset, 'success');
+                    }
+                    return sorted;
+                });
             };
 
             const fitToMusic = () => {
@@ -827,11 +914,39 @@
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
                                 {activeTab === 'photos' && (
                                     <div className="space-y-4 animate-fade-in">
-                                        <label className="block w-full border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-2xl p-6 text-center hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition cursor-pointer group bg-white/50 dark:bg-slate-800/50">
+                                        <label 
+                                            onDragOver={onDragOver}
+                                            onDragLeave={onDragLeave}
+                                            onDrop={e => handleDrop(e, 'photo')}
+                                            className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer group relative overflow-hidden
+                                                ${isDragging 
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 scale-[1.02]' 
+                                                    : 'border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 bg-white/50 dark:bg-slate-800/50'
+                                                }`}
+                                        >
                                             <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                                            <div className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition shadow-md"><Icon name="plus" /></div>
-                                            <span className="text-sm text-indigo-600 dark:text-indigo-300 font-bold block">{t.addPhoto}</span>
+                                            <div className="bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition shadow-md relative z-10">
+                                                <Icon name={isDragging ? "arrow-down-to-line" : "plus"} className={isDragging ? "animate-bounce" : ""} />
+                                            </div>
+                                            <span className="text-sm text-indigo-600 dark:text-indigo-300 font-bold block relative z-10">
+                                                {isDragging ? t.dropHere : t.addPhoto}
+                                            </span>
+                                            <div className="text-[10px] text-indigo-400 mt-1 font-bold relative z-10">{t.dragDrop}</div>
                                         </label>
+
+                                        {/* Sorting Toolbar */}
+                                        <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
+                                            <button onClick={() => sortPhotos('date')} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap shadow-sm">
+                                                <Icon name="calendar" size={12}/> {t.sortDate}
+                                            </button>
+                                            <button onClick={() => sortPhotos('name')} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap shadow-sm">
+                                                <Icon name="arrow-down-a-z" size={12}/> {t.sortName}
+                                            </button>
+                                            <button onClick={() => sortPhotos('reset')} className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap shadow-sm ml-auto">
+                                                <Icon name="history" size={12}/> {t.sortReset}
+                                            </button>
+                                        </div>
+
                                         <div className="grid grid-cols-2 gap-3">
                                             {photos.map((p, i) => (
                                                 <div key={p.id} className="relative group aspect-square bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition">
@@ -858,10 +973,24 @@
                                             <p className="text-xs text-indigo-600 dark:text-indigo-300 mb-4 leading-relaxed">{t.autoFitDesc}</p>
                                             <button onClick={fitToMusic} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition transform active:scale-95">{t.run}</button>
                                         </div>
-                                        <label className="block w-full border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-2xl p-4 text-center hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer bg-white/50 dark:bg-slate-800/50">
+                                        <label 
+                                            onDragOver={onDragOver}
+                                            onDragLeave={onDragLeave}
+                                            onDrop={e => handleDrop(e, 'music')}
+                                            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center transition cursor-pointer group bg-white/50 dark:bg-slate-800/50 relative overflow-hidden
+                                            ${isDragging 
+                                                ? 'border-gray-500 bg-gray-50 dark:bg-gray-800/60 scale-[1.02]' 
+                                                : 'border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800'
+                                            }`}
+                                        >
                                             <input type="file" multiple accept="audio/*" onChange={handleMusicUpload} className="hidden" />
-                                            <div className="w-10 h-10 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-500 dark:text-slate-400"><Icon name="music" /></div>
-                                            <span className="text-sm text-gray-600 dark:text-slate-300 font-bold">{t.addMusic}</span>
+                                            <div className="w-10 h-10 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-500 dark:text-slate-400 relative z-10">
+                                                <Icon name={isDragging ? "arrow-down-to-line" : "music"} className={isDragging ? "animate-bounce" : ""} />
+                                            </div>
+                                            <span className="text-sm text-gray-600 dark:text-slate-300 font-bold relative z-10">
+                                                {isDragging ? t.dropHere : t.addMusic}
+                                            </span>
+                                            <div className="text-[10px] text-gray-400 mt-1 font-bold relative z-10">{t.dragDrop}</div>
                                         </label>
                                         <div className="space-y-2">
                                             {music.map((m, i) => (
