@@ -132,7 +132,7 @@
                 errNoBrowser: '録画非対応ブラウザです',
                 errNoData: '写真と音楽が必要です',
                 errNoPhoto: '写真がありません',
-                ver: 'ver 4.8 (DnD + Sort)',
+                ver: 'ver 4.8.1 (Fixes)',
                 wakeLockActive: 'スリープ防止機能: ON',
                 guideTitle: '録画時間の目安',
                 guideMobile: '推奨 5-10分 (限界15分)',
@@ -170,7 +170,7 @@
                 errNoBrowser: 'Browser not supported',
                 errNoData: 'Photos and Music required',
                 errNoPhoto: 'No photos added',
-                ver: 'ver 4.8 (DnD + Sort)',
+                ver: 'ver 4.8.1 (Fixes)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Recording Duration',
                 guideMobile: 'Rec 5-10m (Limit 15m)',
@@ -208,7 +208,7 @@
                 errNoBrowser: 'Navegador no soportado',
                 errNoData: 'Se requieren fotos y música',
                 errNoPhoto: 'No hay fotos',
-                ver: 'ver 4.8 (DnD + Sort)',
+                ver: 'ver 4.8.1 (Fixes)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Guía de Duración',
                 guideMobile: 'Rec 5-10m (Límite 15m)',
@@ -246,7 +246,7 @@
                 errNoBrowser: '瀏覽器不支援',
                 errNoData: '需要照片和音樂',
                 errNoPhoto: '沒有照片',
-                ver: 'ver 4.8 (DnD + Sort)',
+                ver: 'ver 4.8.1 (Fixes)',
                 wakeLockActive: '喚醒鎖定: ON',
                 guideTitle: '錄製時間指南',
                 guideMobile: '建議 5-10分 (極限15分)',
@@ -284,7 +284,7 @@
                 errNoBrowser: 'ब्राउज़र समर्थित नहीं है',
                 errNoData: 'तस्वीरें और संगीत आवश्यक हैं',
                 errNoPhoto: 'कोई तस्वीरें नहीं',
-                ver: 'ver 4.8 (DnD + Sort)',
+                ver: 'ver 4.8.1 (Fixes)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'रिकॉर्डिंग समय',
                 guideMobile: '5-10 मिनट (सीमा 15 मिनट)',
@@ -388,9 +388,9 @@
             const bg = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-indigo-500', wake: 'bg-amber-500' };
             const iconName = { success: 'check-circle', error: 'alert-circle', info: 'info', wake: 'zap' }[type] || 'info';
             return (
-                <div className={`fixed top-4 right-4 ${bg[type] || 'bg-gray-800'} text-white px-5 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[200px] shadow-lg`}>
+                <div className={`relative ${bg[type] || 'bg-gray-800'} text-white px-5 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[200px] shadow-lg mb-2`}>
                     <div className="shrink-0"><Icon name={iconName} size={20} /></div>
-                    <span className="font-bold text-sm leading-tight">{message}</span>
+                    <span className="font-bold text-sm leading-tight drop-shadow-sm">{message}</span>
                 </div>
             );
         };
@@ -554,9 +554,9 @@
                 }
             };
 
-            const addToast = (msg, type = 'info') => {
+            const addToast = (message, type = 'info') => {
                 const id = Date.now();
-                setToasts(prev => [...prev, { id, msg, type }]);
+                setToasts(prev => [...prev, { id, message, type }]);
             };
             const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
