@@ -123,7 +123,7 @@
                 stopExport: '書き出し停止',
                 recStopTitle: '書き出しを停止しますか？',
                 recStopMsg: '途中までの動画が保存されます。',
-                recWarning: '※書き出し中はページを切り替えないでください',
+                recWarning: '書き出し中はページを切り替えないでください', // Removed ※ for better styling
                 stop: '停止する', cancel: 'キャンセル',
                 totalTime: '総時間', photos: '枚数', size: 'サイズ',
                 noPhotos: '写真を追加してください',
@@ -161,7 +161,7 @@
                 stopExport: 'Stop Export',
                 recStopTitle: 'Stop exporting?',
                 recStopMsg: 'The video up to this point will be saved.',
-                recWarning: '* Do not switch tabs during export',
+                recWarning: 'Do not switch tabs during export',
                 stop: 'Stop', cancel: 'Cancel',
                 totalTime: 'Total Time', photos: 'Photos', size: 'Size',
                 noPhotos: 'Please add photos',
@@ -199,7 +199,7 @@
                 stopExport: 'Detener',
                 recStopTitle: '¿Detener exportación?',
                 recStopMsg: 'Se guardará el video hasta este punto.',
-                recWarning: '* No cambies de pestaña al exportar',
+                recWarning: 'No cambies de pestaña al exportar',
                 stop: 'Detener', cancel: 'Cancelar',
                 totalTime: 'Tiempo Total', photos: 'Fotos', size: 'Tamaño',
                 noPhotos: 'Añade fotos por favor',
@@ -237,7 +237,7 @@
                 stopExport: '停止導出',
                 recStopTitle: '確定停止導出？',
                 recStopMsg: '將保存目前的進度。',
-                recWarning: '* 導出時請勿切換頁面',
+                recWarning: '導出時請勿切換頁面',
                 stop: '停止', cancel: '取消',
                 totalTime: '總時間', photos: '張數', size: '尺寸',
                 noPhotos: '請新增照片',
@@ -275,7 +275,7 @@
                 stopExport: 'रोकें',
                 recStopTitle: 'निर्यात रोकें?',
                 recStopMsg: 'अब तक का वीडियो सहेजा जाएगा।',
-                recWarning: '* निर्यात के दौरान टैब न बदलें',
+                recWarning: 'निर्यात के दौरान टैब न बदलें',
                 stop: 'रोकें', cancel: 'रद्द करें',
                 totalTime: 'कुल समय', photos: 'तस्वीरें', size: 'आकार',
                 noPhotos: 'कृपया तस्वीरें जोड़ें',
@@ -386,9 +386,11 @@
         const Toast = ({ message, type, onClose }) => {
             useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
             const bg = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-indigo-500', wake: 'bg-amber-500' };
+            const iconName = { success: 'check-circle', error: 'alert-circle', info: 'info', wake: 'zap' }[type] || 'info';
             return (
-                <div className={`fixed top-4 right-4 ${bg[type] || 'bg-gray-800'} text-white px-6 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in font-bold`}>
-                    <span>{message}</span>
+                <div className={`fixed top-4 right-4 ${bg[type] || 'bg-gray-800'} text-white px-5 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[200px] shadow-lg`}>
+                    <div className="shrink-0"><Icon name={iconName} size={20} /></div>
+                    <span className="font-bold text-sm leading-tight">{message}</span>
                 </div>
             );
         };
@@ -1083,7 +1085,12 @@
                                                     className="w-full py-4 rounded-xl font-bold text-base shadow-xl bg-red-500 text-white hover:bg-red-600 transition flex items-center justify-center gap-2 animate-pulse">
                                                     <Icon name="square" fill="currentColor" /> {t.stopExport}
                                                 </button>
-                                                <p className="text-[10px] text-red-500 dark:text-red-400 text-center font-bold animate-pulse">{t.recWarning}</p>
+                                                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 animate-pulse">
+                                                    <p className="text-sm text-red-600 dark:text-red-300 text-center font-bold flex items-center justify-center gap-2">
+                                                        <Icon name="alert-triangle" size={16} />
+                                                        {t.recWarning}
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
