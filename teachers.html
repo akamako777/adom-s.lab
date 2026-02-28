@@ -19,6 +19,9 @@
     <!-- SheetJS (cdnjs) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+    <!-- JSZip (ZIP圧縮処理) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
         
@@ -97,6 +100,16 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        /* 写真アップロード用のドロップゾーン */
+        .drop-zone {
+            border: 2px dashed #93c5fd;
+            transition: all 0.2s;
+        }
+        .drop-zone.dragover {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+        }
     </style>
 </head>
 <body>
@@ -111,7 +124,9 @@
             Grid: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
             Calendar: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
             Layers: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+            Image: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
             Download: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+            UploadCloud: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>,
             Printer: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
             Trash: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
             Shuffle: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>,
@@ -128,13 +143,27 @@
             Unlock: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
             AlertOctagon: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
             Info: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+            Camera: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+            RotateCw: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+            Save: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            FileUp: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12 9 8 13"/><line x1="12" y1="9" x2="12" y2="17"/></svg>
         };
 
-        // --- 印刷用ユーティリティ ---
-        const handlePrint = (targetId, showToast) => {
+        // --- 印刷用ユーティリティ (第3引数でオプションを拡張) ---
+        const handlePrint = (targetId, showToast, options = {}) => {
             const content = document.getElementById(targetId);
             const header = document.getElementById('print-header');
             
+            // 既存コードとの互換性対応 (第3引数が boolean だった場合)
+            let isPhotoPrint = false;
+            let orientation = 'portrait';
+            if (typeof options === 'boolean') {
+                isPhotoPrint = options;
+            } else if (typeof options === 'object' && options !== null) {
+                isPhotoPrint = options.isPhotoPrint || false;
+                orientation = options.orientation || 'portrait';
+            }
+
             if (!content) {
                 showToast("印刷対象が見つかりません", "error");
                 return;
@@ -148,6 +177,22 @@
                 showToast("ポップアップがブロックされました。設定を確認してください。", "error");
                 return;
             }
+
+            const customCSS = isPhotoPrint ? `
+                .photo-grid { display: grid; gap: 10px; }
+                .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+                .grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
+                .grid-cols-8 { grid-template-columns: repeat(8, 1fr); }
+                .grid-cols-12 { grid-template-columns: repeat(12, 1fr); }
+                .photo-card { border: 1px solid #ccc; padding: 5px; text-align: center; page-break-inside: avoid; }
+                .photo-img { width: 100%; height: auto; object-fit: cover; aspect-ratio: 3/4; border: 1px solid #eee; margin-bottom: 5px; }
+                .photo-empty { width: 100%; aspect-ratio: 3/4; border: 1px dashed #ccc; margin-bottom: 5px; background: #fafafa; }
+                .photo-name { font-size: 12px; font-weight: bold; }
+                .photo-no { font-size: 10px; color: #666; }
+            ` : `
+                table { border-collapse: collapse; width: 100%; }
+                th, td { border: 1px solid #000; padding: 4px; }
+            `;
 
             printWindow.document.write(`
                 <html>
@@ -166,26 +211,82 @@
                         }
                         .print-header-wrapper { text-align: center; margin-bottom: 2rem; }
                         .no-print { display: none !important; }
-                        table { border-collapse: collapse; width: 100%; }
-                        th, td { border: 1px solid #000; padding: 4px; }
-                        @page { size: landscape; margin: 10mm; }
+                        @page { size: ${orientation}; margin: 10mm; }
+                        ${customCSS}
                     </style>
                 </head>
                 <body>
                     <div class="print-header-wrapper">${headerHtml}</div>
                     <div>${contentHtml}</div>
                     <script>
-                        setTimeout(function() { window.print(); }, 1000);
+                        window.onload = function() {
+                            setTimeout(function() { window.print(); }, 500);
+                        };
                     <\/script>
                 </body>
                 </html>
             `);
             printWindow.document.close();
-            // printWindow.focus(); // モバイル等でエラーになることがあるため省略
+        };
+
+        // --- 画像処理ユーティリティ (メモリ節約) ---
+        const resizeImage = (file, maxDimension = 1200) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) {
+                                height = Math.round((height * maxDimension) / width);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width * maxDimension) / height);
+                                height = maxDimension;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        const rotateImage = (dataUrl) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                    const ctx = canvas.getContext('2d');
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(Math.PI / 2);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+        };
+
+        const dataURLtoBlob = (dataurl) => {
+            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+            let bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], {type:mime});
         };
 
         // --- コンポーネント: トースト通知 ---
-        const ToastContainer = ({ toasts, removeToast }) => {
+        const ToastContainer = ({ toasts }) => {
             return (
                 <div className="toast-container no-print">
                     {toasts.map(t => (
@@ -218,12 +319,15 @@
             );
         };
 
-        const Card = ({ children, title, action, id }) => (
-            <div id={id} className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                {(title || action) && (
-                    <div className="flex justify-between items-center mb-4 border-b pb-2 no-print">
-                        {title && <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">{title}</h2>}
-                        <div>{action}</div>
+        const Card = ({ children, title, action, id, subtitle, className="" }) => (
+            <div id={id} className={`bg-white rounded-xl shadow-lg p-6 mb-6 ${className}`}>
+                {(title || action || subtitle) && (
+                    <div className="mb-4 border-b pb-2 no-print">
+                        <div className="flex justify-between items-center">
+                            {title && <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">{title}</h2>}
+                            <div>{action}</div>
+                        </div>
+                        {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
                     </div>
                 )}
                 {children}
@@ -310,6 +414,7 @@
             const [deleteId, setDeleteId] = useState(null);
             const [showPassModal, setShowPassModal] = useState(false);
             const [showResetConfirm, setShowResetConfirm] = useState(false);
+            const fileInputRef = useRef(null);
 
             const generateId = () => 's_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 
@@ -331,7 +436,6 @@
                     avoid: ['', '', '']
                 };
                 setData(prev => ({ ...prev, students: [...prev.students, newStudent] }));
-                // スクロール最下部へなどUX向上も可
             };
 
             const update = (id, field, val) => {
@@ -399,6 +503,42 @@
                 setShowPassModal(false);
             };
 
+            // --- JSONバックアップ・復元機能 ---
+            const exportData = () => {
+                const dataStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `クラス管理データ_${data.settings.gradeClass || '未設定'}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("バックアップデータを保存しました", "success");
+            };
+
+            const importData = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const parsed = JSON.parse(event.target.result);
+                        if(parsed.students && parsed.settings) {
+                            setData(parsed);
+                            showToast("データを復元しました", "success");
+                        } else {
+                            showToast("無効なファイル形式です", "error");
+                        }
+                    } catch (err) {
+                        showToast("ファイルの読み込みに失敗しました", "error");
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // Reset
+            };
+
             return (
                 <div className="space-y-6">
                     <ConfirmModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={remove} message="本当に削除しますか？" />
@@ -407,7 +547,13 @@
                         title="Excelから一括登録" placeholder={`氏名\n氏名\t性別\n...`} />
                     <PasswordModal isOpen={showPassModal} onClose={()=>setShowPassModal(false)} onConfirm={handleLockAction} isLocking={!isLocked} />
                     
-                    <Card title="クラス基本情報">
+                    <Card title="クラス基本情報" action={
+                        <div className="flex gap-2">
+                            <input type="file" accept=".json" ref={fileInputRef} className="hidden" onChange={importData} />
+                            <Button variant="ghost" className="text-sm border border-gray-200" onClick={() => fileInputRef.current.click()} title="JSONファイルから設定を復元"><Icons.FileUp /> 復元</Button>
+                            <Button variant="ghost" className="text-sm border border-gray-200" onClick={exportData} title="現在の設定と名簿をバックアップ保存"><Icons.Save /> バックアップ</Button>
+                        </div>
+                    } subtitle="※バックアップデータ(JSON)にはセキュリティ保護のため写真画像は含まれません。">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <label className="block"><span className="text-gray-700 font-bold">学校名</span><input type="text" disabled={isLocked} className="mt-1 block w-full border rounded p-2" value={data.settings.school} onChange={e => setData({...data, settings: {...data.settings, school: e.target.value}})} /></label>
                             <label className="block"><span className="text-gray-700 font-bold">学年・組</span><input type="text" disabled={isLocked} className="mt-1 block w-full border rounded p-2" value={data.settings.gradeClass} onChange={e => setData({...data, settings: {...data.settings, gradeClass: e.target.value}})} /></label>
@@ -540,7 +686,6 @@
                 }
 
                 let best = null, minScore = Infinity;
-                // 試行回数を 50 -> 500 に増加
                 const TRIALS = 500; 
                 
                 for(let k=0; k < TRIALS; k++) {
@@ -578,26 +723,22 @@
                         if((i+1) % safeCols !== 0) {
                             const s2 = current[i+1];
                             if(s2) {
-                                // NG
                                 if(s1.avoid.includes(s2.id) || s2.avoid.includes(s1.id)) score += 100;
-                                // 同性隣り合わせ回避（推奨）
                                 if (s1.gender !== 'mixed' && s2.gender !== 'mixed' && s1.gender === s2.gender) score += 10; 
                             }
                         }
 
-                        // --- ★追加: 真下（前後）チェック ---
-                        // 最後の行以外なら、真下の席をチェック
+                        // --- 真下（前後）チェック ---
                         if (i + safeCols < total) {
                             const sDown = current[i + safeCols];
                             if (sDown) {
-                                // NG (前後は隣と同じくらい重要なのでペナルティ大)
                                 if (s1.avoid.includes(sDown.id) || sDown.avoid.includes(s1.id)) score += 100;
                             }
                         }
                     }
 
                     if(score < minScore) { minScore = score; best = current; }
-                    if(score === 0) break; // 完全な配置が見つかれば即終了
+                    if(score === 0) break; 
                 }
                 
                 setLayout(best);
@@ -623,24 +764,18 @@
 
             const doPrint = () => handlePrint('print-target', showToast);
 
-            // --- Excel出力機能 (新規追加) ---
             const doExcel = () => {
                 if (layout.length === 0) return showToast("座席データがありません", "error");
 
                 const wb = XLSX.utils.book_new();
                 const rows = [];
 
-                // 1. 教卓行 (中央に配置)
                 const pulpitRow = Array(safeCols).fill("");
-                // 単純に中央付近のセルに「教卓」と入れる
                 const centerIdx = Math.floor((safeCols - 1) / 2);
                 pulpitRow[centerIdx] = "教卓";
                 rows.push(pulpitRow);
-                
-                // 空行
                 rows.push(Array(safeCols).fill(""));
 
-                // 2. 座席データ (グリッドに合わせて配置)
                 for (let r = 0; r < safeRows; r++) {
                     const rowData = [];
                     for (let c = 0; c < safeCols; c++) {
@@ -649,7 +784,6 @@
                         rowData.push(student ? student.name : "");
                     }
                     rows.push(rowData);
-                    // 見やすさのために空行を入れても良いが、今回はシンプルに詰める
                 }
 
                 const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -663,7 +797,6 @@
                 if (isNaN(num)) num = 1;
                 
                 const currentVal = data.seatConfig[field];
-                // 急激に大きな値を入力された場合のガード
                 if (num > currentVal) {
                     const otherVal = field === 'cols' ? data.seatConfig.rows : data.seatConfig.cols;
                     const newTotal = num * otherVal;
@@ -723,7 +856,6 @@
 
         // --- 3. 係り・当番 (Smart Gender Logic & Fixed Slots & EXEMPTION Implemented) ---
         const DutyTool = ({ data, setData, showToast }) => {
-            // 初期データ構造に genderReq, fixedStudentId を追加
             const initialDuties = data.dutyConfig.jobs?.length 
                 ? data.dutyConfig.jobs.map(j => ({...j, genderReq: j.genderReq || 'none', fixedStudentId: j.fixedStudentId || null})) 
                 : [{name:'黒板', count:2, genderReq:'none', fixedStudentId: null}];
@@ -737,16 +869,12 @@
                 setData(prev => ({...prev, dutyConfig: {...prev.dutyConfig, jobs: duties}}));
             }, [duties]);
 
-            // --- ★排他制御ロジック (Smart Exclusion) ---
-            // 「固定」または「免除」で既に選ばれている生徒IDをリスト化（自分自身は除くため、レンダリング時にチェック）
-            // これにより、Aさんを「固定」に選んだら、他のプルダウンからAさんが消える
             const usedStudentIds = new Set(
                 duties
                     .filter(d => (d.genderReq === 'fixed' || d.genderReq === 'exempt') && d.fixedStudentId)
                     .map(d => d.fixedStudentId)
             );
 
-            // 在庫計算（固定生徒 と 免除生徒 を除く）
             const availableStudents = data.students.filter(s => !usedStudentIds.has(s.id));
             
             const rosterCounts = availableStudents.reduce((acc, s) => {
@@ -755,7 +883,7 @@
             }, {boy:0, girl:0, mixed:0});
 
             const dutyCounts = duties.reduce((acc, d) => {
-                if(d.genderReq === 'fixed' || d.genderReq === 'exempt') return acc; // 固定・免除はカウントしない
+                if(d.genderReq === 'fixed' || d.genderReq === 'exempt') return acc; 
                 if(d.genderReq === 'boy') acc.boy += d.count;
                 else if(d.genderReq === 'girl') acc.girl += d.count;
                 else acc.none += d.count;
@@ -768,7 +896,6 @@
 
             const updateCount = (index, newCount) => {
                 if (isNaN(newCount) || newCount < 1) return; 
-                // 生徒数上限チェック
                 if (newCount > duties[index].count && remainingSlots <= 0) {
                     showToast("生徒数が不足しています", "error");
                     return; 
@@ -781,7 +908,6 @@
             const updateGender = (index, val) => {
                 const nd = [...duties];
                 nd[index].genderReq = val;
-                // 固定/免除から切り替えた場合、カウントを1に戻すなど
                 if(val === 'fixed' || val === 'exempt') nd[index].count = 1;
                 setDuties(nd);
             };
@@ -800,16 +926,12 @@
             const generate = (sortType) => {
                 if(data.students.length === 0) return showToast("生徒がいません", "error");
 
-                // --- 1. 事前検証 (Safety Check) ---
                 if (rosterCounts.boy < dutyCounts.boy) return showToast(`男子が不足しています (必要: ${dutyCounts.boy}, 対象: ${rosterCounts.boy})`, "error");
                 if (rosterCounts.girl < dutyCounts.girl) return showToast(`女子が不足しています (必要: ${dutyCounts.girl}, 対象: ${rosterCounts.girl})`, "error");
                 if (remainingStudents < requiredSlots) return showToast("全体の生徒数が不足しています", "error");
 
-                // --- 2. リスト準備 ---
-                // 固定・免除以外の生徒を取得
                 let pool = data.students.filter(s => !usedStudentIds.has(s.id));
 
-                // ソート適用
                 if(sortType === 'random') {
                     for (let i = pool.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
@@ -819,27 +941,26 @@
                     pool.reverse();
                 }
 
-                // 属性別リストに分割
                 const boysList = pool.filter(s => s.gender === 'boy');
                 const girlsList = pool.filter(s => s.gender === 'girl');
-                // 全体リスト（指定なし用）
                 const allList = [...pool]; 
 
-                // 係スロット展開
                 const slotsInfo = [];
+                let slotIndex = 0;
                 duties.forEach(d => {
                     if (d.genderReq === 'fixed') {
                         slotsInfo.push({
+                            id: `slot_${slotIndex++}`,
                             name: d.name,
                             genderReq: 'fixed',
                             fixedStudentId: d.fixedStudentId
                         });
                     } else if (d.genderReq === 'exempt') {
-                        // 免除行はスロットを作らない（人数-1）
                         return;
                     } else {
                         for(let i=0; i<d.count; i++) {
                             slotsInfo.push({
+                                id: `slot_${slotIndex++}`,
                                 name: d.count > 1 ? `${d.name}${i+1}` : d.name,
                                 genderReq: d.genderReq
                             });
@@ -850,76 +971,67 @@
                 const weeks = data.dutyConfig.duration || 10;
                 const newSchedule = []; 
                 
-                // 3つの独立したカウンター（歯車）
                 let boyIndex = 0;
                 let girlIndex = 0;
                 let globalIndex = 0;
 
-                // --- 3. 週ごとの生成ループ ---
                 for(let w=1; w<=weeks; w++) {
                     const weekAssignments = {};
-                    const usedInThisWeek = new Set(); // 今週すでに割り当てられた生徒ID
+                    const usedInThisWeek = new Set(); 
 
-                    // A. 固定枠の割り当て (最優先)
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq === 'fixed') {
                             const student = data.students.find(s => s.id === slot.fixedStudentId);
-                            weekAssignments[slot.name] = student ? student.name : "(未設定)";
+                            weekAssignments[slot.id] = student ? student.name : "(未設定)";
                             if (student) usedInThisWeek.add(student.id);
                         }
                     });
 
-                    // B. 男子指定枠の割り当て (男子歯車)
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'boy') return;
                         
                         if (boysList.length > 0) {
                             const student = boysList[boyIndex % boysList.length];
-                            weekAssignments[slot.name] = student.name;
+                            weekAssignments[slot.id] = student.name;
                             usedInThisWeek.add(student.id);
-                            boyIndex++; // 次の人のために進める
+                            boyIndex++; 
                         } else {
-                            weekAssignments[slot.name] = "(不足)";
+                            weekAssignments[slot.id] = "(不足)";
                         }
                     });
 
-                    // C. 女子指定枠の割り当て (女子歯車)
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'girl') return;
 
                         if (girlsList.length > 0) {
                             const student = girlsList[girlIndex % girlsList.length];
-                            weekAssignments[slot.name] = student.name;
+                            weekAssignments[slot.id] = student.name;
                             usedInThisWeek.add(student.id);
-                            girlIndex++; // 次の人のために進める
+                            girlIndex++; 
                         } else {
-                            weekAssignments[slot.name] = "(不足)";
+                            weekAssignments[slot.id] = "(不足)";
                         }
                     });
 
-                    // D. 指定なし枠の割り当て (全体歯車 + スキップロジック)
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'none') return;
 
-                        // まだ今週割り当てられていない人を探す
-                        // globalIndexからスタートして、1周するまで探す
                         let found = false;
                         for (let k = 0; k < allList.length; k++) {
                             const currentIndex = (globalIndex + k) % allList.length;
                             const student = allList[currentIndex];
                             
                             if (!usedInThisWeek.has(student.id)) {
-                                weekAssignments[slot.name] = student.name;
+                                weekAssignments[slot.id] = student.name;
                                 usedInThisWeek.add(student.id);
-                                globalIndex = (currentIndex + 1) % allList.length; // 次回開始位置を更新
+                                globalIndex = (currentIndex + 1) % allList.length; 
                                 found = true;
                                 break;
                             }
                         }
-                        if (!found) weekAssignments[slot.name] = "-";
+                        if (!found) weekAssignments[slot.id] = "-";
                     });
 
-                    // シフトロジック（係人数 < 生徒数の場合は自動でずれるが、＝の場合は強制シフトが必要）
                     if (requiredSlots === remainingStudents) {
                          boyIndex += shiftVal;
                          girlIndex += shiftVal;
@@ -929,7 +1041,7 @@
                     newSchedule.push({ id: w, mapping: weekAssignments });
                 }
 
-                setSchedule({ slots: slotsInfo.map(s=>s.name), weeks: newSchedule });
+                setSchedule({ slots: slotsInfo, weeks: newSchedule });
                 showToast("当番表を作成しました", "success");
             };
 
@@ -939,10 +1051,10 @@
                 const rows = [];
                 const header = ["係名", ...schedule.weeks.map(w => `${w.id}${data.dutyConfig.type==='week'?'週':'月'}`)];
                 rows.push(header);
-                schedule.slots.forEach(duty => {
-                    const row = [duty];
+                schedule.slots.forEach(slot => {
+                    const row = [slot.name];
                     schedule.weeks.forEach(w => {
-                        row.push(w.mapping[duty] || "");
+                        row.push(w.mapping[slot.id] || "");
                     });
                     rows.push(row);
                 });
@@ -1009,7 +1121,6 @@
                                             >
                                                 <option value="">生徒を選択...</option>
                                                 {data.students.map(s => {
-                                                    // 排他制御: 自分自身か、誰にも使われていない生徒のみ表示
                                                     if (s.id === d.fixedStudentId || !usedStudentIds.has(s.id)) {
                                                         return <option key={s.id} value={s.id}>{s.name}</option>;
                                                     }
@@ -1081,12 +1192,12 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {schedule.slots.map((duty, i) => (
+                                            {schedule.slots.map((slot, i) => (
                                                 <tr key={i}>
-                                                    <td className="border p-2 font-bold bg-gray-50 text-left px-4">{duty}</td>
+                                                    <td className="border p-2 font-bold bg-gray-50 text-left px-4">{slot.name}</td>
                                                     {schedule.weeks.map(w => (
                                                         <td key={w.id} className="border p-2">
-                                                            {w.mapping[duty]}
+                                                            {w.mapping[slot.id]}
                                                         </td>
                                                     ))}
                                                 </tr>
@@ -1183,47 +1294,82 @@
                     const TRIALS = 500;
                     let bestGroups = null;
                     let minConflicts = Infinity;
+                    let bestScore = Infinity;
 
                     for (let k = 0; k < TRIALS; k++) {
-                        let currentTargets = [...unassigned];
-                        for (let i = currentTargets.length - 1; i > 0; i--) {
-                            const j = Math.floor(Math.random() * (i + 1));
-                            [currentTargets[i], currentTargets[j]] = [currentTargets[j], currentTargets[i]];
-                        }
+                        // 1. 性別ごとに分けてシャッフル
+                        let boys = unassigned.filter(s => s.gender === 'boy');
+                        let girls = unassigned.filter(s => s.gender === 'girl');
+                        let mixed = unassigned.filter(s => s.gender !== 'boy' && s.gender !== 'girl');
 
+                        const shuffleArr = (arr) => {
+                            let res = [...arr];
+                            for (let i = res.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [res[i], res[j]] = [res[j], res[i]];
+                            }
+                            return res;
+                        };
+                        
                         let tempGroups = groups.map(g => ({...g, members: [...g.members]}));
                         let currentConflicts = 0;
 
-                        currentTargets.forEach(s => {
-                            let minLen = Math.min(...tempGroups.map(g => g.members.length));
-                            let candidates = tempGroups.filter(g => g.members.length === minLen);
-                            
-                            let validCandidates = candidates.filter(g => 
-                                !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))
-                            );
+                        // 2. グループに均等に配る関数 (コンフリクト回避優先)
+                        const assignToGroups = (students) => {
+                            students.forEach(s => {
+                                let minLen = Math.min(...tempGroups.map(g => g.members.length));
+                                let candidates = tempGroups.filter(g => g.members.length === minLen);
+                                
+                                // コンフリクトがない候補を探す
+                                let validCandidates = candidates.filter(g => 
+                                    !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))
+                                );
 
-                            let targetGroup;
-                            if (validCandidates.length > 0) {
-                                targetGroup = validCandidates[Math.floor(Math.random() * validCandidates.length)];
-                            } else {
-                                targetGroup = candidates[Math.floor(Math.random() * candidates.length)];
-                                if (targetGroup.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))) {
-                                    currentConflicts++;
+                                let targetGroup;
+                                if (validCandidates.length > 0) {
+                                    targetGroup = validCandidates[Math.floor(Math.random() * validCandidates.length)];
+                                } else {
+                                    // 【最優先：NG回避】人数バランスを崩してでもNGにならない班を探す
+                                    let allValidGroups = tempGroups.filter(g => 
+                                        !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))
+                                    );
+                                    if(allValidGroups.length > 0) {
+                                        let minValidLen = Math.min(...allValidGroups.map(g => g.members.length));
+                                        let bestValidCandidates = allValidGroups.filter(g => g.members.length === minValidLen);
+                                        targetGroup = bestValidCandidates[Math.floor(Math.random() * bestValidCandidates.length)];
+                                    } else {
+                                        // どうやってもNGになる場合は諦めて入れる
+                                        targetGroup = candidates[Math.floor(Math.random() * candidates.length)];
+                                        currentConflicts++;
+                                    }
                                 }
-                            }
-                            targetGroup.members.push(s);
-                        });
+                                targetGroup.members.push(s);
+                            });
+                        };
 
-                        if (currentConflicts < minConflicts) {
-                            minConflicts = currentConflicts;
+                        // 順番に配ることで男女を均等化する
+                        assignToGroups(shuffleArr(boys));
+                        assignToGroups(shuffleArr(girls));
+                        assignToGroups(shuffleArr(mixed));
+
+                        // 3. 評価スコア (NG条件抵触には大きなペナルティ)
+                        let lengths = tempGroups.map(g => g.members.length);
+                        let balancePenalty = Math.max(...lengths) - Math.min(...lengths);
+                        let score = (currentConflicts * 1000) + balancePenalty;
+
+                        if (score < bestScore) {
+                            bestScore = score;
                             bestGroups = tempGroups;
+                            minConflicts = currentConflicts;
                         }
-                        if (minConflicts === 0) break;
+                        
+                        // 理想的な状態 (NGなし ＆ 人数差1以内) なら早めに探索打ち切り
+                        if (currentConflicts === 0 && balancePenalty <= 1) break;
                     }
 
                     setGroups(bestGroups);
                     if (minConflicts === 0) {
-                        showToast("最適な班分けができました！", "success");
+                        showToast("男女均等で最適な班分けができました！", "success");
                     } else {
                         showToast(`班分け完了（※NG条件を${minConflicts}件 解消できませんでした）`, "warning");
                     }
@@ -1324,7 +1470,7 @@
                                 <span className="text-sm font-bold text-gray-700">自動振り分け:</span>
                                 <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('asc')} disabled={unassigned.length===0}>名簿順</Button>
                                 <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('desc')} disabled={unassigned.length===0}>逆順</Button>
-                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('random')} disabled={unassigned.length===0}>ランダム</Button>
+                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('random')} disabled={unassigned.length===0}>ランダム（男女均等）</Button>
                             </div>
                         </div>
 
@@ -1364,6 +1510,371 @@
                                     <button onClick={()=>setDelGId(g.id)} className="text-red-300 text-right mt-1 no-print hover:text-red-500"><Icons.Trash size={16}/></button>
                                 </div>
                             ))}
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        // --- 5. 写真ツール (新機能) ---
+        const PhotoTool = ({ data, showToast }) => {
+            const [photos, setPhotos] = useState({}); // { studentId: dataUrl }
+            const [stockPhotos, setStockPhotos] = useState([]); // 写真ストック(最大100枚)
+            const [selectedStockIndex, setSelectedStockIndex] = useState(null); // タップ操作用
+            
+            const [isDragging, setIsDragging] = useState(false);
+            const [printCols, setPrintCols] = useState(8);
+            const [printOrientation, setPrintOrientation] = useState('portrait'); // 縦横設定
+            
+            // カメラ用ステート
+            const [cameraTarget, setCameraTarget] = useState(null);
+            const videoRef = useRef(null);
+            const streamRef = useRef(null);
+
+            // 制限設定
+            const MAX_STOCK = 100;
+            const isNoStudents = data.students.length === 0;
+            const isExportDisabled = isNoStudents || Object.keys(photos).length === 0;
+
+            // メモリ解放
+            useEffect(() => {
+                return () => {
+                    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+                };
+            }, []);
+
+            // --- 画像アップロード処理 (ストックエリアへ) ---
+            const processFiles = async (files) => {
+                const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+                if(imageFiles.length === 0) return;
+                
+                let availableSlots = MAX_STOCK - stockPhotos.length;
+                if (availableSlots <= 0) {
+                    return showToast(`ストックの上限(${MAX_STOCK}枚)に達しています`, "error");
+                }
+
+                let filesToProcess = imageFiles.slice(0, availableSlots);
+                if (imageFiles.length > availableSlots) {
+                    showToast(`上限を超えるため、${availableSlots}枚のみ読み込みます`, "warning");
+                } else {
+                    showToast(`${filesToProcess.length}枚の画像をストックに読み込んでいます...`, "info");
+                }
+                
+                let newStocks = [];
+                for (let i = 0; i < filesToProcess.length; i++) {
+                    try {
+                        const dataUrl = await resizeImage(filesToProcess[i], 1200);
+                        newStocks.push(dataUrl);
+                    } catch(e) {
+                        console.error("画像リサイズエラー:", e);
+                    }
+                }
+                
+                setStockPhotos(prev => [...prev, ...newStocks]);
+                showToast(`${newStocks.length}枚をストックに追加しました`, "success");
+            };
+
+            const onDropFiles = (e) => {
+                e.preventDefault(); setIsDragging(false);
+                if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
+            };
+
+            const handleFileSelect = (e) => {
+                if (e.target.files) processFiles(e.target.files);
+                e.target.value = ''; // Reset input
+            };
+
+            // --- ドラッグ＆ドロップ ＆ タップ配置処理 ---
+            const handleDragStartStock = (e, index) => {
+                e.dataTransfer.setData("stockIndex", index);
+                setSelectedStockIndex(index); // 見た目も選択状態にする
+            };
+
+            const handleDropOnStudent = (e, studentId) => {
+                e.preventDefault();
+                const stockIndexStr = e.dataTransfer.getData("stockIndex");
+                if (stockIndexStr === "") return;
+                assignPhotoToStudent(parseInt(stockIndexStr), studentId);
+            };
+
+            const assignPhotoToStudent = (stockIndex, studentId) => {
+                if (stockIndex < 0 || stockIndex >= stockPhotos.length) return;
+                
+                const photoData = stockPhotos[stockIndex];
+                const oldPhoto = photos[studentId];
+                
+                // ストックから消す
+                const newStock = [...stockPhotos];
+                newStock.splice(stockIndex, 1);
+                
+                // 生徒がすでに写真を持っていたら、それをストックに戻す
+                if (oldPhoto) {
+                    newStock.push(oldPhoto);
+                }
+                
+                setStockPhotos(newStock);
+                setPhotos(prev => ({...prev, [studentId]: photoData}));
+                setSelectedStockIndex(null); // 選択解除
+            };
+
+            const handleStudentClick = (studentId) => {
+                if (selectedStockIndex !== null) {
+                    assignPhotoToStudent(selectedStockIndex, studentId);
+                }
+            };
+
+            // --- 既存の写真操作 ---
+            const removePhoto = (id) => {
+                const oldPhoto = photos[id];
+                if (!oldPhoto) return;
+                
+                const newPhotos = {...photos};
+                delete newPhotos[id];
+                setPhotos(newPhotos);
+
+                // ゴミ箱に捨てた写真はストックに戻す（上限未満の場合のみ）
+                if (stockPhotos.length < MAX_STOCK) {
+                    setStockPhotos(prev => [...prev, oldPhoto]);
+                    showToast("写真をストックに戻しました", "info");
+                } else {
+                    showToast("取り外した写真はストック上限のため破棄されました", "warning");
+                }
+            };
+
+            const rotatePhoto = async (id) => {
+                if (!photos[id]) return;
+                try {
+                    const rotated = await rotateImage(photos[id]);
+                    setPhotos(prev => ({...prev, [id]: rotated}));
+                } catch(e) {
+                    showToast("回転に失敗しました", "error");
+                }
+            };
+
+            // --- カメラ機能 ---
+            const openCamera = async (studentId) => {
+                setCameraTarget(studentId);
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    streamRef.current = stream;
+                    if (videoRef.current) videoRef.current.srcObject = stream;
+                } catch(err) {
+                    showToast("カメラの起動に失敗しました。権限を確認してください。", "error");
+                    setCameraTarget(null);
+                }
+            };
+
+            const takePhoto = () => {
+                if (!videoRef.current || !cameraTarget) return;
+                const video = videoRef.current;
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                setPhotos(prev => ({...prev, [cameraTarget]: dataUrl}));
+                closeCamera();
+            };
+
+            const closeCamera = () => {
+                if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+                setCameraTarget(null);
+            };
+
+            // --- ZIPダウンロード ---
+            const downloadZip = async () => {
+                if (isExportDisabled) return;
+
+                showToast("ZIPファイルを作成中です...", "info");
+                try {
+                    const zip = new JSZip();
+                    data.students.forEach((s, idx) => {
+                        if (photos[s.id]) {
+                            const blob = dataURLtoBlob(photos[s.id]);
+                            // ファイル名: 学年組_No_氏名.jpg
+                            const noStr = String(idx + 1).padStart(2, '0');
+                            const prefix = data.settings.gradeClass ? `${data.settings.gradeClass}_` : '';
+                            const filename = `${prefix}${noStr}_${s.name}.jpg`;
+                            zip.file(filename, blob);
+                        }
+                    });
+                    
+                    const content = await zip.generateAsync({type:"blob"});
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `クラス写真_${data.settings.gradeClass || '未設定'}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast("ZIPダウンロードが完了しました", "success");
+                } catch(err) {
+                    showToast("ZIP作成中にエラーが発生しました", "error");
+                    console.error(err);
+                }
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* カメラモーダル */}
+                    {cameraTarget && (
+                        <div className="modal-overlay z-[3000]">
+                            <div className="bg-black p-4 rounded-xl shadow-2xl">
+                                <video ref={videoRef} autoPlay playsInline className="max-h-[70vh] rounded bg-gray-900 mx-auto" />
+                                <div className="mt-4 flex justify-center gap-4">
+                                    <Button variant="secondary" onClick={closeCamera}>キャンセル</Button>
+                                    <Button variant="primary" onClick={takePhoto} className="px-8 py-3"><Icons.Camera /> 撮影する</Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-lg shadow-sm flex gap-3 no-print items-start">
+                        <Icons.AlertOctagon size={24} className="flex-shrink-0 mt-1" />
+                        <div className="text-sm">
+                            <p className="font-bold text-base mb-1">【重要】写真データはブラウザ内に保存されません！</p>
+                            <p>プライバシー保護および動作の安定化（メモリオーバー防止）のため、<b>写真はページを再読み込みしたり、他の作業をして戻ると消去されます。</b><br/>作業が完了したら、必ずページ下部のボタンから<b>ZIPダウンロード</b>または<b>PDF印刷</b>を行ってください。</p>
+                        </div>
+                    </div>
+
+                    <div className="no-print">
+                        <Card title={`1. 写真ストック (${stockPhotos.length}/${MAX_STOCK}枚)`} subtitle="ここに画像をドロップしてストックし、下の名簿枠へ「ドラッグ＆ドロップ」または「タップして配置」します。">
+                            {/* 一括アップロードエリア */}
+                            <div className={`drop-zone p-6 rounded-xl text-center mb-4 cursor-pointer
+                                ${isDragging ? 'dragover' : 'bg-gray-50'}`}
+                                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                                onDragLeave={() => setIsDragging(false)}
+                                onDrop={onDropFiles}
+                                onClick={() => document.getElementById('fileUpload').click()}
+                            >
+                                <Icons.UploadCloud size={40} className="mx-auto text-blue-400 mb-2" />
+                                <p className="font-bold text-gray-700">ここに複数枚の画像ファイルをドロップ</p>
+                                <p className="text-xs text-gray-500 mt-1">追加した写真は自動で軽量化され、下のストックエリアに並びます。</p>
+                                <input id="fileUpload" type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                            </div>
+
+                            {/* ストックグリッド */}
+                            {stockPhotos.length > 0 && (
+                                <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm font-bold text-blue-800">
+                                            {selectedStockIndex !== null ? '👇 配置したい児童の枠をタップしてください' : '👉 写真をドラッグ、またはタップして選択'}
+                                        </p>
+                                        {selectedStockIndex !== null && (
+                                            <Button variant="secondary" className="text-xs py-1" onClick={() => setSelectedStockIndex(null)}>選択解除</Button>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 p-1 min-h-[120px]">
+                                        {stockPhotos.map((dataUrl, i) => (
+                                            <div 
+                                                key={i} 
+                                                draggable 
+                                                onDragStart={(e) => handleDragStartStock(e, i)}
+                                                onClick={() => setSelectedStockIndex(i === selectedStockIndex ? null : i)}
+                                                className={`relative w-20 h-28 flex-shrink-0 cursor-grab rounded overflow-hidden border-2 transition-all 
+                                                    ${selectedStockIndex === i ? 'border-blue-500 scale-105 shadow-md z-10' : 'border-gray-200 hover:border-gray-400'}`}
+                                            >
+                                                <img src={dataUrl} className="w-full h-full object-cover pointer-events-none" />
+                                                {selectedStockIndex === i && (
+                                                    <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-1 font-bold rounded-bl shadow">
+                                                        選択中
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
+                    <Card title="2. 児童の写真割り当て" subtitle={isNoStudents ? "※名簿タブで生徒を登録してください" : "プレビュー用グリッド"}>
+                        {/* 写真グリッド (印刷プレビュー対象) */}
+                        <div id="print-target" className="p-4 bg-white print:p-0">
+                            <div className={`photo-grid grid gap-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 print:grid-cols-${printCols}`}>
+                                {data.students.map((s, idx) => {
+                                    const hasPhoto = !!photos[s.id];
+                                    const isTargetMode = selectedStockIndex !== null;
+                                    
+                                    return (
+                                        <div 
+                                            key={s.id} 
+                                            className={`photo-card relative group flex flex-col h-full bg-white border rounded overflow-hidden shadow-sm transition-all
+                                                ${isTargetMode ? 'ring-2 ring-blue-300 ring-offset-1 cursor-pointer hover:bg-blue-50 hover:ring-blue-500' : 'border-gray-200'}`}
+                                            onDragOver={e => e.preventDefault()}
+                                            onDrop={e => handleDropOnStudent(e, s.id)}
+                                            onClick={() => handleStudentClick(s.id)}
+                                        >
+                                            <div className="relative w-full pt-[133%] bg-gray-100 flex-shrink-0"> {/* 3:4 アスペクト比 */}
+                                                {hasPhoto ? (
+                                                    <img src={photos[s.id]} alt={s.name} className="absolute top-0 left-0 w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                                        <Icons.Image size={32} />
+                                                        {isTargetMode && <span className="text-xs font-bold text-blue-400 mt-2">ここへ配置</span>}
+                                                    </div>
+                                                )}
+                                                
+                                                {/* マウスオーバー時（またはスマホタッチ時）の操作レイヤー */}
+                                                <div className="no-print absolute top-0 left-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                                    {!hasPhoto ? (
+                                                        <button onClick={(e)=>{e.stopPropagation(); openCamera(s.id);}} className="bg-white p-2 rounded-full text-blue-600 hover:scale-110 transition"><Icons.Camera size={20}/></button>
+                                                    ) : (
+                                                        <>
+                                                            <button onClick={(e)=>{e.stopPropagation(); rotatePhoto(s.id);}} className="bg-white p-2 rounded-full text-gray-700 hover:scale-110 transition" title="90度回転"><Icons.RotateCw size={20}/></button>
+                                                            <button onClick={(e)=>{e.stopPropagation(); removePhoto(s.id);}} className="bg-white p-2 rounded-full text-red-500 hover:scale-110 transition" title="外す (ストックに戻す)"><Icons.Trash size={20}/></button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="p-2 text-center border-t bg-gray-50 flex-grow flex flex-col justify-center">
+                                                <div className="photo-no">{idx + 1}</div>
+                                                <div className="photo-name text-gray-800 leading-tight">{s.name || '未設定'}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 下部アクションバー */}
+                        <div className="no-print sticky bottom-4 mt-8 bg-white border shadow-xl p-4 rounded-xl flex flex-wrap justify-between items-center gap-4 z-40">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 font-bold">
+                                登録済み: {Object.keys(photos).length} / {data.students.length}名
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded border">
+                                    <span className="text-xs font-bold text-gray-600">レイアウト設定:</span>
+                                    <select className="border rounded text-sm p-1 font-bold" 
+                                        value={`${printOrientation}-${printCols}`} 
+                                        onChange={e => {
+                                            const [ori, cols] = e.target.value.split('-');
+                                            setPrintOrientation(ori);
+                                            setPrintCols(parseInt(cols));
+                                        }}>
+                                        <optgroup label="縦向き (A4)">
+                                            <option value="portrait-4">縦 4列 (大きめ)</option>
+                                            <option value="portrait-6">縦 6列 (標準大)</option>
+                                            <option value="portrait-8">縦 8列 (標準)</option>
+                                            <option value="portrait-12">縦 12列 (小さめ)</option>
+                                        </optgroup>
+                                        <optgroup label="横向き (A4)">
+                                            <option value="landscape-4">横 4列 (かなり大きめ)</option>
+                                            <option value="landscape-6">横 6列 (大きめ)</option>
+                                            <option value="landscape-8">横 8列 (標準大)</option>
+                                            <option value="landscape-12">横 12列 (標準)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <Button variant="secondary" onClick={() => handlePrint('print-target', showToast, { isPhotoPrint: true, orientation: printOrientation })} disabled={isExportDisabled} title={isExportDisabled ? "名簿・写真データを追加してください" : ""}>
+                                    <Icons.Printer /> PDF(印刷)作成
+                                </Button>
+                                <Button variant="primary" onClick={downloadZip} disabled={isExportDisabled} title={isExportDisabled ? "名簿・写真データを追加してください" : ""}>
+                                    <Icons.Download /> まとめてZIP保存
+                                </Button>
+                            </div>
                         </div>
                     </Card>
                 </div>
@@ -1417,13 +1928,15 @@
                     <ToastContainer toasts={toasts} />
                     
                     <header className="bg-white shadow-sm border-b sticky top-0 z-50 no-print">
-                        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-                            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Icons.Smile /> クラス管理ツール</h1>
-                            <div className="flex gap-2">
+                        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+                            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Icons.Smile /> クラス管理ツール Pro</h1>
+                            <div className="flex gap-1 overflow-x-auto pb-1 sm:pb-0">
                                 <Button onClick={()=>setTab('students')} variant={tab==='students'?'primary':'ghost'}><Icons.Users /> 名簿</Button>
                                 <Button onClick={()=>setTab('seats')} variant={tab==='seats'?'primary':'ghost'}><Icons.Grid /> 席替</Button>
                                 <Button onClick={()=>setTab('duties')} variant={tab==='duties'?'primary':'ghost'}><Icons.Calendar /> 当番</Button>
                                 <Button onClick={()=>setTab('clubs')} variant={tab==='clubs'?'primary':'ghost'}><Icons.Layers /> 班</Button>
+                                {/* 写真タブ追加 */}
+                                <Button onClick={()=>setTab('photos')} variant={tab==='photos'?'primary':'ghost'} className="border-l border-gray-200 ml-1 pl-3 text-blue-600"><Icons.Image /> 写真</Button>
                             </div>
                         </div>
                     </header>
@@ -1448,10 +1961,12 @@
                         {tab==='seats' && <SeatingTool data={data} setData={setData} showToast={showToast} />}
                         {tab==='duties' && <DutyTool data={data} setData={setData} showToast={showToast} />}
                         {tab==='clubs' && <ClubTool data={data} setData={setData} showToast={showToast} />}
+                        {/* 写真ツール表示 */}
+                        {tab==='photos' && <PhotoTool data={data} showToast={showToast} />}
                     </main>
                     
                     <footer className="no-print fixed bottom-0 w-full bg-white border-t py-2 text-center text-xs text-gray-400">
-                        自動保存中
+                        自動保存中（※写真データは保存されません）
                     </footer>
                 </div>
             );
@@ -1460,22 +1975,16 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-<script>
-    // ▼ ここから追加 ▼
-    // オフライン対応（PWA）の設定
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
-                .catch(err => console.log('SW Registration Failed', err));
-        });
-    }
-    // ▲ ここまで追加 ▲
-</script>
+    <script>
+        // オフライン対応（PWA）の設定
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered!', reg))
+                    .catch(err => console.log('SW Registration Failed', err));
+            });
+        }
+    </script>
 </body>
 </html>
-</body>
-</html>
-
-
 
