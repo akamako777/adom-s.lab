@@ -1,7 +1,7 @@
-// sw.js (Adom's Lab 統合版 v12: FontAwesome JS対応ハイブリッド版)
+// sw.js (Adom's Lab 統合版 v13: クラス管理ツールPro対応版)
 // ローカルファイル(JS)とCDN(CSS/Webfonts)、どちらを使っていてもキャッシュするように設定しています
 
-const CACHE_NAME = 'adom-lab-v12-hybrid-fa'; // ★更新のためバージョン名を変更
+const CACHE_NAME = 'adom-lab-v13-teachers-pro'; // ★更新のためバージョン名を変更(v12 -> v13)
 const INITIAL_ASSETS = [
     // ---------------------------
     // 1. アプリ本体 (HTML)
@@ -18,16 +18,20 @@ const INITIAL_ASSETS = [
     './gotobaramon.png',
     './plannavi.png',
     './gotostarview.png',
+    './manifest_teachers.json', // ★追加：クラス管理ツール用マニフェスト
+    './teachers.png',           // ★追加：クラス管理ツール用アイコン
 
     // ---------------------------
-    // 3. 【新】ローカル用ライブラリ
-    // (gotoshitrash.html が使うファイル)
+    // 3. ローカル用ライブラリ
+    // (gotoshitrash.html や teachers.html が使うファイル)
     // ---------------------------
     './react.production.min.js',
     './react-dom.production.min.js',
     './babel.min.js',
     './tailwindcss.js',
-    './fontawesome.min.js', // ★追加！これでゴミ分別アプリのアイコンは完璧です
+    './fontawesome.min.js',
+    './xlsx.full.min.js',       // ★追加：Excel出力用 (クラス管理ツール用)
+    './jszip.min.js',           // ★追加：ZIP圧縮用 (クラス管理ツールの写真一括ダウンロード用)
 
     // ---------------------------
     // 4. 【旧】CDN用ライブラリ
@@ -60,7 +64,7 @@ const INITIAL_ASSETS = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2', 
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2',
 
-    // Excel処理 (xlsx)
+    // Excel処理 (xlsx) - ※CDN版も他のアプリの保険として残しています
     'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
     // QRコード (qrious)
     'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js',
