@@ -1,0 +1,23 @@
+{
+  "name": "先生のクラス管理ツール Pro",
+  "short_name": "クラス管理",
+  "id": "/adom-s.lab/teachers",
+  "start_url": "./teachers.html",
+  "scope": "./teachers.html",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#3b82f6",
+  "description": "名簿、席替え、当番、班分け、写真管理を一元化する教員向けクラス管理ツール。完全オフライン動作対応。",
+  "icons": [
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/teachers.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://akamako777.github.io/adom-s.lab/teachers.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
