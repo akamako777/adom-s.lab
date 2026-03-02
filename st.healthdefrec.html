@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Integration Ready -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#14b8a6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Stealth Defense Recorder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Hiragino Maru Gothic ProN", "Yu Rounded", "Arial Rounded MT Bold", sans-serif;
+            overscroll-behavior-y: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .stealth-active {
+            background-color: #000 !important;
+            color: #000 !important;
+            user-select: none;
+        }
+
+        .clock-font {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-variant-numeric: tabular-nums;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* ホタル型インジケーター用アニメーション */
+        @keyframes rec-pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+            50% { transform: scale(1.3); box-shadow: 0 0 10px rgba(16, 185, 129, 0.8); }
+        }
+        .indicator-recording {
+            background-color: #10b981 !important; /* teal-500 */
+            opacity: 0.8 !important;
+            animation: rec-pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-[100dvh] flex flex-col relative overflow-hidden">
+
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl z-[100] transition-opacity duration-300 opacity-0 pointer-events-none flex items-center space-x-2">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-msg">メッセージ</span>
+    </div>
+
+    <!-- 宣誓モーダル -->
+    <div id="consent-modal" class="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full border border-gray-100 shadow-2xl">
+            <h2 class="text-xl font-bold text-teal-600 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span data-i18n="terms_title">利用規約と宣誓</span>
+            </h2>
+            <p class="text-sm text-gray-600 mb-4 font-medium" data-i18n="terms_desc">本アプリは自己防衛および証拠保全のみを目的とします。以下に同意してください。</p>
+            <div class="space-y-4 mb-8">
+                <label class="flex items-start space-x-3 cursor-pointer p-2 bg-gray-50 rounded-lg">
+                    <input type="checkbox" id="chk-1" class="w-5 h-5 mt-0.5 rounded border-gray-300 text-teal-500 focus:ring-teal-500">
+                    <span class="text-sm text-gray-700 leading-tight" data-i18n="terms_chk1">盗聴や悪意ある切り取り等の用途には絶対に使用しません。</span>
+                </label>
+                <label class="flex items-start space-x-3 cursor-pointer p-2 bg-gray-50 rounded-lg">
+                    <input type="checkbox" id="chk-2" class="w-5 h-5 mt-0.5 rounded border-gray-300 text-teal-500 focus:ring-teal-500">
+                    <span class="text-sm text-gray-700 leading-tight" data-i18n="terms_chk2">監視中は画面外でマイク使用マークが点灯することを理解しています。</span>
+                </label>
+            </div>
+            <button id="btn-agree" class="w-full bg-gray-200 text-gray-400 py-3.5 rounded-2xl font-bold transition-all duration-300" disabled data-i18n="btn_agree">同意して次へ</button>
+        </div>
+    </div>
+
+    <!-- PINモーダル -->
+    <div id="pin-modal" class="fixed inset-0 bg-gray-900/80 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-md hidden">
+        <div class="bg-white p-8 rounded-[2rem] max-w-xs w-full shadow-2xl text-center">
+            <h2 id="pin-title" class="text-2xl font-bold text-gray-800 mb-2">PIN</h2>
+            <p id="pin-desc" class="text-sm text-gray-500 mb-6 font-medium">Description</p>
+            <div class="flex justify-center space-x-4 mb-8">
+                <div class="w-4 h-4 rounded-full bg-gray-200 pin-dot transition-colors duration-200"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-200 pin-dot transition-colors duration-200"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-200 pin-dot transition-colors duration-200"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-200 pin-dot transition-colors duration-200"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-6" id="pin-numpad"></div>
+            <button id="btn-pin-cancel" class="text-gray-400 text-sm py-2 px-4 rounded-lg hover:bg-gray-100 transition font-bold" data-i18n="btn_cancel">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div id="settings-modal" class="fixed inset-0 bg-gray-900/50 z-40 flex items-center justify-center p-4 backdrop-blur-sm hidden">
+        <div class="bg-white p-6 rounded-3xl max-w-sm w-full shadow-2xl">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <span class="text-2xl mr-2">⚙️</span> <span data-i18n="settings_title">設定</span>
+            </h2>
+            <div class="space-y-4 mb-6">
+                <!-- 表示モード設定 -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2" data-i18n="settings_mode">監視中の画面表示</label>
+                    <select id="mode-select" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-xl focus:outline-none focus:border-teal-500 font-bold">
+                        <option value="pocket" data-i18n="mode_pocket">ポケット (完全ブラックアウト)</option>
+                        <option value="desk" data-i18n="mode_desk">机上 (時計・天気カモフラージュ)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-2" data-i18n="settings_lang">言語 (Language)</label>
+                    <select id="lang-select" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-xl focus:outline-none focus:border-teal-500 font-bold">
+                        <option value="ja">日本語</option>
+                        <option value="en">English (US)</option>
+                        <option value="zh-TW">繁體中文 (Taiwan)</option>
+                        <option value="zh-CN">简体中文 (China)</option>
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="vi">Tiếng Việt (Vietnamese)</option>
+                        <option value="tl">Tagalog (Filipino)</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="pt">Português (Portuguese)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button id="btn-reset-pin" class="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
+                        <span data-i18n="settings_reset_pin">暗証番号(PIN)の再設定</span>
+                    </button>
+                </div>
+            </div>
+            <button id="btn-close-settings" class="w-full bg-teal-50 text-teal-600 py-3 rounded-xl font-bold hover:bg-teal-100 transition" data-i18n="btn_close">閉じる</button>
+        </div>
+    </div>
+
+    <!-- メイン画面 -->
+    <div id="main-view" class="flex-1 flex flex-col p-5 overflow-hidden hidden">
+        <header class="flex justify-between items-center mb-4 pt-2 shrink-0">
+            <div>
+                <h1 class="text-2xl font-black text-gray-800 tracking-tight">Stealth<span class="text-teal-500">Def</span></h1>
+            </div>
+            <div class="flex space-x-2">
+                <button id="btn-settings" class="bg-white border border-gray-200 p-2.5 rounded-xl shadow-sm hover:bg-gray-50 transition text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button id="btn-vault" class="bg-teal-50 border border-teal-100 px-4 py-2.5 rounded-xl shadow-sm hover:bg-teal-100 transition flex items-center">
+                    <span class="text-lg mr-1">🔒</span>
+                    <span class="font-bold text-sm text-teal-700" data-i18n="nav_vault">録音データ</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto pb-4 custom-scrollbar">
+            <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-teal-400 rounded-l-3xl"></div>
+                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="text-lg mr-2">🎛️</span> <span data-i18n="config_title">センサー設定</span>
+                </h3>
+                
+                <!-- 【NEW】端末選択UI -->
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-600 mb-1" data-i18n="config_device">使用端末 (Device)</label>
+                    <div class="flex bg-gray-100 p-1 rounded-xl">
+                        <button id="btn-dev-mobile" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-teal-600 transition-all duration-200" data-i18n="dev_mobile">スマホ</button>
+                        <button id="btn-dev-pc" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-700 transition-all duration-200" data-i18n="dev_pc">パソコン</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div id="wrap-motion" class="bg-gray-50 p-3 rounded-xl border border-gray-100 transition-opacity duration-300">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-gray-600" data-i18n="config_motion">物理タップ</label>
+                            <span id="val-motion" class="text-[10px] text-teal-600 font-bold bg-teal-100 px-1.5 py-0.5 rounded">普通</span>
+                        </div>
+                        <input type="range" id="slider-motion" min="1" max="3" step="1" value="2" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-gray-600" data-i18n="config_audio">環境音(声)</label>
+                            <span id="val-audio" class="text-[10px] text-teal-600 font-bold bg-teal-100 px-1.5 py-0.5 rounded">普通</span>
+                        </div>
+                        <input type="range" id="slider-audio" min="1" max="3" step="1" value="2" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1" data-i18n="config_autostop">自動録音停止 (無音状態が続いた場合)</label>
+                    <select id="select-autostop" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-xl focus:outline-none focus:border-teal-500 text-sm font-bold">
+                        <option value="60000" data-i18n="opt_1min">1分で停止して保存</option>
+                        <option value="180000" data-i18n="opt_3min">3分で停止して保存</option>
+                        <option value="0" data-i18n="opt_never">自動停止しない</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 使い方と注意書き (ボタン上部に配置) -->
+            <div class="px-1 mb-2">
+                <div class="bg-blue-50/70 border border-blue-100 rounded-2xl p-3 text-center shadow-sm">
+                    <p class="text-xs text-blue-800 font-black mb-1.5" data-i18n="info_bg_record">
+                        ⚠️ バックグラウンド録音はできません
+                    </p>
+                    <p class="text-[11px] text-gray-600 font-medium leading-relaxed" data-i18n="info_usage">
+                        「プロテクト開始」を押し、専用画面を開いたまま使用します。<br>
+                        <span class="text-teal-600 font-bold">【ドラレコ機能】</span> トリガー発動時、直前の会話も遡って保存します。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="shrink-0 pt-2 pb-8 flex justify-center">
+            <button id="btn-stealth" class="w-40 h-40 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 shadow-[0_8px_30px_rgba(20,184,166,0.3)] border-4 border-white flex flex-col items-center justify-center transform transition-all active:scale-95 relative overflow-hidden group">
+                <div class="absolute inset-0 bg-white opacity-0 transition-opacity group-active:opacity-20"></div>
+                <svg class="w-12 h-12 text-white mb-1 relative z-10 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span class="font-black text-white text-lg relative z-10 tracking-widest drop-shadow-sm" data-i18n="btn_start">プロテクト開始</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Vault画面 -->
+    <div id="vault-view" class="fixed inset-0 bg-gray-50 z-40 hidden flex flex-col">
+        <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center shadow-sm shrink-0">
+            <button id="btn-vault-back" class="text-gray-500 hover:text-gray-800 p-2 bg-gray-100 rounded-full transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                <span class="mr-2">📁</span> <span data-i18n="vault_title">証拠保管庫</span>
+            </h2>
+            <div class="w-10"></div>
+        </header>
+        <div class="bg-yellow-50 text-yellow-800 text-xs p-3 text-center font-bold border-b border-yellow-100 shrink-0" data-i18n="vault_notice">
+            ⚠️ 録音データは安全のため10日で自動消去されます。
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="recordings-list"></div>
+    </div>
+
+    <!-- ステルススクリーン (オーバーレイ) -->
+    <div id="stealth-screen" class="fixed inset-0 bg-black z-[200] hidden flex-col items-center justify-center stealth-active">
+        
+        <!-- 【NEW】ホタル型インジケーター (トリガー時のみ点滅) -->
+        <div id="rec-indicator" class="absolute top-6 left-6 w-2.5 h-2.5 rounded-full bg-gray-800 opacity-20 z-50 transition-colors duration-300"></div>
+
+        <!-- 【机上モード】 カモフラージュUI -->
+        <div id="desk-ui" class="hidden flex-col items-center justify-center w-full h-full text-gray-300">
+            <div class="flex flex-col items-center pointer-events-none select-none">
+                <div id="clock-time" class="text-[5.5rem] leading-none font-light tracking-widest clock-font text-white opacity-90">00:00</div>
+                <div id="clock-date" class="text-sm font-medium tracking-wide mt-2 text-gray-400 uppercase">YYYY/MM/DD DAY</div>
+            </div>
+            <div id="manual-trigger-desk" class="mt-12 flex items-center justify-center space-x-3 text-2xl select-none px-6 py-4 rounded-3xl active:bg-white/5 transition-colors duration-300">
+                <span id="weather-icon" class="opacity-80">--</span>
+                <span id="weather-temp" class="clock-font font-light text-gray-400 opacity-90">--°</span>
+            </div>
+        </div>
+
+        <!-- 【ポケットモード】 -->
+        <div id="manual-trigger-pocket" class="absolute inset-0 z-10 hidden"></div>
+
+        <div id="stealth-hint" class="absolute bottom-10 w-full text-gray-500 text-xs font-bold text-center px-4 transition-opacity duration-1000 opacity-100 pointer-events-none">
+            <span data-i18n="stealth_fade_hint">画面を素早く2回タップで解除</span>
+        </div>
+    </div>
+
+    <!-- 🌍 i18n Dictionary (12 Languages) -->
+    <script>
+        const TRANSLATIONS = {
+            ja: {
+                terms_title: "利用規約と宣誓", terms_desc: "本アプリは自己防衛および証拠保全のみを目的とします。以下に同意してください。",
+                terms_chk1: "盗聴や悪意ある切り取り等の用途には絶対に使用しません。", terms_chk2: "監視中は画面外でマイク使用マークが点灯することを理解しています。",
+                btn_agree: "同意して次へ", pin_setup_title: "暗証番号の設定", pin_setup_desc: "データを守るための4桁の数字を決めてください",
+                pin_auth_title: "ロック解除", pin_auth_desc: "証拠庫を開くためにPINを入力してください", btn_cancel: "キャンセル", nav_vault: "録音データ",
+                config_title: "センサー設定", config_motion: "物理タップ", config_audio: "環境音(声)",
+                config_device: "使用端末 (Device)", dev_mobile: "スマホ", dev_pc: "パソコン",
+                config_autostop: "自動録音停止 (無音状態が続いた場合)", opt_1min: "1分で停止して保存", opt_3min: "3分で停止して保存", opt_never: "自動停止しない",
+                info_bg_record: "⚠️ バックグラウンド録音はできません",
+                info_usage: "「プロテクト開始」を押し、専用画面を開いたまま使用します。<br><span class='text-teal-600 font-bold'>【ドラレコ機能】</span> トリガー発動時、直前の会話も遡って保存します。",
+                main_hint: "<span class='text-teal-500 font-bold'>【ドラレコ機能】</span> トリガー発動時、直前の会話も遡って保存されるため悪意ある切り取りを防ぎます。",
+                btn_start: "プロテクト開始", vault_title: "証拠保管庫", vault_notice: "⚠️ 録音データは安全のため10日で自動消去されます。",
+                vault_empty: "保存されたデータはありません", stealth_fade_hint: "画面を素早く2回タップで解除",
+                settings_title: "設定", settings_mode: "監視中の画面表示", mode_pocket: "ポケット (完全ブラックアウト)", mode_desk: "机上 (時計・天気カモフラージュ)",
+                settings_lang: "言語 (Language)", settings_reset_pin: "暗証番号(PIN)の再設定", btn_close: "閉じる",
+                msg_pin_set: "PINを設定しました", msg_pin_err: "PINが間違っています", msg_mic_err: "マイクの使用許可が必要です",
+                msg_stealth_end: "監視を終了しました", msg_saved: "録音を保存しました", msg_deleted: "データを削除しました",
+                lvl_1: "鈍感", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手動録音を開始",
+                btn_del_confirm: "もう一度押すと削除"
+            },
+            en: {
+                terms_title: "Terms & Oath", terms_desc: "This app is strictly for self-defense. Please agree to the following:",
+                terms_chk1: "I will never use this app for malicious out-of-context editing.", terms_chk2: "I understand the OS mic indicator will be visible.",
+                btn_agree: "Agree & Continue", pin_setup_title: "Set PIN", pin_setup_desc: "Create a 4-digit PIN",
+                pin_auth_title: "Unlock", pin_auth_desc: "Enter your PIN", btn_cancel: "Cancel", nav_vault: "Vault",
+                config_title: "Sensor Settings", config_motion: "Physical Tap", config_audio: "Audio (Voice)",
+                config_device: "Device Type", dev_mobile: "Mobile", dev_pc: "PC",
+                config_autostop: "Auto-Stop (When silent)", opt_1min: "Stop & Save after 1 min", opt_3min: "Stop & Save after 3 mins", opt_never: "Never auto-stop",
+                info_bg_record: "⚠️ Background recording is NOT supported",
+                info_usage: "Press START PROTECT and keep the app open on the stealth screen.<br><span class='text-teal-600 font-bold'>[Drive Recorder]</span> Caches prior conversation to prevent unfair editing.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Drive Recorder]</span> Caches prior conversation when triggered.",
+                btn_start: "START PROTECT", vault_title: "Evidence Vault", vault_notice: "⚠️ Records are auto-deleted after 10 days.",
+                vault_empty: "No records found", stealth_fade_hint: "Double tap the screen to exit",
+                settings_title: "Settings", settings_mode: "Display Mode during Monitoring", mode_pocket: "Pocket (Complete Blackout)", mode_desk: "Desk (Clock & Weather Camo)",
+                settings_lang: "Language", settings_reset_pin: "Reset PIN", btn_close: "Close",
+                msg_pin_set: "PIN set", msg_pin_err: "Incorrect PIN", msg_mic_err: "Mic permission required",
+                msg_stealth_end: "Monitoring ended", msg_saved: "Recording saved", msg_deleted: "Deleted",
+                lvl_1: "Low", lvl_2: "Normal", lvl_3: "High", manual_trig: "Manual Rec Started",
+                btn_del_confirm: "Tap again to delete"
+            },
+            'zh-TW': {
+                terms_title: "使用條款與誓言", terms_desc: "本應用程式僅用於自我防衛及證據保全。請同意以下項目：",
+                terms_chk1: "我絕對不會將本應用程式用於竊聽或惡意斷章取義。", terms_chk2: "我了解在監控期間，系統麥克風圖示會顯示在螢幕外。",
+                btn_agree: "同意並繼續", pin_setup_title: "設定密碼 (PIN)", pin_setup_desc: "請設定4位數字密碼以保護您的資料",
+                pin_auth_title: "解鎖", pin_auth_desc: "請輸入PIN碼解鎖證據庫", btn_cancel: "取消", nav_vault: "錄音資料",
+                config_title: "感測器設定", config_motion: "物理敲擊", config_audio: "環境音(人聲)",
+                config_device: "使用裝置 (Device)", dev_mobile: "手機", dev_pc: "電腦",
+                config_autostop: "自動停止錄音 (當持續無聲時)", opt_1min: "1分鐘後停止並儲存", opt_3min: "3分鐘後停止並儲存", opt_never: "不自動停止",
+                info_bg_record: "⚠️ 不支援背景錄音",
+                info_usage: "按下「啟動保護」，並保持專用畫面開啟。<br><span class='text-teal-600 font-bold'>【行車紀錄器功能】</span>觸發時，會回溯並儲存先前的對話。",
+                main_hint: "<span class='text-teal-500 font-bold'>【行車紀錄器功能】</span>觸發時會回溯並儲存先前的對話，防止惡意剪輯。",
+                btn_start: "啟動保護", vault_title: "證據保管庫", vault_notice: "⚠️ 為確保安全，錄音資料將於10天後自動刪除。",
+                vault_empty: "目前沒有儲存的資料", stealth_fade_hint: "快速雙擊螢幕以解除",
+                settings_title: "設定", settings_mode: "監控時的畫面顯示", mode_pocket: "口袋模式 (完全黑屏)", mode_desk: "桌面模式 (時鐘與天氣偽裝)",
+                settings_lang: "語言 (Language)", settings_reset_pin: "重設密碼 (PIN)", btn_close: "關閉",
+                msg_pin_set: "已設定 PIN 碼", msg_pin_err: "PIN 碼錯誤", msg_mic_err: "需要麥克風權限",
+                msg_stealth_end: "監控已結束", msg_saved: "錄音已儲存", msg_deleted: "資料已刪除",
+                lvl_1: "遲鈍", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手動錄音已開始",
+                btn_del_confirm: "再次點擊以刪除"
+            },
+            'zh-CN': {
+                terms_title: "使用条款与誓言", terms_desc: "本应用仅用于自我防卫及证据保全。请同意以下项目：",
+                terms_chk1: "我绝对不会将本应用用于窃听或恶意断章取义。", terms_chk2: "我了解在监控期间，系统麦克风图标会显示在屏幕外。",
+                btn_agree: "同意并继续", pin_setup_title: "设置密码 (PIN)", pin_setup_desc: "请设置4位数字密码以保护您的数据",
+                pin_auth_title: "解锁", pin_auth_desc: "请输入PIN码解锁证据库", btn_cancel: "取消", nav_vault: "录音数据",
+                config_title: "传感器设置", config_motion: "物理敲击", config_audio: "环境音(人声)",
+                config_device: "使用设备 (Device)", dev_mobile: "手机", dev_pc: "电脑",
+                config_autostop: "自动停止录音 (当持续无声时)", opt_1min: "1分钟后停止并保存", opt_3min: "3分钟后停止并保存", opt_never: "不自动停止",
+                info_bg_record: "⚠️ 不支持后台录音",
+                info_usage: "按下“启动保护”，并保持专用画面开启。<br><span class='text-teal-600 font-bold'>【行车记录仪功能】</span>触发时，会回溯并保存之前的对话。",
+                main_hint: "<span class='text-teal-500 font-bold'>【行车记录仪功能】</span>触发时会回溯并保存之前的对话，防止恶意剪辑。",
+                btn_start: "启动保护", vault_title: "证据保管库", vault_notice: "⚠️ 为确保安全，录音数据将于10天后自动删除。",
+                vault_empty: "目前没有保存的数据", stealth_fade_hint: "快速双击屏幕以解除",
+                settings_title: "设置", settings_mode: "监控时的画面显示", mode_pocket: "口袋模式 (完全黑屏)", mode_desk: "桌面模式 (时钟与天气伪装)",
+                settings_lang: "语言 (Language)", settings_reset_pin: "重设密码 (PIN)", btn_close: "关闭",
+                msg_pin_set: "已设置 PIN 码", msg_pin_err: "PIN 码错误", msg_mic_err: "需要麦克风权限",
+                msg_stealth_end: "监控已结束", msg_saved: "录音已保存", msg_deleted: "数据已删除",
+                lvl_1: "迟钝", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手动录音已开始",
+                btn_del_confirm: "再次点击以删除"
+            },
+            ko: {
+                terms_title: "이용약관 및 서약", terms_desc: "본 앱은 자기방어 및 증거 보존 목적으로만 사용됩니다. 다음 항목에 동의해 주세요.",
+                terms_chk1: "도청이나 악의적인 편집 등의 용도로 절대 사용하지 않겠습니다.", terms_chk2: "모니터링 중에는 OS 사양상 마이크 사용 아이콘이 표시됨을 이해합니다.",
+                btn_agree: "동의하고 계속", pin_setup_title: "비밀번호(PIN) 설정", pin_setup_desc: "데이터를 보호할 4자리 숫자를 설정해 주세요",
+                pin_auth_title: "잠금 해제", pin_auth_desc: "증거 보관함을 열려면 PIN을 입력하세요", btn_cancel: "취소", nav_vault: "녹음 데이터",
+                config_title: "센서 설정", config_motion: "물리적 탭", config_audio: "주변 소리(목소리)",
+                config_device: "사용 기기", dev_mobile: "스마트폰", dev_pc: "PC",
+                config_autostop: "자동 녹음 중지 (무음 상태 지속 시)", opt_1min: "1분 후 중지 및 저장", opt_3min: "3분 후 중지 및 저장", opt_never: "자동 중지 안 함",
+                info_bg_record: "⚠️ 백그라운드 녹음은 지원되지 않습니다",
+                info_usage: "'보호 시작'을 누르고 전용 화면을 열어둔 채 사용합니다.<br><span class='text-teal-600 font-bold'>[블랙박스 기능]</span> 트리거 작동 시 직전 대화도 소급 저장합니다.",
+                main_hint: "<span class='text-teal-500 font-bold'>[블랙박스 기능]</span> 트리거 작동 시 직전 대화도 함께 저장되어 악의적인 편집을 방지합니다.",
+                btn_start: "보호 시작", vault_title: "증거 보관함", vault_notice: "⚠️ 녹음 데이터는 안전을 위해 10일 후 자동 삭제됩니다.",
+                vault_empty: "저장된 데이터가 없습니다", stealth_fade_hint: "화면을 빠르게 두 번 탭하여 해제",
+                settings_title: "설정", settings_mode: "모니터링 중 화면 표시", mode_pocket: "포켓 모드 (완전 블랙아웃)", mode_desk: "데스크 모드 (시계/날씨 위장)",
+                settings_lang: "언어 (Language)", settings_reset_pin: "비밀번호(PIN) 재설정", btn_close: "닫기",
+                msg_pin_set: "PIN이 설정되었습니다", msg_pin_err: "PIN이 일치하지 않습니다", msg_mic_err: "마이크 권한이 필요합니다",
+                msg_stealth_end: "모니터링 종료", msg_saved: "녹음이 저장되었습니다", msg_deleted: "데이터 삭제됨",
+                lvl_1: "둔감", lvl_2: "보통", lvl_3: "민감", manual_trig: "수동 녹음 시작됨",
+                btn_del_confirm: "다시 탭하여 삭제"
+            },
+            vi: {
+                terms_title: "Điều khoản & Cam kết", terms_desc: "Ứng dụng này chỉ dành cho mục đích tự vệ và bảo vệ bằng chứng. Vui lòng đồng ý với các điều khoản sau:",
+                terms_chk1: "Tôi sẽ không bao giờ sử dụng ứng dụng này để nghe lén hoặc cắt ghép ác ý.", terms_chk2: "Tôi hiểu rằng biểu tượng micro của HĐH sẽ hiển thị.",
+                btn_agree: "Đồng ý & Tiếp tục", pin_setup_title: "Thiết lập PIN", pin_setup_desc: "Tạo mã PIN 4 chữ số",
+                pin_auth_title: "Mở khóa", pin_auth_desc: "Nhập mã PIN của bạn", btn_cancel: "Hủy", nav_vault: "Kho lưu trữ",
+                config_title: "Cài đặt Cảm biến", config_motion: "Chạm vật lý", config_audio: "Âm thanh",
+                config_device: "Loại thiết bị", dev_mobile: "Di động", dev_pc: "Máy tính",
+                config_autostop: "Tự động dừng ghi âm", opt_1min: "Dừng & Lưu sau 1 phút", opt_3min: "Dừng & Lưu sau 3 phút", opt_never: "Không bao giờ tự động dừng",
+                info_bg_record: "⚠️ KHÔNG hỗ trợ ghi âm dưới nền",
+                info_usage: "Nhấn 'BẢO VỆ' và mở ứng dụng ở màn hình chuyên dụng.<br><span class='text-teal-600 font-bold'>[Camera Hành Trình]</span> Lưu trữ cuộc trò chuyện trước đó.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Camera Hành Trình]</span> Lưu trữ cuộc trò chuyện trước đó khi kích hoạt.",
+                btn_start: "BẮT ĐẦU BẢO VỆ", vault_title: "Kho Bằng Chứng", vault_notice: "⚠️ Bản ghi tự động bị xóa sau 10 ngày.",
+                vault_empty: "Không tìm thấy bản ghi nào", stealth_fade_hint: "Chạm đúp vào màn hình để thoát",
+                settings_title: "Cài đặt", settings_mode: "Chế độ hiển thị", mode_pocket: "Bỏ túi (Đen)", mode_desk: "Trên bàn (Đồng hồ)",
+                settings_lang: "Ngôn ngữ (Language)", settings_reset_pin: "Đặt lại mã PIN", btn_close: "Đóng",
+                msg_pin_set: "Đã thiết lập mã PIN", msg_pin_err: "Mã PIN sai", msg_mic_err: "Cần quyền micro",
+                msg_stealth_end: "Đã kết thúc", msg_saved: "Đã lưu", msg_deleted: "Đã xóa",
+                lvl_1: "Thấp", lvl_2: "Bình thường", lvl_3: "Cao", manual_trig: "Đã bắt đầu ghi âm",
+                btn_del_confirm: "Nhấn lại để xóa"
+            },
+            tl: {
+                terms_title: "Mga Tuntunin at Panunumpa", terms_desc: "Ang app na ito ay para lamang sa pagtatanggol sa sarili. Sumang-ayon sa mga sumusunod:",
+                terms_chk1: "Hindi ko gagamitin ang app na ito para sa malisyosong pag-edit.", terms_chk2: "Nauunawaan ko na ang mic indicator ng OS ay makikita.",
+                btn_agree: "Sumang-ayon & Magpatuloy", pin_setup_title: "I-set ang PIN", pin_setup_desc: "Gumawa ng 4-digit PIN",
+                pin_auth_title: "I-unlock", pin_auth_desc: "Ipasok ang iyong PIN", btn_cancel: "Kanselahin", nav_vault: "Vault",
+                config_title: "Mga Setting ng Sensor", config_motion: "Pisikal na Pag-tap", config_audio: "Audio (Boses)",
+                config_device: "Device Type", dev_mobile: "Mobile", dev_pc: "PC",
+                config_autostop: "Auto-Stop Recording", opt_1min: "I-stop at I-save (1 min)", opt_3min: "I-stop at I-save (3 min)", opt_never: "Huwag mag-auto-stop",
+                info_bg_record: "⚠️ HINDI suportado ang background recording",
+                info_usage: "Pindutin ang PROTEKTAHAN at panatilihing bukas ang app.<br><span class='text-teal-600 font-bold'>[Drive Recorder]</span> Kinukuha ang naunang usapan.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Drive Recorder]</span> Kinukuha ang naunang usapan upang maiwasan ang hindi patas na pag-edit.",
+                btn_start: "SIMULAN ANG PROTEKSYON", vault_title: "Vault ng Ebidensya", vault_notice: "⚠️ Ang mga record ay awtomatikong dine-delete pagkalipas 10 araw.",
+                vault_empty: "Walang record", stealth_fade_hint: "I-double tap ang screen para lumabas",
+                settings_title: "Mga Setting", settings_mode: "Display Mode", mode_pocket: "Bulsa (Blackout)", mode_desk: "Lamesa (Orasan)",
+                settings_lang: "Wika (Language)", settings_reset_pin: "I-reset ang PIN", btn_close: "Isara",
+                msg_pin_set: "Na-set na ang PIN", msg_pin_err: "Maling PIN", msg_mic_err: "Kailangan ang mikropono",
+                msg_stealth_end: "Natapos na", msg_saved: "Na-save", msg_deleted: "Na-delete",
+                lvl_1: "Mababa", lvl_2: "Normal", lvl_3: "Mataas", manual_trig: "Manual Rec Started",
+                btn_del_confirm: "I-tap ulit para i-delete"
+            },
+            de: {
+                terms_title: "Bedingungen & Eid", terms_desc: "Diese App dient ausschließlich der Selbstverteidigung. Bitte stimmen Sie zu:",
+                terms_chk1: "Ich werde diese App niemals für böswillige Bearbeitungen verwenden.", terms_chk2: "Ich verstehe, dass die Mikrofonanzeige sichtbar sein wird.",
+                btn_agree: "Zustimmen & Weiter", pin_setup_title: "PIN festlegen", pin_setup_desc: "Erstellen Sie eine 4-stellige PIN",
+                pin_auth_title: "Entsperren", pin_auth_desc: "Geben Sie Ihre PIN ein", btn_cancel: "Abbrechen", nav_vault: "Tresor",
+                config_title: "Sensor-Einstellungen", config_motion: "Physisches Tippen", config_audio: "Audio (Stimme)",
+                config_device: "Gerätetyp", dev_mobile: "Smartphone", dev_pc: "PC",
+                config_autostop: "Auto-Stop", opt_1min: "Stopp & Speichern nach 1 Min", opt_3min: "Stopp & Speichern nach 3 Min", opt_never: "Niemals",
+                info_bg_record: "⚠️ Hintergrundaufnahme wird NICHT unterstützt",
+                info_usage: "Drücken Sie SCHUTZ und halten Sie die App geöffnet.<br><span class='text-teal-600 font-bold'>[Dashcam]</span> Speichert vorherige Gespräche.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Dashcam]</span> Speichert vorherige Gespräche, um unfaire Bearbeitungen zu verhindern.",
+                btn_start: "SCHUTZ STARTEN", vault_title: "Beweis-Tresor", vault_notice: "⚠️ Aufzeichnungen werden nach 10 Tagen gelöscht.",
+                vault_empty: "Keine Aufzeichnungen", stealth_fade_hint: "Doppeltippen zum Beenden",
+                settings_title: "Einstellungen", settings_mode: "Anzeigemodus", mode_pocket: "Tasche (Blackout)", mode_desk: "Schreibtisch (Uhr)",
+                settings_lang: "Sprache (Language)", settings_reset_pin: "PIN zurücksetzen", btn_close: "Schließen",
+                msg_pin_set: "PIN festgelegt", msg_pin_err: "Falsche PIN", msg_mic_err: "Mikrofonberechtigung erforderlich",
+                msg_stealth_end: "Beendet", msg_saved: "Gespeichert", msg_deleted: "Gelöscht",
+                lvl_1: "Niedrig", lvl_2: "Normal", lvl_3: "Hoch", manual_trig: "Manuelle Aufnahme",
+                btn_del_confirm: "Erneut tippen zum Löschen"
+            },
+            es: {
+                terms_title: "Términos y Juramento", terms_desc: "Esta aplicación es estrictamente para defensa personal. Por favor, acepta:",
+                terms_chk1: "Nunca usaré esta aplicación para ediciones maliciosas.", terms_chk2: "Entiendo que el indicador del micrófono será visible.",
+                btn_agree: "Aceptar y Continuar", pin_setup_title: "Establecer PIN", pin_setup_desc: "Crea un PIN de 4 dígitos",
+                pin_auth_title: "Desbloquear", pin_auth_desc: "Ingresa tu PIN", btn_cancel: "Cancelar", nav_vault: "Bóveda",
+                config_title: "Configuración de Sensores", config_motion: "Toque Físico", config_audio: "Audio (Voz)",
+                config_device: "Tipo de dispositivo", dev_mobile: "Móvil", dev_pc: "PC",
+                config_autostop: "Auto-Detener", opt_1min: "Detener y Guardar (1 min)", opt_3min: "Detener y Guardar (3 min)", opt_never: "Nunca",
+                info_bg_record: "⚠️ La grabación en segundo plano NO es compatible",
+                info_usage: "Presiona PROTEGER y mantén la aplicación abierta.<br><span class='text-teal-600 font-bold'>[Dashcam]</span> Guarda la conversación previa.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Dashcam]</span> Guarda la conversación previa para evitar ediciones injustas.",
+                btn_start: "INICIAR PROTECCIÓN", vault_title: "Bóveda de Evidencia", vault_notice: "⚠️ Los registros se eliminan después de 10 días.",
+                vault_empty: "No hay registros", stealth_fade_hint: "Toca dos veces para salir",
+                settings_title: "Configuración", settings_mode: "Modo de visualización", mode_pocket: "Bolsillo (Apagón)", mode_desk: "Escritorio (Reloj)",
+                settings_lang: "Idioma (Language)", settings_reset_pin: "Restablecer PIN", btn_close: "Cerrar",
+                msg_pin_set: "PIN establecido", msg_pin_err: "PIN incorrecto", msg_mic_err: "Permiso de micrófono",
+                msg_stealth_end: "Finalizado", msg_saved: "Guardado", msg_deleted: "Eliminado",
+                lvl_1: "Bajo", lvl_2: "Normal", lvl_3: "Alto", manual_trig: "Grabación Manual",
+                btn_del_confirm: "Toca de nuevo para eliminar"
+            },
+            hi: {
+                terms_title: "शर्तें और शपथ", terms_desc: "यह ऐप केवल आत्मरक्षा के लिए है। कृपया सहमत हों:",
+                terms_chk1: "मैं इस ऐप का उपयोग दुर्भावनापूर्ण संपादन के लिए नहीं करूंगा।", terms_chk2: "निगरानी के दौरान OS माइक संकेतक दिखाई देगा।",
+                btn_agree: "सहमत और जारी रखें", pin_setup_title: "पिन सेट करें", pin_setup_desc: "4-अंकीय पिन बनाएं",
+                pin_auth_title: "अनलॉक करें", pin_auth_desc: "अपना पिन दर्ज करें", btn_cancel: "रद्द करें", nav_vault: "वॉल्ट",
+                config_title: "सेंसर सेटिंग्स", config_motion: "भौतिक टैप", config_audio: "ऑडियो (आवाज़)",
+                config_device: "उपकरण का प्रकार", dev_mobile: "मोबाइल", dev_pc: "पीसी",
+                config_autostop: "ऑटो-स्टॉप", opt_1min: "1 मिनट के बाद रोकें", opt_3min: "3 मिनट के बाद रोकें", opt_never: "कभी नहीं",
+                info_bg_record: "⚠️ बैकग्राउंड रिकॉर्डिंग समर्थित नहीं है",
+                info_usage: "'सुरक्षा शुरू करें' दबाएं और ऐप को खुला रखें।<br><span class='text-teal-600 font-bold'>[ड्राइव रिकॉर्डर]</span> पूर्व बातचीत को सहेजता है।",
+                main_hint: "<span class='text-teal-500 font-bold'>[ड्राइव रिकॉर्डर]</span> अनुचित संपादन को रोकने के लिए पूर्व बातचीत को सहेजता है।",
+                btn_start: "सुरक्षा शुरू करें", vault_title: "साक्ष्य वॉल्ट", vault_notice: "⚠️ रिकॉर्ड 10 दिनों के बाद हटा दिए जाते हैं।",
+                vault_empty: "कोई रिकॉर्ड नहीं", stealth_fade_hint: "बाहर निकलने के लिए डबल टैप करें",
+                settings_title: "सेटिंग्स", settings_mode: "प्रदर्शन मोड", mode_pocket: "पॉकेट (ब्लैकआउट)", mode_desk: "डेस्क (घड़ी)",
+                settings_lang: "भाषा (Language)", settings_reset_pin: "पिन रीसेट करें", btn_close: "बंद करें",
+                msg_pin_set: "पिन सेट किया गया", msg_pin_err: "गलत पिन", msg_mic_err: "माइक्रोफ़ोन अनुमति आवश्यक",
+                msg_stealth_end: "निगरानी समाप्त", msg_saved: "सहेजी गई", msg_deleted: "हटा दिया गया",
+                lvl_1: "कम", lvl_2: "सामान्य", lvl_3: "उच्च", manual_trig: "मैनुअल रिकॉर्डिंग",
+                btn_del_confirm: "हटाने के लिए फिर से टैप करें"
+            },
+            fr: {
+                terms_title: "Conditions & Serment", terms_desc: "Cette application est pour l'autodéfense. Veuillez accepter :",
+                terms_chk1: "Je n'utiliserai jamais cette app pour des montages malveillants.", terms_chk2: "L'indicateur de micro du système sera visible.",
+                btn_agree: "Accepter & Continuer", pin_setup_title: "Définir le PIN", pin_setup_desc: "Créez un PIN à 4 chiffres",
+                pin_auth_title: "Déverrouiller", pin_auth_desc: "Entrez votre PIN", btn_cancel: "Annuler", nav_vault: "Coffre",
+                config_title: "Capteurs", config_motion: "Tape Physique", config_audio: "Audio (Voix)",
+                config_device: "Type d'appareil", dev_mobile: "Mobile", dev_pc: "PC",
+                config_autostop: "Arrêt Auto", opt_1min: "Arrêter après 1 min", opt_3min: "Arrêter après 3 min", opt_never: "Ne jamais",
+                info_bg_record: "⚠️ L'enregistrement en arrière-plan n'est PAS pris en charge",
+                info_usage: "Appuyez sur PROTÉGER et gardez l'application ouverte.<br><span class='text-teal-600 font-bold'>[Dashcam]</span> Enregistre la conversation précédente.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Dashcam]</span> Enregistre la conversation précédente pour éviter les montages injustes.",
+                btn_start: "DÉMARRER LA PROTECTION", vault_title: "Coffre", vault_notice: "⚠️ Les enregistrements sont supprimés après 10 jours.",
+                vault_empty: "Aucun enregistrement", stealth_fade_hint: "Appuyez deux fois pour quitter",
+                settings_title: "Paramètres", settings_mode: "Mode d'affichage", mode_pocket: "Poche (Écran Noir)", mode_desk: "Bureau (Horloge)",
+                settings_lang: "Langue (Language)", settings_reset_pin: "Réinitialiser le PIN", btn_close: "Fermer",
+                msg_pin_set: "PIN configuré", msg_pin_err: "PIN incorrect", msg_mic_err: "Microphone requis",
+                msg_stealth_end: "Terminé", msg_saved: "Sauvegardé", msg_deleted: "Supprimé",
+                lvl_1: "Bas", lvl_2: "Normal", lvl_3: "Haut", manual_trig: "Enregistrement Manuel",
+                btn_del_confirm: "Appuyez à nouveau pour supprimer"
+            },
+            pt: {
+                terms_title: "Termos e Juramento", terms_desc: "Este aplicativo é para autodefesa. Por favor, concorde:",
+                terms_chk1: "Nunca usarei este aplicativo para edições maliciosas.", terms_chk2: "Entendo que o indicador de microfone estará visível.",
+                btn_agree: "Concordar e Continuar", pin_setup_title: "Definir PIN", pin_setup_desc: "Crie um PIN de 4 dígitos",
+                pin_auth_title: "Desbloquear", pin_auth_desc: "Digite seu PIN", btn_cancel: "Cancelar", nav_vault: "Cofre",
+                config_title: "Sensores", config_motion: "Toque Físico", config_audio: "Áudio (Voz)",
+                config_device: "Tipo de dispositivo", dev_mobile: "Celular", dev_pc: "PC",
+                config_autostop: "Parada Automática", opt_1min: "Parar e Salvar (1 min)", opt_3min: "Parar e Salvar (3 min)", opt_never: "Nunca",
+                info_bg_record: "⚠️ Gravação em segundo plano NÃO é suportada",
+                info_usage: "Pressione PROTEGER e mantenha o aplicativo aberto.<br><span class='text-teal-600 font-bold'>[Dashcam]</span> Salva a conversa anterior.",
+                main_hint: "<span class='text-teal-500 font-bold'>[Dashcam]</span> Salva a conversa anterior para evitar edições injustas.",
+                btn_start: "INICIAR PROTEÇÃO", vault_title: "Cofre", vault_notice: "⚠️ Os registros são excluídos após 10 dias.",
+                vault_empty: "Nenhum registro", stealth_fade_hint: "Toque duas vezes para sair",
+                settings_title: "Configurações", settings_mode: "Modo de exibição", mode_pocket: "Bolso (Apagão)", mode_desk: "Mesa (Relógio)",
+                settings_lang: "Idioma (Language)", settings_reset_pin: "Redefinir PIN", btn_close: "Fechar",
+                msg_pin_set: "PIN definido", msg_pin_err: "PIN incorreto", msg_mic_err: "Microfone necessário",
+                msg_stealth_end: "Encerrado", msg_saved: "Salvo", msg_deleted: "Excluído",
+                lvl_1: "Baixo", lvl_2: "Normal", lvl_3: "Alto", manual_trig: "Gravação Manual",
+                btn_del_confirm: "Toque novamente para excluir"
+            }
+        };
+
+        let currentLang = localStorage.getItem('stealth_lang') || 'ja';
+        function t(key) { return TRANSLATIONS[currentLang][key] || key; }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (TRANSLATIONS[currentLang][key]) el.innerHTML = t(key).replace(/\n/g, '<br>');
+            });
+            updateSliders();
+        }
+    </script>
+
+    <!-- メインロジック -->
+    <script>
+        const CONFIG = {
+            dbName: 'StealthDefDB_v4',
+            storeName: 'recordings',
+            retentionDays: 10,
+            motionThresholds: [15, 10, 5], 
+            audioThresholds: [65, 50, 35], // V2.2: センサー全体のベースラインを鈍感化 (PCの旧「鈍感」が現在の「普通」になるよう設計)
+            audioSpikeFactor: [3.0, 2.5, 2.0], 
+            historyMaxFrames: 60, 
+            idleRotationMs: 5 * 60 * 1000,
+            warmupMs: 3000 // V2.1: 開始直後の誤検知を防ぐウォームアップ時間
+        };
+
+        const state = {
+            isStealth: false,
+            recorderMode: 'idle',
+            pin: localStorage.getItem('stealth_pin') || null,
+            displayMode: localStorage.getItem('stealth_display_mode') || 'pocket',
+            deviceType: localStorage.getItem('stealth_device_type') || (/Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'pc'), 
+            motionLevel: 1, 
+            audioLevel: 1,
+            mediaRecorder: null, audioChunks: [], wakeLock: null, audioContext: null, analyser: null, micStream: null,
+            reqAnimFrameId: null, tapCount: 0, lastTapTime: 0, idleStartMs: 0, lastLoudMs: 0,
+            clockIntervalId: null,
+            audioHistory: [],
+            loudFrameCount: 0,
+            stealthStartTime: 0, // V2.1: ウォームアップ判定用
+            loudStartMs: 0, // 音声持続時間計測用
+            lastAcc: { x: 0, y: 0, z: 0 }, // ジャーク計算用
+            wakeLockTimer: null // WakeLock監視用
+        };
+
+        const UI = {
+            toast: document.getElementById('toast'), toastIcon: document.getElementById('toast-icon'), toastMsg: document.getElementById('toast-msg'),
+            consentModal: document.getElementById('consent-modal'), btnAgree: document.getElementById('btn-agree'), chks: [document.getElementById('chk-1'), document.getElementById('chk-2')],
+            pinModal: document.getElementById('pin-modal'), pinTitle: document.getElementById('pin-title'), pinDesc: document.getElementById('pin-desc'),
+            pinDots: document.querySelectorAll('.pin-dot'), btnPinCancel: document.getElementById('btn-pin-cancel'), pinNumpad: document.getElementById('pin-numpad'),
+            settingsModal: document.getElementById('settings-modal'), modeSelect: document.getElementById('mode-select'), langSelect: document.getElementById('lang-select'),
+            mainView: document.getElementById('main-view'), vaultView: document.getElementById('vault-view'), btnVault: document.getElementById('btn-vault'), btnVaultBack: document.getElementById('btn-vault-back'),
+            btnStealth: document.getElementById('btn-stealth'), btnSettings: document.getElementById('btn-settings'), btnCloseSettings: document.getElementById('btn-close-settings'), btnResetPin: document.getElementById('btn-reset-pin'),
+            stealthScreen: document.getElementById('stealth-screen'), stealthHint: document.getElementById('stealth-hint'),
+            deskUi: document.getElementById('desk-ui'), clockTime: document.getElementById('clock-time'), clockDate: document.getElementById('clock-date'), weatherIcon: document.getElementById('weather-icon'), weatherTemp: document.getElementById('weather-temp'),
+            manualTrigDesk: document.getElementById('manual-trigger-desk'), manualTrigPocket: document.getElementById('manual-trigger-pocket'),
+            sliderMotion: document.getElementById('slider-motion'), sliderAudio: document.getElementById('slider-audio'), valMotion: document.getElementById('val-motion'), valAudio: document.getElementById('val-audio'),
+            selectAutoStop: document.getElementById('select-autostop'), recordingsList: document.getElementById('recordings-list'),
+            btnDevMobile: document.getElementById('btn-dev-mobile'), btnDevPc: document.getElementById('btn-dev-pc'), wrapMotion: document.getElementById('wrap-motion'),
+            recIndicator: document.getElementById('rec-indicator')
+        };
+
+        function showToast(msgKey, type = 'info', isDirectMsg = false) {
+            UI.toastMsg.textContent = isDirectMsg ? msgKey : t(msgKey);
+            UI.toastIcon.textContent = type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            UI.toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4'); UI.toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => { UI.toast.classList.remove('opacity-100', 'translate-y-0'); UI.toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4'); }, 3000);
+        }
+        function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
+        function updateSliders() {
+            state.motionLevel = parseInt(UI.sliderMotion.value) - 1; state.audioLevel = parseInt(UI.sliderAudio.value) - 1;
+            const levels = ['lvl_1', 'lvl_2', 'lvl_3']; UI.valMotion.textContent = t(levels[state.motionLevel]); UI.valAudio.textContent = t(levels[state.audioLevel]);
+        }
+        function updateDeviceUI() {
+            if (state.deviceType === 'pc') {
+                UI.btnDevPc.classList.replace('text-gray-500', 'text-teal-600'); UI.btnDevPc.classList.add('bg-white', 'shadow-sm');
+                UI.btnDevMobile.classList.replace('text-teal-600', 'text-gray-500'); UI.btnDevMobile.classList.remove('bg-white', 'shadow-sm');
+                UI.wrapMotion.classList.add('opacity-40', 'pointer-events-none'); // PCは物理タップ無効
+            } else {
+                UI.btnDevMobile.classList.replace('text-gray-500', 'text-teal-600'); UI.btnDevMobile.classList.add('bg-white', 'shadow-sm');
+                UI.btnDevPc.classList.replace('text-teal-600', 'text-gray-500'); UI.btnDevPc.classList.remove('bg-white', 'shadow-sm');
+                UI.wrapMotion.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        const DB = {
+            db: null,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(CONFIG.dbName, 1);
+                    req.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(CONFIG.storeName)) db.createObjectStore(CONFIG.storeName, { keyPath: 'id' }); };
+                    req.onsuccess = (e) => { this.db = e.target.result; this.cleanOldRecords(); resolve(); };
+                    req.onerror = (e) => reject(e.target.error);
+                });
+            },
+            save(blob, durationStr, ext) {
+                return new Promise((resolve, reject) => {
+                    const now = new Date(); const id = now.getTime();
+                    // V2.1: 拡張子を引数で受け取るように修正（.mp4 または .webm）
+                    const filename = `DEFENSE-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.${ext}`;
+                    const tx = this.db.transaction(CONFIG.storeName, 'readwrite'); const store = tx.objectStore(CONFIG.storeName);
+                    const req = store.add({ id, blob, filename, date: now.toISOString(), duration: durationStr });
+                    req.onsuccess = () => resolve(); req.onerror = () => reject(req.error);
+                });
+            },
+            getAll() {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(CONFIG.storeName, 'readonly'); const store = tx.objectStore(CONFIG.storeName);
+                    const req = store.getAll(); req.onsuccess = () => resolve(req.result.sort((a,b) => b.id - a.id)); req.onerror = () => reject(req.error);
+                });
+            },
+            delete(id) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(CONFIG.storeName, 'readwrite'); const store = tx.objectStore(CONFIG.storeName);
+                    const req = store.delete(id); req.onsuccess = () => resolve(); req.onerror = () => reject();
+                });
+            },
+            cleanOldRecords() {
+                const limitDate = new Date(); limitDate.setDate(limitDate.getDate() - CONFIG.retentionDays); const limitTs = limitDate.getTime();
+                const tx = this.db.transaction(CONFIG.storeName, 'readwrite'); const store = tx.objectStore(CONFIG.storeName); const req = store.openCursor();
+                req.onsuccess = (e) => { const cursor = e.target.result; if (cursor) { if (cursor.value.id < limitTs) store.delete(cursor.primaryKey); cursor.continue(); } };
+            }
+        };
+
+        const PIN = {
+            currentInput: '', mode: 'auth', onSuccess: null,
+            init() {
+                UI.pinNumpad.innerHTML = '';
+                [1,2,3,4,5,6,7,8,9,'',0,'del'].forEach(n => {
+                    const btn = document.createElement('button');
+                    if (n === '') { btn.className = 'invisible'; }
+                    else if (n === 'del') {
+                        btn.innerHTML = `<svg class="w-7 h-7 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>`;
+                        btn.className = 'h-16 bg-gray-100 text-gray-600 rounded-2xl active:bg-gray-200 flex items-center justify-center transition'; btn.onclick = () => this.input('del');
+                    } else {
+                        btn.textContent = n; btn.className = 'h-16 bg-gray-100 text-2xl font-black text-gray-800 rounded-2xl active:bg-gray-200 transition'; btn.onclick = () => this.input(n.toString());
+                    }
+                    UI.pinNumpad.appendChild(btn);
+                });
+            },
+            open(mode, successCallback) {
+                this.mode = mode; this.onSuccess = successCallback; this.currentInput = ''; this.updateDots();
+                UI.pinTitle.textContent = t(mode === 'setup' ? 'pin_setup_title' : 'pin_auth_title'); UI.pinDesc.textContent = t(mode === 'setup' ? 'pin_setup_desc' : 'pin_auth_desc');
+                if (mode === 'setup' && !state.pin) UI.btnPinCancel.classList.add('hidden'); else UI.btnPinCancel.classList.remove('hidden');
+                UI.pinModal.classList.remove('hidden');
+            },
+            close() { UI.pinModal.classList.add('hidden'); },
+            input(val) {
+                if (val === 'del') this.currentInput = this.currentInput.slice(0, -1); else if (this.currentInput.length < 4) this.currentInput += val;
+                this.updateDots(); if (this.currentInput.length === 4) setTimeout(() => this.check(), 100);
+            },
+            updateDots() { UI.pinDots.forEach((dot, i) => { if (i < this.currentInput.length) dot.classList.replace('bg-gray-200', 'bg-teal-500'); else dot.classList.replace('bg-teal-500', 'bg-gray-200'); }); },
+            check() {
+                if (this.mode === 'setup') { state.pin = this.currentInput; localStorage.setItem('stealth_pin', state.pin); showToast('msg_pin_set', 'success'); this.close(); if (this.onSuccess) this.onSuccess(); }
+                else if (this.mode === 'auth') {
+                    if (this.currentInput === state.pin) { this.close(); if (this.onSuccess) this.onSuccess(); }
+                    else { showToast('msg_pin_err', 'error'); this.currentInput = ''; this.updateDots(); const box = UI.pinModal.firstElementChild; box.classList.add('animate-pulse'); setTimeout(() => box.classList.remove('animate-pulse'), 500); }
+                }
+            }
+        };
+
+        function checkInitFlow() {
+            if (!localStorage.getItem('stealth_consent')) {
+                UI.consentModal.classList.remove('hidden');
+                const checkConsent = () => {
+                    const allChecked = UI.chks.every(chk => chk.checked); UI.btnAgree.disabled = !allChecked;
+                    if (allChecked) { UI.btnAgree.classList.replace('bg-gray-200', 'bg-teal-600'); UI.btnAgree.classList.replace('text-gray-400', 'text-white'); } 
+                    else { UI.btnAgree.classList.replace('bg-teal-600', 'bg-gray-200'); UI.btnAgree.classList.replace('text-white', 'text-gray-400'); }
+                };
+                UI.chks.forEach(chk => chk.addEventListener('change', checkConsent));
+                
+                UI.btnAgree.onclick = async () => { 
+                    try {
+                        UI.btnAgree.innerHTML = '<span class="animate-pulse">' + t('btn_agree') + '...</span>';
+                        UI.btnAgree.disabled = true;
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        stream.getTracks().forEach(track => track.stop());
+                        localStorage.setItem('stealth_consent', 'true'); 
+                        UI.consentModal.classList.add('hidden'); 
+                        checkInitFlow(); 
+                    } catch (err) {
+                        showToast('msg_mic_err', 'error');
+                        UI.btnAgree.innerHTML = t('btn_agree');
+                        UI.btnAgree.disabled = false;
+                    }
+                };
+                return;
+            }
+            if (!state.pin) { PIN.open('setup', () => checkInitFlow()); return; }
+            UI.mainView.classList.remove('hidden');
+        }
+
+        // --- Camouflage UI (Clock & Weather) ---
+        function updateClock() {
+            if (!state.isStealth || state.displayMode !== 'desk') return;
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            UI.clockTime.textContent = `${h}:${m}`;
+            
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' };
+            const locMap = {
+                'ja': 'ja-JP', 'en': 'en-US', 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN',
+                'ko': 'ko-KR', 'vi': 'vi-VN', 'tl': 'fil-PH', 'de': 'de-DE',
+                'es': 'es-ES', 'hi': 'hi-IN', 'fr': 'fr-FR', 'pt': 'pt-BR'
+            };
+            const loc = locMap[currentLang] || 'en-US';
+            UI.clockDate.textContent = now.toLocaleDateString(loc, options).replace(/\//g, ' / ');
+        }
+
+        async function fetchWeather() {
+            if (state.displayMode !== 'desk') return;
+            try {
+                const geoRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
+                if (!geoRes.ok) throw new Error();
+                const geoData = await geoRes.json();
+                
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geoData.latitude}&longitude=${geoData.longitude}&current_weather=true`);
+                const weatherData = await weatherRes.json();
+                const temp = Math.round(weatherData.current_weather.temperature);
+                const code = weatherData.current_weather.weathercode;
+                
+                let icon = '☁️';
+                if (code === 0) icon = '☀️';
+                else if (code <= 3) icon = '⛅';
+                else if (code <= 48) icon = '🌫️';
+                else if (code <= 67) icon = '🌧️';
+                else if (code <= 77) icon = '❄️';
+                else if (code >= 95) icon = '⛈️';
+
+                UI.weatherIcon.textContent = icon;
+                UI.weatherTemp.textContent = `${temp}°`;
+            } catch (e) {
+                UI.weatherIcon.textContent = '--'; UI.weatherTemp.textContent = '--°';
+            }
+        }
+
+        // --- Handled Long Press (手動トリガー) ---
+        function setupManualTrigger(element) {
+            let pressTimer;
+            element.addEventListener('pointerdown', (e) => {
+                pressTimer = setTimeout(() => { fireTrigger("manual"); }, 1000); 
+            });
+            const cancelPress = () => clearTimeout(pressTimer);
+            element.addEventListener('pointerup', cancelPress);
+            element.addEventListener('pointerleave', cancelPress);
+            element.addEventListener('pointercancel', cancelPress);
+        }
+
+        function setIndicatorState(isActive) {
+            if (isActive) {
+                UI.recIndicator.classList.add('indicator-recording');
+                UI.recIndicator.classList.remove('bg-gray-800', 'opacity-20');
+            } else {
+                UI.recIndicator.classList.remove('indicator-recording');
+                UI.recIndicator.classList.add('bg-gray-800', 'opacity-20');
+            }
+        }
+
+        // --- Core Audio Logic ---
+        function startRecordingCycle() {
+            // 不死鳥ループの安全装置: すでに録画中ならスキップ
+            if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') return;
+
+            state.audioChunks = [];
+            let mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+            let ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+            state.mediaRecorder = new MediaRecorder(state.micStream, { mimeType });
+            state.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) state.audioChunks.push(e.data); };
+            
+            state.mediaRecorder.onstop = async () => {
+                const chunks = state.audioChunks;
+                const wasTriggered = (state.recorderMode === 'triggered');
+                const startMs = state.idleStartMs;
+                
+                if (wasTriggered) {
+                    const blob = new Blob(chunks, { type: mimeType });
+                    const d = Date.now() - startMs;
+                    const dur = Math.floor(d/60000) + ":" + String(Math.floor((d%60000)/1000)).padStart(2,'0');
+                    await DB.save(blob, dur, ext).catch(e=>console.error(e));
+                    showToast('msg_saved', 'success');
+                }
+                if (state.isStealth) startRecordingCycle();
+            };
+
+            state.idleStartMs = Date.now();
+            state.recorderMode = 'idle';
+            setIndicatorState(false); // 待機状態に戻す
+            state.mediaRecorder.start();
+        }
+
+        function fireTrigger(src) {
+            if (state.recorderMode === 'idle') {
+                state.recorderMode = 'triggered';
+                state.lastLoudMs = Date.now();
+                setIndicatorState(true); // ホタル点滅開始
+                vibrate([200]); 
+                if(src === 'manual') showToast('manual_trig', 'info'); 
+            } else if (src === 'tap' || src === 'manual') {
+                state.mediaRecorder.stop(); 
+                vibrate([100, 100, 100]);
+            }
+        }
+
+        async function acquireWakeLock() {
+            if ('wakeLock' in navigator && state.isStealth) {
+                try {
+                    if (state.wakeLock) {
+                        state.wakeLock.release().catch(()=>{});
+                    }
+                    state.wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('WakeLock acquired (Phoenix)');
+                } catch (err) {
+                    console.log('WakeLock acquisition failed', err);
+                }
+            }
+        }
+
+        async function startStealthMode() {
+            try {
+                state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    const permission = await DeviceMotionEvent.requestPermission();
+                    if (permission !== 'granted') throw new Error('Motion denied');
+                }
+            } catch (err) { showToast('msg_mic_err', 'error'); return; }
+
+            state.isStealth = true;
+            state.stealthStartTime = Date.now(); // V2.1: ウォームアップタイマー開始
+            
+            await acquireWakeLock(); 
+
+            state.audioHistory = [];
+            state.loudFrameCount = 0;
+            state.loudStartMs = 0;
+            state.lastAcc = { x: 0, y: 0, z: 0 };
+            setIndicatorState(false); // 初期化時は消灯
+
+            // WakeLock不死鳥ループ: 定期的にロック状態を監視・再取得
+            state.wakeLockTimer = setInterval(async () => {
+                if (state.isStealth && (!state.wakeLock || state.wakeLock.released)) {
+                    await acquireWakeLock();
+                }
+            }, 5000);
+
+            UI.stealthScreen.classList.remove('hidden');
+            UI.stealthScreen.classList.replace('flex-col', 'flex'); 
+            
+            if (state.displayMode === 'desk') {
+                UI.deskUi.classList.remove('hidden');
+                UI.deskUi.classList.add('flex');
+                UI.manualTrigPocket.classList.add('hidden');
+                updateClock();
+                state.clockIntervalId = setInterval(updateClock, 1000);
+                fetchWeather(); 
+            } else {
+                UI.deskUi.classList.add('hidden');
+                UI.deskUi.classList.remove('flex');
+                UI.manualTrigPocket.classList.remove('hidden');
+            }
+
+            UI.stealthHint.classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => { UI.stealthHint.classList.replace('opacity-100', 'opacity-0'); }, 3500);
+            
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            state.audioContext = new AudioContext();
+            const source = state.audioContext.createMediaStreamSource(state.micStream);
+            const filter = state.audioContext.createBiquadFilter();
+            filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 1.0;
+            state.analyser = state.audioContext.createAnalyser(); state.analyser.fftSize = 512;
+            source.connect(filter); filter.connect(state.analyser);
+
+            window.addEventListener('devicemotion', handleMotion);
+            startRecordingCycle();
+            monitorAudio();
+        }
+
+        function stopStealthMode() {
+            state.isStealth = false;
+            UI.stealthScreen.classList.add('hidden');
+            window.removeEventListener('devicemotion', handleMotion);
+            if (state.reqAnimFrameId) cancelAnimationFrame(state.reqAnimFrameId);
+            if (state.clockIntervalId) clearInterval(state.clockIntervalId);
+            if (state.wakeLockTimer) clearInterval(state.wakeLockTimer);
+            if (state.audioContext) state.audioContext.close();
+            
+            if (state.mediaRecorder?.state !== 'inactive') state.mediaRecorder.stop();
+            
+            if (state.micStream) {
+                state.micStream.getTracks().forEach(track => track.stop());
+                state.micStream = null;
+            }
+
+            if (state.wakeLock) { state.wakeLock.release().catch(()=>{}); state.wakeLock = null; }
+            setIndicatorState(false);
+            vibrate([100, 50, 100]);
+            showToast('msg_stealth_end');
+        }
+
+        function handleMotion(e) {
+            if (!e.acceleration || state.deviceType === 'pc') return; // PCモードでは物理タップを完全に無効化
+            
+            // ウォームアップ期間中は無効化
+            if (Date.now() - state.stealthStartTime < CONFIG.warmupMs) return;
+
+            const acc = e.acceleration;
+            // 揺れ(重力や歩行)を排除し、直前のフレームとの差分(ジャーク/衝撃波)のみを抽出
+            const dx = acc.x - state.lastAcc.x;
+            const dy = acc.y - state.lastAcc.y;
+            const dz = acc.z - state.lastAcc.z;
+            state.lastAcc = { x: acc.x || 0, y: acc.y || 0, z: acc.z || 0 };
+
+            const jerk = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            if (jerk > CONFIG.motionThresholds[state.motionLevel]) {
+                const now = Date.now();
+                // 極端に連続する波を1回のタップとして扱うためのデバウンス(150ms)
+                if (now - state.lastTapTime > 150) {
+                    state.tapCount++; state.lastTapTime = now;
+                    // 1秒以内に3回の鋭い衝撃があった場合のみトリガー
+                    if (state.tapCount >= 3) { fireTrigger("tap"); state.tapCount = 0; }
+                }
+            }
+            // 1秒以上間隔が空いたらカウントリセット
+            if (Date.now() - state.lastTapTime > 1000) state.tapCount = 0;
+        }
+
+        function monitorAudio() {
+            if (!state.isStealth) return;
+            const dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+            state.analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for(let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
+            const rms = Math.sqrt(sum / dataArray.length);
+            const now = Date.now();
+            
+            state.audioHistory.push(rms);
+            if (state.audioHistory.length > CONFIG.historyMaxFrames) {
+                state.audioHistory.shift();
+            }
+
+            // V2.1: ウォームアップ期間（開始から3秒）はベースラインの計算のみ行い、トリガーは無視する
+            const isWarmup = (now - state.stealthStartTime < CONFIG.warmupMs);
+
+            // PCモード時はノイズ床が高いため、しきい値を自動で15引き上げる(感度を下げる)
+            let threshold = CONFIG.audioThresholds[state.audioLevel];
+            if (state.deviceType === 'pc') threshold += 15; 
+            
+            let isTriggeredNow = false;
+
+            if (!isWarmup) {
+                // ボイスレコーダー化の阻止: 一瞬のスパイクではなく「持続性」を評価する
+                if (rms > threshold) {
+                    if (state.loudStartMs === 0) state.loudStartMs = now;
+                    // PCモードは少し長め(600ms)、スマホは標準(400ms) 大音量が継続した場合に判定
+                    const requiredDuration = (state.deviceType === 'pc') ? 600 : 400;
+                    if (now - state.loudStartMs > requiredDuration) {
+                        isTriggeredNow = true;
+                    }
+                } else {
+                    // 少しでも静かになったら持続タイマーをリセット
+                    state.loudStartMs = 0;
+                }
+            }
+
+            if (state.recorderMode === 'idle') {
+                if (isTriggeredNow) {
+                    fireTrigger("audio");
+                } else if (now - state.idleStartMs > CONFIG.idleRotationMs) {
+                    state.mediaRecorder.stop();
+                }
+            } else if (state.recorderMode === 'triggered') {
+                if (isTriggeredNow || rms > threshold * 0.8) { 
+                    state.lastLoudMs = now;
+                } else {
+                    const autoStopMs = parseInt(UI.selectAutoStop.value);
+                    if (autoStopMs > 0 && (now - state.lastLoudMs > autoStopMs)) {
+                        state.mediaRecorder.stop();
+                        vibrate([100, 100, 100]); 
+                    }
+                }
+            }
+            state.reqAnimFrameId = requestAnimationFrame(monitorAudio);
+        }
+
+        // --- Vault ---
+        async function loadVault() {
+            UI.recordingsList.innerHTML = '<div class="flex justify-center mt-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div></div>';
+            try {
+                const records = await DB.getAll();
+                if (records.length === 0) {
+                    UI.recordingsList.innerHTML = `<div class="flex items-center justify-center h-full text-gray-400 flex-col pt-10"><span class="text-4xl mb-4 grayscale opacity-50">📂</span><p class="font-bold">${t('vault_empty')}</p></div>`;
+                    return;
+                }
+                UI.recordingsList.innerHTML = '';
+                records.forEach(rec => {
+                    const item = document.createElement('div'); item.className = 'bg-white p-4 rounded-2xl mb-3 border border-gray-100 flex flex-col shadow-sm';
+                    const url = URL.createObjectURL(rec.blob);
+                    
+                    // UXリニューアル: 情報とボタンを上段に、再生バーを横幅いっぱいの下段に配置
+                    item.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1 truncate mr-2">
+                                <h4 class="text-gray-800 font-mono text-xs font-bold truncate">${rec.filename}</h4>
+                                <p class="text-[11px] text-gray-500 mt-1">${new Date(rec.date).toLocaleString()} • ${rec.duration}</p>
+                            </div>
+                            <div class="flex space-x-2 shrink-0">
+                                <button class="btn-dl p-2 bg-teal-50 text-teal-600 rounded-xl hover:bg-teal-100 transition" data-url="${url}" data-fn="${rec.filename}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </button>
+                                <button class="btn-del flex items-center justify-center p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all duration-300 overflow-hidden" data-id="${rec.id}">
+                                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <span class="del-text max-w-0 opacity-0 whitespace-nowrap transition-all duration-300 text-[10px] font-bold ml-0"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <audio src="${url}" controls class="h-10 w-full outline-none" preload="none"></audio>
+                        </div>
+                    `;
+                    UI.recordingsList.appendChild(item);
+                });
+                
+                document.querySelectorAll('.btn-dl').forEach(btn => { 
+                    btn.onclick = () => { const a = document.createElement('a'); a.href = btn.dataset.url; a.download = btn.dataset.fn; a.click(); }; 
+                });
+                
+                // UXリニューアル: 削除ボタンのトランジション警告機能
+                document.querySelectorAll('.btn-del').forEach(btn => {
+                    btn.onclick = async () => {
+                        const textSpan = btn.querySelector('.del-text');
+                        if (btn.dataset.confirm === 'yes') { 
+                            await DB.delete(parseInt(btn.dataset.id)); loadVault(); showToast('msg_deleted'); 
+                        } else { 
+                            btn.dataset.confirm = 'yes'; 
+                            btn.classList.replace('text-red-600', 'text-white'); 
+                            btn.classList.replace('bg-red-50', 'bg-red-500');
+                            btn.classList.add('px-3');
+                            textSpan.textContent = t('btn_del_confirm');
+                            textSpan.classList.remove('max-w-0', 'opacity-0', 'ml-0');
+                            textSpan.classList.add('max-w-[150px]', 'opacity-100', 'ml-1.5');
+                            
+                            setTimeout(() => { 
+                                // 要素がDOM上にまだ存在する場合のみ戻す(削除完了後にエラーを出さないため)
+                                if (document.body.contains(btn)) {
+                                    btn.dataset.confirm = 'no'; 
+                                    btn.classList.replace('text-white', 'text-red-600'); 
+                                    btn.classList.replace('bg-red-500', 'bg-red-50'); 
+                                    btn.classList.remove('px-3');
+                                    textSpan.classList.add('max-w-0', 'opacity-0', 'ml-0');
+                                    textSpan.classList.remove('max-w-[150px]', 'opacity-100', 'ml-1.5');
+                                }
+                            }, 3000); 
+                        }
+                    };
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function bootApp() {
+            UI.langSelect.value = currentLang;
+            UI.modeSelect.value = state.displayMode;
+            updateDeviceUI(); // 初期表示
+            applyTranslations();
+
+            await DB.init().catch(e => showToast('DB Init Error', 'error', true));
+            PIN.init(); checkInitFlow(); 
+
+            // デバイス切り替えボタン
+            UI.btnDevMobile.onclick = () => { state.deviceType = 'mobile'; localStorage.setItem('stealth_device_type', 'mobile'); updateDeviceUI(); };
+            UI.btnDevPc.onclick = () => { state.deviceType = 'pc'; localStorage.setItem('stealth_device_type', 'pc'); updateDeviceUI(); };
+
+            UI.sliderMotion.addEventListener('input', updateSliders);
+            UI.sliderAudio.addEventListener('input', updateSliders);
+
+            UI.btnStealth.onclick = () => startStealthMode();
+
+            let taps = 0, tapTimer;
+            UI.stealthScreen.addEventListener('pointerup', (e) => {
+                if (e.target.closest('#manual-trigger-desk')) return; 
+                taps++; clearTimeout(tapTimer);
+                if (taps >= 2) { stopStealthMode(); taps = 0; }
+                else tapTimer = setTimeout(() => { taps = 0; }, 400);
+            });
+
+            setupManualTrigger(UI.manualTrigDesk);
+            setupManualTrigger(UI.manualTrigPocket);
+
+            UI.btnVault.onclick = () => { PIN.open('auth', () => { UI.vaultView.classList.remove('hidden'); loadVault(); }); };
+            UI.btnVaultBack.onclick = () => { UI.vaultView.classList.add('hidden'); document.querySelectorAll('audio').forEach(a => URL.revokeObjectURL(a.src)); };
+
+            UI.btnSettings.onclick = () => UI.settingsModal.classList.remove('hidden');
+            UI.btnCloseSettings.onclick = () => UI.settingsModal.classList.add('hidden');
+            
+            UI.langSelect.addEventListener('change', (e) => { currentLang = e.target.value; localStorage.setItem('stealth_lang', currentLang); applyTranslations(); });
+            UI.modeSelect.addEventListener('change', (e) => { state.displayMode = e.target.value; localStorage.setItem('stealth_display_mode', state.displayMode); });
+
+            UI.btnResetPin.onclick = () => { UI.settingsModal.classList.add('hidden'); PIN.open('setup'); };
+            UI.btnPinCancel.onclick = () => PIN.close();
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && state.isStealth) {
+                    acquireWakeLock();
+                }
+            });
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js').catch((err) => {
+                        console.log('PWA mode standby: sw.js not found yet.');
+                    });
+                });
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', bootApp);
+    </script>
+</body>
+</html>
