@@ -520,12 +520,18 @@
             dbName: 'StealthDefDB_v4',
             storeName: 'recordings',
             retentionDays: 10,
-            motionThresholds: [15, 10, 5], 
-            audioThresholds: [65, 50, 35], // V2.2: センサー全体のベースラインを鈍感化 (PCの旧「鈍感」が現在の「普通」になるよう設計)
+            // 【手動調整用】物理タップの感度 (数値を小さくするほど敏感になる) [鈍感, 普通, 敏感]
+            motionThresholds: [10, 5, 2.5], 
+            // 【手動調整用】環境音の感度 スマホ用 (数値を大きくするほど鈍感) [鈍感, 普通, 敏感]
+            mobileAudioThresholds: [65, 50, 35], 
+            // 【手動調整用】環境音の感度 PC用 [鈍感, 普通, 敏感]
+            pcAudioThresholds: [80, 65, 50],
             audioSpikeFactor: [3.0, 2.5, 2.0], 
             historyMaxFrames: 60, 
             idleRotationMs: 5 * 60 * 1000,
-            warmupMs: 3000 // V2.1: 開始直後の誤検知を防ぐウォームアップ時間
+            warmupMs: 3000, // V2.1: 開始直後の誤検知を防ぐウォームアップ時間
+            // 【手動調整用】タップ有効時間（ミリ秒）: 2500なら「2.5秒以内に3回」で発動
+            tapTimeWindowMs: 2500
         };
 
         const state = {
@@ -922,12 +928,12 @@
                 // 極端に連続する波を1回のタップとして扱うためのデバウンス(150ms)
                 if (now - state.lastTapTime > 150) {
                     state.tapCount++; state.lastTapTime = now;
-                    // 1秒以内に3回の鋭い衝撃があった場合のみトリガー
+                    // 3回の鋭い衝撃があった場合のみトリガー
                     if (state.tapCount >= 3) { fireTrigger("tap"); state.tapCount = 0; }
                 }
             }
-            // 1秒以上間隔が空いたらカウントリセット
-            if (Date.now() - state.lastTapTime > 1000) state.tapCount = 0;
+            // CONFIGで設定した時間（2.5秒）以上間隔が空いたらカウントリセット
+            if (Date.now() - state.lastTapTime > CONFIG.tapTimeWindowMs) state.tapCount = 0;
         }
 
         function monitorAudio() {
@@ -947,9 +953,10 @@
             // V2.1: ウォームアップ期間（開始から3秒）はベースラインの計算のみ行い、トリガーは無視する
             const isWarmup = (now - state.stealthStartTime < CONFIG.warmupMs);
 
-            // PCモード時はノイズ床が高いため、しきい値を自動で15引き上げる(感度を下げる)
-            let threshold = CONFIG.audioThresholds[state.audioLevel];
-            if (state.deviceType === 'pc') threshold += 15; 
+            // デバイスごとに設定されたしきい値を適用
+            let threshold = (state.deviceType === 'pc') 
+                ? CONFIG.pcAudioThresholds[state.audioLevel] 
+                : CONFIG.mobileAudioThresholds[state.audioLevel];
             
             let isTriggeredNow = false;
 
