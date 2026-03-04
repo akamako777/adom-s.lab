@@ -167,18 +167,26 @@
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div id="wrap-motion" class="bg-gray-50 p-3 rounded-xl border border-gray-100 transition-opacity duration-300">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-xs font-bold text-gray-600" data-i18n="config_motion">物理タップ</label>
-                            <span id="val-motion" class="text-[10px] text-teal-600 font-bold bg-teal-100 px-1.5 py-0.5 rounded">普通</span>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[11px] font-bold text-gray-600" data-i18n="config_motion">物理タップ</label>
+                            <span id="val-motion" class="text-[11px] text-teal-600 font-bold bg-teal-100 px-2 py-0.5 rounded">3.0</span>
                         </div>
-                        <input type="range" id="slider-motion" min="1" max="3" step="1" value="2" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                        <input type="range" id="slider-motion" min="1.0" max="8.0" step="0.1" value="3.0" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500 my-2">
+                        <div class="flex justify-between text-[9px] text-gray-400 font-bold px-0.5">
+                            <span data-i18n="lbl_sensitive">敏感</span>
+                            <span data-i18n="lbl_insensitive">鈍感</span>
+                        </div>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-xs font-bold text-gray-600" data-i18n="config_audio">環境音(声)</label>
-                            <span id="val-audio" class="text-[10px] text-teal-600 font-bold bg-teal-100 px-1.5 py-0.5 rounded">普通</span>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[11px] font-bold text-gray-600" data-i18n="config_audio">環境音(声)</label>
+                            <span id="val-audio" class="text-[11px] text-teal-600 font-bold bg-teal-100 px-2 py-0.5 rounded">65</span>
                         </div>
-                        <input type="range" id="slider-audio" min="1" max="3" step="1" value="2" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                        <input type="range" id="slider-audio" min="50" max="80" step="1" value="65" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-500 my-2">
+                        <div class="flex justify-between text-[9px] text-gray-400 font-bold px-0.5">
+                            <span data-i18n="lbl_sensitive">敏感</span>
+                            <span data-i18n="lbl_insensitive">鈍感</span>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -278,7 +286,7 @@
                 msg_pin_set: "PINを設定しました", msg_pin_err: "PINが間違っています", msg_mic_err: "マイクの使用許可が必要です",
                 msg_stealth_end: "監視を終了しました", msg_saved: "録音を保存しました", msg_deleted: "データを削除しました",
                 lvl_1: "鈍感", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手動録音を開始",
-                btn_del_confirm: "もう一度押すと削除"
+                btn_del_confirm: "もう一度押すと削除", lbl_sensitive: "敏感", lbl_insensitive: "鈍感"
             },
             en: {
                 terms_title: "Terms & Oath", terms_desc: "This app is strictly for self-defense. Please agree to the following:",
@@ -298,7 +306,7 @@
                 msg_pin_set: "PIN set", msg_pin_err: "Incorrect PIN", msg_mic_err: "Mic permission required",
                 msg_stealth_end: "Monitoring ended", msg_saved: "Recording saved", msg_deleted: "Deleted",
                 lvl_1: "Low", lvl_2: "Normal", lvl_3: "High", manual_trig: "Manual Rec Started",
-                btn_del_confirm: "Tap again to delete"
+                btn_del_confirm: "Tap again to delete", lbl_sensitive: "Sensitive", lbl_insensitive: "Dull"
             },
             'zh-TW': {
                 terms_title: "使用條款與誓言", terms_desc: "本應用程式僅用於自我防衛及證據保全。請同意以下項目：",
@@ -318,7 +326,7 @@
                 msg_pin_set: "已設定 PIN 碼", msg_pin_err: "PIN 碼錯誤", msg_mic_err: "需要麥克風權限",
                 msg_stealth_end: "監控已結束", msg_saved: "錄音已儲存", msg_deleted: "資料已刪除",
                 lvl_1: "遲鈍", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手動錄音已開始",
-                btn_del_confirm: "再次點擊以刪除"
+                btn_del_confirm: "再次點擊以刪除", lbl_sensitive: "靈敏", lbl_insensitive: "遲鈍"
             },
             'zh-CN': {
                 terms_title: "使用条款与誓言", terms_desc: "本应用仅用于自我防卫及证据保全。请同意以下项目：",
@@ -338,7 +346,7 @@
                 msg_pin_set: "已设置 PIN 码", msg_pin_err: "PIN 码错误", msg_mic_err: "需要麦克风权限",
                 msg_stealth_end: "监控已结束", msg_saved: "录音已保存", msg_deleted: "数据已删除",
                 lvl_1: "迟钝", lvl_2: "普通", lvl_3: "敏感", manual_trig: "手动录音已开始",
-                btn_del_confirm: "再次点击以删除"
+                btn_del_confirm: "再次点击以删除", lbl_sensitive: "灵敏", lbl_insensitive: "迟钝"
             },
             ko: {
                 terms_title: "이용약관 및 서약", terms_desc: "본 앱은 자기방어 및 증거 보존 목적으로만 사용됩니다. 다음 항목에 동의해 주세요.",
@@ -358,7 +366,7 @@
                 msg_pin_set: "PIN이 설정되었습니다", msg_pin_err: "PIN이 일치하지 않습니다", msg_mic_err: "마이크 권한이 필요합니다",
                 msg_stealth_end: "모니터링 종료", msg_saved: "녹음이 저장되었습니다", msg_deleted: "데이터 삭제됨",
                 lvl_1: "둔감", lvl_2: "보통", lvl_3: "민감", manual_trig: "수동 녹음 시작됨",
-                btn_del_confirm: "다시 탭하여 삭제"
+                btn_del_confirm: "다시 탭하여 삭제", lbl_sensitive: "민감", lbl_insensitive: "둔감"
             },
             vi: {
                 terms_title: "Điều khoản & Cam kết", terms_desc: "Ứng dụng này chỉ dành cho mục đích tự vệ và bảo vệ bằng chứng. Vui lòng đồng ý với các điều khoản sau:",
@@ -378,7 +386,7 @@
                 msg_pin_set: "Đã thiết lập mã PIN", msg_pin_err: "Mã PIN sai", msg_mic_err: "Cần quyền micro",
                 msg_stealth_end: "Đã kết thúc", msg_saved: "Đã lưu", msg_deleted: "Đã xóa",
                 lvl_1: "Thấp", lvl_2: "Bình thường", lvl_3: "Cao", manual_trig: "Đã bắt đầu ghi âm",
-                btn_del_confirm: "Nhấn lại để xóa"
+                btn_del_confirm: "Nhấn lại để xóa", lbl_sensitive: "Nhạy", lbl_insensitive: "Kém nhạy"
             },
             tl: {
                 terms_title: "Mga Tuntunin at Panunumpa", terms_desc: "Ang app na ito ay para lamang sa pagtatanggol sa sarili. Sumang-ayon sa mga sumusunod:",
@@ -398,7 +406,7 @@
                 msg_pin_set: "Na-set na ang PIN", msg_pin_err: "Maling PIN", msg_mic_err: "Kailangan ang mikropono",
                 msg_stealth_end: "Natapos na", msg_saved: "Na-save", msg_deleted: "Na-delete",
                 lvl_1: "Mababa", lvl_2: "Normal", lvl_3: "Mataas", manual_trig: "Manual Rec Started",
-                btn_del_confirm: "I-tap ulit para i-delete"
+                btn_del_confirm: "I-tap ulit para i-delete", lbl_sensitive: "Sensitibo", lbl_insensitive: "Hindi sensitibo"
             },
             de: {
                 terms_title: "Bedingungen & Eid", terms_desc: "Diese App dient ausschließlich der Selbstverteidigung. Bitte stimmen Sie zu:",
@@ -418,7 +426,7 @@
                 msg_pin_set: "PIN festgelegt", msg_pin_err: "Falsche PIN", msg_mic_err: "Mikrofonberechtigung erforderlich",
                 msg_stealth_end: "Beendet", msg_saved: "Gespeichert", msg_deleted: "Gelöscht",
                 lvl_1: "Niedrig", lvl_2: "Normal", lvl_3: "Hoch", manual_trig: "Manuelle Aufnahme",
-                btn_del_confirm: "Erneut tippen zum Löschen"
+                btn_del_confirm: "Erneut tippen zum Löschen", lbl_sensitive: "Empfindlich", lbl_insensitive: "Unempfindlich"
             },
             es: {
                 terms_title: "Términos y Juramento", terms_desc: "Esta aplicación es estrictamente para defensa personal. Por favor, acepta:",
@@ -438,7 +446,7 @@
                 msg_pin_set: "PIN establecido", msg_pin_err: "PIN incorrecto", msg_mic_err: "Permiso de micrófono",
                 msg_stealth_end: "Finalizado", msg_saved: "Guardado", msg_deleted: "Eliminado",
                 lvl_1: "Bajo", lvl_2: "Normal", lvl_3: "Alto", manual_trig: "Grabación Manual",
-                btn_del_confirm: "Toca de nuevo para eliminar"
+                btn_del_confirm: "Toca de nuevo para eliminar", lbl_sensitive: "Sensible", lbl_insensitive: "Insensible"
             },
             hi: {
                 terms_title: "शर्तें और शपथ", terms_desc: "यह ऐप केवल आत्मरक्षा के लिए है। कृपया सहमत हों:",
@@ -458,7 +466,7 @@
                 msg_pin_set: "पिन सेट किया गया", msg_pin_err: "गलत पिन", msg_mic_err: "माइक्रोफ़ोन अनुमति आवश्यक",
                 msg_stealth_end: "निगरानी समाप्त", msg_saved: "सहेजी गई", msg_deleted: "हटा दिया गया",
                 lvl_1: "कम", lvl_2: "सामान्य", lvl_3: "उच्च", manual_trig: "मैनुअल रिकॉर्डिंग",
-                btn_del_confirm: "हटाने के लिए फिर से टैप करें"
+                btn_del_confirm: "हटाने के लिए फिर से टैप करें", lbl_sensitive: "संवेदनशील", lbl_insensitive: "असंवेदनशील"
             },
             fr: {
                 terms_title: "Conditions & Serment", terms_desc: "Cette application est pour l'autodéfense. Veuillez accepter :",
@@ -478,7 +486,7 @@
                 msg_pin_set: "PIN configuré", msg_pin_err: "PIN incorrect", msg_mic_err: "Microphone requis",
                 msg_stealth_end: "Terminé", msg_saved: "Sauvegardé", msg_deleted: "Supprimé",
                 lvl_1: "Bas", lvl_2: "Normal", lvl_3: "Haut", manual_trig: "Enregistrement Manuel",
-                btn_del_confirm: "Appuyez à nouveau pour supprimer"
+                btn_del_confirm: "Appuyez à nouveau pour supprimer", lbl_sensitive: "Sensible", lbl_insensitive: "Insensible"
             },
             pt: {
                 terms_title: "Termos e Juramento", terms_desc: "Este aplicativo é para autodefesa. Por favor, concorde:",
@@ -491,14 +499,14 @@
                 info_bg_record: "⚠️ Operação em segundo plano",
                 info_usage: "O sensor de áudio funciona mesmo em outras guias.<br><span class='text-teal-600 font-bold'>[Dashcam]</span> Salva a conversa anterior.",
                 main_hint: "<span class='text-teal-500 font-bold'>[Dashcam]</span> Salva a conversa anterior para evitar edições injustas.",
-                btn_start: "INICIAR PROTEÇÃO", vault_title: "Cofre", vault_notice: "⚠️ Os registros são excluídos após 10 dias.",
+                btn_start: "INICIAR PROTEÇÃO", vault_title: "Cofre", notice: "⚠️ Os registros são excluídos após 10 dias.",
                 vault_empty: "Nenhum registro", stealth_fade_hint: "Toque duas vezes para sair",
                 settings_title: "Configurações", settings_mode: "Modo de exibição", mode_pocket: "Bolso (Apagão)", mode_desk: "Mesa (Relógio)",
                 settings_lang: "Idioma (Language)", settings_reset_pin: "Redefinir PIN", btn_close: "Fechar",
                 msg_pin_set: "PIN definido", msg_pin_err: "PIN incorreto", msg_mic_err: "Microfone necessário",
                 msg_stealth_end: "Encerrado", msg_saved: "Salvo", msg_deleted: "Excluído",
                 lvl_1: "Baixo", lvl_2: "Normal", lvl_3: "Alto", manual_trig: "Gravação Manual",
-                btn_del_confirm: "Toque novamente para excluir"
+                btn_del_confirm: "Toque novamente para excluir", lbl_sensitive: "Sensível", lbl_insensitive: "Insensível"
             }
         };
 
@@ -510,7 +518,7 @@
                 const key = el.getAttribute('data-i18n');
                 if (TRANSLATIONS[currentLang][key]) el.innerHTML = t(key).replace(/\n/g, '<br>');
             });
-            updateSliders();
+            updateSliderUI();
         }
     </script>
 
@@ -520,17 +528,10 @@
             dbName: 'StealthDefDB_v4',
             storeName: 'recordings',
             retentionDays: 10,
-            // 【手動調整用】物理タップの感度 (数値を小さくするほど敏感になる) [鈍感, 普通, 敏感]
-            motionThresholds: [7, 3, 1.5], 
-            // 【手動調整用】環境音の感度 スマホ用 (数値を大きくするほど鈍感) [鈍感, 普通, 敏感]
-            mobileAudioThresholds: [75, 65, 55], 
-            // 【手動調整用】環境音の感度 PC用 [鈍感, 普通, 敏感]
-            pcAudioThresholds: [75, 60, 50],
             audioSpikeFactor: [3.0, 2.5, 2.0], 
             historyMaxFrames: 60, 
             idleRotationMs: 5 * 60 * 1000,
             warmupMs: 3000, // V2.1: 開始直後の誤検知を防ぐウォームアップ時間
-            // 【手動調整用】タップ有効時間（ミリ秒）: 2500なら「2.5秒以内に3回」で発動
             tapTimeWindowMs: 3000
         };
 
@@ -540,8 +541,8 @@
             pin: localStorage.getItem('stealth_pin') || null,
             displayMode: localStorage.getItem('stealth_display_mode') || 'pocket',
             deviceType: localStorage.getItem('stealth_device_type') || (/Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'pc'), 
-            motionLevel: 1, 
-            audioLevel: 1,
+            motionValue: parseFloat(localStorage.getItem('stealth_motion_val')) || 3.0, 
+            audioValue: parseInt(localStorage.getItem('stealth_audio_val')) || 65,
             mediaRecorder: null, audioChunks: [], wakeLock: null, audioContext: null, analyser: null, micStream: null,
             tapCount: 0, lastTapTime: 0, idleStartMs: 0, lastLoudMs: 0,
             clockIntervalId: null,
@@ -578,12 +579,24 @@
             setTimeout(() => { UI.toast.classList.remove('opacity-100', 'translate-y-0'); UI.toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4'); }, 3000);
         }
         function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
-        function updateSliders() {
-            state.motionLevel = parseInt(UI.sliderMotion.value) - 1; state.audioLevel = parseInt(UI.sliderAudio.value) - 1;
-            const levels = ['lvl_1', 'lvl_2', 'lvl_3']; UI.valMotion.textContent = t(levels[state.motionLevel]); UI.valAudio.textContent = t(levels[state.audioLevel]);
+        
+        function updateSliderUI() {
+            UI.valMotion.textContent = parseFloat(UI.sliderMotion.value).toFixed(1);
+            UI.valAudio.textContent = UI.sliderAudio.value;
         }
+
+        function handleSliderChange() {
+            state.motionValue = parseFloat(UI.sliderMotion.value);
+            state.audioValue = parseInt(UI.sliderAudio.value);
+            localStorage.setItem('stealth_motion_val', state.motionValue);
+            localStorage.setItem('stealth_audio_val', state.audioValue);
+            updateSliderUI();
+        }
+
         function updateDeviceUI() {
+            let minAudio = 50, maxAudio = 80; // スマホ基準
             if (state.deviceType === 'pc') {
+                minAudio = 45;
                 UI.btnDevPc.classList.replace('text-gray-500', 'text-teal-600'); UI.btnDevPc.classList.add('bg-white', 'shadow-sm');
                 UI.btnDevMobile.classList.replace('text-teal-600', 'text-gray-500'); UI.btnDevMobile.classList.remove('bg-white', 'shadow-sm');
                 UI.wrapMotion.classList.add('opacity-40', 'pointer-events-none'); // PCは物理タップ無効
@@ -592,6 +605,16 @@
                 UI.btnDevPc.classList.replace('text-teal-600', 'text-gray-500'); UI.btnDevPc.classList.remove('bg-white', 'shadow-sm');
                 UI.wrapMotion.classList.remove('opacity-40', 'pointer-events-none');
             }
+            
+            // スライダー限界値の動的変更とクランプ
+            UI.sliderAudio.min = minAudio;
+            UI.sliderAudio.max = maxAudio;
+            if (state.audioValue < minAudio) state.audioValue = minAudio;
+            if (state.audioValue > maxAudio) state.audioValue = maxAudio;
+            
+            UI.sliderAudio.value = state.audioValue;
+            UI.sliderMotion.value = state.motionValue;
+            updateSliderUI();
         }
 
         const DB = {
@@ -939,7 +962,7 @@
 
             const jerk = Math.sqrt(dx*dx + dy*dy + dz*dz);
             
-            if (jerk > CONFIG.motionThresholds[state.motionLevel]) {
+            if (jerk > state.motionValue) {
                 const now = Date.now();
                 // 極端に連続する波を1回のタップとして扱うためのデバウンス(150ms)
                 if (now - state.lastTapTime > 150) {
@@ -969,10 +992,8 @@
             // V2.1: ウォームアップ期間（開始から3秒）はベースラインの計算のみ行い、トリガーは無視する
             const isWarmup = (now - state.stealthStartTime < CONFIG.warmupMs);
 
-            // デバイスごとに設定されたしきい値を適用
-            let threshold = (state.deviceType === 'pc') 
-                ? CONFIG.pcAudioThresholds[state.audioLevel] 
-                : CONFIG.mobileAudioThresholds[state.audioLevel];
+            // スライダーで設定した実数値を直接適用
+            let threshold = state.audioValue;
             
             let isTriggeredNow = false;
 
@@ -1097,8 +1118,8 @@
             UI.btnDevMobile.onclick = () => { state.deviceType = 'mobile'; localStorage.setItem('stealth_device_type', 'mobile'); updateDeviceUI(); };
             UI.btnDevPc.onclick = () => { state.deviceType = 'pc'; localStorage.setItem('stealth_device_type', 'pc'); updateDeviceUI(); };
 
-            UI.sliderMotion.addEventListener('input', updateSliders);
-            UI.sliderAudio.addEventListener('input', updateSliders);
+            UI.sliderMotion.addEventListener('input', handleSliderChange);
+            UI.sliderAudio.addEventListener('input', handleSliderChange);
 
             UI.btnStealth.onclick = () => startStealthMode();
 
