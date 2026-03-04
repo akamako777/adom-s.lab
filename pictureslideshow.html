@@ -105,7 +105,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Translations (Updated with DnD & Sort) ---
+        // --- Translations (Updated with Crossfade) ---
         const TRANSLATIONS = {
             ja: {
                 title: 'Simple Memories',
@@ -117,13 +117,14 @@
                 autoFitDesc: '音楽の長さに合わせて、全ての写真の表示時間を自動で調整します。',
                 run: '実行する',
                 secPerPhoto: '1枚の秒数',
+                crossfade: 'クロスフェード (曲の重なり)', crossfadeSec: '秒',
                 autoFitLocked: '※音楽入りは自動調整固定になります',
                 motion: '動き (Motion)', transition: '切り替え (Transition)', filter: 'フィルター',
                 exportVideo: '動画を書き出す (MP4)',
                 stopExport: '書き出し停止',
                 recStopTitle: '書き出しを停止しますか？',
                 recStopMsg: '途中までの動画が保存されます。',
-                recWarning: '書き出し中はページを切り替えないでください', // Removed ※ for better styling
+                recWarning: '書き出し中はページを切り替えないでください', 
                 stop: '停止する', cancel: 'キャンセル',
                 totalTime: '総時間', photos: '枚数', size: 'サイズ',
                 noPhotos: '写真を追加してください',
@@ -132,7 +133,7 @@
                 errNoBrowser: '録画非対応ブラウザです',
                 errNoData: '写真と音楽が必要です',
                 errNoPhoto: '写真がありません',
-                ver: 'ver 4.8.1 (Fixes)',
+                ver: 'ver 4.9.0 (Crossfade Update)',
                 wakeLockActive: 'スリープ防止機能: ON',
                 guideTitle: '録画時間の目安',
                 guideMobile: '推奨 5-10分 (限界15分)',
@@ -155,6 +156,7 @@
                 autoFitDesc: 'Automatically adjusts photo duration to match music length.',
                 run: 'Execute',
                 secPerPhoto: 'Sec per Photo',
+                crossfade: 'Crossfade (Overlap)', crossfadeSec: 'sec',
                 autoFitLocked: '* Locked to music duration',
                 motion: 'Motion', transition: 'Transition', filter: 'Filter',
                 exportVideo: 'Export Video (MP4)',
@@ -170,7 +172,7 @@
                 errNoBrowser: 'Browser not supported',
                 errNoData: 'Photos and Music required',
                 errNoPhoto: 'No photos added',
-                ver: 'ver 4.8.1 (Fixes)',
+                ver: 'ver 4.9.0 (Crossfade Update)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Recording Duration',
                 guideMobile: 'Rec 5-10m (Limit 15m)',
@@ -193,6 +195,7 @@
                 autoFitDesc: 'Ajusta automáticamente la duración de las fotos a la música.',
                 run: 'Ejecutar',
                 secPerPhoto: 'Seg. por Foto',
+                crossfade: 'Fundido cruzado', crossfadeSec: 'seg',
                 autoFitLocked: '* Bloqueado a la duración de la música',
                 motion: 'Movimiento', transition: 'Transición', filter: 'Filtro',
                 exportVideo: 'Exportar Video (MP4)',
@@ -208,7 +211,7 @@
                 errNoBrowser: 'Navegador no soportado',
                 errNoData: 'Se requieren fotos y música',
                 errNoPhoto: 'No hay fotos',
-                ver: 'ver 4.8.1 (Fixes)',
+                ver: 'ver 4.9.0 (Crossfade Update)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'Guía de Duración',
                 guideMobile: 'Rec 5-10m (Límite 15m)',
@@ -231,6 +234,7 @@
                 autoFitDesc: '根據音樂長度自動調整照片顯示時間。',
                 run: '執行',
                 secPerPhoto: '每張秒數',
+                crossfade: '淡入淡出 (重疊)', crossfadeSec: '秒',
                 autoFitLocked: '* 已鎖定為音樂長度',
                 motion: '動態效果', transition: '轉場效果', filter: '濾鏡',
                 exportVideo: '導出影片 (MP4)',
@@ -246,7 +250,7 @@
                 errNoBrowser: '瀏覽器不支援',
                 errNoData: '需要照片和音樂',
                 errNoPhoto: '沒有照片',
-                ver: 'ver 4.8.1 (Fixes)',
+                ver: 'ver 4.9.0 (Crossfade Update)',
                 wakeLockActive: '喚醒鎖定: ON',
                 guideTitle: '錄製時間指南',
                 guideMobile: '建議 5-10分 (極限15分)',
@@ -269,6 +273,7 @@
                 autoFitDesc: 'संगीत की लंबाई के अनुसार फोटो का समय समायोजित करें।',
                 run: 'चलाएं',
                 secPerPhoto: 'प्रति फोटो सेकंड',
+                crossfade: 'क्रॉसफ़ेड (ओवरलैप)', crossfadeSec: 'सेकंड',
                 autoFitLocked: '* संगीत की अवधि के लिए लॉक किया गया',
                 motion: 'गति (Motion)', transition: 'परिवर्तन (Transition)', filter: 'फ़िल्टर',
                 exportVideo: 'वीडियो निर्यात करें (MP4)',
@@ -284,7 +289,7 @@
                 errNoBrowser: 'ब्राउज़र समर्थित नहीं है',
                 errNoData: 'तस्वीरें और संगीत आवश्यक हैं',
                 errNoPhoto: 'कोई तस्वीरें नहीं',
-                ver: 'ver 4.8.1 (Fixes)',
+                ver: 'ver 4.9.0 (Crossfade Update)',
                 wakeLockActive: 'Wake Lock: ON',
                 guideTitle: 'रिकॉर्डिंग समय',
                 guideMobile: '5-10 मिनट (सीमा 15 मिनट)',
@@ -356,7 +361,7 @@
             return <span ref={ref} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} />;
         };
 
-        // --- Audio Controller ---
+        // --- Audio Controller (Updated for Crossfade) ---
         class AudioController {
             constructor() {
                 this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -367,27 +372,70 @@
                 const arrayBuffer = await file.arrayBuffer();
                 return await this.ctx.decodeAudioData(arrayBuffer);
             }
-            play(buffer, time = 0, loop = false) {
+            
+            // New Method to handle Fades
+            playWithFade(buffer, scheduleTime, offsetInTrack, overlap, isFirst, isLast) {
                 const source = this.ctx.createBufferSource();
                 source.buffer = buffer;
-                source.loop = loop;
-                source.connect(this.ctx.destination); 
-                source.connect(this.destination);
-                source.start(time);
-                this.sources.push(source);
+                
+                const gainNode = this.ctx.createGain();
+                source.connect(gainNode);
+                gainNode.connect(this.ctx.destination);
+                gainNode.connect(this.destination);
+
+                // Calculate absolute times as if track played from start
+                const absoluteStartTime = scheduleTime - offsetInTrack;
+                const absoluteEndTime = absoluteStartTime + buffer.duration;
+                
+                // Safe set value at current time to prevent clicks
+                gainNode.gain.setValueAtTime(1, Math.max(0, this.ctx.currentTime));
+
+                // Apply Fade In
+                if (!isFirst && overlap > 0) {
+                    const fadeInEnd = absoluteStartTime + overlap;
+                    if (this.ctx.currentTime < fadeInEnd) {
+                        const startValTime = Math.max(this.ctx.currentTime, absoluteStartTime);
+                        const currentGain = Math.max(0, Math.min(1, (startValTime - absoluteStartTime) / overlap));
+                        gainNode.gain.setValueAtTime(currentGain, startValTime);
+                        gainNode.gain.linearRampToValueAtTime(1, fadeInEnd);
+                    }
+                }
+
+                // Apply Fade Out
+                if (!isLast && overlap > 0) {
+                    const fadeOutStart = absoluteEndTime - overlap;
+                    if (this.ctx.currentTime < absoluteEndTime) {
+                        const startValTime = Math.max(this.ctx.currentTime, fadeOutStart);
+                        const currentGain = Math.max(0, Math.min(1, 1 - (startValTime - fadeOutStart) / overlap));
+                        gainNode.gain.setValueAtTime(currentGain, startValTime);
+                        gainNode.gain.linearRampToValueAtTime(0, absoluteEndTime);
+                    }
+                }
+
+                source.start(scheduleTime, offsetInTrack);
+                
+                // Track source and gainNode for cleanup
+                this.sources.push({ source, gainNode });
                 return source;
             }
-            stopAll() { this.sources.forEach(s => { try { s.stop(); } catch(e){} }); this.sources = []; }
+
+            stopAll() { 
+                this.sources.forEach(s => { 
+                    try { 
+                        s.source.stop(); 
+                        s.source.disconnect();
+                        if(s.gainNode) s.gainNode.disconnect();
+                    } catch(e){} 
+                }); 
+                this.sources = []; 
+            }
             getStream() { return this.destination.stream; }
             resume() { if (this.ctx.state === 'suspended') this.ctx.resume(); }
         }
 
-      // --- Components (Toast 修正版) ---
+      // --- Components ---
         const Toast = ({ message, type, onClose }) => {
-            // 3秒で自動消去
             useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
-
-            // 背景色とアイコンの定義（視認性を高めるため少し濃い色に変更）
             const getStyle = (t) => {
                 switch(t) {
                     case 'success': return { bg: 'bg-green-600', icon: 'check-circle' };
@@ -396,17 +444,13 @@
                     default:        return { bg: 'bg-indigo-600', icon: 'info' }; 
                 }
             };
-            
             const style = getStyle(type);
 
             return (
                 <div className={`pointer-events-auto relative ${style.bg} text-white px-4 py-3 rounded-xl shadow-xl z-[100] flex items-center gap-3 animate-fade-in border border-white/20 min-w-[280px] max-w-sm mb-2`}>
-                    {/* アイコン部分: 縮小されないように shrink-0 を指定 */}
                     <div className="shrink-0 flex items-center justify-center">
                         <Icon name={style.icon} size={24} className="text-white drop-shadow-md" />
                     </div>
-                    
-                    {/* テキスト部分: flex-1 で余白を埋めつつ、文字色を強制的に白にする */}
                     <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm leading-snug text-white drop-shadow-md break-words" style={{color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.2)'}}>
                             {message}
@@ -415,7 +459,6 @@
                 </div>
             );
         };
-
 
         const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, texts }) => {
             if (!isOpen) return null;
@@ -433,7 +476,6 @@
             );
         };
 
-        // Restored FileInfoModal
         const FileInfoModal = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             return (
@@ -466,7 +508,6 @@
             );
         };
 
-        // New Duration Guide Modal
         const RecDurationModal = ({ isOpen, onClose, texts }) => {
             if (!isOpen) return null;
             return (
@@ -506,7 +547,8 @@
                 motion: 'kenburns',
                 transition: 'fade',
                 filter: 'none',
-                aspectRatio: '16:9'
+                aspectRatio: '16:9',
+                audioOverlap: 0 // New Setting for Crossfade
             });
             const [isRecording, setIsRecording] = useState(false);
             const [previewTime, setPreviewTime] = useState(0);
@@ -517,7 +559,7 @@
             const [darkMode, setDarkMode] = useState(false);
             const [showFileInfo, setShowFileInfo] = useState(false); 
             const [showDurationGuide, setShowDurationGuide] = useState(false);
-            const [isDragging, setIsDragging] = useState(false); // New Drag State
+            const [isDragging, setIsDragging] = useState(false); 
 
             const canvasRef = useRef(null);
             const audioController = useRef(null);
@@ -531,6 +573,29 @@
             const t = TRANSLATIONS[lang] || TRANSLATIONS['ja'];
             const aspectConfig = ASPECT_RATIOS[settings.aspectRatio];
             const totalDuration = useMemo(() => photos.length > 0 ? photos.length * settings.durationPerPhoto : 0, [photos.length, settings.durationPerPhoto]);
+
+            // --- Crossfade Logic ---
+            // Calculate maximum allowed overlap based on the shortest track (capped at 10s)
+            const maxOverlap = useMemo(() => {
+                if (music.length < 2) return 0;
+                return Math.min(10, ...music.map(m => m.duration));
+            }, [music]);
+
+            // Ensure current overlap setting doesn't exceed maximum when tracks change
+            useEffect(() => {
+                if (settings.audioOverlap > maxOverlap) {
+                    setSettings(prev => ({ ...prev, audioOverlap: Math.floor(maxOverlap * 10) / 10 }));
+                }
+            }, [maxOverlap, settings.audioOverlap]);
+
+            // Calculate exact total music duration considering overlaps
+            const totalMusicDuration = useMemo(() => {
+                if (music.length === 0) return 0;
+                const sum = music.reduce((acc, m) => acc + m.duration, 0);
+                const overlapDeduction = settings.audioOverlap * (music.length - 1);
+                return Math.max(0, sum - overlapDeduction);
+            }, [music, settings.audioOverlap]);
+
 
             useEffect(() => {
                 audioController.current = new AudioController();
@@ -546,18 +611,16 @@
                 else document.documentElement.classList.remove('dark');
             }, [darkMode]);
 
-            // Auto-fit duration logic
+            // Auto-fit duration logic (Updated to use exact overlapped music duration)
             useEffect(() => {
                 if (music.length > 0 && photos.length > 0) {
-                    const totalMusicDuration = music.reduce((acc, m) => acc + m.duration, 0);
                     const newDuration = totalMusicDuration / photos.length;
                     if (Math.abs(settings.durationPerPhoto - newDuration) > 0.05) {
                         setSettings(prev => ({ ...prev, durationPerPhoto: parseFloat(newDuration.toFixed(1)) }));
                     }
                 }
-            }, [music, photos.length, settings.durationPerPhoto]);
+            }, [totalMusicDuration, photos.length]);
 
-            // --- Wake Lock Functions ---
             const requestWakeLock = async () => {
                 try {
                     if ('wakeLock' in navigator) {
@@ -582,7 +645,6 @@
             };
             const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
 
-            // --- DnD & File Handling ---
             const onDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
             const onDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
             
@@ -594,7 +656,7 @@
                         url: URL.createObjectURL(file), 
                         rotation: 0, 
                         motion: { type: ['zoomIn','zoomOut','panRight','panLeft'][Math.floor(Math.random()*4)] },
-                        addedAt: Date.now() // Track added time for reset sort
+                        addedAt: Date.now() 
                     }));
                     if(newPhotos.length > 0) {
                         setPhotos(prev => [...prev, ...newPhotos]);
@@ -633,20 +695,16 @@
                 processFiles(files, 'music');
             };
 
-            // --- Sorting Logic ---
             const sortPhotos = (type) => {
                 setPhotos(prev => {
                     const sorted = [...prev];
                     if (type === 'date') {
-                        // Sort by lastModified (oldest to newest)
                         sorted.sort((a, b) => a.file.lastModified - b.file.lastModified);
                         addToast(t.sortedDate, 'success');
                     } else if (type === 'name') {
-                        // Sort by name A-Z naturally
                         sorted.sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, {numeric: true, sensitivity: 'base'}));
                         addToast(t.sortedName, 'success');
                     } else if (type === 'reset') {
-                        // Sort by addedAt
                         sorted.sort((a, b) => a.addedAt - b.addedAt);
                         addToast(t.sortedReset, 'success');
                     }
@@ -656,13 +714,11 @@
 
             const fitToMusic = () => {
                 if (music.length === 0 || photos.length === 0) return addToast(t.errNoData, 'error');
-                const totalMusic = music.reduce((acc, m) => acc + m.duration, 0);
-                const newDur = totalMusic / photos.length;
+                const newDur = totalMusicDuration / photos.length;
                 setSettings(prev => ({ ...prev, durationPerPhoto: parseFloat(newDur.toFixed(1)) }));
                 addToast(`1 = ${newDur.toFixed(1)}s`, 'success');
             };
 
-            // Canvas Drawing Logic
             const renderFrame = (ctx, time) => {
                 ctx.fillStyle = '#000';
                 ctx.fillRect(0, 0, aspectConfig.w, aspectConfig.h);
@@ -745,11 +801,34 @@
                 requestRef.current = requestAnimationFrame(animate);
             };
 
-            const playMusicFrom = (startTime) => {
-                let currentTime = 0;
-                music.forEach(m => {
-                    audioController.current.play(m.buffer, audioController.current.ctx.currentTime + currentTime - startTime);
-                    currentTime += m.duration;
+            // Enhanced playback to support overlapping fades based on offsetTime
+            const playMusicFrom = (offsetTime) => {
+                let trackStartTime = 0;
+                const ctxTime = audioController.current.ctx.currentTime;
+                
+                music.forEach((m, idx) => {
+                    const isFirst = idx === 0;
+                    const isLast = idx === music.length - 1;
+                    const overlap = settings.audioOverlap;
+                    
+                    const trackEndTime = trackStartTime + m.duration;
+                    
+                    if (trackEndTime > offsetTime) {
+                        const startOffsetInTrack = Math.max(0, offsetTime - trackStartTime);
+                        const scheduleTime = ctxTime + Math.max(0, trackStartTime - offsetTime);
+                        
+                        audioController.current.playWithFade(
+                            m.buffer, 
+                            scheduleTime, 
+                            startOffsetInTrack, 
+                            overlap, 
+                            isFirst, 
+                            isLast
+                        );
+                    }
+                    
+                    // The next track starts exactly "overlap" seconds before this one ends
+                    trackStartTime += m.duration - overlap;
                 });
             }
 
@@ -770,7 +849,6 @@
                 if (photos.length === 0) return addToast(t.errNoPhoto, 'error');
                 if (isPlayingRef.current) { audioController.current.stopAll(); cancelAnimationFrame(requestRef.current); setIsPlaying(false); isPlayingRef.current = false; }
                 
-                // Activate Wake Lock
                 await requestWakeLock();
 
                 setIsRecording(true); isRecordingRef.current = true;
@@ -806,7 +884,7 @@
                     setIsPlaying(false); isPlayingRef.current = false;
                     audioController.current.stopAll(); cancelAnimationFrame(requestRef.current);
                     
-                    releaseWakeLock(); // Release lock
+                    releaseWakeLock(); 
                     addToast(t.dlSuccess, 'success');
                 };
                 mediaRecorderRef.current = recorder;
@@ -855,12 +933,10 @@
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"><Icon name="globe" size={14} /></div>
                             </div>
                             
-                            {/* Restored Info Button */}
                             <button onClick={() => setShowFileInfo(true)} className="p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
                                 <Icon name="info" size={20} />
                             </button>
 
-                            {/* New Duration Guide Button */}
                             <button onClick={() => setShowDurationGuide(true)} className="p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
                                 <Icon name="clock" size={20} />
                             </button>
@@ -872,7 +948,7 @@
                     </header>
 
                     <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-                        {/* PREVIEW AREA (45vh on mobile) */}
+                        {/* PREVIEW AREA */}
                         <div className="order-1 md:order-2 bg-slate-900 flex flex-col items-center justify-center p-4 md:p-8 relative h-[45vh] md:h-auto md:flex-1 shrink-0 overflow-hidden border-b md:border-b-0 md:border-l border-slate-700">
                             <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px'}}></div>
 
@@ -920,7 +996,7 @@
                             </div>
                         </div>
 
-                        {/* TOOLS AREA - Mobile Optimized Scroll */}
+                        {/* TOOLS AREA */}
                         <div className="order-2 md:order-1 w-full md:w-1/3 lg:w-1/4 bg-white/90 dark:bg-slate-900/90 flex flex-col flex-1 min-h-0 z-10 backdrop-blur-sm transition-colors relative">
                             {/* Fixed Tab Header */}
                             <div className="flex border-b border-gray-200 dark:border-slate-700 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur z-20 shadow-sm">
@@ -997,6 +1073,7 @@
                                             <p className="text-xs text-indigo-600 dark:text-indigo-300 mb-4 leading-relaxed">{t.autoFitDesc}</p>
                                             <button onClick={fitToMusic} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition transform active:scale-95">{t.run}</button>
                                         </div>
+                                        
                                         <label 
                                             onDragOver={onDragOver}
                                             onDragLeave={onDragLeave}
@@ -1016,6 +1093,26 @@
                                             </span>
                                             <div className="text-[10px] text-gray-400 mt-1 font-bold relative z-10">{t.dragDrop}</div>
                                         </label>
+
+                                        {/* New Crossfade UI - Only shown if 2 or more songs exist */}
+                                        {music.length > 1 && (
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mt-4 animate-fade-in">
+                                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-3">
+                                                    <Icon name="git-merge" size={14}/> {t.crossfade}
+                                                </label>
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" max={maxOverlap} step="0.1" 
+                                                        value={settings.audioOverlap} 
+                                                        onChange={e => setSettings({...settings, audioOverlap: parseFloat(e.target.value)})} 
+                                                        className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                    />
+                                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400 w-12 text-right">{settings.audioOverlap} {t.crossfadeSec}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div className="space-y-2">
                                             {music.map((m, i) => (
                                                 <div key={m.id} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm">
@@ -1118,10 +1215,6 @@
                                     </div>
                                 )}
                                 
-                                {/* CRITICAL: INFINITE SPACER FOR MOBILE 
-                                    This invisible div ensures the last buttons can be scrolled 
-                                    up to the middle of the screen, preventing thumb fatigue.
-                                */}
                                 <div className="h-40 md:h-0 w-full shrink-0" aria-hidden="true"></div>
                             </div>
                         </div>
@@ -1132,7 +1225,6 @@
                     </div>
                     <ConfirmModal isOpen={showStopConfirm} title={t.recStopTitle} message={t.recStopMsg} onConfirm={executeStopRecording} onCancel={() => setShowStopConfirm(false)} texts={{stop: t.stop, cancel: t.cancel}} />
                     <FileInfoModal isOpen={showFileInfo} onClose={() => setShowFileInfo(false)} />
-                    {/* New Guide Modal */}
                     <RecDurationModal isOpen={showDurationGuide} onClose={() => setShowDurationGuide(false)} texts={t} />
                 </div>
             );
