@@ -1183,7 +1183,7 @@
 
     // API Call
     async function callGeminiAPI(history, systemInstructionText, retryKey = null) {
-        const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
         
         const storedKey = getStoredApiKey();
         const keyToUse = retryKey !== null ? retryKey : storedKey;
@@ -1665,3 +1665,4 @@
 </script>
 </body>
 </html>
+
