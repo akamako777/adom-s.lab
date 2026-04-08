@@ -2,9 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- スマホでも無理に縮小せず、PC用の幅(1100px)として認識させる -->
-    <meta name="viewport" content="width=1100">
-    <title>先生のクラス管理ツール Pro</title>
+<meta name="viewport" content="width=1100">
+  <title>先生のクラス管理ツール Pro</title>
     
   <script src="./tailwindcss.js"></script>
     
@@ -18,8 +17,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <link rel="manifest" href="./manifest_teachers.json">
-
-
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
@@ -970,13 +967,22 @@
                 const weeks = data.dutyConfig.duration || 10;
                 const newSchedule = []; 
                 
-                let boyIndex = 0;
-                let girlIndex = 0;
-                let globalIndex = 0;
+                let absBoyIndex = 0;
+                let absGirlIndex = 0;
+                let absGlobalIndex = 0;
+
+                const getSafeIndex = (index, length) => {
+                    if (length <= 0) return 0;
+                    return ((index % length) + length) % length;
+                };
 
                 for(let w=1; w<=weeks; w++) {
                     const weekAssignments = {};
                     const usedInThisWeek = new Set(); 
+
+                    const startBoyLap = boysList.length > 0 ? Math.floor(absBoyIndex / boysList.length) : 0;
+                    const startGirlLap = girlsList.length > 0 ? Math.floor(absGirlIndex / girlsList.length) : 0;
+                    const startGlobalLap = allList.length > 0 ? Math.floor(absGlobalIndex / allList.length) : 0;
 
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq === 'fixed') {
@@ -990,10 +996,10 @@
                         if (slot.genderReq !== 'boy') return;
                         
                         if (boysList.length > 0) {
-                            const student = boysList[boyIndex % boysList.length];
+                            const student = boysList[getSafeIndex(absBoyIndex, boysList.length)];
                             weekAssignments[slot.id] = student.name;
                             usedInThisWeek.add(student.id);
-                            boyIndex++; 
+                            absBoyIndex++; 
                         } else {
                             weekAssignments[slot.id] = "(不足)";
                         }
@@ -1003,10 +1009,10 @@
                         if (slot.genderReq !== 'girl') return;
 
                         if (girlsList.length > 0) {
-                            const student = girlsList[girlIndex % girlsList.length];
+                            const student = girlsList[getSafeIndex(absGirlIndex, girlsList.length)];
                             weekAssignments[slot.id] = student.name;
                             usedInThisWeek.add(student.id);
-                            girlIndex++; 
+                            absGirlIndex++; 
                         } else {
                             weekAssignments[slot.id] = "(不足)";
                         }
@@ -1017,13 +1023,13 @@
 
                         let found = false;
                         for (let k = 0; k < allList.length; k++) {
-                            const currentIndex = (globalIndex + k) % allList.length;
-                            const student = allList[currentIndex];
+                            const checkIndex = absGlobalIndex + k;
+                            const student = allList[getSafeIndex(checkIndex, allList.length)];
                             
                             if (!usedInThisWeek.has(student.id)) {
                                 weekAssignments[slot.id] = student.name;
                                 usedInThisWeek.add(student.id);
-                                globalIndex = (currentIndex + 1) % allList.length; 
+                                absGlobalIndex = checkIndex + 1; 
                                 found = true;
                                 break;
                             }
@@ -1031,10 +1037,17 @@
                         if (!found) weekAssignments[slot.id] = "-";
                     });
 
-                    if (requiredSlots === remainingStudents) {
-                         boyIndex += shiftVal;
-                         girlIndex += shiftVal;
-                         globalIndex += shiftVal;
+                    if (boysList.length > 0) {
+                        const endBoyLap = Math.floor(absBoyIndex / boysList.length);
+                        if (endBoyLap > startBoyLap) absBoyIndex += shiftVal;
+                    }
+                    if (girlsList.length > 0) {
+                        const endGirlLap = Math.floor(absGirlIndex / girlsList.length);
+                        if (endGirlLap > startGirlLap) absGirlIndex += shiftVal;
+                    }
+                    if (allList.length > 0) {
+                        const endGlobalLap = Math.floor(absGlobalIndex / allList.length);
+                        if (endGlobalLap > startGlobalLap) absGlobalIndex += shiftVal;
                     }
 
                     newSchedule.push({ id: w, mapping: weekAssignments });
@@ -1149,7 +1162,10 @@
                                         <input type="number" className="ml-2 w-16 border rounded p-1" value={data.dutyConfig.duration} onChange={e=>setData({...data, dutyConfig:{...data.dutyConfig, duration:parseInt(e.target.value)}})} />
                                     </label>
                                     <label className="font-bold text-sm">ずらす数: 
-                                        <input type="number" className="ml-2 w-12 border rounded p-1" value={shiftVal} min="1" onChange={e=>setShiftVal(parseInt(e.target.value)||1)} />
+                                        <input type="number" className="ml-2 w-12 border rounded p-1" value={shiftVal} onChange={e => {
+                                            const v = parseInt(e.target.value);
+                                            setShiftVal(isNaN(v) ? 0 : v);
+                                        }} />
                                     </label>
                                 </div>
                                 
@@ -1986,4 +2002,3 @@
     </script>
 </body>
 </html>
-
