@@ -967,14 +967,17 @@
                 const weeks = data.dutyConfig.duration || 10;
                 const newSchedule = []; 
                 
-                // 絶対減らない実働カウンター（純粋な割り当て数・進行数）
-                let countBoy = 0;
-                let countGirl = 0;
-                let countGlobal = 0;
-                
-                // 1周するごとに蓄積されていくシフト専用オフセット
+                // 修正版：カーソル（名簿の現在地）と、純粋な配属人数の完全分離
+                let cursorBoy = 0;
+                let assignCountBoy = 0;
                 let offsetBoy = 0;
+
+                let cursorGirl = 0;
+                let assignCountGirl = 0;
                 let offsetGirl = 0;
+
+                let cursorGlobal = 0;
+                let assignCountGlobal = 0;
                 let offsetGlobal = 0;
 
                 // 安全なモジュロ計算（マイナス値でも正しく末尾からループする）
@@ -987,10 +990,10 @@
                     const weekAssignments = {};
                     const usedInThisWeek = new Set(); 
 
-                    // 週の始めの「何周完了しているか（実働ベース）」を記録
-                    const startBoyLaps = boysList.length > 0 ? Math.floor(countBoy / boysList.length) : 0;
-                    const startGirlLaps = girlsList.length > 0 ? Math.floor(countGirl / girlsList.length) : 0;
-                    const startGlobalLaps = allList.length > 0 ? Math.floor(countGlobal / allList.length) : 0;
+                    // 週の始めの「何周完了しているか（純粋な配属ベース）」を記録
+                    const startBoyLaps = boysList.length > 0 ? Math.floor(assignCountBoy / boysList.length) : 0;
+                    const startGirlLaps = girlsList.length > 0 ? Math.floor(assignCountGirl / girlsList.length) : 0;
+                    const startGlobalLaps = allList.length > 0 ? Math.floor(assignCountGlobal / allList.length) : 0;
 
                     // 1. 固定枠の割り当て
                     slotsInfo.forEach(slot => {
@@ -1004,45 +1007,54 @@
                     // 2. 男子枠の割り当て
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'boy') return;
-                        if (boysList.length > 0) {
-                            const indexToUse = getSafeIndex(countBoy + offsetBoy, boysList.length);
-                            const student = boysList[indexToUse];
-                            weekAssignments[slot.id] = student.name;
-                            usedInThisWeek.add(student.id);
-                            countBoy++; 
-                        } else {
-                            weekAssignments[slot.id] = "(不足)";
+                        let found = false;
+                        for(let k=0; k<boysList.length; k++) {
+                            const checkIndex = cursorBoy + offsetBoy + k;
+                            const student = boysList[getSafeIndex(checkIndex, boysList.length)];
+                            if (!usedInThisWeek.has(student.id)) {
+                                weekAssignments[slot.id] = student.name;
+                                usedInThisWeek.add(student.id);
+                                cursorBoy += (k + 1); // 次回のスタート位置
+                                assignCountBoy++;     // 純粋な配属数
+                                found = true;
+                                break;
+                            }
                         }
+                        if(!found) weekAssignments[slot.id] = "(不足)";
                     });
 
                     // 3. 女子枠の割り当て
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'girl') return;
-                        if (girlsList.length > 0) {
-                            const indexToUse = getSafeIndex(countGirl + offsetGirl, girlsList.length);
-                            const student = girlsList[indexToUse];
-                            weekAssignments[slot.id] = student.name;
-                            usedInThisWeek.add(student.id);
-                            countGirl++; 
-                        } else {
-                            weekAssignments[slot.id] = "(不足)";
+                        let found = false;
+                        for(let k=0; k<girlsList.length; k++) {
+                            const checkIndex = cursorGirl + offsetGirl + k;
+                            const student = girlsList[getSafeIndex(checkIndex, girlsList.length)];
+                            if (!usedInThisWeek.has(student.id)) {
+                                weekAssignments[slot.id] = student.name;
+                                usedInThisWeek.add(student.id);
+                                cursorGirl += (k + 1);
+                                assignCountGirl++;
+                                found = true;
+                                break;
+                            }
                         }
+                        if(!found) weekAssignments[slot.id] = "(不足)";
                     });
 
                     // 4. 指定なし枠の割り当て
                     slotsInfo.forEach(slot => {
                         if (slot.genderReq !== 'none') return;
-
                         let found = false;
                         for (let k = 0; k < allList.length; k++) {
-                            const checkIndex = countGlobal + offsetGlobal + k;
+                            const checkIndex = cursorGlobal + offsetGlobal + k;
                             const student = allList[getSafeIndex(checkIndex, allList.length)];
                             
                             if (!usedInThisWeek.has(student.id)) {
                                 weekAssignments[slot.id] = student.name;
                                 usedInThisWeek.add(student.id);
-                                // カーソルを、今回見つけた位置の「次」に進める
-                                countGlobal += (k + 1); 
+                                cursorGlobal += (k + 1); // 次回のスタート位置を更新
+                                assignCountGlobal++;     // 純粋な配属数のみを+1
                                 found = true;
                                 break;
                             }
@@ -1050,23 +1062,24 @@
                         if (!found) weekAssignments[slot.id] = "-";
                     });
 
-                    // 週の終わりに「何周完了しているか」をチェックし、周回が増えていればオフセットを追加
+                    // 5. 週の終わりに「何周完了しているか」をチェックし、周回が増えていればオフセットを追加
+                    // 【重要修正】符号を反転 (-shiftVal) させることで、生徒側から見て係が「右」にずれる直感的な挙動に変更
                     if (boysList.length > 0) {
-                        const endBoyLaps = Math.floor(countBoy / boysList.length);
+                        const endBoyLaps = Math.floor(assignCountBoy / boysList.length);
                         if (endBoyLaps > startBoyLaps) {
-                            offsetBoy += shiftVal * (endBoyLaps - startBoyLaps);
+                            offsetBoy += -shiftVal * (endBoyLaps - startBoyLaps);
                         }
                     }
                     if (girlsList.length > 0) {
-                        const endGirlLaps = Math.floor(countGirl / girlsList.length);
+                        const endGirlLaps = Math.floor(assignCountGirl / girlsList.length);
                         if (endGirlLaps > startGirlLaps) {
-                            offsetGirl += shiftVal * (endGirlLaps - startGirlLaps);
+                            offsetGirl += -shiftVal * (endGirlLaps - startGirlLaps);
                         }
                     }
                     if (allList.length > 0) {
-                        const endGlobalLaps = Math.floor(countGlobal / allList.length);
+                        const endGlobalLaps = Math.floor(assignCountGlobal / allList.length);
                         if (endGlobalLaps > startGlobalLaps) {
-                            offsetGlobal += shiftVal * (endGlobalLaps - startGlobalLaps);
+                            offsetGlobal += -shiftVal * (endGlobalLaps - startGlobalLaps);
                         }
                     }
 
@@ -2022,4 +2035,3 @@
     </script>
 </body>
 </html>
-
