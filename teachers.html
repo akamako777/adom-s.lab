@@ -18,6 +18,7 @@
 
     <link rel="manifest" href="./manifest_teachers.json">
 
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
         
@@ -1260,12 +1261,15 @@
             );
         };
 
-        // --- 4. グループ分け ---
+        // --- 4. グループ分け (ロック機能・ガチャ機能強化版) ---
         const ClubTool = ({ data, setData, showToast }) => {
             const [groups, setGroups] = useState(data.clubConfig.clubs?.length ? data.clubConfig.clubs : [{id:'g1', name:'班1', members:[]}]);
             const [unassigned, setUnassigned] = useState([]);
             const [delGId, setDelGId] = useState(null);
             const [resetConfirm, setResetConfirm] = useState(false);
+            
+            // 班長ロック用のIDを管理するSet
+            const [lockedIds, setLockedIds] = useState(new Set(data.clubConfig.lockedStudentIds || []));
 
             useEffect(() => {
                 const assigned = new Set();
@@ -1274,8 +1278,17 @@
             }, [data.students, groups]);
 
             useEffect(() => {
-                setData(p=>({...p, clubConfig:{...p.clubConfig, clubs:groups}}));
-            }, [groups]);
+                setData(p=>({...p, clubConfig:{...p.clubConfig, clubs:groups, lockedStudentIds: Array.from(lockedIds)}}));
+            }, [groups, lockedIds]);
+
+            // ロック切り替え処理
+            const toggleLock = (e, sid) => {
+                e.stopPropagation();
+                const newLocked = new Set(lockedIds);
+                if(newLocked.has(sid)) newLocked.delete(sid);
+                else newLocked.add(sid);
+                setLockedIds(newLocked);
+            };
 
             const deleteGroup = () => {
                 const g = groups.find(x => x.id === delGId);
@@ -1288,8 +1301,9 @@
 
             const resetAll = () => {
                 setGroups([]);
+                setLockedIds(new Set()); // ロックも初期化
                 setResetConfirm(false);
-                showToast("班をリセットしました", "success");
+                showToast("全ての班をリセットしました", "success");
             };
 
             const canAddGroup = unassigned.length > 0;
@@ -1332,12 +1346,24 @@
                 setGroups(newGroups);
             };
 
+            // 自動振り分け（ロック機能対応）
             const autoAssign = (mode) => {
                 if (groups.length === 0) return showToast("班を作ってください", "error");
-                if (unassigned.length === 0) return showToast("未所属の生徒がいません", "error");
 
-                let targets = [...unassigned];
+                // 1. ロックされていない生徒を全て集める（未所属 ＋ 班にいる非ロックの生徒）
+                let targets = unassigned.filter(s => !lockedIds.has(s.id));
+                
+                // baseGroups には「ロックされている生徒だけ」を残す
+                let baseGroups = groups.map(g => {
+                    const locked = g.members.filter(m => lockedIds.has(m.id));
+                    const unlocked = g.members.filter(m => !lockedIds.has(m.id));
+                    targets.push(...unlocked); // ロックされていない生徒は回収して再振り分け対象に
+                    return { ...g, members: locked };
+                });
 
+                if (targets.length === 0) return showToast("振り分ける対象の生徒がいません（全員固定されています）", "warning");
+
+                // --- 2. 振り分けロジックの実行 ---
                 if (mode === 'random') {
                     const TRIALS = 500;
                     let bestGroups = null;
@@ -1345,10 +1371,9 @@
                     let bestScore = Infinity;
 
                     for (let k = 0; k < TRIALS; k++) {
-                        // 1. 性別ごとに分けてシャッフル
-                        let boys = unassigned.filter(s => s.gender === 'boy');
-                        let girls = unassigned.filter(s => s.gender === 'girl');
-                        let mixed = unassigned.filter(s => s.gender !== 'boy' && s.gender !== 'girl');
+                        let boys = targets.filter(s => s.gender === 'boy');
+                        let girls = targets.filter(s => s.gender === 'girl');
+                        let mixed = targets.filter(s => s.gender !== 'boy' && s.gender !== 'girl');
 
                         const shuffleArr = (arr) => {
                             let res = [...arr];
@@ -1359,16 +1384,14 @@
                             return res;
                         };
                         
-                        let tempGroups = groups.map(g => ({...g, members: [...g.members]}));
+                        let tempGroups = baseGroups.map(g => ({...g, members: [...g.members]}));
                         let currentConflicts = 0;
 
-                        // 2. グループに均等に配る関数 (コンフリクト回避優先)
                         const assignToGroups = (students) => {
                             students.forEach(s => {
                                 let minLen = Math.min(...tempGroups.map(g => g.members.length));
                                 let candidates = tempGroups.filter(g => g.members.length === minLen);
                                 
-                                // コンフリクトがない候補を探す
                                 let validCandidates = candidates.filter(g => 
                                     !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))
                                 );
@@ -1377,7 +1400,6 @@
                                 if (validCandidates.length > 0) {
                                     targetGroup = validCandidates[Math.floor(Math.random() * validCandidates.length)];
                                 } else {
-                                    // 【最優先：NG回避】人数バランスを崩してでもNGにならない班を探す
                                     let allValidGroups = tempGroups.filter(g => 
                                         !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id))
                                     );
@@ -1386,7 +1408,6 @@
                                         let bestValidCandidates = allValidGroups.filter(g => g.members.length === minValidLen);
                                         targetGroup = bestValidCandidates[Math.floor(Math.random() * bestValidCandidates.length)];
                                     } else {
-                                        // どうやってもNGになる場合は諦めて入れる
                                         targetGroup = candidates[Math.floor(Math.random() * candidates.length)];
                                         currentConflicts++;
                                     }
@@ -1395,12 +1416,10 @@
                             });
                         };
 
-                        // 順番に配ることで男女を均等化する
                         assignToGroups(shuffleArr(boys));
                         assignToGroups(shuffleArr(girls));
                         assignToGroups(shuffleArr(mixed));
 
-                        // 3. 評価スコア (NG条件抵触には大きなペナルティ)
                         let lengths = tempGroups.map(g => g.members.length);
                         let balancePenalty = Math.max(...lengths) - Math.min(...lengths);
                         let score = (currentConflicts * 1000) + balancePenalty;
@@ -1411,7 +1430,6 @@
                             minConflicts = currentConflicts;
                         }
                         
-                        // 理想的な状態 (NGなし ＆ 人数差1以内) なら早めに探索打ち切り
                         if (currentConflicts === 0 && balancePenalty <= 1) break;
                     }
 
@@ -1427,7 +1445,7 @@
                         targets.reverse();
                     }
 
-                    let newGroups = groups.map(g => ({...g, members: [...g.members]}));
+                    let newGroups = baseGroups.map(g => ({...g, members: [...g.members]}));
                     let gIdx = 0; 
 
                     targets.forEach(s => {
@@ -1492,10 +1510,42 @@
                 showToast("Excelファイルをダウンロードしました", "success");
             };
 
+            // 生徒のカードを描画する共通関数
+            const renderStudent = (s, groupId, inGroup) => {
+                const isLocked = lockedIds.has(s.id);
+                let bgClass = '';
+                if (inGroup) {
+                    bgClass = s.gender==='boy' ? 'bg-blue-100 border-blue-300 text-blue-900' : 
+                              s.gender==='girl' ? 'bg-red-100 border-red-300 text-red-900' : 
+                              'bg-blue-50 border-blue-100';
+                } else {
+                    bgClass = s.gender==='boy' ? 'bg-blue-50 border-blue-200 text-blue-900' : 
+                              s.gender==='girl' ? 'bg-red-50 border-red-200 text-red-900' : 
+                              'bg-white border-transparent';
+                }
+
+                return (
+                    <div key={s.id} draggable={!isLocked} onDragStart={e=>onDrag(e,s.id,groupId)} 
+                        className={`relative pr-8 p-2 rounded shadow mb-2 text-sm border transition-all
+                            ${bgClass} 
+                            ${isLocked ? 'ring-2 ring-gray-500 font-bold opacity-90' : 'cursor-grab hover:opacity-80'}`}
+                    >
+                        <span className="truncate block">{s.name}</span>
+                        <button onClick={(e)=>toggleLock(e, s.id)} 
+                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-gray-200 transition-colors 
+                            ${isLocked ? 'text-gray-800' : 'text-gray-400'}`} 
+                            title={isLocked ? "固定解除" : "班長として固定"}
+                        >
+                            {isLocked ? <Icons.Lock size={14}/> : <Icons.Unlock size={14}/>}
+                        </button>
+                    </div>
+                );
+            };
+
             return (
                 <div className="space-y-4">
                     <ConfirmModal isOpen={!!delGId} onClose={()=>setDelGId(null)} onConfirm={deleteGroup} message="班を削除しますか？メンバーは未所属に戻ります。" />
-                    <ConfirmModal isOpen={resetConfirm} onClose={()=>setResetConfirm(false)} onConfirm={resetAll} message="全ての班を削除し、全員を未所属に戻しますか？" />
+                    <ConfirmModal isOpen={resetConfirm} onClose={()=>setResetConfirm(false)} onConfirm={resetAll} message="全ての班とロック設定を削除し、全員を未所属に戻しますか？" />
                     
                     <Card title="グループ分け" action={
                         <div className="flex gap-2">
@@ -1516,25 +1566,27 @@
                             
                             <div className="flex gap-2 items-center border-t pt-3">
                                 <span className="text-sm font-bold text-gray-700">自動振り分け:</span>
-                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('asc')} disabled={unassigned.length===0}>名簿順</Button>
-                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('desc')} disabled={unassigned.length===0}>逆順</Button>
-                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('random')} disabled={unassigned.length===0}>ランダム（男女均等）</Button>
+                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('asc')} disabled={unassigned.length===0 && lockedIds.size === data.students.length}>名簿順</Button>
+                                <Button variant="ghost" className="text-xs" onClick={()=>autoAssign('desc')} disabled={unassigned.length===0 && lockedIds.size === data.students.length}>逆順</Button>
+                                <Button variant="ghost" className="text-xs font-bold text-blue-600" onClick={()=>autoAssign('random')} disabled={unassigned.length===0 && lockedIds.size === data.students.length}>
+                                    <Icons.Shuffle size={16} /> ランダム（ガチャ）
+                                </Button>
+                            </div>
+                            
+                            <div className="text-xs text-gray-500 mt-1 p-3 bg-white border rounded">
+                                <p className="font-bold text-gray-700 mb-1">💡 ガチャ機能（再シャッフル）のヒント</p>
+                                <ul className="list-disc list-inside space-y-1">
+                                    <li>各生徒の右端の <strong>🔒ボタン</strong> を押すと、その生徒を班に固定できます（班長など）。</li>
+                                    <li>ロックした状態で「ランダム」を押すと、<strong>固定された生徒はそのまま</strong>で、他のメンバーだけをシャッフルできます！</li>
+                                    <li>納得がいく組み合わせが出るまで、何度でもランダムボタンを押してガチャを回せます。</li>
+                                </ul>
                             </div>
                         </div>
 
                         <div id="print-target" className="flex gap-4 overflow-x-auto pb-4 min-h-[400px]">
                             <div className="min-w-[180px] bg-gray-100 p-4 rounded border-2 border-dashed no-print" onDragOver={e=>e.preventDefault()} onDrop={e=>onDrop(e,'un')}>
                                 <div className="font-bold text-gray-500 mb-2">未所属 ({unassigned.length})</div>
-                                {unassigned.map(s=>(
-                                    <div key={s.id} draggable onDragStart={e=>onDrag(e,s.id,'un')} 
-                                        className={`p-2 rounded shadow mb-2 text-sm cursor-grab border hover:opacity-80
-                                            ${s.gender==='boy' ? 'bg-blue-50 border-blue-200 text-blue-900' : 
-                                              s.gender==='girl' ? 'bg-red-50 border-red-200 text-red-900' : 
-                                              'bg-white border-transparent'}`}
-                                    >
-                                        {s.name}
-                                    </div>
-                                ))}
+                                {unassigned.map(s => renderStudent(s, 'un', false))}
                             </div>
                             {groups.map(g=>(
                                 <div key={g.id} className="min-w-[180px] bg-white border p-4 rounded shadow-sm flex flex-col" onDragOver={e=>e.preventDefault()} onDrop={e=>onDrop(e,g.id)}>
@@ -1543,16 +1595,7 @@
                                         setGroups(ng);
                                     }} />
                                     <div className="flex-grow min-h-[50px]">
-                                        {g.members.map(s=>(
-                                            <div key={s.id} draggable onDragStart={e=>onDrag(e,s.id,g.id)} 
-                                                className={`p-2 rounded mb-2 text-sm cursor-grab border hover:opacity-80
-                                                    ${s.gender==='boy' ? 'bg-blue-100 border-blue-300 text-blue-900' : 
-                                                      s.gender==='girl' ? 'bg-red-100 border-red-300 text-red-900' : 
-                                                      'bg-blue-50 border-blue-100'}`}
-                                            >
-                                                {s.name}
-                                            </div>
-                                        ))}
+                                        {g.members.map(s => renderStudent(s, g.id, true))}
                                     </div>
                                     <div className="text-right mt-2 text-xs text-gray-400">{g.members.length}名</div>
                                     <button onClick={()=>setDelGId(g.id)} className="text-red-300 text-right mt-1 no-print hover:text-red-500"><Icons.Trash size={16}/></button>
@@ -1783,7 +1826,7 @@
                         <Icons.AlertOctagon size={24} className="flex-shrink-0 mt-1" />
                         <div className="text-sm">
                             <p className="font-bold text-base mb-1">【重要】写真データはブラウザ内に保存されません！</p>
-                            <p>プライバシー保護および動作の安定化（メモリオーバー防止）のため、<b>写真はページを再読み込みしたり、他の作業をして戻ると消去されます。</b><br/>作業が完了したら、必ずページ下部のボタンから<b>ZIPダウンロード</b>または<b>PDF印刷</b>を行ってください。</p>
+                            <p>プライバシー保護および動作の安定化（メモリオーバー防止） fixed）のため、<b>写真はページを再読み込みしたり、他の作業をして戻ると消去されます。</b><br/>作業が完了したら、必ずページ下部のボタンから<b>ZIPダウンロード</b>または<b>PDF印刷</b>を行ってください。</p>
                         </div>
                     </div>
 
@@ -2035,3 +2078,4 @@
     </script>
 </body>
 </html>
+
