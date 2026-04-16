@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OCR Scan & Motion Capture</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            overscroll-behavior-y: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: pan-y;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes flash {
+            0% { background-color: white; opacity: 1; }
+            100% { background-color: transparent; opacity: 0; }
+        }
+        .animate-flash { animation: flash 0.3s ease-out; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+
+        /* オニオンスキンの視認性特化（青色強調） */
+        .onion-skin-active {
+            filter: sepia(1) hue-rotate(180deg) saturate(3) opacity(0.5);
+            mix-blend-mode: screen;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-white h-screen w-full flex flex-col overflow-hidden font-sans">
+
+    <!-- アプリケーションヘッダー -->
+    <header class="bg-gray-900 px-4 py-3 flex justify-between items-center z-20 shadow-md">
+        <h1 class="text-lg font-bold tracking-wider text-blue-400">SCAN & MOTION</h1>
+        <div class="flex items-center space-x-3">
+            <span id="counter-badge" class="text-sm font-mono bg-gray-800 px-2 py-1 rounded-md text-gray-300">
+                0%
+            </span>
+            <button id="btn-clear-all" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="全削除" disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+            <button id="btn-export-pdf" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                PDF生成
+            </button>
+            <button id="btn-open-video-modal" class="hidden bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                動画出力
+            </button>
+        </div>
+    </header>
+
+    <!-- モード切り替えタブ -->
+    <div class="bg-gray-900 w-full flex justify-center pb-2 border-b border-gray-800 z-20">
+        <div class="flex space-x-1 bg-gray-800 p-1 rounded-lg">
+            <button id="tab-document" class="mode-tab active px-4 py-1.5 rounded-md text-sm font-bold text-white bg-gray-700 shadow transition-all">📄 ドキュメント</button>
+            <button id="tab-motion" class="mode-tab px-4 py-1.5 rounded-md text-sm font-bold text-gray-400 hover:text-white transition-all">🎬 モーション</button>
+        </div>
+    </div>
+
+    <!-- メイン：カメラビュー -->
+    <main class="flex-1 relative bg-black overflow-hidden flex flex-col">
+        <!-- カメラ映像 -->
+        <video id="camera-stream" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline muted></video>
+        
+        <!-- オニオンスキン (透かしレイヤー) -->
+        <img id="onion-skin-view" src="" class="absolute inset-0 w-full h-full object-cover pointer-events-none hidden onion-skin-active" alt="Onion Skin">
+
+        <!-- ガイドライン（中央の枠） -->
+        <div class="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
+            <div class="w-full h-full border-2 border-white/30 border-dashed rounded-lg" id="guideline-box"></div>
+        </div>
+
+        <!-- シャッターフラッシュ用オーバーレイ -->
+        <div id="flash-overlay" class="absolute inset-0 pointer-events-none opacity-0 z-10"></div>
+
+        <!-- コントロール領域 -->
+        <div class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-gray-950 via-gray-900/80 to-transparent z-20 flex flex-col items-center pb-6">
+            
+            <!-- ドキュメント用 フィルター選択 -->
+            <div id="capture-filters" class="flex space-x-4 mb-6 bg-gray-800/80 backdrop-blur rounded-full p-1 border border-gray-700">
+                <button class="filter-btn active bg-gray-700 text-white text-xs px-4 py-1.5 rounded-full transition-colors" data-filter="normal">カラー</button>
+                <button class="filter-btn text-gray-400 text-xs px-4 py-1.5 rounded-full transition-colors" data-filter="grayscale">白黒(軽量)</button>
+            </div>
+
+            <!-- シャッターボタン & カメラ切り替えボタン領域 -->
+            <div class="relative w-full flex justify-center items-center max-w-sm">
+                <!-- シャッターボタン -->
+                <button id="btn-capture" class="w-16 h-16 rounded-full bg-white border-4 border-gray-400 focus:outline-none active:scale-95 transition-transform flex items-center justify-center relative z-10">
+                    <div class="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-lg"></div>
+                </button>
+                
+                <!-- カメラ切り替えボタン -->
+                <button id="btn-switch-camera" class="absolute right-4 w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 下部：サムネイルギャラリー -->
+    <footer class="bg-gray-900 min-h-[160px] border-t border-gray-800 flex-shrink-0 flex items-center px-2 z-20 overflow-hidden">
+        <div id="gallery-container" class="flex overflow-x-auto hide-scrollbar w-full py-4 px-2 items-center h-full">
+            <p id="empty-state" class="text-gray-500 text-sm w-full text-center">撮影された画像はありません</p>
+            <!-- サムネイルとインサートバーがここに追加される -->
+        </div>
+    </footer>
+
+    <!-- 動画プレビュー＆エクスポートモーダル -->
+    <div id="video-export-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col transition-opacity">
+        <div class="flex justify-between items-center p-4 bg-gray-900 border-b border-gray-800 shrink-0">
+            <button id="btn-close-video-modal" class="text-gray-400 hover:text-white p-2">キャンセル</button>
+            <h3 class="text-white font-bold tracking-widest text-sm">MOTION CAPTURE</h3>
+            <button id="btn-start-export-video" class="text-purple-400 font-bold p-2">保存する</button>
+        </div>
+        
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <!-- 設定パネル (スマホ: 上 / PC: 右) -->
+            <div class="w-full md:w-1/3 max-w-none md:max-w-sm bg-gray-900 p-4 border-b md:border-b-0 md:border-l border-gray-800 flex flex-col order-1 md:order-2 shrink-0 overflow-y-auto shadow-xl z-10">
+                <label class="block text-gray-400 text-xs font-bold mb-1 uppercase">再生速度 (FPS): <span id="fps-label" class="text-white ml-2 text-sm">10 fps</span></label>
+                <input type="range" id="fps-slider" min="1" max="24" value="10" class="w-full mb-5 accent-purple-500">
+
+                <label class="block text-gray-400 text-xs font-bold mb-2 uppercase">動画フィルター</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="normal" class="peer hidden" checked>
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">ノーマル</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="monochrome" class="peer hidden">
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">モノクロ</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="sepia" class="peer hidden">
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">セピア</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="cinematic" class="peer hidden">
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">シネマティック</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="high-contrast" class="peer hidden">
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">くっきり</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="video-filter" value="vintage" class="peer hidden">
+                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">ヴィンテージ</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- プレビューキャンバス (スマホ: 下 / PC: 左) -->
+            <div class="flex-1 bg-black p-4 flex items-center justify-center order-2 md:order-1 overflow-hidden relative">
+                <canvas id="video-preview-canvas" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 画像拡大確認モーダル -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col transition-opacity">
+        <div class="flex justify-between items-center p-4 bg-gray-900">
+            <button id="btn-close-modal" class="text-white p-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <span class="text-white text-sm font-mono" id="modal-index-label">1 / 5</span>
+            <div class="flex space-x-2">
+                <button id="btn-modal-rotate" class="text-blue-400 p-2 hover:bg-gray-800 rounded-full transition-colors" title="90度回転">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <button id="btn-modal-delete" class="text-red-500 p-2 hover:bg-gray-800 rounded-full transition-colors" title="この画像を削除">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
+            <div id="modal-tap-left" class="absolute inset-y-0 left-0 w-1/3 z-10 cursor-pointer"></div>
+            <div id="modal-tap-right" class="absolute inset-y-0 right-0 w-1/3 z-10 cursor-pointer"></div>
+            <button id="btn-modal-prev" class="absolute left-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <img id="modal-preview-img" src="" class="max-w-full max-h-full object-contain rounded-md relative z-0" alt="Preview">
+            <button id="btn-modal-next" class="absolute right-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ローディングオーバーレイ -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/80 z-[60] hidden flex-col items-center justify-center backdrop-blur-sm">
+        <svg class="spinner w-12 h-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p id="loading-text" class="text-white text-lg font-bold tracking-wider">処理中...</p>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-full shadow-xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center space-x-2">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-msg" class="text-sm">通知メッセージ</span>
+    </div>
+
+    <!-- 全削除確認モーダル -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-2xl max-w-sm w-[90%] text-center">
+            <h3 class="text-lg font-bold text-white mb-2">すべての画像を削除</h3>
+            <p class="text-gray-400 text-sm mb-6">撮影したすべての画像データが消去されます。<br>この操作は取り消せません。</p>
+            <div class="flex space-x-3">
+                <button id="btn-confirm-cancel" class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-2 rounded-lg font-semibold transition-colors">キャンセル</button>
+                <button id="btn-confirm-ok" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg font-semibold transition-colors">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 2027 Canvas Architecture: Single File SPA (Scan & Motion)
+         */
+
+        // ==========================================
+        // Constants & State
+        // ==========================================
+        const MAX_STORAGE_MB = 50; 
+        const MAX_IMAGE_DIMENSION = 1600; 
+        let capturedImages = []; 
+        let currentFilter = 'normal'; // 撮影時のフィルタ(ドキュメント用)
+        let editingIndex = -1;
+        let wakeLock = null;
+        let currentMode = 'document'; // 'document' | 'motion'
+        let insertIndex = -1; // 挿入位置のインデックス（青いバーの位置）
+        let currentFacingMode = 'environment'; // 'environment' (アウト) | 'user' (イン)
+        let currentStream = null; // カメラストリーム保持用
+
+        // UI Elements
+        const video = document.getElementById('camera-stream');
+        const galleryContainer = document.getElementById('gallery-container');
+        const counterBadge = document.getElementById('counter-badge');
+        const btnCapture = document.getElementById('btn-capture');
+        const btnExportPdf = document.getElementById('btn-export-pdf');
+        const btnOpenVideoModal = document.getElementById('btn-open-video-modal');
+        const onionSkinView = document.getElementById('onion-skin-view');
+        
+        // ==========================================
+        // IndexedDB Wrapper
+        // ==========================================
+        const dbName = 'OCR_Scanner_DB';
+        const storeName = 'images_store';
+        
+        const initDB = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        db.createObjectStore(storeName, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
+        const saveToDB = async (imagesArray) => {
+            try {
+                const db = await initDB();
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                store.clear(); 
+                imagesArray.forEach(img => store.put(img));
+            } catch (e) { console.error("DB Save Error:", e); }
+        };
+
+        const loadFromDB = async () => {
+            try {
+                const db = await initDB();
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                return new Promise((resolve) => request.onsuccess = () => resolve(request.result || []));
+            } catch (e) { return []; }
+        };
+
+        const clearDB = async () => {
+            try {
+                const db = await initDB();
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).clear();
+            } catch (e) {}
+        };
+
+        // ==========================================
+        // Utilities
+        // ==========================================
+        let toastTimeout;
+        const showToast = (msg, type = 'info') => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            document.getElementById('toast-icon').textContent = type === 'error' ? '⚠️' : (type === 'success' ? '✅' : 'ℹ️');
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
+        };
+
+        const toggleLoading = (show, text = '処理中...') => {
+            const el = document.getElementById('loading-overlay');
+            document.getElementById('loading-text').textContent = text;
+            show ? el.classList.remove('hidden') : el.classList.add('hidden');
+            show ? el.classList.add('flex') : el.classList.remove('flex');
+        };
+
+        const requestWakeLock = async () => {
+            if ('wakeLock' in navigator) try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+        };
+        const releaseWakeLock = () => {
+            if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
+        };
+
+        const getStorageUsageMB = () => {
+            let totalBytes = 0;
+            capturedImages.forEach(img => {
+                const base64Length = img.dataUrl.length - (img.dataUrl.indexOf(',') + 1);
+                totalBytes += Math.floor(base64Length * 0.75);
+            });
+            return totalBytes / (1024 * 1024);
+        };
+
+        // ==========================================
+        // Core UI & Logic
+        // ==========================================
+        const updateModeUI = () => {
+            const tabDoc = document.getElementById('tab-document');
+            const tabMotion = document.getElementById('tab-motion');
+            const captureFilters = document.getElementById('capture-filters');
+            
+            if (currentMode === 'document') {
+                tabDoc.className = "mode-tab active px-4 py-1.5 rounded-md text-sm font-bold text-white bg-gray-700 shadow transition-all";
+                tabMotion.className = "mode-tab px-4 py-1.5 rounded-md text-sm font-bold text-gray-400 hover:text-white transition-all";
+                btnExportPdf.classList.remove('hidden');
+                btnOpenVideoModal.classList.add('hidden');
+                captureFilters.classList.remove('hidden');
+                document.getElementById('guideline-box').classList.remove('hidden');
+            } else {
+                tabMotion.className = "mode-tab active px-4 py-1.5 rounded-md text-sm font-bold text-white bg-purple-600 shadow transition-all";
+                tabDoc.className = "mode-tab px-4 py-1.5 rounded-md text-sm font-bold text-gray-400 hover:text-white transition-all";
+                btnExportPdf.classList.add('hidden');
+                btnOpenVideoModal.classList.remove('hidden');
+                captureFilters.classList.add('hidden');
+                document.getElementById('guideline-box').classList.add('hidden');
+            }
+        };
+
+        const refreshOnionSkin = () => {
+            let targetIndex = -1;
+            if (currentMode === 'motion') {
+                if (insertIndex !== -1) {
+                    targetIndex = insertIndex - 1; // 挿入バーの左隣の画像を透かす
+                } else if (capturedImages.length > 0) {
+                    targetIndex = capturedImages.length - 1; // デフォルトは最後尾の画像
+                }
+            }
+
+            if (targetIndex >= 0 && targetIndex < capturedImages.length) {
+                onionSkinView.src = capturedImages[targetIndex].dataUrl;
+                onionSkinView.classList.remove('hidden');
+            } else {
+                onionSkinView.classList.add('hidden');
+            }
+        };
+
+        const createInsertPoint = (index) => {
+            const pt = document.createElement('div');
+            pt.className = 'flex-shrink-0 cursor-pointer w-8 h-32 flex items-center justify-center group relative mx-1';
+            
+            const bar = document.createElement('div');
+            const isActive = insertIndex === index;
+            bar.className = `w-1.5 h-full rounded-full transition-all duration-300 ${isActive ? 'bg-blue-500 shadow-[0_0_12px_4px_rgba(59,130,246,0.8)]' : 'bg-transparent group-hover:bg-blue-500/30'}`;
+            
+            pt.appendChild(bar);
+            pt.onclick = () => {
+                insertIndex = isActive ? -1 : index;
+                if (insertIndex !== -1 && currentMode !== 'motion') {
+                    // バーを立てたら、オニオンスキンを見るために自動でモーションモードへ
+                    currentMode = 'motion';
+                    updateModeUI();
+                }
+                updateUI();
+            };
+            return pt;
+        };
+
+        const updateUI = () => {
+            const currentMB = getStorageUsageMB();
+            const percent = Math.min(100, Math.round((currentMB / MAX_STORAGE_MB) * 100));
+            counterBadge.textContent = `${percent}%`;
+            counterBadge.className = `text-sm font-mono bg-gray-800 px-2 py-1 rounded-md ${percent >= 90 ? 'text-red-400' : 'text-gray-300'}`;
+
+            btnExportPdf.disabled = capturedImages.length === 0;
+            btnOpenVideoModal.disabled = capturedImages.length === 0;
+            const btnClearAll = document.getElementById('btn-clear-all');
+            btnClearAll.disabled = capturedImages.length === 0;
+            btnClearAll.className = `p-1 transition-colors ${capturedImages.length === 0 ? 'text-gray-700' : 'text-gray-400 hover:text-red-500'}`;
+
+            if (insertIndex > capturedImages.length) insertIndex = -1;
+            refreshOnionSkin();
+
+            galleryContainer.innerHTML = '';
+            if (capturedImages.length === 0) {
+                galleryContainer.innerHTML = '<p id="empty-state" class="text-gray-500 text-sm w-full text-center">撮影された画像はありません</p>';
+            } else {
+                // 先頭のインサートポイント
+                galleryContainer.appendChild(createInsertPoint(0));
+                
+                capturedImages.forEach((imgObj, index) => {
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.className = 'flex-shrink-0 flex flex-col items-center w-24 bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-md relative';
+                    
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'relative w-full h-28 cursor-pointer hover:opacity-80 transition-opacity';
+                    
+                    const img = document.createElement('img');
+                    img.src = imgObj.dataUrl;
+                    img.className = 'w-full h-full object-cover';
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-1 left-1 bg-black/70 text-white text-[10px] font-mono px-1 rounded';
+                    badge.textContent = index + 1;
+
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(badge);
+                    imgContainer.addEventListener('click', () => openEditModal(index));
+                    
+                    const controls = document.createElement('div');
+                    controls.className = 'w-full flex justify-between items-center bg-gray-900 p-1 border-t border-gray-700';
+                    
+                    const btnLeft = document.createElement('button');
+                    btnLeft.innerHTML = '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>';
+                    btnLeft.className = 'p-1 hover:bg-gray-700 rounded active:scale-90 disabled:opacity-30';
+                    btnLeft.disabled = index === 0;
+                    btnLeft.addEventListener('click', () => moveImage(index, -1));
+
+                    const btnTrash = document.createElement('button');
+                    btnTrash.innerHTML = '<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                    btnTrash.className = 'p-1 hover:bg-gray-700 rounded active:scale-90';
+                    btnTrash.addEventListener('click', () => deleteImage(index));
+
+                    const btnRight = document.createElement('button');
+                    btnRight.innerHTML = '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+                    btnRight.className = 'p-1 hover:bg-gray-700 rounded active:scale-90 disabled:opacity-30';
+                    btnRight.disabled = index === capturedImages.length - 1;
+                    btnRight.addEventListener('click', () => moveImage(index, 1));
+
+                    controls.appendChild(btnLeft);
+                    controls.appendChild(btnTrash);
+                    controls.appendChild(btnRight);
+
+                    cardWrapper.appendChild(imgContainer);
+                    cardWrapper.appendChild(controls);
+                    
+                    galleryContainer.appendChild(cardWrapper);
+                    
+                    // 後続のインサートポイント
+                    galleryContainer.appendChild(createInsertPoint(index + 1));
+                });
+            }
+        };
+
+        const initCamera = async () => {
+            if (currentStream) {
+                // 既存のストリーム（カメラ）を安全に停止
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: currentFacingMode, width: { ideal: 1920 } },
+                    audio: false
+                });
+                currentStream = stream;
+                video.srcObject = stream;
+            } catch (err) { 
+                console.error("Camera Init Error:", err);
+                showToast('カメラを利用できません。権限等を確認してください。', 'error'); 
+            }
+        };
+
+        const switchCamera = () => {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            initCamera();
+        };
+
+        // 撮影
+        const captureFrame = () => {
+            if (getStorageUsageMB() >= MAX_STORAGE_MB) {
+                showToast(`容量の上限（約${MAX_STORAGE_MB}MB）です。`, 'error');
+                return;
+            }
+            
+            const flash = document.getElementById('flash-overlay');
+            flash.classList.remove('animate-flash');
+            void flash.offsetWidth; 
+            flash.classList.add('animate-flash');
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let w = video.videoWidth;
+            let h = video.videoHeight;
+            if (w > MAX_IMAGE_DIMENSION || h > MAX_IMAGE_DIMENSION) {
+                const ratio = Math.min(MAX_IMAGE_DIMENSION / w, MAX_IMAGE_DIMENSION / h);
+                w = Math.floor(w * ratio);
+                h = Math.floor(h * ratio);
+            }
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+
+            if (currentMode === 'document' && currentFilter === 'grayscale') {
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+                    const val = avg > 120 ? Math.min(255, avg * 1.2) : Math.max(0, avg * 0.8);
+                    data[i] = data[i+1] = data[i+2] = val;
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+
+            const newImg = {
+                id: Date.now() + Math.random(),
+                dataUrl: canvas.toDataURL('image/jpeg', 0.8)
+            };
+
+            // バーが立っている場合はそこに割り込んで挿入
+            if (insertIndex !== -1) {
+                capturedImages.splice(insertIndex, 0, newImg);
+                insertIndex++; // 挿入後、バーを１つ右へ移動させる（連続撮影のため）
+            } else {
+                capturedImages.push(newImg);
+            }
+
+            saveToDB(capturedImages);
+            updateUI();
+            
+            setTimeout(() => {
+                if (insertIndex === -1) {
+                    // 通常撮影時は右端へスクロール
+                    galleryContainer.scrollLeft = galleryContainer.scrollWidth;
+                } else {
+                    // 挿入撮影時は、挿入された画像が見えるように調整
+                    const insertedEl = galleryContainer.children[(insertIndex - 1) * 2 + 1];
+                    if (insertedEl) insertedEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }, 50);
+        };
+
+        const moveImage = (index, dir) => {
+            const newIndex = index + dir;
+            if (newIndex >= 0 && newIndex < capturedImages.length) {
+                const temp = capturedImages[index];
+                capturedImages[index] = capturedImages[newIndex];
+                capturedImages[newIndex] = temp;
+                insertIndex = -1; // 混乱を防ぐためバーをリセット
+                updateUI(); saveToDB(capturedImages);
+            }
+        };
+
+        const deleteImage = (index) => {
+            capturedImages.splice(index, 1);
+            insertIndex = -1; // 混乱を防ぐためバーをリセット
+            updateUI(); saveToDB(capturedImages);
+        };
+
+        // ==========================================
+        // Modal Previews
+        // ==========================================
+        const openEditModal = (index) => {
+            editingIndex = index;
+            refreshModalUI();
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+        };
+        const closeEditModal = () => {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+            editingIndex = -1;
+        };
+        const refreshModalUI = () => {
+            if (editingIndex < 0 || editingIndex >= capturedImages.length) { closeEditModal(); return; }
+            document.getElementById('modal-preview-img').src = capturedImages[editingIndex].dataUrl;
+            document.getElementById('modal-index-label').textContent = `${editingIndex + 1} / ${capturedImages.length}`;
+            ['btn-modal-prev', 'modal-tap-left'].forEach(id => document.getElementById(id).style.display = editingIndex === 0 ? 'none' : 'block');
+            ['btn-modal-next', 'modal-tap-right'].forEach(id => document.getElementById(id).style.display = editingIndex === capturedImages.length - 1 ? 'none' : 'block');
+        };
+        const navigateModal = (dir) => {
+            const newIndex = editingIndex + dir;
+            if (newIndex >= 0 && newIndex < capturedImages.length) { editingIndex = newIndex; refreshModalUI(); }
+        };
+        const deleteFromModal = () => { deleteImage(editingIndex); refreshModalUI(); };
+
+        const rotateFromModal = async () => {
+            if (editingIndex < 0 || editingIndex >= capturedImages.length) return;
+            
+            toggleLoading(true, '回転中...');
+            
+            try {
+                const imgObj = capturedImages[editingIndex];
+                const img = new Image();
+                img.src = imgObj.dataUrl;
+                
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 90度回転のため、幅と高さを入れ替える
+                canvas.width = img.height;
+                canvas.height = img.width;
+                
+                // 中心を基準に回転
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(90 * Math.PI / 180);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                
+                // 新しいデータURLを生成して上書き (JPEG 80% で再圧縮)
+                imgObj.dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // データを更新
+                saveToDB(capturedImages);
+                updateUI();
+                refreshModalUI();
+                
+            } catch (err) {
+                console.error("Rotation error:", err);
+                showToast('画像の回転に失敗しました。', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        };
+
+        // ==========================================
+        // Filters & Motion Video Engine (2027)
+        // ==========================================
+        const applyCanvasFilter = (ctx, w, h, filterType) => {
+            if (filterType === 'normal') return;
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                if (filterType === 'monochrome') {
+                    const v = r*0.299 + g*0.587 + b*0.114;
+                    data[i] = data[i+1] = data[i+2] = v;
+                } else if (filterType === 'sepia') {
+                    data[i]   = Math.min(255, r*0.393 + g*0.769 + b*0.189);
+                    data[i+1] = Math.min(255, r*0.349 + g*0.686 + b*0.168);
+                    data[i+2] = Math.min(255, r*0.272 + g*0.534 + b*0.131);
+                } else if (filterType === 'cinematic') {
+                    data[i]   = Math.max(0, r * 0.9);
+                    data[i+1] = g;
+                    data[i+2] = Math.min(255, b * 1.2);
+                } else if (filterType === 'high-contrast') {
+                    const f = (259 * (128 + 255)) / (255 * (259 - 128));
+                    data[i]   = Math.min(255, Math.max(0, f * (r - 128) + 128));
+                    data[i+1] = Math.min(255, Math.max(0, f * (g - 128) + 128));
+                    data[i+2] = Math.min(255, Math.max(0, f * (b - 128) + 128));
+                } else if (filterType === 'vintage') {
+                    const tr = r*0.393 + g*0.769 + b*0.189;
+                    const tg = r*0.349 + g*0.686 + b*0.168;
+                    const tb = r*0.272 + g*0.534 + b*0.131;
+                    const noise = (Math.random() - 0.5) * 40;
+                    data[i]   = Math.min(255, Math.max(0, tr + noise));
+                    data[i+1] = Math.min(255, Math.max(0, tg + noise));
+                    data[i+2] = Math.min(255, Math.max(0, tb + noise));
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        };
+
+        // 動画プレビューエンジン
+        let previewAnimId;
+        let previewCtx;
+        let currentFrameIndex = 0;
+        let lastFrameTime = 0;
+
+        const startVideoPreview = () => {
+            if (capturedImages.length === 0) return;
+            const modal = document.getElementById('video-export-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            
+            const canvas = document.getElementById('video-preview-canvas');
+            
+            // 最初の画像のアスペクト比に合わせてキャンバス解像度を動的設定
+            const firstImg = new Image();
+            firstImg.onload = () => {
+                const MAX_PREVIEW_DIM = 1080;
+                let w = firstImg.width;
+                let h = firstImg.height;
+                if (w > MAX_PREVIEW_DIM || h > MAX_PREVIEW_DIM) {
+                    const ratio = Math.min(MAX_PREVIEW_DIM / w, MAX_PREVIEW_DIM / h);
+                    w = Math.floor(w * ratio);
+                    h = Math.floor(h * ratio);
+                }
+                canvas.width = w;
+                canvas.height = h;
+                previewCtx = canvas.getContext('2d');
+                
+                currentFrameIndex = 0;
+                lastFrameTime = performance.now();
+                cancelAnimationFrame(previewAnimId);
+                previewLoop(performance.now());
+            };
+            firstImg.src = capturedImages[0].dataUrl;
+        };
+
+        const stopVideoPreview = () => {
+            cancelAnimationFrame(previewAnimId);
+            const modal = document.getElementById('video-export-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        };
+
+        const previewLoop = (now) => {
+            if (capturedImages.length === 0) return;
+            const fps = parseInt(document.getElementById('fps-slider').value, 10);
+            const frameDuration = 1000 / fps;
+            
+            if (now - lastFrameTime >= frameDuration) {
+                drawPreviewFrame(currentFrameIndex);
+                currentFrameIndex = (currentFrameIndex + 1) % capturedImages.length;
+                lastFrameTime = now;
+            }
+            previewAnimId = requestAnimationFrame(previewLoop);
+        };
+
+        const drawPreviewFrame = (index) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.getElementById('video-preview-canvas');
+                if (!previewCtx) return;
+                previewCtx.fillStyle = 'black';
+                previewCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const imgRatio = img.width / img.height;
+                const canvasRatio = canvas.width / canvas.height;
+                let drawW = canvas.width, drawH = canvas.height;
+                if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio;
+                else drawW = canvas.height * imgRatio;
+                
+                const dx = (canvas.width - drawW) / 2;
+                const dy = (canvas.height - drawH) / 2;
+                previewCtx.drawImage(img, dx, dy, drawW, drawH);
+                
+                const selectedFilter = document.querySelector('input[name="video-filter"]:checked').value;
+                applyCanvasFilter(previewCtx, canvas.width, canvas.height, selectedFilter);
+            };
+            img.src = capturedImages[index].dataUrl;
+        };
+
+        // 動画エクスポート処理 (MediaRecorder)
+        const generateVideo = async () => {
+            if (capturedImages.length === 0) return;
+            await requestWakeLock();
+            stopVideoPreview(); // プレビューを止めて処理リソースを確保
+            toggleLoading(true, '動画をエンコード中...');
+
+            try {
+                const fps = parseInt(document.getElementById('fps-slider').value, 10);
+                const selectedFilter = document.querySelector('input[name="video-filter"]:checked').value;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 1枚目から動画解像度を決定（安全のため最大長辺1080px）
+                const firstImg = new Image();
+                firstImg.src = capturedImages[0].dataUrl;
+                await new Promise(r => firstImg.onload = r);
+                const MAX_VID_DIM = 1080;
+                let w = firstImg.width, h = firstImg.height;
+                if (w > MAX_VID_DIM || h > MAX_VID_DIM) {
+                    const ratio = Math.min(MAX_VID_DIM/w, MAX_VID_DIM/h);
+                    w = Math.floor(w * ratio); h = Math.floor(h * ratio);
+                }
+                // H.264エンコーダ等でエラーを避けるため、偶数ピクセルにする
+                canvas.width = w % 2 === 0 ? w : w - 1;
+                canvas.height = h % 2 === 0 ? h : h - 1;
+
+                const stream = canvas.captureStream(fps);
+                let mimeType = 'video/webm';
+                if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
+                
+                const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5000000 });
+                const chunks = [];
+                recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                const recPromise = new Promise(resolve => recorder.onstop = resolve);
+                recorder.start();
+
+                // 描画ループ
+                const frameDuration = 1000 / fps;
+                for (let i = 0; i < capturedImages.length; i++) {
+                    const img = new Image();
+                    img.src = capturedImages[i].dataUrl;
+                    await new Promise(r => img.onload = r);
+                    
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    const imgRatio = img.width / img.height;
+                    const canvasRatio = canvas.width / canvas.height;
+                    let drawW = canvas.width, drawH = canvas.height;
+                    if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio;
+                    else drawW = canvas.height * imgRatio;
+                    ctx.drawImage(img, (canvas.width - drawW)/2, (canvas.height - drawH)/2, drawW, drawH);
+                    
+                    applyCanvasFilter(ctx, canvas.width, canvas.height, selectedFilter);
+                    await new Promise(r => setTimeout(r, frameDuration)); // streamに流し込むためのwait
+                }
+                
+                recorder.stop();
+                await recPromise;
+                stream.getTracks().forEach(t => t.stop());
+                
+                const blob = new Blob(chunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Motion_${new Date().toISOString().slice(0,10)}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('動画を保存しました！', 'success');
+
+            } catch (err) {
+                console.error(err);
+                showToast('動画生成に失敗しました。', 'error');
+            } finally {
+                toggleLoading(false);
+                releaseWakeLock();
+            }
+        };
+
+        // ==========================================
+        // PDF Generation
+        // ==========================================
+        const generatePDF = async () => {
+            if (capturedImages.length === 0) return;
+            await requestWakeLock();
+            toggleLoading(true, 'PDFを生成中...');
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfW = pdf.internal.pageSize.getWidth(), pdfH = pdf.internal.pageSize.getHeight();
+                const margin = 10;
+                for (let i = 0; i < capturedImages.length; i++) {
+                    if (i > 0) pdf.addPage();
+                    const imgData = capturedImages[i].dataUrl;
+                    const props = pdf.getImageProperties(imgData);
+                    const imgRatio = props.width / props.height;
+                    const pdfRatio = (pdfW - margin*2) / (pdfH - margin*2);
+                    let drawW = pdfW - margin*2, drawH = drawW / imgRatio;
+                    if (imgRatio <= pdfRatio) { drawH = pdfH - margin*2; drawW = drawH * imgRatio; }
+                    pdf.addImage(imgData, 'JPEG', (pdfW - drawW)/2, (pdfH - drawH)/2, drawW, drawH, undefined, 'FAST');
+                }
+                pdf.save(`OCR_Scan_${new Date().toISOString().slice(0,10)}.pdf`);
+                showToast('PDFを保存しました！', 'success');
+            } catch (err) { showToast('PDF生成に失敗しました。', 'error');
+            } finally { toggleLoading(false); releaseWakeLock(); }
+        };
+
+        // ==========================================
+        // Event Listeners
+        // ==========================================
+        document.getElementById('tab-document').onclick = () => { currentMode = 'document'; updateModeUI(); updateUI(); };
+        document.getElementById('tab-motion').onclick = () => { currentMode = 'motion'; updateModeUI(); updateUI(); };
+
+        document.getElementById('btn-switch-camera').onclick = switchCamera;
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active', 'bg-gray-700', 'text-white'); b.classList.add('text-gray-400'); });
+                e.target.classList.add('active', 'bg-gray-700', 'text-white'); e.target.classList.remove('text-gray-400');
+                currentFilter = e.target.dataset.filter;
+            };
+        });
+
+        btnCapture.onclick = captureFrame;
+        btnExportPdf.onclick = generatePDF;
+        btnOpenVideoModal.onclick = startVideoPreview;
+        document.getElementById('btn-close-video-modal').onclick = stopVideoPreview;
+        document.getElementById('btn-start-export-video').onclick = generateVideo;
+
+        document.getElementById('fps-slider').oninput = (e) => document.getElementById('fps-label').textContent = `${e.target.value} fps`;
+        
+        document.getElementById('btn-clear-all').onclick = () => {
+            document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('confirm-modal').classList.add('flex');
+        };
+        document.getElementById('btn-confirm-cancel').onclick = () => {
+            document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex');
+        };
+        document.getElementById('btn-confirm-ok').onclick = async () => {
+            capturedImages = []; insertIndex = -1; await clearDB(); updateUI();
+            document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex');
+            showToast('すべての画像を削除しました。', 'info');
+        };
+
+        document.getElementById('btn-close-modal').onclick = closeEditModal;
+        document.getElementById('btn-modal-rotate').onclick = rotateFromModal;
+        document.getElementById('btn-modal-delete').onclick = deleteFromModal;
+        document.getElementById('modal-tap-left').onclick = () => navigateModal(-1);
+        document.getElementById('modal-tap-right').onclick = () => navigateModal(1);
+        document.getElementById('btn-modal-prev').onclick = () => navigateModal(-1);
+        document.getElementById('btn-modal-next').onclick = () => navigateModal(1);
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            initCamera();
+            const savedData = await loadFromDB();
+            if (savedData && savedData.length > 0) {
+                capturedImages = savedData; updateUI();
+                showToast(`前回の未保存データ(${savedData.length}枚)を復元しました。`, 'success');
+            }
+        });
+    </script>
+</body>
+</html>
