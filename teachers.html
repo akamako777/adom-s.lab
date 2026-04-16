@@ -18,7 +18,6 @@
 
     <link rel="manifest" href="./manifest_teachers.json">
 
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
         
@@ -144,6 +143,70 @@
             RotateCw: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
             Save: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
             FileUp: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12 9 8 13"/><line x1="12" y1="9" x2="12" y2="17"/></svg>
+        };
+
+        // --- IndexedDB ユーティリティ (写真保存用) ---
+        const DB_NAME = 'ClassToolPhotoDB';
+        const STORE_NAME = 'photos';
+
+        const initDB = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
+        const saveToDB = async (key, data) => {
+            try {
+                const db = await initDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.put(data, key);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                console.error("IndexedDB Save Error:", e);
+            }
+        };
+
+        const loadFromDB = async (key) => {
+            try {
+                const db = await initDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                console.error("IndexedDB Load Error:", e);
+                return null;
+            }
+        };
+
+        const clearDB = async () => {
+            try {
+                const db = await initDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.clear();
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                console.error("IndexedDB Clear Error:", e);
+            }
         };
 
         // --- 印刷用ユーティリティ (第3引数でオプションを拡張) ---
@@ -539,7 +602,7 @@
             return (
                 <div className="space-y-6">
                     <ConfirmModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={remove} message="本当に削除しますか？" />
-                    <ConfirmModal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={() => {resetAll(); setShowResetConfirm(false);}} message="注意：すべてのデータ（名簿、設定、班など）が消去されます。\n本当によろしいですか？" />
+                    <ConfirmModal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={() => {resetAll(); setShowResetConfirm(false);}} message="注意：すべてのデータ（名簿、設定、班など）や【一時保存中の写真データ】も完全に消去されます。\n本当によろしいですか？" />
                     <PasteModal isOpen={isImportModalOpen} onClose={() => setImportModalOpen(false)} onImport={bulkImport} 
                         title="Excelから一括登録" placeholder={`氏名\n氏名\t性別\n...`} />
                     <PasswordModal isOpen={showPassModal} onClose={()=>setShowPassModal(false)} onConfirm={handleLockAction} isLocking={!isLocked} />
@@ -1607,7 +1670,7 @@
             );
         };
 
-        // --- 5. 写真ツール (新機能) ---
+        // --- 5. 写真ツール (IndexedDB 強化版) ---
         const PhotoTool = ({ data, showToast }) => {
             const [photos, setPhotos] = useState({}); // { studentId: dataUrl }
             const [stockPhotos, setStockPhotos] = useState([]); // 写真ストック(最大100枚)
@@ -1617,6 +1680,9 @@
             const [printCols, setPrintCols] = useState(8);
             const [printOrientation, setPrintOrientation] = useState('portrait'); // 縦横設定
             
+            const [isLoaded, setIsLoaded] = useState(false); // IndexedDBの読み込み完了フラグ
+            const [showClearConfirm, setShowClearConfirm] = useState(false); // 全削除確認
+
             // カメラ用ステート
             const [cameraTarget, setCameraTarget] = useState(null);
             const videoRef = useRef(null);
@@ -1627,12 +1693,35 @@
             const isNoStudents = data.students.length === 0;
             const isExportDisabled = isNoStudents || Object.keys(photos).length === 0;
 
-            // メモリ解放
+            // IndexedDB からデータを読み込む (初回マウント時)
             useEffect(() => {
+                const loadData = async () => {
+                    const savedPhotos = await loadFromDB('assignedPhotos');
+                    const savedStock = await loadFromDB('stockPhotos');
+                    if (savedPhotos) setPhotos(savedPhotos);
+                    if (savedStock) setStockPhotos(savedStock);
+                    setIsLoaded(true);
+                };
+                loadData();
+
+                // カメラのクリーンアップ
                 return () => {
                     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 };
             }, []);
+
+            // 変更があったら IndexedDB に自動保存
+            useEffect(() => {
+                if (isLoaded) {
+                    saveToDB('assignedPhotos', photos);
+                }
+            }, [photos, isLoaded]);
+
+            useEffect(() => {
+                if (isLoaded) {
+                    saveToDB('stockPhotos', stockPhotos);
+                }
+            }, [stockPhotos, isLoaded]);
 
             // --- 画像アップロード処理 (ストックエリアへ) ---
             const processFiles = async (files) => {
@@ -1648,7 +1737,7 @@
                 if (imageFiles.length > availableSlots) {
                     showToast(`上限を超えるため、${availableSlots}枚のみ読み込みます`, "warning");
                 } else {
-                    showToast(`${filesToProcess.length}枚の画像をストックに読み込んでいます...`, "info");
+                    showToast(`${filesToProcess.length}枚の画像を軽量化して保存しています...`, "info");
                 }
                 
                 let newStocks = [];
@@ -1662,7 +1751,7 @@
                 }
                 
                 setStockPhotos(prev => [...prev, ...newStocks]);
-                showToast(`${newStocks.length}枚をストックに追加しました`, "success");
+                showToast(`${newStocks.length}枚を保存しました`, "success");
             };
 
             const onDropFiles = (e) => {
@@ -1726,9 +1815,9 @@
                 // ゴミ箱に捨てた写真はストックに戻す（上限未満の場合のみ）
                 if (stockPhotos.length < MAX_STOCK) {
                     setStockPhotos(prev => [...prev, oldPhoto]);
-                    showToast("写真をストックに戻しました", "info");
+                    showToast("写真を外しました", "info");
                 } else {
-                    showToast("取り外した写真はストック上限のため破棄されました", "warning");
+                    showToast("ストック上限のため破棄されました", "warning");
                 }
             };
 
@@ -1740,6 +1829,14 @@
                 } catch(e) {
                     showToast("回転に失敗しました", "error");
                 }
+            };
+
+            const clearAllPhotos = async () => {
+                setPhotos({});
+                setStockPhotos([]);
+                await clearDB();
+                setShowClearConfirm(false);
+                showToast("すべての写真データを削除しました", "success");
             };
 
             // --- カメラ機能 ---
@@ -1807,6 +1904,10 @@
                 }
             };
 
+            if (!isLoaded) {
+                return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">写真データを読み込んでいます...</div>;
+            }
+
             return (
                 <div className="space-y-6">
                     {/* カメラモーダル */}
@@ -1821,12 +1922,14 @@
                             </div>
                         </div>
                     )}
+                    
+                    <ConfirmModal isOpen={showClearConfirm} onClose={() => setShowClearConfirm(false)} onConfirm={clearAllPhotos} message="保存されている写真データ（ストック・枠内すべて）を消去します。\n本当によろしいですか？" />
 
-                    <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-lg shadow-sm flex gap-3 no-print items-start">
-                        <Icons.AlertOctagon size={24} className="flex-shrink-0 mt-1" />
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg shadow-sm flex gap-3 no-print items-start">
+                        <Icons.Info size={24} className="flex-shrink-0 mt-1" />
                         <div className="text-sm">
-                            <p className="font-bold text-base mb-1">【重要】写真データはブラウザ内に保存されません！</p>
-                            <p>プライバシー保護および動作の安定化（メモリオーバー防止） fixed）のため、<b>写真はページを再読み込みしたり、他の作業をして戻ると消去されます。</b><br/>作業が完了したら、必ずページ下部のボタンから<b>ZIPダウンロード</b>または<b>PDF印刷</b>を行ってください。</p>
+                            <p className="font-bold text-base mb-1">写真データはブラウザに自動保存されます</p>
+                            <p>追加した写真は端末内部に保存されるため、タブの切り替えや日をまたいでの作業が可能です。<br/><span className="text-red-600 font-bold">※注意: ブラウザの履歴削除を行ったり、端末の容量が不足した場合はデータが消える可能性があります。作業完了後は必ず ZIPダウンロード を行ってください。</span></p>
                         </div>
                     </div>
 
@@ -1881,7 +1984,13 @@
                         </Card>
                     </div>
 
-                    <Card title="2. 児童の写真割り当て" subtitle={isNoStudents ? "※名簿タブで生徒を登録してください" : "プレビュー用グリッド"}>
+                    <Card title="2. 児童の写真割り当て" subtitle={isNoStudents ? "※名簿タブで生徒を登録してください" : "プレビュー用グリッド"} action={
+                        (!isNoStudents && (Object.keys(photos).length > 0 || stockPhotos.length > 0)) && (
+                            <Button variant="danger" className="text-xs py-1" onClick={() => setShowClearConfirm(true)}>
+                                <Icons.Trash /> 写真リセット
+                            </Button>
+                        )
+                    }>
                         {/* 写真グリッド (印刷プレビュー対象) */}
                         <div id="print-target" className="p-4 bg-white print:p-0">
                             <div className={`photo-grid grid gap-4 grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 print:grid-cols-${printCols}`}>
@@ -2002,7 +2111,7 @@
                 localStorage.setItem('classToolAppState', JSON.stringify(appState));
             }, [appState]);
 
-            const resetAllData = () => {
+            const resetAllData = async () => {
                 const initialData = { settings:{school:'', teacher:'', gradeClass:''}, students:[], seatConfig:{rows:5, cols:6}, dutyConfig:{jobs:[], duration:15, type:'week'}, clubConfig:{clubs:[]} };
                 const initialAppState = { isLocked: false, lockPass: null };
                 
@@ -2010,6 +2119,9 @@
                 setAppState(initialAppState);
                 localStorage.removeItem('classToolDataV2');
                 localStorage.removeItem('classToolAppState');
+                
+                // IndexedDBの写真データも完全消去
+                await clearDB();
                 
                 showToast("全てのデータを初期化しました", "success");
             };
@@ -2057,7 +2169,7 @@
                     </main>
                     
                     <footer className="no-print fixed bottom-0 w-full bg-white border-t py-2 text-center text-xs text-gray-400">
-                        自動保存中（※写真データは保存されません）
+                        自動保存中（設定・名簿・写真すべて）
                     </footer>
                 </div>
             );
@@ -2078,4 +2190,3 @@
     </script>
 </body>
 </html>
-
