@@ -697,37 +697,64 @@
             );
         };
 
-        // --- 2. 席替え (強化版) ---
+        // --- 2. 席替え (使用不可ロック ＆ 男女交互強制 対応版) ---
         const SeatingTool = ({ data, setData, showToast }) => {
             const [layout, setLayout] = useState([]);
             const [running, setRunning] = useState(false);
             
-            useEffect(() => {
-                const cols = data.seatConfig.cols || 1;
-                const rows = data.seatConfig.rows || 1;
-                const total = cols * rows;
-                const students = data.students || [];
-                
-                const newLayout = Array(total).fill(null);
-                students.forEach((s, i) => { if (i < total) newLayout[i] = s; });
-                setLayout(newLayout);
-            }, [data.seatConfig.rows, data.seatConfig.cols, data.students.length]); 
-
+            const disabledSeats = data.seatConfig.disabledSeats || [];
+            const [isAlternateGender, setIsAlternateGender] = useState(false);
+            
             const safeCols = Math.max(1, data.seatConfig.cols || 1);
             const safeRows = Math.max(1, data.seatConfig.rows || 1);
-            const seatCount = safeRows * safeCols;
+            const total = safeRows * safeCols;
             const studentCount = data.students.length;
-            const isShortage = seatCount < studentCount;
+            const validSeatCount = total - disabledSeats.length;
+            const isShortage = validSeatCount < studentCount;
+
+            useEffect(() => {
+                const newLayout = Array(total).fill(null);
+                const students = data.students || [];
+                let p = 0;
+                for(let i=0; i<total; i++) {
+                    if (disabledSeats.includes(i)) {
+                        newLayout[i] = 'disabled';
+                    } else if (p < students.length) {
+                        newLayout[i] = students[p++];
+                    }
+                }
+                setLayout(newLayout);
+            }, [data.seatConfig.rows, data.seatConfig.cols, data.students.length, disabledSeats]); 
+
+            const toggleDisableSeat = (idx) => {
+                let newDisabled = [...disabledSeats];
+                if (newDisabled.includes(idx)) {
+                    newDisabled = newDisabled.filter(i => i !== idx);
+                } else {
+                    newDisabled.push(idx);
+                }
+                setData({...data, seatConfig:{...data.seatConfig, disabledSeats: newDisabled}});
+            };
 
             const shuffle = () => {
+                if (isShortage) {
+                    return showToast(`有効な席数(${validSeatCount})が生徒数(${studentCount})より少ないため実行できません`, "error");
+                }
+                
                 setRunning(true);
                 let count = 0;
                 const timer = setInterval(() => {
                     setLayout(prev => {
                         const temp = [...prev];
-                        for (let i = temp.length - 1; i > 0; i--) {
+                        // シャッフル中も「使用不可の席」は除外してスワップする
+                        const validIndices = [];
+                        temp.forEach((s, i) => { if (!disabledSeats.includes(i)) validIndices.push(i); });
+                        
+                        for (let i = validIndices.length - 1; i > 0; i--) {
                             const j = Math.floor(Math.random() * (i + 1));
-                            [temp[i], temp[j]] = [temp[j], temp[i]];
+                            const idxI = validIndices[i];
+                            const idxJ = validIndices[j];
+                            [temp[idxI], temp[idxJ]] = [temp[idxJ], temp[idxI]];
                         }
                         return temp;
                     });
@@ -739,7 +766,6 @@
             };
 
             const finalize = () => {
-                const total = safeRows * safeCols;
                 if (total <= 0) {
                     setRunning(false);
                     return;
@@ -750,14 +776,17 @@
                 
                 for(let k=0; k < TRIALS; k++) {
                     const current = Array(total).fill(null);
+                    // 1. 使用不可席をマーク
+                    disabledSeats.forEach(idx => current[idx] = 'disabled');
+
                     const pool = [...data.students];
-                    
                     const fixed = pool.filter(s => s.fixedSeat !== null);
                     const others = pool.filter(s => s.fixedSeat === null);
                     
+                    // 2. 固定席を配置
                     fixed.forEach(s => {
                         const seatIdx = s.fixedSeat - 1;
-                        if(seatIdx >= 0 && seatIdx < total && !current[seatIdx]) {
+                        if(seatIdx >= 0 && seatIdx < total && current[seatIdx] !== 'disabled' && !current[seatIdx]) {
                             current[seatIdx] = s;
                         } else {
                             others.push(s);
@@ -770,29 +799,87 @@
                         [others[i], others[j]] = [others[j], others[i]];
                     }
                     
-                    // 空いている席に詰める
-                    let p = 0;
-                    for(let i=0; i<total; i++) if(!current[i] && p < others.length) current[i] = others[p++];
+                    // 3. 残りの生徒を配置
+                    if (isAlternateGender) {
+                        // 【男女交互強制モード（市松模様アルゴリズム）】
+                        const slots0 = [];
+                        const slots1 = [];
+                        for(let i=0; i<total; i++) {
+                            if (current[i] === null) {
+                                const r = Math.floor(i / safeCols);
+                                const c = i % safeCols;
+                                if ((r + c) % 2 === 0) slots0.push(i);
+                                else slots1.push(i);
+                            }
+                        }
+
+                        // パターンAとBをランダムに試行
+                        const isZeroBoy = Math.random() < 0.5;
+                        let boySlots = isZeroBoy ? slots0 : slots1;
+                        let girlSlots = isZeroBoy ? slots1 : slots0;
+
+                        const boys = others.filter(s => s.gender === 'boy');
+                        const girls = others.filter(s => s.gender === 'girl');
+                        const mixed = others.filter(s => s.gender !== 'boy' && s.gender !== 'girl');
+
+                        const remainingStudents = [];
+
+                        boys.forEach(b => {
+                            if (boySlots.length > 0) current[boySlots.pop()] = b;
+                            else remainingStudents.push(b);
+                        });
+
+                        girls.forEach(g => {
+                            if (girlSlots.length > 0) current[girlSlots.pop()] = g;
+                            else remainingStudents.push(g);
+                        });
+
+                        // 枠に収まらなかった生徒（男女比の偏り）とmixedを余った席に詰める
+                        const remainingSlots = [...boySlots, ...girlSlots];
+                        for (let i = remainingSlots.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [remainingSlots[i], remainingSlots[j]] = [remainingSlots[j], remainingSlots[i]];
+                        }
+
+                        [...mixed, ...remainingStudents].forEach(s => {
+                            if (remainingSlots.length > 0) current[remainingSlots.pop()] = s;
+                        });
+                    } else {
+                        // 【通常モード】
+                        let p = 0;
+                        for(let i=0; i<total; i++) {
+                            if(current[i] === null && p < others.length) current[i] = others[p++];
+                        }
+                    }
                     
+                    // 4. スコア（NG条件）の計算
                     let score = 0;
                     for(let i=0; i<total; i++) {
                         const s1 = current[i];
-                        if(!s1) continue;
+                        if(!s1 || s1 === 'disabled') continue;
 
                         // --- 右隣チェック ---
                         if((i+1) % safeCols !== 0) {
                             const s2 = current[i+1];
-                            if(s2) {
+                            if(s2 && s2 !== 'disabled') {
                                 if(s1.avoid.includes(s2.id) || s2.avoid.includes(s1.id)) score += 100;
-                                if (s1.gender !== 'mixed' && s2.gender !== 'mixed' && s1.gender === s2.gender) score += 10; 
+                                if (!isAlternateGender) {
+                                    if (s1.gender !== 'mixed' && s2.gender !== 'mixed' && s1.gender === s2.gender) score += 10; 
+                                } else {
+                                    // 交互強制ONの場合は、はみ出しによる同性隣接をより重く減点
+                                    if (s1.gender !== 'mixed' && s2.gender !== 'mixed' && s1.gender === s2.gender) score += 50;
+                                }
                             }
                         }
 
                         // --- 真下（前後）チェック ---
                         if (i + safeCols < total) {
                             const sDown = current[i + safeCols];
-                            if (sDown) {
+                            if (sDown && sDown !== 'disabled') {
                                 if (s1.avoid.includes(sDown.id) || sDown.avoid.includes(s1.id)) score += 100;
+                                if (isAlternateGender) {
+                                    if (s1.gender !== 'mixed' && sDown.gender !== 'mixed' && s1.gender === sDown.gender) score += 50;
+                                }
                             }
                         }
                     }
@@ -806,7 +893,7 @@
                 if (minScore === 0) {
                     showToast("最適な配置が見つかりました！", "success");
                 } else if (minScore < 100) {
-                    showToast("配置完了（性別などの条件を一部妥協しました）", "info");
+                    showToast("配置完了（条件を一部妥協しました）", "info");
                 } else {
                     showToast("配置完了（※NG条件を完全に満たせませんでした）", "error");
                 }
@@ -816,7 +903,7 @@
             const onDragOver = (e) => e.preventDefault();
             const onDrop = (e, to) => {
                 const from = e.dataTransfer.getData("idx");
-                if(from === "") return;
+                if(from === "" || disabledSeats.includes(to) || disabledSeats.includes(parseInt(from))) return;
                 const next = [...layout];
                 [next[from], next[to]] = [next[to], next[from]];
                 setLayout(next);
@@ -841,7 +928,8 @@
                     for (let c = 0; c < safeCols; c++) {
                         const idx = r * safeCols + c;
                         const student = layout[idx];
-                        rowData.push(student ? student.name : "");
+                        const isDisabled = disabledSeats.includes(idx) || student === 'disabled';
+                        rowData.push(isDisabled ? "×" : (student && student !== 'disabled' ? student.name : ""));
                     }
                     rows.push(rowData);
                 }
@@ -879,13 +967,19 @@
                         <div className="flex flex-wrap gap-4 mb-4 items-end no-print">
                             <label className="text-sm font-bold text-gray-700">横 <input type="number" className="w-16 border rounded p-1" value={data.seatConfig.cols} onChange={e=>handleConfigChange('cols', e.target.value)} /></label>
                             <label className="text-sm font-bold text-gray-700">縦 <input type="number" className="w-16 border rounded p-1" value={data.seatConfig.rows} onChange={e=>handleConfigChange('rows', e.target.value)} /></label>
-                            <Button onClick={shuffle} disabled={running}><Icons.Shuffle /> スタート</Button>
                             
-                            <div className={`ml-2 font-bold text-sm flex items-center px-3 py-1 rounded-full border ${isShortage ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                                <span className="mr-3 text-gray-600">生徒数: {studentCount}名</span>
+                            <Button onClick={shuffle} disabled={running || isShortage}><Icons.Shuffle /> スタート</Button>
+                            
+                            <label className="ml-2 flex items-center gap-1 text-sm font-bold text-gray-700 cursor-pointer bg-white px-3 py-2 rounded-lg border shadow-sm hover:bg-gray-50 transition-colors">
+                                <input type="checkbox" checked={isAlternateGender} onChange={e=>setIsAlternateGender(e.target.checked)} className="w-4 h-4 text-blue-600" />
+                                🚻 男女交互を強制
+                            </label>
+                            
+                            <div className={`ml-auto font-bold text-sm flex items-center px-3 py-1 rounded-full border ${isShortage ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                                <span className="mr-3 text-gray-600">有効席: {validSeatCount} / 生徒: {studentCount}名</span>
                                 {isShortage ? (
                                     <span className="text-red-500 flex items-center gap-1 animate-pulse">
-                                        <Icons.Alert size={16}/> 席数が足りていません
+                                        <Icons.Alert size={16}/> 席数が足りません
                                     </span>
                                 ) : (
                                     <span className="text-green-600 flex items-center gap-1">
@@ -895,18 +989,37 @@
                             </div>
                         </div>
                         
+                        <div className="text-xs text-gray-500 mb-2 no-print bg-white p-2 border rounded inline-block">
+                            💡 各席の右上の <Icons.X size={12} className="inline text-gray-400"/> ボタンを押すと、その席を「使用不可（通路など）」にできます。
+                        </div>
+
                         <div id="print-target" className="p-4 border rounded bg-gray-50 print:border-none print:p-0">
                             <div className="text-center font-bold text-xl mb-4 text-gray-700 print:text-black">教卓</div>
                             <div className="grid gap-2 mx-auto" style={{ gridTemplateColumns: `repeat(${safeCols}, 1fr)` }}>
-                                {layout.map((s, i) => (
-                                    <div key={i} draggable={!running} onDragStart={e=>onDragStart(e, i)} onDragOver={onDragOver} onDrop={e=>onDrop(e, i)}
-                                        className={`aspect-[5/4] border-2 rounded flex items-center justify-center p-1 text-center font-bold text-lg bg-white
-                                            ${s?.gender==='boy'?'border-blue-300':s?.gender==='girl'?'border-red-300':'border-gray-300'}
-                                            ${running ? 'bg-yellow-100' : ''}`}
-                                    >
-                                        {s ? s.name : ''}
-                                    </div>
-                                ))}
+                                {layout.map((s, i) => {
+                                    const isDisabled = disabledSeats.includes(i) || s === 'disabled';
+                                    const isBoy = s && s !== 'disabled' && s.gender === 'boy';
+                                    const isGirl = s && s !== 'disabled' && s.gender === 'girl';
+                                    
+                                    return (
+                                        <div key={i} draggable={!running && !isDisabled} onDragStart={e=>onDragStart(e, i)} onDragOver={onDragOver} onDrop={e=>onDrop(e, i)}
+                                            className={`relative aspect-[5/4] border-2 rounded flex items-center justify-center p-1 text-center font-bold text-lg bg-white transition-colors
+                                                ${isDisabled ? 'bg-gray-200 border-gray-300 opacity-60' :
+                                                  isBoy ? 'border-blue-300' : isGirl ? 'border-red-300' : 'border-gray-300'}
+                                                ${running && !isDisabled ? 'bg-yellow-100' : ''}`}
+                                        >
+                                            {!running && (
+                                                <button onClick={(e) => { e.stopPropagation(); toggleDisableSeat(i); }} 
+                                                    className={`absolute -top-2 -right-2 bg-white rounded-full shadow border no-print transition-transform hover:scale-110
+                                                    ${isDisabled ? 'text-green-500 border-green-200' : 'text-gray-400 hover:text-red-500'}`}
+                                                    title={isDisabled ? "席を有効にする" : "この席を使用不可にする"}>
+                                                    {isDisabled ? <Icons.Check size={16} /> : <Icons.X size={16} />}
+                                                </button>
+                                            )}
+                                            {isDisabled ? <Icons.Trash size={24} className="text-gray-400 opacity-20" /> : (s ? s.name : '')}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </Card>
@@ -2190,3 +2303,4 @@
     </script>
 </body>
 </html>
+
