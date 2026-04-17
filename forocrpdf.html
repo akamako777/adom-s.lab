@@ -31,6 +31,13 @@
             filter: sepia(1) hue-rotate(180deg) saturate(3) opacity(0.5);
             mix-blend-mode: screen;
         }
+
+        /* A4ガイド枠のスタイル（CSSではなくJSで動的にサイズ制御するため基本設定のみ） */
+        #a4-guideline {
+            border: 2px dashed rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4); /* 枠の外側を暗くするハック */
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-white h-screen w-full flex flex-col overflow-hidden font-sans">
@@ -63,16 +70,16 @@
     </div>
 
     <!-- メイン：カメラビュー -->
-    <main class="flex-1 relative bg-black overflow-hidden flex flex-col">
+    <main class="flex-1 relative bg-black overflow-hidden flex flex-col" id="camera-container">
         <!-- カメラ映像 -->
         <video id="camera-stream" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline muted></video>
         
         <!-- オニオンスキン (透かしレイヤー) -->
         <img id="onion-skin-view" src="" class="absolute inset-0 w-full h-full object-cover pointer-events-none hidden onion-skin-active" alt="Onion Skin">
 
-        <!-- ガイドライン（中央の枠） -->
-        <div class="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
-            <div class="w-full h-full border-2 border-white/30 border-dashed rounded-lg" id="guideline-box"></div>
+        <!-- A4ガイドライン（枠の外側を暗くする処理含む） -->
+        <div class="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden" id="guideline-container">
+            <div id="a4-guideline" class="relative rounded-sm"></div>
         </div>
 
         <!-- シャッターフラッシュ用オーバーレイ -->
@@ -119,41 +126,23 @@
         </div>
         
         <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-            <!-- 設定パネル (スマホ: 上 / PC: 右) -->
+            <!-- 設定パネル -->
             <div class="w-full md:w-1/3 max-w-none md:max-w-sm bg-gray-900 p-4 border-b md:border-b-0 md:border-l border-gray-800 flex flex-col order-1 md:order-2 shrink-0 overflow-y-auto shadow-xl z-10">
                 <label class="block text-gray-400 text-xs font-bold mb-1 uppercase">再生速度 (FPS): <span id="fps-label" class="text-white ml-2 text-sm">10 fps</span></label>
                 <input type="range" id="fps-slider" min="1" max="24" value="10" class="w-full mb-5 accent-purple-500">
 
                 <label class="block text-gray-400 text-xs font-bold mb-2 uppercase">動画フィルター</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="normal" class="peer hidden" checked>
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">ノーマル</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="monochrome" class="peer hidden">
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">モノクロ</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="sepia" class="peer hidden">
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">セピア</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="cinematic" class="peer hidden">
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">シネマティック</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="high-contrast" class="peer hidden">
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">くっきり</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="video-filter" value="vintage" class="peer hidden">
-                        <div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-500 transition-colors">ヴィンテージ</div>
-                    </label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="normal" class="peer hidden" checked><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">ノーマル</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="monochrome" class="peer hidden"><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">モノクロ</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="sepia" class="peer hidden"><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">セピア</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="cinematic" class="peer hidden"><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">シネマ</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="high-contrast" class="peer hidden"><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">くっきり</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="video-filter" value="vintage" class="peer hidden"><div class="text-center text-xs text-gray-400 border border-gray-700 py-2 rounded peer-checked:bg-purple-600 peer-checked:text-white transition-colors">ヴィンテージ</div></label>
                 </div>
             </div>
 
-            <!-- プレビューキャンバス (スマホ: 下 / PC: 左) -->
+            <!-- プレビューキャンバス -->
             <div class="flex-1 bg-black p-4 flex items-center justify-center order-2 md:order-1 overflow-hidden relative">
                 <canvas id="video-preview-canvas" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"></canvas>
             </div>
@@ -163,29 +152,19 @@
     <!-- 画像拡大確認モーダル -->
     <div id="edit-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col transition-opacity">
         <div class="flex justify-between items-center p-4 bg-gray-900">
-            <button id="btn-close-modal" class="text-white p-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+            <button id="btn-close-modal" class="text-white p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             <span class="text-white text-sm font-mono" id="modal-index-label">1 / 5</span>
             <div class="flex space-x-2">
-                <button id="btn-modal-rotate" class="text-blue-400 p-2 hover:bg-gray-800 rounded-full transition-colors" title="90度回転">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                </button>
-                <button id="btn-modal-delete" class="text-red-500 p-2 hover:bg-gray-800 rounded-full transition-colors" title="この画像を削除">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
+                <button id="btn-modal-rotate" class="text-blue-400 p-2 hover:bg-gray-800 rounded-full transition-colors" title="90度回転"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
+                <button id="btn-modal-delete" class="text-red-500 p-2 hover:bg-gray-800 rounded-full transition-colors" title="削除"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
             </div>
         </div>
         <div class="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
             <div id="modal-tap-left" class="absolute inset-y-0 left-0 w-1/3 z-10 cursor-pointer"></div>
             <div id="modal-tap-right" class="absolute inset-y-0 right-0 w-1/3 z-10 cursor-pointer"></div>
-            <button id="btn-modal-prev" class="absolute left-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
+            <button id="btn-modal-prev" class="absolute left-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
             <img id="modal-preview-img" src="" class="max-w-full max-h-full object-contain rounded-md relative z-0" alt="Preview">
-            <button id="btn-modal-next" class="absolute right-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>
+            <button id="btn-modal-next" class="absolute right-4 bg-black/50 p-3 rounded-full text-white hover:bg-black/80 transition-colors z-20 pointer-events-none sm:pointer-events-auto"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
         </div>
     </div>
 
@@ -219,21 +198,26 @@
     <script>
         /**
          * 2027 Canvas Architecture: Single File SPA (Scan & Motion)
+         * - Smart A4 Cropping
+         * - High-Resolution Limit
          */
 
         // ==========================================
         // Constants & State
         // ==========================================
         const MAX_STORAGE_MB = 50; 
-        const MAX_IMAGE_DIMENSION = 1600; 
+        const MAX_IMAGE_DIMENSION_CROP = 2400; // クロップ時の超高解像度上限（文字くっきり）
+        const MAX_IMAGE_DIMENSION_FULL = 1600; // モーション用（全体）
+        const A4_RATIO = 1.414; // A4用紙の縦横比 (√2)
+
         let capturedImages = []; 
-        let currentFilter = 'normal'; // 撮影時のフィルタ(ドキュメント用)
+        let currentFilter = 'normal';
         let editingIndex = -1;
         let wakeLock = null;
         let currentMode = 'document'; // 'document' | 'motion'
-        let insertIndex = -1; // 挿入位置のインデックス（青いバーの位置）
-        let currentFacingMode = 'environment'; // 'environment' (アウト) | 'user' (イン)
-        let currentStream = null; // カメラストリーム保持用
+        let insertIndex = -1;
+        let currentFacingMode = 'environment';
+        let currentStream = null;
 
         // UI Elements
         const video = document.getElementById('camera-stream');
@@ -243,6 +227,8 @@
         const btnExportPdf = document.getElementById('btn-export-pdf');
         const btnOpenVideoModal = document.getElementById('btn-open-video-modal');
         const onionSkinView = document.getElementById('onion-skin-view');
+        const guidelineBox = document.getElementById('a4-guideline');
+        const guidelineContainer = document.getElementById('guideline-container');
         
         // ==========================================
         // IndexedDB Wrapper
@@ -329,6 +315,47 @@
         };
 
         // ==========================================
+        // Camera & Guideline Geometry
+        // ==========================================
+        const updateGuideline = () => {
+            if (currentMode !== 'document') return;
+            
+            // カメラコンテナのサイズを取得
+            const cw = document.getElementById('camera-container').offsetWidth;
+            const ch = document.getElementById('camera-container').offsetHeight;
+            
+            // マージン(余白)を設ける
+            const margin = 20; 
+            const availW = cw - margin * 2;
+            const availH = ch - margin * 2;
+            
+            let guideW, guideH;
+            
+            if (cw > ch) {
+                // 横長画面（PC等）： A4横の比率 (1.414 : 1)
+                guideW = availW;
+                guideH = guideW / A4_RATIO;
+                if (guideH > availH) {
+                    guideH = availH;
+                    guideW = guideH * A4_RATIO;
+                }
+            } else {
+                // 縦長画面（スマホ等）： A4縦の比率 (1 : 1.414)
+                guideH = availH;
+                guideW = guideH / A4_RATIO;
+                if (guideW > availW) {
+                    guideW = availW;
+                    guideH = guideW * A4_RATIO;
+                }
+            }
+
+            guidelineBox.style.width = `${guideW}px`;
+            guidelineBox.style.height = `${guideH}px`;
+        };
+
+        window.addEventListener('resize', updateGuideline);
+
+        // ==========================================
         // Core UI & Logic
         // ==========================================
         const updateModeUI = () => {
@@ -342,14 +369,15 @@
                 btnExportPdf.classList.remove('hidden');
                 btnOpenVideoModal.classList.add('hidden');
                 captureFilters.classList.remove('hidden');
-                document.getElementById('guideline-box').classList.remove('hidden');
+                guidelineContainer.classList.remove('hidden');
+                updateGuideline();
             } else {
                 tabMotion.className = "mode-tab active px-4 py-1.5 rounded-md text-sm font-bold text-white bg-purple-600 shadow transition-all";
                 tabDoc.className = "mode-tab px-4 py-1.5 rounded-md text-sm font-bold text-gray-400 hover:text-white transition-all";
                 btnExportPdf.classList.add('hidden');
                 btnOpenVideoModal.classList.remove('hidden');
                 captureFilters.classList.add('hidden');
-                document.getElementById('guideline-box').classList.add('hidden');
+                guidelineContainer.classList.add('hidden');
             }
         };
 
@@ -357,9 +385,9 @@
             let targetIndex = -1;
             if (currentMode === 'motion') {
                 if (insertIndex !== -1) {
-                    targetIndex = insertIndex - 1; // 挿入バーの左隣の画像を透かす
+                    targetIndex = insertIndex - 1;
                 } else if (capturedImages.length > 0) {
-                    targetIndex = capturedImages.length - 1; // デフォルトは最後尾の画像
+                    targetIndex = capturedImages.length - 1;
                 }
             }
 
@@ -374,18 +402,14 @@
         const createInsertPoint = (index) => {
             const pt = document.createElement('div');
             pt.className = 'flex-shrink-0 cursor-pointer w-8 h-32 flex items-center justify-center group relative mx-1';
-            
             const bar = document.createElement('div');
             const isActive = insertIndex === index;
             bar.className = `w-1.5 h-full rounded-full transition-all duration-300 ${isActive ? 'bg-blue-500 shadow-[0_0_12px_4px_rgba(59,130,246,0.8)]' : 'bg-transparent group-hover:bg-blue-500/30'}`;
-            
             pt.appendChild(bar);
             pt.onclick = () => {
                 insertIndex = isActive ? -1 : index;
                 if (insertIndex !== -1 && currentMode !== 'motion') {
-                    // バーを立てたら、オニオンスキンを見るために自動でモーションモードへ
-                    currentMode = 'motion';
-                    updateModeUI();
+                    currentMode = 'motion'; updateModeUI();
                 }
                 updateUI();
             };
@@ -411,7 +435,6 @@
             if (capturedImages.length === 0) {
                 galleryContainer.innerHTML = '<p id="empty-state" class="text-gray-500 text-sm w-full text-center">撮影された画像はありません</p>';
             } else {
-                // 先頭のインサートポイント
                 galleryContainer.appendChild(createInsertPoint(0));
                 
                 capturedImages.forEach((imgObj, index) => {
@@ -419,14 +442,14 @@
                     cardWrapper.className = 'flex-shrink-0 flex flex-col items-center w-24 bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-md relative';
                     
                     const imgContainer = document.createElement('div');
-                    imgContainer.className = 'relative w-full h-28 cursor-pointer hover:opacity-80 transition-opacity';
+                    imgContainer.className = 'relative w-full h-28 cursor-pointer hover:opacity-80 transition-opacity bg-black flex items-center justify-center';
                     
                     const img = document.createElement('img');
                     img.src = imgObj.dataUrl;
-                    img.className = 'w-full h-full object-cover';
+                    img.className = 'max-w-full max-h-full object-contain'; // クロップで比率が変わるためcontain
                     
                     const badge = document.createElement('div');
-                    badge.className = 'absolute top-1 left-1 bg-black/70 text-white text-[10px] font-mono px-1 rounded';
+                    badge.className = 'absolute top-1 left-1 bg-black/70 text-white text-[10px] font-mono px-1 rounded z-10';
                     badge.textContent = index + 1;
 
                     imgContainer.appendChild(img);
@@ -461,29 +484,23 @@
                     cardWrapper.appendChild(controls);
                     
                     galleryContainer.appendChild(cardWrapper);
-                    
-                    // 後続のインサートポイント
                     galleryContainer.appendChild(createInsertPoint(index + 1));
                 });
             }
         };
 
         const initCamera = async () => {
-            if (currentStream) {
-                // 既存のストリーム（カメラ）を安全に停止
-                currentStream.getTracks().forEach(track => track.stop());
-            }
+            if (currentStream) currentStream.getTracks().forEach(track => track.stop());
             try {
+                // なるべく高解像度（4K要求）で映像を取得する
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: currentFacingMode, width: { ideal: 1920 } },
+                    video: { facingMode: currentFacingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
                     audio: false
                 });
                 currentStream = stream;
                 video.srcObject = stream;
-            } catch (err) { 
-                console.error("Camera Init Error:", err);
-                showToast('カメラを利用できません。権限等を確認してください。', 'error'); 
-            }
+                video.onloadedmetadata = () => updateGuideline();
+            } catch (err) { showToast('カメラを利用できません。', 'error'); }
         };
 
         const switchCamera = () => {
@@ -491,7 +508,9 @@
             initCamera();
         };
 
-        // 撮影
+        // ==========================================
+        // Capture & Smart Crop
+        // ==========================================
         const captureFrame = () => {
             if (getStorageUsageMB() >= MAX_STORAGE_MB) {
                 showToast(`容量の上限（約${MAX_STORAGE_MB}MB）です。`, 'error');
@@ -505,22 +524,78 @@
 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            let w = video.videoWidth;
-            let h = video.videoHeight;
-            if (w > MAX_IMAGE_DIMENSION || h > MAX_IMAGE_DIMENSION) {
-                const ratio = Math.min(MAX_IMAGE_DIMENSION / w, MAX_IMAGE_DIMENSION / h);
-                w = Math.floor(w * ratio);
-                h = Math.floor(h * ratio);
-            }
-            canvas.width = w; canvas.height = h;
-            ctx.drawImage(video, 0, 0, w, h);
+            
+            const vidW = video.videoWidth;
+            const vidH = video.videoHeight;
+            
+            let drawW, drawH, sourceX = 0, sourceY = 0, sourceW = vidW, sourceH = vidH;
 
+            // スマート・クロップ処理 (ドキュメントモードのみ)
+            if (currentMode === 'document') {
+                // UI上のカメラコンテナとビデオの実際のスケール比を計算
+                const containerW = document.getElementById('camera-container').offsetWidth;
+                const containerH = document.getElementById('camera-container').offsetHeight;
+                
+                // object-coverの挙動をシミュレートして、ビデオがどう表示されているか計算
+                const containerRatio = containerW / containerH;
+                const videoRatio = vidW / vidH;
+                let displayedW, displayedH, offsetX = 0, offsetY = 0;
+
+                if (containerRatio > videoRatio) {
+                    displayedW = containerW;
+                    displayedH = containerW / videoRatio;
+                    offsetY = (displayedH - containerH) / 2;
+                } else {
+                    displayedH = containerH;
+                    displayedW = containerH * videoRatio;
+                    offsetX = (displayedW - containerW) / 2;
+                }
+                
+                // UI上のガイドラインの座標とサイズ
+                const guideRect = guidelineBox.getBoundingClientRect();
+                const containerRect = document.getElementById('camera-container').getBoundingClientRect();
+                
+                // ガイドラインの、UIコンテナ内での相対座標
+                const guideLeft = guideRect.left - containerRect.left;
+                const guideTop = guideRect.top - containerRect.top;
+                
+                // スケール比を掛けて、実際のビデオピクセル上のクロップ座標を算出
+                const scale = vidW / displayedW;
+                sourceX = (guideLeft + offsetX) * scale;
+                sourceY = (guideTop + offsetY) * scale;
+                sourceW = guideRect.width * scale;
+                sourceH = guideRect.height * scale;
+                
+                // 超高解像度制限
+                let ratio = 1;
+                if (sourceW > MAX_IMAGE_DIMENSION_CROP || sourceH > MAX_IMAGE_DIMENSION_CROP) {
+                    ratio = Math.min(MAX_IMAGE_DIMENSION_CROP / sourceW, MAX_IMAGE_DIMENSION_CROP / sourceH);
+                }
+                drawW = Math.floor(sourceW * ratio);
+                drawH = Math.floor(sourceH * ratio);
+                
+            } else {
+                // モーションモード：クロップせず全体を保存
+                let ratio = 1;
+                if (vidW > MAX_IMAGE_DIMENSION_FULL || vidH > MAX_IMAGE_DIMENSION_FULL) {
+                    ratio = Math.min(MAX_IMAGE_DIMENSION_FULL / vidW, MAX_IMAGE_DIMENSION_FULL / vidH);
+                }
+                drawW = Math.floor(vidW * ratio);
+                drawH = Math.floor(vidH * ratio);
+            }
+
+            canvas.width = drawW; 
+            canvas.height = drawH;
+            ctx.drawImage(video, sourceX, sourceY, sourceW, sourceH, 0, 0, drawW, drawH);
+
+            // フィルター (白黒)
             if (currentMode === 'document' && currentFilter === 'grayscale') {
-                const imgData = ctx.getImageData(0, 0, w, h);
+                const imgData = ctx.getImageData(0, 0, drawW, drawH);
                 const data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) {
                     const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-                    const val = avg > 120 ? Math.min(255, avg * 1.2) : Math.max(0, avg * 0.8);
+                    // より強い2値化で文字をくっきりさせる
+                    const val = avg > 110 ? Math.min(255, avg * 1.3) : Math.max(0, avg * 0.7);
                     data[i] = data[i+1] = data[i+2] = val;
                 }
                 ctx.putImageData(imgData, 0, 0);
@@ -528,13 +603,12 @@
 
             const newImg = {
                 id: Date.now() + Math.random(),
-                dataUrl: canvas.toDataURL('image/jpeg', 0.8)
+                dataUrl: canvas.toDataURL('image/jpeg', 0.8) // JPEG圧縮でファイルサイズ抑制
             };
 
-            // バーが立っている場合はそこに割り込んで挿入
             if (insertIndex !== -1) {
                 capturedImages.splice(insertIndex, 0, newImg);
-                insertIndex++; // 挿入後、バーを１つ右へ移動させる（連続撮影のため）
+                insertIndex++; 
             } else {
                 capturedImages.push(newImg);
             }
@@ -544,10 +618,8 @@
             
             setTimeout(() => {
                 if (insertIndex === -1) {
-                    // 通常撮影時は右端へスクロール
                     galleryContainer.scrollLeft = galleryContainer.scrollWidth;
                 } else {
-                    // 挿入撮影時は、挿入された画像が見えるように調整
                     const insertedEl = galleryContainer.children[(insertIndex - 1) * 2 + 1];
                     if (insertedEl) insertedEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }
@@ -560,29 +632,26 @@
                 const temp = capturedImages[index];
                 capturedImages[index] = capturedImages[newIndex];
                 capturedImages[newIndex] = temp;
-                insertIndex = -1; // 混乱を防ぐためバーをリセット
+                insertIndex = -1;
                 updateUI(); saveToDB(capturedImages);
             }
         };
 
         const deleteImage = (index) => {
             capturedImages.splice(index, 1);
-            insertIndex = -1; // 混乱を防ぐためバーをリセット
+            insertIndex = -1; 
             updateUI(); saveToDB(capturedImages);
         };
 
         // ==========================================
-        // Modal Previews
+        // Modal Previews & Rotation
         // ==========================================
         const openEditModal = (index) => {
-            editingIndex = index;
-            refreshModalUI();
-            document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-modal').classList.add('flex');
+            editingIndex = index; refreshModalUI();
+            document.getElementById('edit-modal').classList.remove('hidden'); document.getElementById('edit-modal').classList.add('flex');
         };
         const closeEditModal = () => {
-            document.getElementById('edit-modal').classList.add('hidden');
-            document.getElementById('edit-modal').classList.remove('flex');
+            document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('edit-modal').classList.remove('flex');
             editingIndex = -1;
         };
         const refreshModalUI = () => {
@@ -597,52 +666,26 @@
             if (newIndex >= 0 && newIndex < capturedImages.length) { editingIndex = newIndex; refreshModalUI(); }
         };
         const deleteFromModal = () => { deleteImage(editingIndex); refreshModalUI(); };
-
+        
         const rotateFromModal = async () => {
             if (editingIndex < 0 || editingIndex >= capturedImages.length) return;
-            
             toggleLoading(true, '回転中...');
-            
             try {
                 const imgObj = capturedImages[editingIndex];
                 const img = new Image();
                 img.src = imgObj.dataUrl;
-                
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                });
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // 90度回転のため、幅と高さを入れ替える
-                canvas.width = img.height;
-                canvas.height = img.width;
-                
-                // 中心を基準に回転
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-                ctx.rotate(90 * Math.PI / 180);
+                await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = img.height; canvas.height = img.width;
+                ctx.translate(canvas.width / 2, canvas.height / 2); ctx.rotate(90 * Math.PI / 180);
                 ctx.drawImage(img, -img.width / 2, -img.height / 2);
-                
-                // 新しいデータURLを生成して上書き (JPEG 80% で再圧縮)
                 imgObj.dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // データを更新
-                saveToDB(capturedImages);
-                updateUI();
-                refreshModalUI();
-                
-            } catch (err) {
-                console.error("Rotation error:", err);
-                showToast('画像の回転に失敗しました。', 'error');
-            } finally {
-                toggleLoading(false);
-            }
+                saveToDB(capturedImages); updateUI(); refreshModalUI();
+            } catch (err) { showToast('画像の回転に失敗しました。', 'error'); } finally { toggleLoading(false); }
         };
 
         // ==========================================
-        // Filters & Motion Video Engine (2027)
+        // Filters & Motion Video Engine
         // ==========================================
         const applyCanvasFilter = (ctx, w, h, filterType) => {
             if (filterType === 'normal') return;
@@ -667,175 +710,95 @@
                     data[i+1] = Math.min(255, Math.max(0, f * (g - 128) + 128));
                     data[i+2] = Math.min(255, Math.max(0, f * (b - 128) + 128));
                 } else if (filterType === 'vintage') {
-                    const tr = r*0.393 + g*0.769 + b*0.189;
-                    const tg = r*0.349 + g*0.686 + b*0.168;
-                    const tb = r*0.272 + g*0.534 + b*0.131;
-                    const noise = (Math.random() - 0.5) * 40;
-                    data[i]   = Math.min(255, Math.max(0, tr + noise));
-                    data[i+1] = Math.min(255, Math.max(0, tg + noise));
+                    // 彩度を落とした上で少し暖色に寄せる（古いカラー写真風）
+                    const v = r*0.299 + g*0.587 + b*0.114;
+                    const tr = r * 0.4 + v * 0.6 + 20;
+                    const tg = g * 0.4 + v * 0.6 + 10;
+                    const tb = b * 0.4 + v * 0.6 - 10;
+                    const noise = (Math.random() - 0.5) * 35;
+                    data[i]   = Math.min(255, Math.max(0, tr + noise)); 
+                    data[i+1] = Math.min(255, Math.max(0, tg + noise)); 
                     data[i+2] = Math.min(255, Math.max(0, tb + noise));
                 }
             }
             ctx.putImageData(imgData, 0, 0);
         };
 
-        // 動画プレビューエンジン
-        let previewAnimId;
-        let previewCtx;
-        let currentFrameIndex = 0;
-        let lastFrameTime = 0;
+        let previewAnimId; let previewCtx; let currentFrameIndex = 0; let lastFrameTime = 0;
 
         const startVideoPreview = () => {
             if (capturedImages.length === 0) return;
-            const modal = document.getElementById('video-export-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            
+            const modal = document.getElementById('video-export-modal'); modal.classList.remove('hidden'); modal.classList.add('flex');
             const canvas = document.getElementById('video-preview-canvas');
-            
-            // 最初の画像のアスペクト比に合わせてキャンバス解像度を動的設定
             const firstImg = new Image();
             firstImg.onload = () => {
                 const MAX_PREVIEW_DIM = 1080;
-                let w = firstImg.width;
-                let h = firstImg.height;
+                let w = firstImg.width; let h = firstImg.height;
                 if (w > MAX_PREVIEW_DIM || h > MAX_PREVIEW_DIM) {
-                    const ratio = Math.min(MAX_PREVIEW_DIM / w, MAX_PREVIEW_DIM / h);
-                    w = Math.floor(w * ratio);
-                    h = Math.floor(h * ratio);
+                    const ratio = Math.min(MAX_PREVIEW_DIM / w, MAX_PREVIEW_DIM / h); w = Math.floor(w * ratio); h = Math.floor(h * ratio);
                 }
-                canvas.width = w;
-                canvas.height = h;
-                previewCtx = canvas.getContext('2d');
-                
-                currentFrameIndex = 0;
-                lastFrameTime = performance.now();
-                cancelAnimationFrame(previewAnimId);
-                previewLoop(performance.now());
+                canvas.width = w; canvas.height = h; previewCtx = canvas.getContext('2d');
+                currentFrameIndex = 0; lastFrameTime = performance.now(); cancelAnimationFrame(previewAnimId); previewLoop(performance.now());
             };
             firstImg.src = capturedImages[0].dataUrl;
         };
 
-        const stopVideoPreview = () => {
-            cancelAnimationFrame(previewAnimId);
-            const modal = document.getElementById('video-export-modal');
-            modal.classList.add('hidden'); modal.classList.remove('flex');
-        };
+        const stopVideoPreview = () => { cancelAnimationFrame(previewAnimId); const modal = document.getElementById('video-export-modal'); modal.classList.add('hidden'); modal.classList.remove('flex'); };
 
         const previewLoop = (now) => {
             if (capturedImages.length === 0) return;
-            const fps = parseInt(document.getElementById('fps-slider').value, 10);
-            const frameDuration = 1000 / fps;
-            
-            if (now - lastFrameTime >= frameDuration) {
-                drawPreviewFrame(currentFrameIndex);
-                currentFrameIndex = (currentFrameIndex + 1) % capturedImages.length;
-                lastFrameTime = now;
-            }
+            const fps = parseInt(document.getElementById('fps-slider').value, 10); const frameDuration = 1000 / fps;
+            if (now - lastFrameTime >= frameDuration) { drawPreviewFrame(currentFrameIndex); currentFrameIndex = (currentFrameIndex + 1) % capturedImages.length; lastFrameTime = now; }
             previewAnimId = requestAnimationFrame(previewLoop);
         };
 
         const drawPreviewFrame = (index) => {
             const img = new Image();
             img.onload = () => {
-                const canvas = document.getElementById('video-preview-canvas');
-                if (!previewCtx) return;
-                previewCtx.fillStyle = 'black';
-                previewCtx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                const imgRatio = img.width / img.height;
-                const canvasRatio = canvas.width / canvas.height;
+                const canvas = document.getElementById('video-preview-canvas'); if (!previewCtx) return;
+                previewCtx.fillStyle = 'black'; previewCtx.fillRect(0, 0, canvas.width, canvas.height);
+                const imgRatio = img.width / img.height; const canvasRatio = canvas.width / canvas.height;
                 let drawW = canvas.width, drawH = canvas.height;
-                if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio;
-                else drawW = canvas.height * imgRatio;
-                
-                const dx = (canvas.width - drawW) / 2;
-                const dy = (canvas.height - drawH) / 2;
-                previewCtx.drawImage(img, dx, dy, drawW, drawH);
-                
-                const selectedFilter = document.querySelector('input[name="video-filter"]:checked').value;
-                applyCanvasFilter(previewCtx, canvas.width, canvas.height, selectedFilter);
+                if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio; else drawW = canvas.height * imgRatio;
+                previewCtx.drawImage(img, (canvas.width - drawW) / 2, (canvas.height - drawH) / 2, drawW, drawH);
+                applyCanvasFilter(previewCtx, canvas.width, canvas.height, document.querySelector('input[name="video-filter"]:checked').value);
             };
             img.src = capturedImages[index].dataUrl;
         };
 
-        // 動画エクスポート処理 (MediaRecorder)
         const generateVideo = async () => {
             if (capturedImages.length === 0) return;
-            await requestWakeLock();
-            stopVideoPreview(); // プレビューを止めて処理リソースを確保
-            toggleLoading(true, '動画をエンコード中...');
-
+            await requestWakeLock(); stopVideoPreview(); toggleLoading(true, '動画をエンコード中...');
             try {
-                const fps = parseInt(document.getElementById('fps-slider').value, 10);
-                const selectedFilter = document.querySelector('input[name="video-filter"]:checked').value;
-                
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // 1枚目から動画解像度を決定（安全のため最大長辺1080px）
-                const firstImg = new Image();
-                firstImg.src = capturedImages[0].dataUrl;
-                await new Promise(r => firstImg.onload = r);
-                const MAX_VID_DIM = 1080;
-                let w = firstImg.width, h = firstImg.height;
-                if (w > MAX_VID_DIM || h > MAX_VID_DIM) {
-                    const ratio = Math.min(MAX_VID_DIM/w, MAX_VID_DIM/h);
-                    w = Math.floor(w * ratio); h = Math.floor(h * ratio);
-                }
-                // H.264エンコーダ等でエラーを避けるため、偶数ピクセルにする
-                canvas.width = w % 2 === 0 ? w : w - 1;
-                canvas.height = h % 2 === 0 ? h : h - 1;
+                const fps = parseInt(document.getElementById('fps-slider').value, 10); const selectedFilter = document.querySelector('input[name="video-filter"]:checked').value;
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const firstImg = new Image(); firstImg.src = capturedImages[0].dataUrl; await new Promise(r => firstImg.onload = r);
+                const MAX_VID_DIM = 1080; let w = firstImg.width, h = firstImg.height;
+                if (w > MAX_VID_DIM || h > MAX_VID_DIM) { const ratio = Math.min(MAX_VID_DIM/w, MAX_VID_DIM/h); w = Math.floor(w * ratio); h = Math.floor(h * ratio); }
+                canvas.width = w % 2 === 0 ? w : w - 1; canvas.height = h % 2 === 0 ? h : h - 1;
 
                 const stream = canvas.captureStream(fps);
-                let mimeType = 'video/webm';
-                if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
-                
+                let mimeType = 'video/webm'; if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
                 const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5000000 });
-                const chunks = [];
-                recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-                const recPromise = new Promise(resolve => recorder.onstop = resolve);
-                recorder.start();
+                const chunks = []; recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                const recPromise = new Promise(resolve => recorder.onstop = resolve); recorder.start();
 
-                // 描画ループ
                 const frameDuration = 1000 / fps;
                 for (let i = 0; i < capturedImages.length; i++) {
-                    const img = new Image();
-                    img.src = capturedImages[i].dataUrl;
-                    await new Promise(r => img.onload = r);
-                    
-                    ctx.fillStyle = 'black';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    const imgRatio = img.width / img.height;
-                    const canvasRatio = canvas.width / canvas.height;
+                    const img = new Image(); img.src = capturedImages[i].dataUrl; await new Promise(r => img.onload = r);
+                    ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    const imgRatio = img.width / img.height; const canvasRatio = canvas.width / canvas.height;
                     let drawW = canvas.width, drawH = canvas.height;
-                    if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio;
-                    else drawW = canvas.height * imgRatio;
+                    if (imgRatio > canvasRatio) drawH = canvas.width / imgRatio; else drawW = canvas.height * imgRatio;
                     ctx.drawImage(img, (canvas.width - drawW)/2, (canvas.height - drawH)/2, drawW, drawH);
-                    
                     applyCanvasFilter(ctx, canvas.width, canvas.height, selectedFilter);
-                    await new Promise(r => setTimeout(r, frameDuration)); // streamに流し込むためのwait
+                    await new Promise(r => setTimeout(r, frameDuration));
                 }
-                
-                recorder.stop();
-                await recPromise;
-                stream.getTracks().forEach(t => t.stop());
-                
-                const blob = new Blob(chunks, { type: mimeType });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Motion_${new Date().toISOString().slice(0,10)}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`;
-                a.click();
-                URL.revokeObjectURL(url);
+                recorder.stop(); await recPromise; stream.getTracks().forEach(t => t.stop());
+                const blob = new Blob(chunks, { type: mimeType }); const url = URL.createObjectURL(blob); const a = document.createElement('a');
+                a.href = url; a.download = `Motion_${new Date().toISOString().slice(0,10)}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`; a.click(); URL.revokeObjectURL(url);
                 showToast('動画を保存しました！', 'success');
-
-            } catch (err) {
-                console.error(err);
-                showToast('動画生成に失敗しました。', 'error');
-            } finally {
-                toggleLoading(false);
-                releaseWakeLock();
-            }
+            } catch (err) { showToast('動画生成に失敗しました。', 'error'); } finally { toggleLoading(false); releaseWakeLock(); }
         };
 
         // ==========================================
@@ -843,23 +806,38 @@
         // ==========================================
         const generatePDF = async () => {
             if (capturedImages.length === 0) return;
-            await requestWakeLock();
-            toggleLoading(true, 'PDFを生成中...');
+            await requestWakeLock(); toggleLoading(true, 'PDFを生成中...');
             try {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfW = pdf.internal.pageSize.getWidth(), pdfH = pdf.internal.pageSize.getHeight();
-                const margin = 10;
+                const margin = 0; // クロップ済みなのでマージンをなくし全面に配置する
+                
                 for (let i = 0; i < capturedImages.length; i++) {
                     if (i > 0) pdf.addPage();
                     const imgData = capturedImages[i].dataUrl;
+                    
+                    // クロップ済み画像はA4比率に近い形になっている前提
+                    // 縦長(A4 Portrait)か、横長(A4 Landscape)かを判定してPDF上の配置を最適化
                     const props = pdf.getImageProperties(imgData);
-                    const imgRatio = props.width / props.height;
-                    const pdfRatio = (pdfW - margin*2) / (pdfH - margin*2);
-                    let drawW = pdfW - margin*2, drawH = drawW / imgRatio;
-                    if (imgRatio <= pdfRatio) { drawH = pdfH - margin*2; drawW = drawH * imgRatio; }
-                    pdf.addImage(imgData, 'JPEG', (pdfW - drawW)/2, (pdfH - drawH)/2, drawW, drawH, undefined, 'FAST');
+                    const isLandscape = props.width > props.height;
+                    
+                    let drawW, drawH;
+                    if (isLandscape) {
+                        // 画像が横長の場合は、A4用紙の中央にレターボックス(上下余白)で配置
+                        drawW = pdfW;
+                        drawH = drawW * (props.height / props.width);
+                    } else {
+                        // 画像が縦長の場合は、A4用紙全面にフィット
+                        drawW = pdfW;
+                        drawH = pdfH;
+                    }
+                    
+                    const x = (pdfW - drawW) / 2;
+                    const y = (pdfH - drawH) / 2;
+                    
+                    pdf.addImage(imgData, 'JPEG', x, y, drawW, drawH, undefined, 'FAST');
                 }
                 pdf.save(`OCR_Scan_${new Date().toISOString().slice(0,10)}.pdf`);
                 showToast('PDFを保存しました！', 'success');
@@ -868,11 +846,10 @@
         };
 
         // ==========================================
-        // Event Listeners
+        // Initialization & Event Listeners
         // ==========================================
         document.getElementById('tab-document').onclick = () => { currentMode = 'document'; updateModeUI(); updateUI(); };
         document.getElementById('tab-motion').onclick = () => { currentMode = 'motion'; updateModeUI(); updateUI(); };
-
         document.getElementById('btn-switch-camera').onclick = switchCamera;
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -888,20 +865,11 @@
         btnOpenVideoModal.onclick = startVideoPreview;
         document.getElementById('btn-close-video-modal').onclick = stopVideoPreview;
         document.getElementById('btn-start-export-video').onclick = generateVideo;
-
         document.getElementById('fps-slider').oninput = (e) => document.getElementById('fps-label').textContent = `${e.target.value} fps`;
         
-        document.getElementById('btn-clear-all').onclick = () => {
-            document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('confirm-modal').classList.add('flex');
-        };
-        document.getElementById('btn-confirm-cancel').onclick = () => {
-            document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex');
-        };
-        document.getElementById('btn-confirm-ok').onclick = async () => {
-            capturedImages = []; insertIndex = -1; await clearDB(); updateUI();
-            document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex');
-            showToast('すべての画像を削除しました。', 'info');
-        };
+        document.getElementById('btn-clear-all').onclick = () => { document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('confirm-modal').classList.add('flex'); };
+        document.getElementById('btn-confirm-cancel').onclick = () => { document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex'); };
+        document.getElementById('btn-confirm-ok').onclick = async () => { capturedImages = []; insertIndex = -1; await clearDB(); updateUI(); document.getElementById('confirm-modal').classList.add('hidden'); document.getElementById('confirm-modal').classList.remove('flex'); showToast('すべての画像を削除しました。', 'info'); };
 
         document.getElementById('btn-close-modal').onclick = closeEditModal;
         document.getElementById('btn-modal-rotate').onclick = rotateFromModal;
@@ -912,6 +880,7 @@
         document.getElementById('btn-modal-next').onclick = () => navigateModal(1);
 
         window.addEventListener('DOMContentLoaded', async () => {
+            updateModeUI();
             initCamera();
             const savedData = await loadFromDB();
             if (savedData && savedData.length > 0) {
