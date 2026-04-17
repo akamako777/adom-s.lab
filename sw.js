@@ -1,7 +1,7 @@
-// sw.js (Adom's Lab 統合版 v14: パワハラ撲滅アプリ対応版)
+// sw.js (Adom's Lab 統合版 v15: OCR & Motion Capture対応版)
 // ローカルファイル(JS)とCDN(CSS/Webfonts)、どちらを使っていてもキャッシュするように設定しています
 
-const CACHE_NAME = 'adom-lab-v14-health-def'; // ★更新のためバージョン名を変更(v13 -> v14)
+const CACHE_NAME = 'adom-lab-v15-ocr-motion'; // ★更新のためバージョン名を変更(v14 -> v15)
 
 const INITIAL_ASSETS = [
     // ---------------------------
@@ -11,7 +11,8 @@ const INITIAL_ASSETS = [
     './teachers.html',
     './gotostarview.html',
     './mission.html',
-    './st.healthdefrec.html', // ★追加：パワハラ撲滅アプリ本体
+    './st.healthdefrec.html',
+    './forocrpdf.html', // ★追加：OCR Scan & Motion Captureアプリ本体
 
     // ---------------------------
     // 2. マニフェストとアイコン (PWA用)
@@ -36,7 +37,7 @@ const INITIAL_ASSETS = [
     './jszip.min.js',           
 
     // ---------------------------
-    // 4. 【旧】CDN用ライブラリ
+    // 4. 【旧】CDN用ライブラリ ＆ 新規追加ライブラリ
     // ---------------------------
     'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
@@ -47,6 +48,7 @@ const INITIAL_ASSETS = [
     'https://unpkg.com/@babel/standalone/babel.min.js',
     
     'https://cdn.tailwindcss.com',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', // ★追加：PDF生成用ライブラリ
 
     // ---------------------------
     // 5. 共通ツール・フォント・機能ライブラリ
