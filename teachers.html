@@ -194,21 +194,6 @@
             }
         };
 
-        const clearDB = async () => {
-            try {
-                const db = await initDB();
-                return new Promise((resolve, reject) => {
-                    const tx = db.transaction(STORE_NAME, 'readwrite');
-                    const store = tx.objectStore(STORE_NAME);
-                    const request = store.clear();
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject(request.error);
-                });
-            } catch (e) {
-                console.error("IndexedDB Clear Error:", e);
-            }
-        };
-
         // --- 印刷用ユーティリティ (第3引数でオプションを拡張) ---
         const handlePrint = (targetId, showToast, options = {}) => {
             const content = document.getElementById(targetId);
@@ -602,7 +587,7 @@
             return (
                 <div className="space-y-6">
                     <ConfirmModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={remove} message="本当に削除しますか？" />
-                    <ConfirmModal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={() => {resetAll(); setShowResetConfirm(false);}} message="注意：すべてのデータ（名簿、設定、班など）や【一時保存中の写真データ】も完全に消去されます。\n本当によろしいですか？" />
+                    <ConfirmModal isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={() => {resetAll(); setShowResetConfirm(false);}} message="注意：現在の枠のすべてのデータ（名簿、設定、班など）や【一時保存中の写真データ】も完全に消去されます。\n本当によろしいですか？" />
                     <PasteModal isOpen={isImportModalOpen} onClose={() => setImportModalOpen(false)} onImport={bulkImport} 
                         title="Excelから一括登録" placeholder={`氏名\n氏名\t性別\n...`} />
                     <PasswordModal isOpen={showPassModal} onClose={()=>setShowPassModal(false)} onConfirm={handleLockAction} isLocking={!isLocked} />
@@ -623,7 +608,7 @@
 
                     <Card title={`生徒名簿 (${data.students.length}名)`} action={
                         <div className="flex gap-2">
-                            <Button onClick={() => setShowResetConfirm(true)} variant="danger" title="全データ初期化">
+                            <Button onClick={() => setShowResetConfirm(true)} variant="danger" title="現在の枠の全データを初期化">
                                 <Icons.AlertOctagon /> オールクリア
                             </Button>
 
@@ -1144,7 +1129,7 @@
                 const weeks = data.dutyConfig.duration || 10;
                 const newSchedule = []; 
                 
-                // 修正版：カーソル（名簿の現在地）と、純粋な配属人数の完全分離
+                // カーソル（名簿の現在地）と、純粋な配属人数の完全分離
                 let cursorBoy = 0;
                 let assignCountBoy = 0;
                 let offsetBoy = 0;
@@ -1240,7 +1225,6 @@
                     });
 
                     // 5. 週の終わりに「何周完了しているか」をチェックし、周回が増えていればオフセットを追加
-                    // 【重要修正】符号を反転 (-shiftVal) させることで、生徒側から見て係が「右」にずれる直感的な挙動に変更
                     if (boysList.length > 0) {
                         const endBoyLaps = Math.floor(assignCountBoy / boysList.length);
                         if (endBoyLaps > startBoyLaps) {
@@ -1783,8 +1767,8 @@
             );
         };
 
-        // --- 5. 写真ツール (IndexedDB 強化版) ---
-        const PhotoTool = ({ data, showToast }) => {
+        // --- 5. 写真ツール (IndexedDB スロット連携強化版) ---
+        const PhotoTool = ({ data, showToast, activeSlot }) => {
             const [photos, setPhotos] = useState({}); // { studentId: dataUrl }
             const [stockPhotos, setStockPhotos] = useState([]); // 写真ストック(最大100枚)
             const [selectedStockIndex, setSelectedStockIndex] = useState(null); // タップ操作用
@@ -1806,13 +1790,14 @@
             const isNoStudents = data.students.length === 0;
             const isExportDisabled = isNoStudents || Object.keys(photos).length === 0;
 
-            // IndexedDB からデータを読み込む (初回マウント時)
+            // スロット切り替え時に IndexedDB からデータを読み込む
             useEffect(() => {
                 const loadData = async () => {
-                    const savedPhotos = await loadFromDB('assignedPhotos');
-                    const savedStock = await loadFromDB('stockPhotos');
-                    if (savedPhotos) setPhotos(savedPhotos);
-                    if (savedStock) setStockPhotos(savedStock);
+                    setIsLoaded(false);
+                    const savedPhotos = await loadFromDB(`assignedPhotos_${activeSlot}`);
+                    const savedStock = await loadFromDB(`stockPhotos_${activeSlot}`);
+                    setPhotos(savedPhotos || {});
+                    setStockPhotos(savedStock || []);
                     setIsLoaded(true);
                 };
                 loadData();
@@ -1821,20 +1806,16 @@
                 return () => {
                     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 };
-            }, []);
+            }, [activeSlot]);
 
-            // 変更があったら IndexedDB に自動保存
+            // 変更があったら そのスロットの IndexedDB に自動保存
             useEffect(() => {
-                if (isLoaded) {
-                    saveToDB('assignedPhotos', photos);
-                }
-            }, [photos, isLoaded]);
+                if (isLoaded) saveToDB(`assignedPhotos_${activeSlot}`, photos);
+            }, [photos, isLoaded, activeSlot]);
 
             useEffect(() => {
-                if (isLoaded) {
-                    saveToDB('stockPhotos', stockPhotos);
-                }
-            }, [stockPhotos, isLoaded]);
+                if (isLoaded) saveToDB(`stockPhotos_${activeSlot}`, stockPhotos);
+            }, [stockPhotos, isLoaded, activeSlot]);
 
             // --- 画像アップロード処理 (ストックエリアへ) ---
             const processFiles = async (files) => {
@@ -1947,9 +1928,10 @@
             const clearAllPhotos = async () => {
                 setPhotos({});
                 setStockPhotos([]);
-                await clearDB();
+                await saveToDB(`assignedPhotos_${activeSlot}`, {});
+                await saveToDB(`stockPhotos_${activeSlot}`, []);
                 setShowClearConfirm(false);
-                showToast("すべての写真データを削除しました", "success");
+                showToast("現在の枠の写真データを削除しました", "success");
             };
 
             // --- カメラ機能 ---
@@ -2036,7 +2018,7 @@
                         </div>
                     )}
                     
-                    <ConfirmModal isOpen={showClearConfirm} onClose={() => setShowClearConfirm(false)} onConfirm={clearAllPhotos} message="保存されている写真データ（ストック・枠内すべて）を消去します。\n本当によろしいですか？" />
+                    <ConfirmModal isOpen={showClearConfirm} onClose={() => setShowClearConfirm(false)} onConfirm={clearAllPhotos} message={`現在表示している「枠${activeSlot}」の写真データ（ストック・枠内すべて）を消去します。\n本当によろしいですか？`} />
 
                     <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg shadow-sm flex gap-3 no-print items-start">
                         <Icons.Info size={24} className="flex-shrink-0 mt-1" />
@@ -2196,13 +2178,23 @@
 
         // --- メインアプリ ---
         const App = () => {
-            const [data, setData] = useState(() => {
-                const s = localStorage.getItem('classToolDataV2');
-                return s ? JSON.parse(s) : { settings:{school:'', teacher:'', gradeClass:''}, students:[], seatConfig:{rows:5, cols:6}, dutyConfig:{jobs:[], duration:15, type:'week'}, clubConfig:{clubs:[]} };
+            // スロット管理ステート
+            const [activeSlot, setActiveSlot] = useState(() => {
+                return parseInt(localStorage.getItem('classToolActiveSlot')) || 1;
             });
+            const [slotNames, setSlotNames] = useState(['', '', '']);
+
+            // スロットのデータロード関数
+            const loadSlotData = (slot) => {
+                const s = localStorage.getItem(`classToolDataV2_${slot}`);
+                return s ? JSON.parse(s) : { settings:{school:'', teacher:'', gradeClass:''}, students:[], seatConfig:{rows:5, cols:6, disabledSeats:[]}, dutyConfig:{jobs:[], duration:15, type:'week'}, clubConfig:{clubs:[], lockedStudentIds:[]} };
+            };
+
+            const [data, setData] = useState(() => loadSlotData(activeSlot));
             const [tab, setTab] = useState('students');
+            
             const [appState, setAppState] = useState(() => {
-                const s = localStorage.getItem('classToolAppState');
+                const s = localStorage.getItem(`classToolAppState_${activeSlot}`);
                 return s ? JSON.parse(s) : { isLocked: false, lockPass: null }; 
             });
 
@@ -2216,33 +2208,86 @@
                 }, 3000);
             }, []);
 
+            // 初期ロード時のスロット名取得
             useEffect(() => {
-                localStorage.setItem('classToolDataV2', JSON.stringify(data));
-            }, [data]);
+                const names = [];
+                for(let i=1; i<=3; i++) {
+                    const s = localStorage.getItem(`classToolDataV2_${i}`);
+                    if (s) {
+                        try {
+                            names.push(JSON.parse(s).settings.gradeClass || `枠${i}`);
+                        } catch(e) {
+                            names.push(`枠${i}`);
+                        }
+                    } else {
+                        names.push(`枠${i}`);
+                    }
+                }
+                setSlotNames(names);
+            }, []);
+
+            // データ保存とスロット名更新
+            useEffect(() => {
+                localStorage.setItem(`classToolDataV2_${activeSlot}`, JSON.stringify(data));
+                localStorage.setItem('classToolActiveSlot', activeSlot.toString());
+                
+                setSlotNames(prev => {
+                    const next = [...prev];
+                    next[activeSlot - 1] = data.settings.gradeClass || `枠${activeSlot}`;
+                    return next;
+                });
+            }, [data, activeSlot]);
 
             useEffect(() => {
-                localStorage.setItem('classToolAppState', JSON.stringify(appState));
-            }, [appState]);
+                localStorage.setItem(`classToolAppState_${activeSlot}`, JSON.stringify(appState));
+            }, [appState, activeSlot]);
+
+            // スロット切り替え処理
+            const handleSlotChange = (slot) => {
+                if (slot === activeSlot) return;
+                setActiveSlot(slot);
+                setData(loadSlotData(slot));
+                const s = localStorage.getItem(`classToolAppState_${slot}`);
+                setAppState(s ? JSON.parse(s) : { isLocked: false, lockPass: null });
+                showToast(`データ枠を「${slotNames[slot-1] || `枠${slot}`}」に切り替えました`, "info");
+            };
 
             const resetAllData = async () => {
-                const initialData = { settings:{school:'', teacher:'', gradeClass:''}, students:[], seatConfig:{rows:5, cols:6}, dutyConfig:{jobs:[], duration:15, type:'week'}, clubConfig:{clubs:[]} };
+                const initialData = { settings:{school:'', teacher:'', gradeClass:''}, students:[], seatConfig:{rows:5, cols:6, disabledSeats:[]}, dutyConfig:{jobs:[], duration:15, type:'week'}, clubConfig:{clubs:[], lockedStudentIds:[]} };
                 const initialAppState = { isLocked: false, lockPass: null };
                 
                 setData(initialData);
                 setAppState(initialAppState);
-                localStorage.removeItem('classToolDataV2');
-                localStorage.removeItem('classToolAppState');
+                localStorage.removeItem(`classToolDataV2_${activeSlot}`);
+                localStorage.removeItem(`classToolAppState_${activeSlot}`);
                 
-                // IndexedDBの写真データも完全消去
-                await clearDB();
+                // 現在の枠のIndexedDB写真データも完全消去
+                await saveToDB(`assignedPhotos_${activeSlot}`, {});
+                await saveToDB(`stockPhotos_${activeSlot}`, []);
                 
-                showToast("全てのデータを初期化しました", "success");
+                showToast(`枠${activeSlot} のすべてのデータを初期化しました`, "success");
             };
 
             return (
                 <div className="min-h-screen pb-20 relative">
                     <ToastContainer toasts={toasts} />
                     
+                    {/* スロット切り替えUI (ヘッダー上部) */}
+                    <div className="bg-gray-800 text-white no-print">
+                        <div className="max-w-7xl mx-auto px-4 flex overflow-x-auto text-sm pt-2 gap-1">
+                            {[1, 2, 3].map(slot => (
+                                <button key={slot} 
+                                    onClick={() => handleSlotChange(slot)}
+                                    className={`px-5 py-2 rounded-t-lg font-bold transition-colors flex items-center gap-2 whitespace-nowrap
+                                        ${activeSlot === slot ? 'bg-white text-blue-800 shadow-sm' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                                >
+                                    <Icons.Layers size={16} />
+                                    {slotNames[slot-1] || `データ枠 ${slot}`}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <header className="bg-white shadow-sm border-b sticky top-0 z-50 no-print">
                         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
                             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Icons.Smile /> クラス管理ツール Pro</h1>
@@ -2262,8 +2307,11 @@
                             <h1 className="text-2xl font-bold">{data.settings.school} {data.settings.gradeClass}</h1>
                             <div className="text-right">担任: {data.settings.teacher}</div>
                         </div>
+
+                        {/* 各ツールには key={activeSlot} を渡し、スロット切替時に安全に再マウント（初期化）させる */}
                         {tab==='students' && (
                             <StudentRegistration 
+                                key={`students-${activeSlot}`}
                                 data={data} 
                                 setData={setData}
                                 isLocked={appState.isLocked}
@@ -2274,15 +2322,15 @@
                                 showToast={showToast}
                             />
                         )}
-                        {tab==='seats' && <SeatingTool data={data} setData={setData} showToast={showToast} />}
-                        {tab==='duties' && <DutyTool data={data} setData={setData} showToast={showToast} />}
-                        {tab==='clubs' && <ClubTool data={data} setData={setData} showToast={showToast} />}
+                        {tab==='seats' && <SeatingTool key={`seats-${activeSlot}`} data={data} setData={setData} showToast={showToast} />}
+                        {tab==='duties' && <DutyTool key={`duties-${activeSlot}`} data={data} setData={setData} showToast={showToast} />}
+                        {tab==='clubs' && <ClubTool key={`clubs-${activeSlot}`} data={data} setData={setData} showToast={showToast} />}
                         {/* 写真ツール表示 */}
-                        {tab==='photos' && <PhotoTool data={data} showToast={showToast} />}
+                        {tab==='photos' && <PhotoTool key={`photos-${activeSlot}`} activeSlot={activeSlot} data={data} showToast={showToast} />}
                     </main>
                     
                     <footer className="no-print fixed bottom-0 w-full bg-white border-t py-2 text-center text-xs text-gray-400">
-                        自動保存中（設定・名簿・写真すべて）
+                        【枠{activeSlot}】自動保存中（設定・名簿・写真すべて）
                     </footer>
                 </div>
             );
@@ -2303,4 +2351,5 @@
     </script>
 </body>
 </html>
+
 
