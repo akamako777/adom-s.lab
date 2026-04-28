@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI英語プリントメーカー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Dancing+Script:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&family=Playpen+Sans:wght@400;700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* カスタムフォントと基本設定 */
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* 英語用のフォント */
+        .font-block { font-family: 'Comic Neue', cursive; }
+        .font-standard { font-family: Arial, Helvetica, sans-serif; }
+        .font-cursive { font-family: 'Dancing Script', cursive; }
+        .font-playpen { font-family: 'Playpen Sans', cursive; }
+        .font-quicksand { font-family: 'Quicksand', sans-serif; }
+
+        /* プレビュー領域（全体）のベース */
+        .preview-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            background: #e5e7eb;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 複数ページを格納するコンテナ */
+        #pages-container {
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem; /* ページ同士の隙間 */
+            padding-bottom: 4rem;
+            cursor: text; /* テキスト入力できる感覚を持たせる */
+        }
+
+        /* 個別のA4用紙のスタイル */
+        .a4-page {
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            /* A4比率 (縦: 210mm x 297mm) */
+            width: 794px; /* 210mm at 96dpi */
+            height: 1123px; /* 297mm at 96dpi */
+            position: relative;
+            padding: 40px; /* 余白 */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .a4-page.landscape {
+            width: 1123px;
+            height: 794px;
+        }
+
+        /* ヘッダー領域 */
+        .print-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid #333;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-family: 'Noto Sans JP', sans-serif; /* ヘッダーは日本語フォント固定 */
+            height: 45px; /* 高さを固定してレイアウト計算を安定させる */
+            box-sizing: content-box;
+        }
+        .print-header-title { font-size: 1.5rem; font-weight: bold; }
+        .print-header-info { font-size: 1.1rem; display: flex; gap: 1.5rem; }
+
+        /* 4線と文字のコンテナ（段組みの1列分） */
+        .column {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 1行分の4線と文字 */
+        .line-row {
+            position: relative;
+            width: 100%;
+        }
+
+        /* 4線の描画（背景） */
+        .four-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none; /* クリックを阻害しない */
+        }
+
+        .four-lines .line {
+            width: 100%;
+            border-bottom: 1px solid;
+            position: absolute;
+        }
+
+        .four-lines .line-top { top: 0%; border-color: #ff9999; }
+        .four-lines .line-mid1 { top: 33.33%; border-color: #99ccff; border-style: dashed; } 
+        .four-lines .line-mid2 { top: 66.66%; border-color: #ff9999; } 
+        .four-lines .line-bottom { top: 100%; border-color: #ff9999; }
+
+        /* 文字領域 */
+        .text-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            line-height: 1; 
+            white-space: pre; 
+            color: #000;
+            pointer-events: none;
+        }
+        
+        /* ページ番号（ノンブル）のスタイル */
+        .page-number {
+            position: absolute;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 14px;
+            color: #4b5563; /* text-gray-600 */
+        }
+        .page-number.top-right {
+            top: 20px;
+            right: 40px;
+            text-align: right;
+        }
+        .page-number.bottom-center {
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .trace-mode {
+            color: #d1d5db !important; 
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* ローディングオーバーレイ */
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- ローディング -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p class="mt-4 text-gray-700 font-medium">AIが翻訳・生成中です...</p>
+    </div>
+
+    <!-- 左側：操作パネル -->
+    <div class="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 flex flex-col h-full overflow-y-auto shadow-lg z-10 relative">
+        <div class="p-6 bg-blue-600 text-white">
+            <h1 class="text-xl font-bold mb-1">AI英語プリントメーカー</h1>
+            <p class="text-xs text-blue-200">4線ノートのレイアウト自動生成</p>
+        </div>
+
+        <div class="p-6 flex-1 flex flex-col gap-6">
+            
+            <!-- AI翻訳機能 -->
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div class="flex justify-between items-center cursor-pointer" onclick="toggleAIPanel()">
+                    <h2 class="text-sm font-bold text-blue-800 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        AIで日本語から生成
+                    </h2>
+                    <span id="ai-toggle-icon" class="text-blue-500 text-xl">+</span>
+                </div>
+                
+                <div id="ai-panel" class="hidden mt-4 space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Gemini APIキー</label>
+                        <input type="password" id="api-key" placeholder="AI-..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">日本語で入力（単語・文章）</label>
+                        <textarea id="ja-text" rows="3" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例：りんご、みかん&#10;例：私は昨日公園に行きました。"></textarea>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="ai-level" class="p-2 border rounded text-sm bg-white flex-1 outline-none">
+                            <option value="単語リスト">単語として</option>
+                            <option value="中学生レベル">中学レベルの英文</option>
+                            <option value="ネイティブレベル">自然な英文</option>
+                        </select>
+                        <button onclick="generateEnglish()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">
+                            翻訳して流し込む
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ヘッダー・ページ番号設定 -->
+            <div>
+                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">ヘッダー・ページ番号設定</h2>
+                <div class="space-y-4">
+                    <div class="space-y-3">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="show-header" checked onchange="toggleHeaderInputs()" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="ml-2 text-sm text-gray-700">各ページにヘッダーを表示する</span>
+                        </label>
+                        <div id="header-inputs" class="space-y-2">
+                            <input type="text" id="header-title" value="英語練習プリント" oninput="updateLayout()" class="w-full p-2 border rounded text-sm outline-none" placeholder="タイトル">
+                            <div class="flex gap-2">
+                                <input type="text" id="header-class" value="　年　組" oninput="updateLayout()" class="w-1/2 p-2 border rounded text-sm outline-none" placeholder="学年・組">
+                                <input type="text" id="header-name" value="名前：" oninput="updateLayout()" class="w-1/2 p-2 border rounded text-sm outline-none" placeholder="名前">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ページ番号設定 -->
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ページ番号の位置</label>
+                            <select id="page-num-pos" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <option value="none" selected>表示しない</option>
+                                <option value="top-right">右上</option>
+                                <option value="bottom-center">下部中央</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ページ番号の表記</label>
+                            <select id="page-num-format" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <option value="simple" selected>1, 2, 3...</option>
+                                <option value="hyphen">- 1 -</option>
+                                <option value="fraction">1 / 3</option>
+                                <option value="english">Page 1</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- レイアウト設定 -->
+            <div>
+                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">レイアウト設定</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex gap-2">
+                        <button onclick="setOrientation('portrait')" id="btn-portrait" class="flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium">縦 (A4)</button>
+                        <button onclick="setOrientation('landscape')" id="btn-landscape" class="flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50">横 (A4)</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">段組み（列）</label>
+                            <select id="columns" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <option value="1" selected>1列 (長文用)</option>
+                                <option value="2">2列</option>
+                                <option value="3">3列 (単語用)</option>
+                                <option value="4">4列</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">行数（1列あたり）</label>
+                            <select id="rows" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <!-- JSで動的生成 -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">行間の広さ（余白）</label>
+                        <select id="row-gap" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                            <option value="10">狭い</option>
+                            <option value="25" selected>普通</option>
+                            <option value="45">広い</option>
+                            <option value="70">かなり広い</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- フォント・表示設定 -->
+            <div>
+                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">文字の設定</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">フォント種類</label>
+                        <select id="font-family" onchange="fontChanged()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                            <option value="font-block">ブロック体風 (Comic Neue)</option>
+                            <option value="font-standard">標準活字体 (Arial)</option>
+                            <option value="font-cursive">筆記体 (Dancing Script)</option>
+                            <option value="font-playpen" selected>手書き風 (Playpen Sans)</option>
+                            <option value="font-quicksand">丸ゴシック風 (Quicksand)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs text-gray-600">文字の大きさ（はみ出し防止）</label>
+                                <span id="val-font-size" class="text-xs text-gray-500">85%</span>
+                            </div>
+                            <input type="range" id="font-scale" min="0.5" max="1.2" step="0.01" value="0.85" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs text-gray-600">上下位置（ベースライン微調整）</label>
+                                <span id="val-font-offset" class="text-xs text-gray-500">-12%</span>
+                            </div>
+                            <input type="range" id="font-offset" min="-50" max="50" step="1" value="-12" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+
+                    <label class="flex items-center cursor-pointer pt-2">
+                        <input type="checkbox" id="trace-mode" onchange="updateLayout()" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">なぞり書き用（色を薄くする）</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- テキスト入力 -->
+            <div class="flex-1 flex flex-col pb-4">
+                <div class="flex justify-between items-end mb-1">
+                    <label class="block text-sm font-bold text-gray-700">印刷するテキスト</label>
+                    <span class="text-xs text-gray-500">自動改ページ対応</span>
+                </div>
+                <textarea id="main-text" oninput="updateLayout()" class="w-full flex-1 min-h-[150px] p-3 border-2 border-blue-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none font-sans transition" placeholder="ここに英語を入力してください。&#10;長文は列の幅に合わせて自動で次の行に折り返され、用紙が足りなくなれば自動で次のページが追加されます。">Apple
+Banana
+Cherry
+I have a pen.
+This is a very very long sentence to test the auto-wrap feature of this application.</textarea>
+            </div>
+            
+            <!-- 下部固定アクションボタン（スクロールしても常に見える） -->
+            <div class="sticky bottom-0 bg-white pt-2 pb-6 border-t mt-auto">
+                <button onclick="printPage()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded flex justify-center items-center gap-2 shadow-sm transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    プリントを印刷する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側：プレビュー -->
+    <div class="flex-1 relative bg-gray-200 overflow-hidden">
+        <!-- ズームコントロール -->
+        <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md flex p-1 z-20">
+            <button onclick="changeZoom(-0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600">-</button>
+            <span id="zoom-level" class="w-12 flex items-center justify-center text-sm text-gray-700">100%</span>
+            <button onclick="changeZoom(0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600">+</button>
+        </div>
+
+        <!-- プレビューコンテナ（スクロール領域） -->
+        <div class="preview-container" id="scroll-area">
+            <!-- 複数ページ描画用コンテナ。クリックで左の入力欄にフォーカス -->
+            <div id="pages-container" onclick="focusTextArea()">
+                <!-- JSで .a4-page が動的に生成される -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 折り返し計算用（非表示） -->
+    <div id="measure-div" style="visibility: hidden; position: absolute; top: -9999px; left: -9999px; white-space: pre; line-height: 1;"></div>
+
+    <script>
+        // --- 状態管理 ---
+        const state = {
+            orientation: 'portrait', 
+            columns: 1, 
+            rows: 10,
+            zoom: 1.0,
+            text: ""
+        };
+
+        // --- 初期化 ---
+        window.onload = () => {
+            fontChanged();
+            initRowOptions();
+            toggleHeaderInputs();
+            
+            // ウィンドウリサイズでズームを自動調整
+            autoZoom();
+            window.addEventListener('resize', autoZoom);
+        };
+
+        // --- UI操作系 ---
+        function toggleAIPanel() {
+            const panel = document.getElementById('ai-panel');
+            const icon = document.getElementById('ai-toggle-icon');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                icon.textContent = '-';
+            } else {
+                panel.classList.add('hidden');
+                icon.textContent = '+';
+            }
+        }
+        
+        function toggleHeaderInputs() {
+            const show = document.getElementById('show-header').checked;
+            document.getElementById('header-inputs').style.display = show ? 'block' : 'none';
+            updateLayout();
+        }
+
+        // プレビューをクリックした際にテキストエリアにフォーカス
+        function focusTextArea() {
+            document.getElementById('main-text').focus();
+        }
+
+        function setOrientation(type) {
+            state.orientation = type;
+            
+            const btnP = document.getElementById('btn-portrait');
+            const btnL = document.getElementById('btn-landscape');
+            
+            if (type === 'portrait') {
+                btnP.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium";
+                btnL.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50";
+            } else {
+                btnL.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium";
+                btnP.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50";
+            }
+            
+            initRowOptions();
+            updateLayout();
+            autoZoom();
+        }
+
+        function initRowOptions() {
+            const rowSelect = document.getElementById('rows');
+            const cols = parseInt(document.getElementById('columns').value);
+            const isPortrait = state.orientation === 'portrait';
+            
+            const currentVal = rowSelect.value;
+            rowSelect.innerHTML = '';
+
+            let maxRows = isPortrait ? 25 : 15;
+            let defaultRows = isPortrait ? (cols === 1 ? 15 : 12) : 8; 
+
+            for (let i = 1; i <= maxRows; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${i} 行`;
+                if (i === defaultRows && !currentVal) opt.selected = true;
+                if (currentVal && i == currentVal) opt.selected = true;
+                rowSelect.appendChild(opt);
+            }
+            
+            if (currentVal > maxRows) rowSelect.value = maxRows;
+        }
+
+        // ズーム制御
+        function changeZoom(delta) {
+            state.zoom = Math.max(0.3, Math.min(2.0, state.zoom + delta));
+            applyZoom();
+        }
+        function autoZoom() {
+            const container = document.getElementById('scroll-area');
+            const availableWidth = container.clientWidth - 40; 
+            const pageWidth = state.orientation === 'portrait' ? 794 : 1123;
+            
+            if (availableWidth < pageWidth) {
+                state.zoom = availableWidth / pageWidth;
+            } else {
+                state.zoom = 1.0;
+            }
+            applyZoom();
+        }
+        function applyZoom() {
+            const container = document.getElementById('pages-container');
+            container.style.transform = `scale(${state.zoom})`;
+            document.getElementById('zoom-level').textContent = Math.round(state.zoom * 100) + '%';
+        }
+
+        // フォント微調整制御
+        function fontChanged() {
+            const fontFamily = document.getElementById('font-family').value;
+            const scaleInput = document.getElementById('font-scale');
+            const offsetInput = document.getElementById('font-offset');
+            
+            if (fontFamily === 'font-block') {
+                scaleInput.value = 0.85; offsetInput.value = -12;
+            } else if (fontFamily === 'font-cursive') {
+                scaleInput.value = 0.9; offsetInput.value = -18;
+            } else if (fontFamily === 'font-playpen') {
+                scaleInput.value = 0.8; offsetInput.value = -15;
+            } else if (fontFamily === 'font-quicksand') {
+                scaleInput.value = 0.85; offsetInput.value = -14;
+            } else {
+                scaleInput.value = 0.85; offsetInput.value = -15;
+            }
+            
+            updateLayoutUI(); 
+        }
+
+        function updateLayoutUI() {
+            document.getElementById('val-font-size').textContent = Math.round(document.getElementById('font-scale').value * 100) + '%';
+            document.getElementById('val-font-offset').textContent = document.getElementById('font-offset').value + '%';
+            updateLayout();
+        }
+
+        // --- コア描画ロジック（複数ページ対応） ---
+        function updateLayout() {
+            state.columns = parseInt(document.getElementById('columns').value);
+            state.rows = parseInt(document.getElementById('rows').value);
+            state.text = document.getElementById('main-text').value;
+            
+            const rowGap = parseInt(document.getElementById('row-gap').value);
+            const fontScale = parseFloat(document.getElementById('font-scale').value);
+            const fontOffset = parseInt(document.getElementById('font-offset').value);
+
+            const fontFamily = document.getElementById('font-family').value;
+            const isTrace = document.getElementById('trace-mode').checked;
+            const showHeader = document.getElementById('show-header').checked;
+
+            const container = document.getElementById('pages-container');
+            container.innerHTML = '';
+
+            // 利用可能な高さを計算
+            const padding = 40 * 2; // top + bottom
+            const pageHeight = (state.orientation === 'portrait' ? 1123 : 794) - padding;
+            
+            // ヘッダー領域の計算 (表示する場合: content 45px + pb 8px + mb 16px + border 2px = 約71px)
+            const headerTotalHeight = showHeader ? 71 : 0; 
+            const availableGridHeight = pageHeight - headerTotalHeight;
+            
+            // 行の高さ計算 (余白を考慮)
+            const rowHeightPx = (availableGridHeight - (rowGap * (state.rows - 1))) / state.rows;
+            const fontSizePx = rowHeightPx * fontScale; 
+
+            // テキストを処理して行(Line)の配列にする
+            const processedLines = processTextForWrapping(state.text, fontFamily, fontSizePx, state.columns);
+
+            // 必要なページ数を計算（1ページの最大行数 = rows * columns）
+            const linesPerPage = state.rows * state.columns;
+            const totalPages = Math.max(1, Math.ceil(processedLines.length / linesPerPage));
+
+            let lineIndex = 0;
+
+            // ページごとの生成ループ
+            for (let p = 0; p < totalPages; p++) {
+                const page = document.createElement('div');
+                page.className = `a4-page ${fontFamily}`;
+                if (state.orientation === 'landscape') page.classList.add('landscape');
+                
+                // ヘッダーの描画
+                if (showHeader) {
+                    const titleVal = document.getElementById('header-title').value;
+                    const classVal = document.getElementById('header-class').value;
+                    const nameVal = document.getElementById('header-name').value;
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'print-header';
+                    headerDiv.innerHTML = `
+                        <div class="print-header-title">${titleVal}</div>
+                        <div class="print-header-info">
+                            <span>${classVal}</span>
+                            <span style="min-width: 150px;">${nameVal}</span>
+                        </div>
+                    `;
+                    page.appendChild(headerDiv);
+                }
+
+                // グリッド（段組み）のコンテナ
+                const gridDiv = document.createElement('div');
+                gridDiv.style.display = 'grid';
+                gridDiv.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
+                gridDiv.style.gap = '20px';
+                gridDiv.style.flex = '1';
+
+                // 列の生成
+                for (let c = 0; c < state.columns; c++) {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'column';
+                    
+                    // その列内の行を生成
+                    for (let r = 0; r < state.rows; r++) {
+                        const lineDiv = document.createElement('div');
+                        lineDiv.className = 'line-row';
+                        lineDiv.style.height = `${rowHeightPx}px`; 
+                        if (r < state.rows - 1) lineDiv.style.marginBottom = `${rowGap}px`;
+
+                        // 4線の背景を描画
+                        const linesBg = document.createElement('div');
+                        linesBg.className = 'four-lines';
+                        linesBg.innerHTML = `
+                            <div class="line line-top"></div>
+                            <div class="line line-mid1"></div>
+                            <div class="line line-mid2"></div>
+                            <div class="line line-bottom"></div>
+                        `;
+                        lineDiv.appendChild(linesBg);
+
+                        // 文字がある場合は配置
+                        if (lineIndex < processedLines.length) {
+                            const textSpan = document.createElement('div');
+                            textSpan.className = 'text-content';
+                            if (isTrace) textSpan.classList.add('trace-mode');
+                            
+                            textSpan.style.fontSize = `${fontSizePx}px`;
+                            textSpan.style.transform = `translateY(${fontOffset}%)`;
+                            
+                            textSpan.textContent = processedLines[lineIndex];
+                            lineDiv.appendChild(textSpan);
+                        }
+                        lineIndex++;
+
+                        colDiv.appendChild(lineDiv);
+                    }
+                    gridDiv.appendChild(colDiv);
+                }
+                
+                page.appendChild(gridDiv);
+
+                // ページ番号の描画
+                const pageNumPos = document.getElementById('page-num-pos').value;
+                if (pageNumPos !== 'none') {
+                    const pageNumFormat = document.getElementById('page-num-format').value;
+                    let pageText = '';
+                    const current = p + 1;
+                    
+                    if (pageNumFormat === 'simple') pageText = current;
+                    else if (pageNumFormat === 'hyphen') pageText = `- ${current} -`;
+                    else if (pageNumFormat === 'fraction') pageText = `${current} / ${totalPages}`;
+                    else if (pageNumFormat === 'english') pageText = `Page ${current}`;
+
+                    const pageNumDiv = document.createElement('div');
+                    pageNumDiv.className = `page-number ${pageNumPos}`;
+                    pageNumDiv.textContent = pageText;
+                    page.appendChild(pageNumDiv);
+                }
+
+                container.appendChild(page);
+            }
+        }
+
+        function processTextForWrapping(rawText, fontClass, fontSize, colCount) {
+            if (!rawText) return [];
+            
+            const padding = 40 * 2; 
+            const gap = 20 * (colCount - 1);
+            const pageWidth = state.orientation === 'portrait' ? 794 : 1123;
+            const maxLineWidth = (pageWidth - padding - gap) / colCount;
+
+            const measureDiv = document.getElementById('measure-div');
+            measureDiv.className = fontClass;
+            measureDiv.style.fontSize = `${fontSize}px`;
+            measureDiv.style.whiteSpace = 'pre'; 
+
+            const rawLines = rawText.split('\n');
+            const wrappedLines = [];
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const line = rawLines[i];
+                if (line === '') {
+                    wrappedLines.push('');
+                    continue;
+                }
+
+                const words = line.split(' ');
+                let currentLine = '';
+
+                for (let j = 0; j < words.length; j++) {
+                    const word = words[j];
+                    const testLine = currentLine === '' ? word : currentLine + ' ' + word;
+                    
+                    measureDiv.textContent = testLine;
+                    const width = measureDiv.offsetWidth;
+
+                    if (width > maxLineWidth) {
+                        if (currentLine !== '') {
+                            wrappedLines.push(currentLine);
+                            currentLine = '';
+                            j--; 
+                        } else {
+                            let tempLine = '';
+                            for (let char of word) {
+                                measureDiv.textContent = tempLine + char;
+                                if (measureDiv.offsetWidth > maxLineWidth && tempLine !== '') {
+                                    wrappedLines.push(tempLine);
+                                    tempLine = char; 
+                                } else {
+                                    tempLine += char;
+                                }
+                            }
+                            currentLine = tempLine; 
+                        }
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+                if (currentLine !== '') {
+                    wrappedLines.push(currentLine);
+                }
+            }
+            return wrappedLines;
+        }
+
+        // --- 印刷処理（別ウィンドウで確実に出力） ---
+        function printPage() {
+            // iframeの制約を回避するため、新しいウィンドウを開いてそこで印刷する
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('印刷ウィンドウが開けませんでした。ブラウザのポップアップブロックを解除して再度お試しください。');
+                return;
+            }
+
+            // プレビューコンテナに描画されている複数ページの中身を取得
+            const containerHTML = document.getElementById('pages-container').innerHTML;
+            const isPortrait = state.orientation === 'portrait';
+            const pageSize = isPortrait ? 'A4 portrait' : 'A4 landscape';
+
+            // 印刷専用のクリーンなHTMLを構築
+            const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>印刷 - AI英語プリントメーカー</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Dancing+Script:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&family=Playpen+Sans:wght@400;700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 印刷専用のリセットと設定 */
+        body { 
+            margin: 0; padding: 0; 
+            background: white;
+            font-family: 'Noto Sans JP', sans-serif;
+            /* 背景の線や色を確実に印刷させる魔法のプロパティ */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        @page { size: ${pageSize}; margin: 0; }
+        
+        /* ページごとのスタイル */
+        .a4-page {
+            width: ${isPortrait ? '794px' : '1123px'};
+            height: ${isPortrait ? '1123px' : '794px'};
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            page-break-after: always; /* ここで改ページを指示 */
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        /* フォントクラスの定義 */
+        .font-block { font-family: 'Comic Neue', cursive; }
+        .font-standard { font-family: Arial, Helvetica, sans-serif; }
+        .font-cursive { font-family: 'Dancing Script', cursive; }
+        .font-playpen { font-family: 'Playpen Sans', cursive; }
+        .font-quicksand { font-family: 'Quicksand', sans-serif; }
+        
+        /* ヘッダーのスタイル */
+        .print-header {
+            width: 100%; display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 2px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem;
+            font-family: 'Noto Sans JP', sans-serif;
+            height: 45px; box-sizing: content-box;
+        }
+        .print-header-title { font-size: 1.5rem; font-weight: bold; }
+        .print-header-info { font-size: 1.1rem; display: flex; gap: 1.5rem; }
+
+        /* レイアウトのスタイル */
+        .column { position: relative; height: 100%; overflow: hidden; }
+        .line-row { position: relative; width: 100%; }
+        
+        .four-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .four-lines .line { width: 100%; border-bottom: 1px solid; position: absolute; }
+        .four-lines .line-top { top: 0%; border-color: #ff9999; }
+        .four-lines .line-mid1 { top: 33.33%; border-color: #99ccff; border-style: dashed; }
+        .four-lines .line-mid2 { top: 66.66%; border-color: #ff9999; }
+        .four-lines .line-bottom { top: 100%; border-color: #ff9999; }
+
+        .text-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; line-height: 1; white-space: pre; color: #000; }
+        
+        .page-number { position: absolute; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: #4b5563; }
+        .page-number.top-right { top: 20px; right: 40px; text-align: right; }
+        .page-number.bottom-center { bottom: 20px; left: 0; width: 100%; text-align: center; }
+
+        .trace-mode { color: #d1d5db !important; }
+    </style>
+</head>
+<body>
+    ${containerHTML}
+    <script>
+        // フォントが完全に読み込まれるのを待ってから印刷ダイアログを開く
+        window.onload = () => {
+            document.fonts.ready.then(() => {
+                setTimeout(() => {
+                    window.print();
+                }, 500); // 描画安定のためのわずかな遅延
+            });
+        };
+    <\/script>
+</body>
+</html>
+            `;
+
+            // 書き込んで表示
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+
+        // --- AI機能 ---
+        async function generateEnglish() {
+            const jaText = document.getElementById('ja-text').value.trim();
+            if (!jaText) {
+                alert('日本語のテキストを入力してください。');
+                return;
+            }
+
+            let apiKey = document.getElementById('api-key').value.trim();
+            if (!apiKey) {
+                try { apiKey = ""; } catch(e) {}
+            }
+            
+            document.getElementById('loading').style.display = 'flex';
+
+            const level = document.getElementById('ai-level').value;
+            let prompt = "";
+            
+            if (level === "単語リスト") {
+                prompt = `以下の日本語を英語の単語に翻訳し、各単語を改行区切りのリストで出力してください。余計な説明は一切不要です。\n\n${jaText}`;
+            } else if (level === "中学生レベル") {
+                prompt = `以下の日本語を、日本の一般的な中学生が習うレベルの簡単な英単語と文法を使って、自然な英文に翻訳してください。結果の英文のみを出力し、説明は不要です。\n\n${jaText}`;
+            } else {
+                prompt = `以下の日本語を、自然で適切な英語の文章に翻訳してください。結果の英文のみを出力し、説明は不要です。\n\n${jaText}`;
+            }
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const response = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "あなたは優秀な英語教師です。指示に従い、英語のテキストのみを出力します。" }] }
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API Request failed`);
+                const result = await response.json();
+                const englishText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (englishText) {
+                    // 入力欄に追記してレイアウト更新（上書きではなく追記で長文プリントに対応）
+                    const currentText = document.getElementById('main-text').value;
+                    document.getElementById('main-text').value = currentText ? currentText + '\n\n' + englishText.trim() : englishText.trim();
+                    updateLayout();
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("エラーが発生しました。APIキーを確認してください。");
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (i === retries - 1) throw new Error(response.statusText);
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        }
+    </script>
+</body>
+</html>
