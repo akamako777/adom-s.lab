@@ -119,7 +119,7 @@
             <div class="w-8"></div> <!-- Spacer -->
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-32">
+        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-48">
             <div id="gallery-grid" class="grid grid-cols-2 gap-4">
                 <!-- Gallery items will be injected here -->
             </div>
@@ -127,6 +127,13 @@
 
         <!-- Export Toolbar -->
         <div class="absolute bottom-0 left-0 w-full bg-gray-800 border-t border-gray-700 p-4 pb-8 rounded-t-2xl shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+            
+            <!-- 追加スキャン機能 -->
+            <div class="flex space-x-3 mb-4">
+                <button id="btn-add-camera" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white font-medium flex items-center justify-center transition-colors border border-gray-600"><i class="fas fa-camera mr-2"></i>カメラ追加</button>
+                <button id="btn-add-file" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white font-medium flex items-center justify-center transition-colors border border-gray-600"><i class="fas fa-images mr-2"></i>写真追加</button>
+            </div>
+
             <div class="mb-4">
                 <label class="block text-xs text-gray-400 mb-2">保存画質</label>
                 <div class="flex bg-gray-900 rounded-lg p-1">
@@ -285,118 +292,99 @@
         const magCanvas = document.getElementById('magnifier-canvas');
         const magCtx = magCanvas.getContext('2d');
 
-        // --- Core Algorithm: 遠近法補正 (Perspective Transform via Texture Mapping) ---
-        // 外部ライブラリなしで、四角形を長方形に変形する。
-        // 画質を保つため、オリジナル画像をメモリに展開し、細かいグリッド(Triangle mesh)に分割して描画する。
+        // --- Core Algorithm: 遠近法補正 (Perspective Transform via Inverse Mapping) ---
+        // GPUクリッピングバグを回避するため、ピクセル単位の逆マッピングアルゴリズムに刷新
         async function processPerspectiveAndEffect(sourceImg, srcCorners, destWidth, destHeight, effectType) {
             return new Promise((resolve) => {
-                const offCanvas = document.createElement('canvas');
-                offCanvas.width = destWidth;
-                offCanvas.height = destHeight;
-                const ctx = offCanvas.getContext('2d', { willReadFrequently: true });
-                
-                // --- 1. Texture Mapping (Bilinear Interpolation Grid) ---
-                // Canvas 2Dには台形描画APIがないため、NxNのグリッドに分割してアフィン変換で近似する
-                const cols = 15; // 分割数 (上げると精度向上・重くなる)
-                const rows = 15;
-                
-                const p0 = srcCorners[0]; // TL
-                const p1 = srcCorners[1]; // TR
-                const p2 = srcCorners[2]; // BR
-                const p3 = srcCorners[3]; // BL
+                // 元画像を一時Canvasに描画してピクセルデータを取得
+                const srcCanvas = document.createElement('canvas');
+                srcCanvas.width = sourceImg.width;
+                srcCanvas.height = sourceImg.height;
+                const srcCtx = srcCanvas.getContext('2d', { willReadFrequently: true });
+                srcCtx.drawImage(sourceImg, 0, 0);
+                const srcDataObj = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+                const srcData = srcDataObj.data;
+                const sw = srcCanvas.width;
+                const sh = srcCanvas.height;
 
-                // 双一次補間でソース座標を計算
-                const getSrcPoint = (tx, ty) => {
-                    const topX = p0.x + (p1.x - p0.x) * tx;
-                    const topY = p0.y + (p1.y - p0.y) * tx;
-                    const botX = p3.x + (p2.x - p3.x) * tx;
-                    const botY = p3.y + (p2.y - p3.y) * tx;
-                    return {
-                        x: topX + (botX - topX) * ty,
-                        y: topY + (botY - topY) * ty
-                    };
-                };
+                // 出力用Canvasの作成
+                const destW = Math.round(destWidth);
+                const destH = Math.round(destHeight);
+                const destCanvas = document.createElement('canvas');
+                destCanvas.width = destW;
+                destCanvas.height = destH;
+                const destCtx = destCanvas.getContext('2d', { willReadFrequently: true });
+                const destDataObj = destCtx.createImageData(destW, destH);
+                const destData = destDataObj.data;
 
-                const cellW = destWidth / cols;
-                const cellH = destHeight / rows;
+                const p0 = srcCorners[0], p1 = srcCorners[1], p2 = srcCorners[2], p3 = srcCorners[3];
 
-                for (let i = 0; i < cols; i++) {
-                    for (let j = 0; j < rows; j++) {
-                        const tx0 = i / cols;       const ty0 = j / rows;
-                        const tx1 = (i + 1) / cols; const ty1 = (j + 1) / rows;
+                // 逆マッピングループ (出力先の座標から元画像の座標を計算)
+                for (let y = 0; y < destH; y++) {
+                    const v = y / (destH - 1 || 1);
+                    const invV = 1 - v;
+                    
+                    const p0x_v = invV * p0.x, p0y_v = invV * p0.y;
+                    const p1x_v = invV * p1.x, p1y_v = invV * p1.y;
+                    const p2x_v = v * p2.x,    p2y_v = v * p2.y;
+                    const p3x_v = v * p3.x,    p3y_v = v * p3.y;
 
-                        const s0 = getSrcPoint(tx0, ty0); // TL
-                        const s1 = getSrcPoint(tx1, ty0); // TR
-                        const s2 = getSrcPoint(tx1, ty1); // BR
-                        const s3 = getSrcPoint(tx0, ty1); // BL
+                    for (let x = 0; x < destW; x++) {
+                        const u = x / (destW - 1 || 1);
+                        const invU = 1 - u;
 
-                        // Destination points
-                        const d0x = i * cellW;       const d0y = j * cellH;
-                        const d1x = (i + 1) * cellW; const d1y = j * cellH;
-                        const d2x = (i + 1) * cellW; const d2y = (j + 1) * cellH;
-                        const d3x = i * cellW;       const d3y = (j + 1) * cellH;
+                        // Bilinear補間によるソース座標 (sx, sy) の計算
+                        const sx = invU * (p0x_v + p3x_v) + u * (p1x_v + p2x_v);
+                        const sy = invU * (p0y_v + p3y_v) + u * (p1y_v + p2y_v);
 
-                        // Triangle 1 (s0, s1, s3 -> d0, d1, d3)
-                        drawTriangle(ctx, sourceImg, s0.x, s0.y, s1.x, s1.y, s3.x, s3.y, d0x, d0y, d1x, d1y, d3x, d3y);
-                        // Triangle 2 (s1, s2, s3 -> d1, d2, d3)
-                        drawTriangle(ctx, sourceImg, s1.x, s1.y, s2.x, s2.y, s3.x, s3.y, d1x, d1y, d2x, d2y, d3x, d3y);
+                        const srcX = Math.round(sx);
+                        const srcY = Math.round(sy);
+                        const dstIdx = (y * destW + x) * 4;
+
+                        // 範囲内であれば色をコピー
+                        if (srcX >= 0 && srcX < sw && srcY >= 0 && srcY < sh) {
+                            const srcIdx = (srcY * sw + srcX) * 4;
+                            destData[dstIdx]     = srcData[srcIdx];
+                            destData[dstIdx + 1] = srcData[srcIdx + 1];
+                            destData[dstIdx + 2] = srcData[srcIdx + 2];
+                            destData[dstIdx + 3] = srcData[srcIdx + 3];
+                        } else {
+                            destData[dstIdx + 3] = 0; // 範囲外は透明
+                        }
                     }
                 }
 
-                // --- 2. Apply Effects ---
+                // --- エフェクト処理 ---
                 if (effectType !== 'none') {
-                    const imageData = ctx.getImageData(0, 0, destWidth, destHeight);
-                    const data = imageData.data;
-                    
                     if (effectType === 'grayscale') {
-                        for (let i = 0; i < data.length; i += 4) {
-                            const avg = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-                            data[i] = data[i+1] = data[i+2] = avg;
+                        for (let i = 0; i < destData.length; i += 4) {
+                            if (destData[i+3] === 0) continue;
+                            const avg = destData[i] * 0.299 + destData[i+1] * 0.587 + destData[i+2] * 0.114;
+                            destData[i] = destData[i+1] = destData[i+2] = avg;
                         }
                     } else if (effectType === 'color-revive') {
-                        // 簡易退色復元: RGBそれぞれの最小・最大を見つけて正規化 (Auto Contrast)
                         let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
-                        // サンプリングして極端なノイズを無視するため、数ピクセル飛ばして計算
-                        for (let i = 0; i < data.length; i += 40) {
-                            if(data[i]<minR) minR=data[i]; if(data[i]>maxR) maxR=data[i];
-                            if(data[i+1]<minG) minG=data[i+1]; if(data[i+1]>maxG) maxG=data[i+1];
-                            if(data[i+2]<minB) minB=data[i+2]; if(data[i+2]>maxB) maxB=data[i+2];
+                        for (let i = 0; i < destData.length; i += 40) {
+                            if (destData[i+3] === 0) continue;
+                            if(destData[i]<minR) minR=destData[i]; if(destData[i]>maxR) maxR=destData[i];
+                            if(destData[i+1]<minG) minG=destData[i+1]; if(destData[i+1]>maxG) maxG=destData[i+1];
+                            if(destData[i+2]<minB) minB=destData[i+2]; if(destData[i+2]>maxB) maxB=destData[i+2];
                         }
-                        // コントラストを伸ばす
-                        for (let i = 0; i < data.length; i += 4) {
-                            data[i] = (data[i] - minR) * 255 / (maxR - minR || 1);
-                            data[i+1] = (data[i+1] - minG) * 255 / (maxG - minG || 1);
-                            data[i+2] = (data[i+2] - minB) * 255 / (maxB - minB || 1);
+                        const rangeR = maxR - minR || 1;
+                        const rangeG = maxG - minG || 1;
+                        const rangeB = maxB - minB || 1;
+                        for (let i = 0; i < destData.length; i += 4) {
+                            if (destData[i+3] === 0) continue;
+                            destData[i]   = (destData[i] - minR) * 255 / rangeR;
+                            destData[i+1] = (destData[i+1] - minG) * 255 / rangeG;
+                            destData[i+2] = (destData[i+2] - minB) * 255 / rangeB;
                         }
                     }
-                    ctx.putImageData(imageData, 0, 0);
                 }
 
-                resolve(offCanvas);
+                destCtx.putImageData(destDataObj, 0, 0);
+                resolve(destCanvas);
             });
-        }
-
-        // アフィン変換による三角形描画ヘルパー
-        function drawTriangle(ctx, img, u0, v0, u1, v1, u2, v2, x0, y0, x1, y1, x2, y2) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
-            ctx.clip();
-
-            // Transform src triangle to dest triangle
-            const delta = u0 * v1 - v0 * u1 - u0 * v2 + u2 * v0 + u1 * v2 - u2 * v1;
-            if (Math.abs(delta) < 0.0001) { ctx.restore(); return; } // 退化回避
-
-            const a = -(y0 * v1 - y1 * v0 - y0 * v2 + y2 * v0 + y1 * v2 - y2 * v1) / delta;
-            const b = (x0 * v1 - x1 * v0 - x0 * v2 + x2 * v0 + x1 * v2 - x2 * v1) / delta;
-            const c = (y0 * u1 - y1 * u0 - y0 * u2 + y2 * u0 + y1 * u2 - y2 * u1) / delta;
-            const d = -(x0 * u1 - x1 * u0 - x0 * u2 + x2 * u0 + x1 * u2 - x2 * u1) / delta;
-            const e = (y0 * u1 * v2 - y0 * u2 * v1 - y1 * u0 * v2 + y1 * u2 * v0 + y2 * u0 * v1 - y2 * u1 * v0) / delta;
-            const f = -(x0 * u1 * v2 - x0 * u2 * v1 - x1 * u0 * v2 + x1 * u2 * v0 + x2 * u0 * v1 - x2 * u1 * v0) / delta;
-
-            ctx.transform(a, b, c, d, e, f);
-            ctx.drawImage(img, 0, 0);
-            ctx.restore();
         }
 
         // --- Edit Screen Logic ---
@@ -426,23 +414,26 @@
                 imgCanvas.height = h;
                 imgCtx.drawImage(img, 0, 0, w, h);
                 
-                // UI Canvasの設定 (コンテナに合わせる)
-                updateUIBounds();
-
-                // 初期四隅 (20%マージン)
-                const marginX = w * 0.15;
-                const marginY = h * 0.15;
-                State.corners = [
-                    { x: marginX, y: marginY }, // TL
-                    { x: w - marginX, y: marginY }, // TR
-                    { x: w - marginX, y: h - marginY }, // BR
-                    { x: marginX, y: h - marginY } // BL
-                ];
-
-                drawUI();
-                URL.revokeObjectURL(url);
-                UI.hideLoading();
                 UI.switchScreen('screen-edit');
+                
+                // UIが完全に展開されてからサイズ計算と描画を実行 (表示バグ回避)
+                requestAnimationFrame(() => {
+                    updateUIBounds();
+
+                    // 初期四隅 (15%マージン)
+                    const marginX = w * 0.15;
+                    const marginY = h * 0.15;
+                    State.corners = [
+                        { x: marginX, y: marginY }, // TL
+                        { x: w - marginX, y: marginY }, // TR
+                        { x: w - marginX, y: h - marginY }, // BR
+                        { x: marginX, y: h - marginY } // BL
+                    ];
+
+                    drawUI();
+                    UI.hideLoading();
+                });
+                URL.revokeObjectURL(url);
             };
             img.src = url;
         }
@@ -793,6 +784,22 @@
                 img.src = item.dataUrl;
                 img.className = 'w-full h-full object-cover';
                 
+                // 削除ボタン (Trash)
+                const delBtn = document.createElement('button');
+                delBtn.className = 'absolute top-2 right-2 bg-red-600/90 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform';
+                delBtn.innerHTML = '<i class="fas fa-trash-alt text-sm"></i>';
+                delBtn.onclick = async () => {
+                    const ok = await UI.confirm('画像を削除', 'この画像をスキャン結果から削除しますか？', '削除');
+                    if (ok) {
+                        URL.revokeObjectURL(item.dataUrl);
+                        State.processedItems.splice(index, 1);
+                        buildGallery();
+                        if (State.processedItems.length === 0) {
+                            UI.switchScreen('screen-home');
+                        }
+                    }
+                };
+                
                 // 個別ダウンロードボタン (ZIPなし対応)
                 const dlBtn = document.createElement('button');
                 dlBtn.className = 'absolute bottom-2 right-2 bg-blue-600/90 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform';
@@ -800,6 +807,7 @@
                 dlBtn.onclick = () => downloadSingle(index);
 
                 div.appendChild(img);
+                div.appendChild(delBtn);
                 div.appendChild(dlBtn);
                 grid.appendChild(div);
             });
@@ -946,6 +954,8 @@
             });
         }
 
+        let isAppendingMode = false; // 追加スキャンフラグ
+
         async function handleFiles(files) {
             if (files.length === 0) return;
             
@@ -956,6 +966,10 @@
             }
             
             UI.showLoading('画像を最適化中...');
+            
+            if (!isAppendingMode) {
+                State.processedItems = [];
+            }
             State.rawImages = [];
             
             try {
@@ -968,21 +982,41 @@
                 UI.showToast('一部の画像の読み込みに失敗しました');
             }
             
-            State.processedItems = [];
             UI.hideLoading();
             
             if (State.rawImages.length > 0) {
                 loadEditScreen(0);
+            } else if (isAppendingMode && State.processedItems.length > 0) {
+                UI.switchScreen('screen-gallery');
             }
+            
+            isAppendingMode = false;
         }
 
         document.getElementById('btn-camera').addEventListener('click', () => {
+            isAppendingMode = false;
             document.getElementById('file-input').removeAttribute('capture');
             document.getElementById('file-input').setAttribute('capture', 'environment');
             document.getElementById('file-input').click();
         });
 
         document.getElementById('btn-file').addEventListener('click', () => {
+            isAppendingMode = false;
+            document.getElementById('file-input').removeAttribute('capture');
+            document.getElementById('file-input').click();
+        });
+
+        // ギャラリーからの追加カメラ
+        document.getElementById('btn-add-camera').addEventListener('click', () => {
+            isAppendingMode = true;
+            document.getElementById('file-input').removeAttribute('capture');
+            document.getElementById('file-input').setAttribute('capture', 'environment');
+            document.getElementById('file-input').click();
+        });
+
+        // ギャラリーからの追加ファイル
+        document.getElementById('btn-add-file').addEventListener('click', () => {
+            isAppendingMode = true;
             document.getElementById('file-input').removeAttribute('capture');
             document.getElementById('file-input').click();
         });
