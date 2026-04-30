@@ -18,21 +18,16 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* Canvas interaction layer */
-        #crop-container { position: relative; width: 100%; height: calc(100vh - 200px); background: #000; touch-action: none; overflow: hidden; display: flex; justify-content: center; align-items: center;}
-        #image-canvas { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        #crop-container { position: relative; width: 100%; height: calc(100vh - 200px); background: #000; touch-action: none; overflow: hidden; }
+        #image-canvas { position: absolute; z-index: 10; transform-origin: center center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
         
         /* Magnifier (ルーペ) */
-        #magnifier { position: absolute; width: 100px; height: 100px; border: 3px solid #3b82f6; border-radius: 50%; background-color: #000; pointer-events: none; display: none; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 50; }
+        #magnifier { position: absolute; width: 100px; height: 100px; border: 3px solid #3b82f6; border-radius: 50%; background-color: #000; pointer-events: none; display: none; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.8); z-index: 50; }
         #magnifier-canvas { width: 100%; height: 100%; }
         #magnifier-crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; transform: translate(-50%, -50%); pointer-events: none; }
         #magnifier-crosshair::before { content: ''; position: absolute; top: 50%; left: -5px; right: -5px; height: 1px; background: rgba(59, 130, 246, 0.8); }
         #magnifier-crosshair::after { content: ''; position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: rgba(59, 130, 246, 0.8); }
-
-        /* Custom Range Slider */
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #4b5563; border-radius: 2px; }
 
         /* Hidden file input */
         #file-input { display: none; }
@@ -54,7 +49,7 @@
             </button>
             <button id="btn-file" class="w-full py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-2xl flex items-center justify-center space-x-3 transition-colors">
                 <i class="fas fa-images text-xl"></i>
-                <span class="text-lg font-medium">写真を選択 (複数可)</span>
+                <span class="text-lg font-medium">写真を選択 (最大20枚)</span>
             </button>
             <input type="file" id="file-input" accept="image/*" multiple>
         </div>
@@ -70,7 +65,7 @@
         <div class="h-14 bg-gray-900 flex justify-between items-center px-4 border-b border-gray-800">
             <button id="btn-edit-cancel" class="text-gray-400 hover:text-white px-2 py-1"><i class="fas fa-times text-xl"></i></button>
             <div class="text-sm font-medium" id="edit-counter">1 / 1</div>
-            <button id="btn-edit-done" class="text-blue-400 font-bold px-2 py-1 hover:text-blue-300">次へ <i class="fas fa-arrow-right ml-1"></i></button>
+            <button id="btn-edit-done" class="text-blue-400 font-bold px-2 py-1 hover:text-blue-300">確定 <i class="fas fa-check ml-1"></i></button>
         </div>
 
         <!-- Working Area -->
@@ -84,7 +79,7 @@
         </div>
 
         <!-- Tools Area -->
-        <div class="h-auto pb-6 pt-4 bg-gray-900 border-t border-gray-800 px-4 space-y-4">
+        <div class="h-auto pb-6 pt-4 bg-gray-900 border-t border-gray-800 px-4 space-y-4 relative z-40">
             <div class="flex justify-around">
                 <button class="tool-btn flex flex-col items-center space-y-1 text-blue-400" data-tool="crop">
                     <i class="fas fa-crop-alt text-xl"></i>
@@ -101,10 +96,12 @@
             </div>
 
             <!-- Effect Options (Hidden by default) -->
-            <div id="effect-options" class="hidden flex justify-around pt-2 border-t border-gray-800">
-                <button class="effect-btn px-3 py-1 rounded-full text-sm bg-blue-600 text-white" data-effect="none">標準</button>
-                <button class="effect-btn px-3 py-1 rounded-full text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="color-revive">退色復元 <i class="fas fa-sparkles text-yellow-400 ml-1"></i></button>
-                <button class="effect-btn px-3 py-1 rounded-full text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="grayscale">白黒</button>
+            <div id="effect-options" class="hidden flex flex-wrap justify-center gap-2 pt-2 border-t border-gray-800">
+                <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-blue-600 text-white" data-effect="none">標準</button>
+                <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="color-revive">退色復元</button>
+                <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="color-revive-mild">復元(弱)</button>
+                <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="sepia">セピア</button>
+                <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="grayscale">白黒</button>
             </div>
             
             <div class="text-center text-xs text-gray-500 pt-1" id="tool-hint">四隅の青い丸をドラッグして、写真の枠に合わせてください</div>
@@ -116,10 +113,11 @@
         <div class="h-14 bg-gray-900 flex justify-between items-center px-4 border-b border-gray-800 shadow-md">
             <button id="btn-gallery-back" class="text-gray-400 hover:text-white px-2 py-1"><i class="fas fa-chevron-left text-xl"></i></button>
             <div class="text-sm font-bold">スキャン結果 (<span id="gallery-count">0</span>)</div>
-            <div class="w-8"></div> <!-- Spacer -->
+            <div class="w-8"></div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-48">
+        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-56">
+            <div class="text-xs text-gray-400 mb-3 text-center"><i class="fas fa-info-circle mr-1"></i>画像をタップすると再編集できます</div>
             <div id="gallery-grid" class="grid grid-cols-2 gap-4">
                 <!-- Gallery items will be injected here -->
             </div>
@@ -151,14 +149,13 @@
         </div>
     </div>
 
-    <!-- UI Overlay: Loading -->
-    <div id="loading-overlay" class="absolute inset-0 bg-black/80 z-50 hidden flex-col items-center justify-center">
+    <!-- UI Overlays -->
+    <div id="loading-overlay" class="absolute inset-0 bg-black/80 z-[100] hidden flex-col items-center justify-center">
         <div class="loader mb-4"></div>
         <p id="loading-text" class="text-white font-medium tracking-wide">処理中...</p>
     </div>
 
-    <!-- UI Overlay: Custom Modal (Confirm代わり) -->
-    <div id="custom-modal" class="absolute inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+    <div id="custom-modal" class="absolute inset-0 bg-black/70 z-[100] hidden items-center justify-center p-4">
         <div class="bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-gray-700 scale-95 transition-transform duration-200" id="modal-content">
             <h3 id="modal-title" class="text-xl font-bold mb-2">確認</h3>
             <p id="modal-desc" class="text-gray-400 mb-6 text-sm leading-relaxed"></p>
@@ -169,15 +166,14 @@
         </div>
     </div>
 
-    <!-- UI Overlay: Toast -->
-    <div id="toast" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm font-medium transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none">
+    <div id="toast" class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg z-[100] text-sm font-medium transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none whitespace-nowrap">
         メッセージ
     </div>
 
     <script>
         /**
          * RetroScan Omni - Core Logic
-         * Phase 2: 2027 Implementation Standards Applied.
+         * Phase 2: Ultimate Architecture (Z-Index fix, Absolute Positioning, Non-Destructive Editing)
          */
         
         // --- System WakeLock ---
@@ -186,13 +182,12 @@
             try {
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock is active');
                 }
             } catch (err) { console.warn('Wake Lock error:', err); }
         }
         function releaseWakeLock() {
             if (wakeLock !== null) {
-                wakeLock.release().then(() => { wakeLock = null; console.log('Wake Lock released'); });
+                wakeLock.release().then(() => { wakeLock = null; });
             }
         }
 
@@ -256,29 +251,30 @@
 
         // --- State Management ---
         const State = {
-            rawImages: [], // Array of File/Blob (Proxy)
-            processedItems: [], // Array of { dataUrl, blob, settings }
+            rawImages: [], 
+            processedItems: [], // { dataUrl, blob, rawIndex, settings }
             currentEditIndex: 0,
-            currentImage: null, // HTMLImageElement
-            previewScale: 1, // 画面フィットのためのスケール
-            corners: [], // [{x, y}, ...] in image coordinates
+            isReEditing: false,     // 非破壊再編集フラグ
+            reEditItemIndex: -1,    // ギャラリー内のインデックス
+            
+            currentImage: null, 
+            previewScale: 1, 
+            corners: [], 
             activeCorner: -1,
-            rotation: 0, // 0, 90, 180, 270
-            effect: 'none', // none, grayscale, color-revive
+            rotation: 0, 
+            effect: 'none', 
             exportMaxSize: 3000,
             exportQuality: 1.0,
+            currentTool: 'crop', // crop, filter
             
             resetEditState: () => {
                 State.corners = [];
                 State.activeCorner = -1;
                 State.rotation = 0;
                 State.effect = 'none';
-                document.querySelectorAll('.effect-btn').forEach(b => {
-                    b.classList.remove('bg-blue-600', 'text-white');
-                    b.classList.add('bg-gray-800', 'text-gray-300');
-                });
-                document.querySelector('.effect-btn[data-effect="none"]').classList.add('bg-blue-600', 'text-white');
-                document.querySelector('.effect-btn[data-effect="none"]').classList.remove('bg-gray-800', 'text-gray-300');
+                State.currentTool = 'crop';
+                applyToolUI('crop');
+                applyEffectUI('none');
             }
         };
 
@@ -292,56 +288,42 @@
         const magCanvas = document.getElementById('magnifier-canvas');
         const magCtx = magCanvas.getContext('2d');
 
-        // --- Core Algorithm: 遠近法補正 (Perspective Transform via Inverse Mapping) ---
-        // GPUクリッピングバグを回避するため、ピクセル単位の逆マッピングアルゴリズムに刷新
+        // --- Core Algorithm: 遠近法補正 (Inverse Mapping) & Effects ---
         async function processPerspectiveAndEffect(sourceImg, srcCorners, destWidth, destHeight, effectType) {
             return new Promise((resolve) => {
-                // 元画像を一時Canvasに描画してピクセルデータを取得
                 const srcCanvas = document.createElement('canvas');
-                srcCanvas.width = sourceImg.width;
-                srcCanvas.height = sourceImg.height;
+                srcCanvas.width = sourceImg.width; srcCanvas.height = sourceImg.height;
                 const srcCtx = srcCanvas.getContext('2d', { willReadFrequently: true });
                 srcCtx.drawImage(sourceImg, 0, 0);
                 const srcDataObj = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
                 const srcData = srcDataObj.data;
-                const sw = srcCanvas.width;
-                const sh = srcCanvas.height;
+                const sw = srcCanvas.width; const sh = srcCanvas.height;
 
-                // 出力用Canvasの作成
-                const destW = Math.round(destWidth);
-                const destH = Math.round(destHeight);
+                const destW = Math.round(destWidth); const destH = Math.round(destHeight);
                 const destCanvas = document.createElement('canvas');
-                destCanvas.width = destW;
-                destCanvas.height = destH;
+                destCanvas.width = destW; destCanvas.height = destH;
                 const destCtx = destCanvas.getContext('2d', { willReadFrequently: true });
                 const destDataObj = destCtx.createImageData(destW, destH);
                 const destData = destDataObj.data;
 
                 const p0 = srcCorners[0], p1 = srcCorners[1], p2 = srcCorners[2], p3 = srcCorners[3];
 
-                // 逆マッピングループ (出力先の座標から元画像の座標を計算)
+                // Inverse Mapping (Bilinear Interpolation)
                 for (let y = 0; y < destH; y++) {
-                    const v = y / (destH - 1 || 1);
-                    const invV = 1 - v;
-                    
+                    const v = y / (destH - 1 || 1); const invV = 1 - v;
                     const p0x_v = invV * p0.x, p0y_v = invV * p0.y;
                     const p1x_v = invV * p1.x, p1y_v = invV * p1.y;
                     const p2x_v = v * p2.x,    p2y_v = v * p2.y;
                     const p3x_v = v * p3.x,    p3y_v = v * p3.y;
 
                     for (let x = 0; x < destW; x++) {
-                        const u = x / (destW - 1 || 1);
-                        const invU = 1 - u;
-
-                        // Bilinear補間によるソース座標 (sx, sy) の計算
+                        const u = x / (destW - 1 || 1); const invU = 1 - u;
                         const sx = invU * (p0x_v + p3x_v) + u * (p1x_v + p2x_v);
                         const sy = invU * (p0y_v + p3y_v) + u * (p1y_v + p2y_v);
 
-                        const srcX = Math.round(sx);
-                        const srcY = Math.round(sy);
+                        const srcX = Math.round(sx); const srcY = Math.round(sy);
                         const dstIdx = (y * destW + x) * 4;
 
-                        // 範囲内であれば色をコピー
                         if (srcX >= 0 && srcX < sw && srcY >= 0 && srcY < sh) {
                             const srcIdx = (srcY * sw + srcX) * 4;
                             destData[dstIdx]     = srcData[srcIdx];
@@ -349,12 +331,12 @@
                             destData[dstIdx + 2] = srcData[srcIdx + 2];
                             destData[dstIdx + 3] = srcData[srcIdx + 3];
                         } else {
-                            destData[dstIdx + 3] = 0; // 範囲外は透明
+                            destData[dstIdx + 3] = 0;
                         }
                     }
                 }
 
-                // --- エフェクト処理 ---
+                // Apply Extended Effects
                 if (effectType !== 'none') {
                     if (effectType === 'grayscale') {
                         for (let i = 0; i < destData.length; i += 4) {
@@ -362,7 +344,16 @@
                             const avg = destData[i] * 0.299 + destData[i+1] * 0.587 + destData[i+2] * 0.114;
                             destData[i] = destData[i+1] = destData[i+2] = avg;
                         }
-                    } else if (effectType === 'color-revive') {
+                    } else if (effectType === 'sepia') {
+                        for (let i = 0; i < destData.length; i += 4) {
+                            if (destData[i+3] === 0) continue;
+                            const r = destData[i], g = destData[i+1], b = destData[i+2];
+                            destData[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+                            destData[i+1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+                            destData[i+2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+                        }
+                    } else if (effectType.startsWith('color-revive')) {
+                        const strength = effectType === 'color-revive' ? 1.0 : 0.5; // 退色復元(弱)対応
                         let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
                         for (let i = 0; i < destData.length; i += 40) {
                             if (destData[i+3] === 0) continue;
@@ -370,14 +361,15 @@
                             if(destData[i+1]<minG) minG=destData[i+1]; if(destData[i+1]>maxG) maxG=destData[i+1];
                             if(destData[i+2]<minB) minB=destData[i+2]; if(destData[i+2]>maxB) maxB=destData[i+2];
                         }
-                        const rangeR = maxR - minR || 1;
-                        const rangeG = maxG - minG || 1;
-                        const rangeB = maxB - minB || 1;
+                        const rangeR = maxR - minR || 1, rangeG = maxG - minG || 1, rangeB = maxB - minB || 1;
                         for (let i = 0; i < destData.length; i += 4) {
                             if (destData[i+3] === 0) continue;
-                            destData[i]   = (destData[i] - minR) * 255 / rangeR;
-                            destData[i+1] = (destData[i+1] - minG) * 255 / rangeG;
-                            destData[i+2] = (destData[i+2] - minB) * 255 / rangeB;
+                            const nr = (destData[i] - minR) * 255 / rangeR;
+                            const ng = (destData[i+1] - minG) * 255 / rangeG;
+                            const nb = (destData[i+2] - minB) * 255 / rangeB;
+                            destData[i]   = destData[i] * (1 - strength) + nr * strength;
+                            destData[i+1] = destData[i+1] * (1 - strength) + ng * strength;
+                            destData[i+2] = destData[i+2] * (1 - strength) + nb * strength;
                         }
                     }
                 }
@@ -387,14 +379,30 @@
             });
         }
 
-        // --- Edit Screen Logic ---
+        // --- Edit Screen Logic (Absolute Positioning Override) ---
 
-        function loadEditScreen(index) {
+        function applyEffectStyle() {
+            const el = imgCanvas;
+            if(State.effect === 'grayscale') el.style.filter = 'grayscale(100%)';
+            else if(State.effect === 'sepia') el.style.filter = 'sepia(100%)';
+            else if(State.effect === 'color-revive') el.style.filter = 'contrast(1.2) saturate(1.5)';
+            else if(State.effect === 'color-revive-mild') el.style.filter = 'contrast(1.1) saturate(1.2)';
+            else el.style.filter = 'none';
+        }
+
+        function loadEditScreen(index, isRestore = false) {
             State.currentEditIndex = index;
-            document.getElementById('edit-counter').innerText = `${index + 1} / ${State.rawImages.length}`;
-            State.resetEditState();
             
-            UI.showLoading('画像展開中...');
+            if (!isRestore) {
+                document.getElementById('edit-counter').innerText = `${index + 1} / ${State.rawImages.length}`;
+                State.resetEditState();
+            } else {
+                document.getElementById('edit-counter').innerText = `再編集`;
+                applyToolUI(State.currentTool);
+                applyEffectUI(State.effect);
+            }
+            
+            UI.showLoading(isRestore ? '設定を復元中...' : '画像展開中...');
             
             const file = State.rawImages[index];
             const url = URL.createObjectURL(file);
@@ -402,7 +410,6 @@
             
             img.onload = () => {
                 State.currentImage = img;
-                // メモリクラッシュ防止: 編集画面用のプレビューは最大長辺1200pxに制限
                 const MAX_PREVIEW = 1200;
                 let w = img.width, h = img.height;
                 if (Math.max(w, h) > MAX_PREVIEW) {
@@ -414,22 +421,25 @@
                 imgCanvas.height = h;
                 imgCtx.drawImage(img, 0, 0, w, h);
                 
+                applyEffectStyle();
+                imgCanvas.style.transform = `rotate(${State.rotation}deg)`;
+                
                 UI.switchScreen('screen-edit');
                 
-                // UIが完全に展開されてからサイズ計算と描画を実行 (表示バグ回避)
+                // 画面展開後に絶対座標を計算
                 requestAnimationFrame(() => {
                     updateUIBounds();
 
-                    // 初期四隅 (15%マージン)
-                    const marginX = w * 0.15;
-                    const marginY = h * 0.15;
-                    State.corners = [
-                        { x: marginX, y: marginY }, // TL
-                        { x: w - marginX, y: marginY }, // TR
-                        { x: w - marginX, y: h - marginY }, // BR
-                        { x: marginX, y: h - marginY } // BL
-                    ];
-
+                    if (!isRestore) {
+                        const marginX = w * 0.15;
+                        const marginY = h * 0.15;
+                        State.corners = [
+                            { x: marginX, y: marginY },
+                            { x: w - marginX, y: marginY },
+                            { x: w - marginX, y: h - marginY },
+                            { x: marginX, y: h - marginY }
+                        ];
+                    }
                     drawUI();
                     UI.hideLoading();
                 });
@@ -438,96 +448,108 @@
             img.src = url;
         }
 
+        // JSによる絶対座標計算 (セーフエリア確保とズレ防止)
         let containerRect = null;
         function updateUIBounds() {
             containerRect = container.getBoundingClientRect();
-            // Containerのサイズと画像のアスペクト比から、実際の描画サイズとオフセットを計算
+            const padding = 30; // セーフエリア(余白)
             const cw = containerRect.width;
             const ch = containerRect.height;
+            const availW = cw - padding * 2;
+            const availH = ch - padding * 2;
+
             const iw = imgCanvas.width;
             const ih = imgCanvas.height;
-            
-            const scale = Math.min(cw / iw, ch / ih);
+
+            // 回転を考慮した専有エリアの計算
+            let drawW = iw, drawH = ih;
+            if (State.rotation === 90 || State.rotation === 270) {
+                drawW = ih; drawH = iw;
+            }
+
+            // 余白内に収まるスケールを計算
+            const scale = Math.min(availW / drawW, availH / drawH);
             State.previewScale = scale;
-            
+
+            const finalW = iw * scale;
+            const finalH = ih * scale;
+
+            // コンテナの中央に絶対配置
+            const left = (cw - finalW) / 2;
+            const top = (ch - finalH) / 2;
+
+            imgCanvas.style.width = `${finalW}px`;
+            imgCanvas.style.height = `${finalH}px`;
+            imgCanvas.style.left = `${left}px`;
+            imgCanvas.style.top = `${top}px`;
+
             uiCanvas.width = cw;
             uiCanvas.height = ch;
         }
 
+        // 中心基準の厳密な座標変換
         function imgToScreen(x, y) {
-            const cw = uiCanvas.width;
-            const ch = uiCanvas.height;
-            const dw = imgCanvas.width * State.previewScale;
-            const dh = imgCanvas.height * State.previewScale;
-            const ox = (cw - dw) / 2;
-            const oy = (ch - dh) / 2;
-            
-            // 回転を考慮 (プレビューの見た目上)
             let cx = imgCanvas.width / 2;
             let cy = imgCanvas.height / 2;
-            
             let dx = x - cx;
             let dy = y - cy;
-            
+
             let rad = State.rotation * Math.PI / 180;
             let nx = dx * Math.cos(rad) - dy * Math.sin(rad);
             let ny = dx * Math.sin(rad) + dy * Math.cos(rad);
 
-            return {
-                x: ox + (nx + cx) * State.previewScale,
-                y: oy + (ny + cy) * State.previewScale
-            };
+            nx *= State.previewScale;
+            ny *= State.previewScale;
+
+            let cw = uiCanvas.width / 2;
+            let ch = uiCanvas.height / 2;
+
+            return { x: cw + nx, y: ch + ny };
         }
 
         function screenToImg(sx, sy) {
-            const cw = uiCanvas.width;
-            const ch = uiCanvas.height;
-            const dw = imgCanvas.width * State.previewScale;
-            const dh = imgCanvas.height * State.previewScale;
-            const ox = (cw - dw) / 2;
-            const oy = (ch - dh) / 2;
+            let cw = uiCanvas.width / 2;
+            let ch = uiCanvas.height / 2;
+            let nx = sx - cw;
+            let ny = sy - ch;
 
-            let nx = (sx - ox) / State.previewScale;
-            let ny = (sy - oy) / State.previewScale;
-
-            let cx = imgCanvas.width / 2;
-            let cy = imgCanvas.height / 2;
-            nx -= cx; ny -= cy;
+            nx /= State.previewScale;
+            ny /= State.previewScale;
 
             let rad = -State.rotation * Math.PI / 180;
             let px = nx * Math.cos(rad) - ny * Math.sin(rad);
             let py = nx * Math.sin(rad) + ny * Math.cos(rad);
 
-            return {
-                x: px + cx,
-                y: py + cy
-            };
+            let cx = imgCanvas.width / 2;
+            let cy = imgCanvas.height / 2;
+
+            return { x: px + cx, y: py + cy };
         }
 
         function drawUI() {
             uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
-            if (State.corners.length !== 4) return;
+            // トリミングツール以外が選ばれている時はUI（青い点）を隠す
+            if (State.currentTool !== 'crop' || State.corners.length !== 4) return;
 
             const sc = State.corners.map(c => imgToScreen(c.x, c.y));
 
-            // 暗いオーバーレイ
+            // オーバーレイ
             uiCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             uiCtx.beginPath();
             uiCtx.moveTo(0, 0); uiCtx.lineTo(uiCanvas.width, 0); uiCtx.lineTo(uiCanvas.width, uiCanvas.height); uiCtx.lineTo(0, uiCanvas.height); uiCtx.closePath();
             uiCtx.moveTo(sc[0].x, sc[0].y); uiCtx.lineTo(sc[3].x, sc[3].y); uiCtx.lineTo(sc[2].x, sc[2].y); uiCtx.lineTo(sc[1].x, sc[1].y); uiCtx.closePath();
             uiCtx.fill('evenodd');
 
-            // 枠線
+            // 枠とハンドル
             uiCtx.strokeStyle = '#3b82f6';
             uiCtx.lineWidth = 2;
             uiCtx.beginPath();
             uiCtx.moveTo(sc[0].x, sc[0].y); uiCtx.lineTo(sc[1].x, sc[1].y); uiCtx.lineTo(sc[2].x, sc[2].y); uiCtx.lineTo(sc[3].x, sc[3].y); uiCtx.closePath();
             uiCtx.stroke();
 
-            // コーナーハンドル
             sc.forEach((c, i) => {
                 uiCtx.beginPath();
-                uiCtx.arc(c.x, c.y, 12, 0, Math.PI * 2);
+                uiCtx.arc(c.x, c.y, 14, 0, Math.PI * 2); // タップしやすく少し大きく
                 uiCtx.fillStyle = i === State.activeCorner ? '#60a5fa' : '#3b82f6';
                 uiCtx.fill();
                 uiCtx.strokeStyle = '#fff';
@@ -538,26 +560,18 @@
 
         function updateMagnifier(sx, sy, imgP) {
             magDiv.style.display = 'block';
-            
-            // 指で隠れない位置にルーペを移動 (左上 or 右上)
-            if (sx < window.innerWidth / 2) {
-                magDiv.style.left = (window.innerWidth - 120) + 'px';
-            } else {
-                magDiv.style.left = '20px';
-            }
+            if (sx < window.innerWidth / 2) magDiv.style.left = (window.innerWidth - 120) + 'px';
+            else magDiv.style.left = '20px';
             magDiv.style.top = '20px';
 
-            const zoom = 2; // ルーペの倍率
+            const zoom = 2;
             const mw = magCanvas.width = 100;
             const mh = magCanvas.height = 100;
             
             magCtx.clearRect(0,0,mw,mh);
-            
-            // 背景を黒に
             magCtx.fillStyle = '#000';
             magCtx.fillRect(0,0,mw,mh);
 
-            // 描画 (元画像から切り出し)
             magCtx.save();
             magCtx.translate(mw/2, mh/2);
             magCtx.rotate(State.rotation * Math.PI / 180);
@@ -570,29 +584,26 @@
             );
             magCtx.restore();
             
-            // エフェクト反映 (見た目のみ)
             if(State.effect !== 'none') {
-                magCtx.fillStyle = State.effect === 'grayscale' ? 'rgba(100,100,100,0.5)' : 'rgba(255,200,150,0.2)';
-                magCtx.globalCompositeOperation = 'color';
-                magCtx.fillRect(0,0,mw,mh);
+                applyEffectStyle(); // 見た目の同期
+                magCanvas.style.filter = imgCanvas.style.filter;
+            } else {
+                magCanvas.style.filter = 'none';
             }
         }
 
-        // --- Touch / Mouse Events on Canvas ---
+        // --- Touch Events ---
         let isDragging = false;
         
         function getEventPos(e) {
-            if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX - containerRect.left, y: e.touches[0].clientY - containerRect.top };
-            }
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX - containerRect.left, y: e.touches[0].clientY - containerRect.top };
             return { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
         }
 
         function onDown(e) {
-            if (State.corners.length !== 4) return;
+            if (State.currentTool !== 'crop' || State.corners.length !== 4) return;
             const pos = getEventPos(e);
             
-            // 一番近いコーナーを探す (タッチ判定を広く 40px)
             let minDist = 40;
             let active = -1;
             
@@ -606,7 +617,7 @@
                 isDragging = true;
                 State.activeCorner = active;
                 drawUI();
-                e.preventDefault(); // スクロール防止
+                e.preventDefault();
             }
         }
 
@@ -615,7 +626,6 @@
             e.preventDefault();
             
             const pos = getEventPos(e);
-            // 画面座標から画像座標へ変換して制限
             let imgP = screenToImg(pos.x, pos.y);
             imgP.x = Math.max(0, Math.min(imgCanvas.width, imgP.x));
             imgP.y = Math.max(0, Math.min(imgCanvas.height, imgP.y));
@@ -634,143 +644,141 @@
             }
         }
 
-        container.addEventListener('mousedown', onDown);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onUp);
-        container.addEventListener('touchstart', onDown, {passive: false});
-        window.addEventListener('touchmove', onMove, {passive: false});
-        window.addEventListener('touchend', onUp);
+        container.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+        container.addEventListener('touchstart', onDown, {passive: false}); window.addEventListener('touchmove', onMove, {passive: false}); window.addEventListener('touchend', onUp);
         window.addEventListener('resize', () => {
-            if (!document.getElementById('screen-edit').classList.contains('hidden')) {
-                updateUIBounds(); drawUI();
-            }
+            if (!document.getElementById('screen-edit').classList.contains('hidden')) { updateUIBounds(); drawUI(); }
         });
 
-        // --- Tools & Export ---
+        // --- Tools UI ---
+        function applyToolUI(toolName) {
+            document.querySelectorAll('.tool-btn').forEach(b => {
+                b.classList.remove('text-blue-400'); b.classList.add('text-gray-400');
+            });
+            const t = document.querySelector(`.tool-btn[data-tool="${toolName}"]`);
+            if(t) { t.classList.remove('text-gray-400'); t.classList.add('text-blue-400'); }
+            
+            if (toolName === 'filter') {
+                document.getElementById('effect-options').classList.remove('hidden');
+                document.getElementById('tool-hint').innerText = "お好みのエフェクトを選択してください";
+            } else {
+                document.getElementById('effect-options').classList.add('hidden');
+                document.getElementById('tool-hint').innerText = "四隅の青い丸をドラッグして、写真の枠に合わせてください";
+            }
+        }
+
+        function applyEffectUI(effectName) {
+            document.querySelectorAll('.effect-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('bg-gray-800', 'text-gray-300');
+            });
+            const t = document.querySelector(`.effect-btn[data-effect="${effectName}"]`);
+            if(t) { t.classList.remove('bg-gray-800', 'text-gray-300'); t.classList.add('bg-blue-600', 'text-white'); }
+        }
+
         document.querySelectorAll('.tool-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tool-btn').forEach(b => {
-                    b.classList.remove('text-blue-400'); b.classList.add('text-gray-400');
-                });
-                const t = e.currentTarget;
-                t.classList.remove('text-gray-400'); t.classList.add('text-blue-400');
-                
-                if (t.dataset.tool === 'filter') {
-                    document.getElementById('effect-options').classList.remove('hidden');
-                    document.getElementById('tool-hint').innerText = "お好みのエフェクトを選択してください";
-                } else {
-                    document.getElementById('effect-options').classList.add('hidden');
-                    document.getElementById('tool-hint').innerText = "四隅の青い丸をドラッグして、写真の枠に合わせてください";
-                }
+                State.currentTool = e.currentTarget.dataset.tool;
+                applyToolUI(State.currentTool);
+                drawUI(); // 切り抜きツール以外では青い点を隠す
             });
         });
 
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.effect-btn').forEach(b => {
-                    b.classList.remove('bg-blue-600', 'text-white');
-                    b.classList.add('bg-gray-800', 'text-gray-300');
-                });
-                const t = e.currentTarget;
-                t.classList.remove('bg-gray-800', 'text-gray-300');
-                t.classList.add('bg-blue-600', 'text-white');
-                State.effect = t.dataset.effect;
-                
-                // CSS filter for quick preview
-                if(State.effect === 'grayscale') imgCanvas.style.filter = 'grayscale(100%)';
-                else if(State.effect === 'color-revive') imgCanvas.style.filter = 'contrast(1.2) saturate(1.5)';
-                else imgCanvas.style.filter = 'none';
+                State.effect = e.currentTarget.dataset.effect;
+                applyEffectUI(State.effect);
+                applyEffectStyle();
             });
         });
 
         document.getElementById('btn-rotate').addEventListener('click', () => {
+            State.currentTool = 'rotate';
+            applyToolUI('rotate');
             State.rotation = (State.rotation + 90) % 360;
             imgCanvas.style.transform = `rotate(${State.rotation}deg)`;
             updateUIBounds();
             drawUI();
         });
 
-        // "次へ" 処理（画像を確定してギャラリーへ、または次の画像へ）
+        // "確定" 処理 (Non-Destructive Save)
         document.getElementById('btn-edit-done').addEventListener('click', async () => {
             UI.showLoading('画像処理中... (高画質演算)');
             
-            // 元画像 (Full Resolution) を読み込んで処理
             const file = State.rawImages[State.currentEditIndex];
             const url = URL.createObjectURL(file);
             const img = new Image();
             
             await new Promise((resolve) => {
                 img.onload = async () => {
-                    // スケール計算 (プレビュー -> 元画像)
                     const scaleX = img.width / imgCanvas.width;
                     const scaleY = img.height / imgCanvas.height;
-                    
                     const fullCorners = State.corners.map(c => ({ x: c.x * scaleX, y: c.y * scaleY }));
                     
-                    // 回転を考慮したCornersの並べ替え
                     let finalCorners = [...fullCorners];
                     if (State.rotation === 90) finalCorners = [fullCorners[3], fullCorners[0], fullCorners[1], fullCorners[2]];
                     else if (State.rotation === 180) finalCorners = [fullCorners[2], fullCorners[3], fullCorners[0], fullCorners[1]];
                     else if (State.rotation === 270) finalCorners = [fullCorners[1], fullCorners[2], fullCorners[3], fullCorners[0]];
 
-                    // 出力サイズの計算 (四角形の最大幅・高さを採用)
                     const w1 = Math.hypot(finalCorners[0].x - finalCorners[1].x, finalCorners[0].y - finalCorners[1].y);
                     const w2 = Math.hypot(finalCorners[2].x - finalCorners[3].x, finalCorners[2].y - finalCorners[3].y);
                     const h1 = Math.hypot(finalCorners[1].x - finalCorners[2].x, finalCorners[1].y - finalCorners[2].y);
                     const h2 = Math.hypot(finalCorners[3].x - finalCorners[0].x, finalCorners[3].y - finalCorners[0].y);
-                    const destW = Math.max(w1, w2);
-                    const destH = Math.max(h1, h2);
+                    const destW = Math.max(w1, w2); const destH = Math.max(h1, h2);
 
-                    // コアアルゴリズム実行
                     const resultCanvas = await processPerspectiveAndEffect(img, finalCorners, destW, destH, State.effect);
                     
-                    // Blobとして保存 (メモリ節約)
                     resultCanvas.toBlob((blob) => {
                         const dataUrl = URL.createObjectURL(blob);
-                        State.processedItems.push({ blob, dataUrl });
+                        const newItem = {
+                            blob, dataUrl, rawIndex: State.currentEditIndex,
+                            settings: { corners: JSON.parse(JSON.stringify(State.corners)), rotation: State.rotation, effect: State.effect }
+                        };
+
+                        if (State.isReEditing) {
+                            URL.revokeObjectURL(State.processedItems[State.reEditItemIndex].dataUrl);
+                            State.processedItems[State.reEditItemIndex] = newItem;
+                        } else {
+                            State.processedItems.push(newItem);
+                        }
                         URL.revokeObjectURL(url);
                         resolve();
-                    }, 'image/jpeg', 0.9); // 中間状態は0.9固定
+                    }, 'image/jpeg', 0.9);
                 };
                 img.src = url;
             });
 
             UI.hideLoading();
+            imgCanvas.style.filter = 'none'; imgCanvas.style.transform = 'none';
 
-            // クリーンアップ
-            imgCanvas.style.filter = 'none';
-            imgCanvas.style.transform = 'none';
-
-            if (State.currentEditIndex + 1 < State.rawImages.length) {
-                // 次の画像へ
+            if (State.isReEditing) {
+                State.isReEditing = false; State.reEditItemIndex = -1;
+                buildGallery(); UI.switchScreen('screen-gallery');
+            } else if (State.currentEditIndex + 1 < State.rawImages.length) {
                 loadEditScreen(State.currentEditIndex + 1);
             } else {
-                // 全て完了 -> ギャラリーへ
-                buildGallery();
-                UI.switchScreen('screen-gallery');
+                buildGallery(); UI.switchScreen('screen-gallery');
             }
         });
 
         document.getElementById('btn-edit-cancel').addEventListener('click', async () => {
-            const ok = await UI.confirm('編集を中止', 'この画像の編集をスキップしますか？', 'スキップ');
+            const isRe = State.isReEditing;
+            const ok = await UI.confirm(isRe ? '再編集の中止' : '編集をスキップ', isRe ? '変更を破棄して戻りますか？' : 'この画像の編集をスキップしますか？', isRe ? '戻る' : 'スキップ');
             if (ok) {
-                imgCanvas.style.filter = 'none';
-                imgCanvas.style.transform = 'none';
-                if (State.currentEditIndex + 1 < State.rawImages.length) {
+                imgCanvas.style.filter = 'none'; imgCanvas.style.transform = 'none';
+                if (isRe) {
+                    State.isReEditing = false; State.reEditItemIndex = -1;
+                    UI.switchScreen('screen-gallery');
+                } else if (State.currentEditIndex + 1 < State.rawImages.length) {
                     loadEditScreen(State.currentEditIndex + 1);
                 } else {
-                    if (State.processedItems.length > 0) {
-                        buildGallery(); UI.switchScreen('screen-gallery');
-                    } else {
-                        UI.switchScreen('screen-home');
-                        State.rawImages = [];
-                    }
+                    if (State.processedItems.length > 0) { buildGallery(); UI.switchScreen('screen-gallery'); }
+                    else { UI.switchScreen('screen-home'); State.rawImages = []; }
                 }
             }
         });
 
         // --- Gallery & Export ---
-        
         function buildGallery() {
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = '';
@@ -778,35 +786,48 @@
 
             State.processedItems.forEach((item, index) => {
                 const div = document.createElement('div');
-                div.className = 'relative aspect-[3/4] bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-md group';
+                div.className = 'relative aspect-[3/4] bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-md group cursor-pointer';
                 
                 const img = document.createElement('img');
                 img.src = item.dataUrl;
-                img.className = 'w-full h-full object-cover';
+                img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
                 
-                // 削除ボタン (Trash)
+                // 再編集トリガー
+                img.onclick = () => {
+                    State.isReEditing = true;
+                    State.reEditItemIndex = index;
+                    State.corners = JSON.parse(JSON.stringify(item.settings.corners));
+                    State.rotation = item.settings.rotation;
+                    State.effect = item.settings.effect;
+                    loadEditScreen(item.rawIndex, true);
+                };
+
+                // 再編集バッジ表示
+                const editBadge = document.createElement('div');
+                editBadge.className = 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none';
+                editBadge.innerHTML = '<div class="bg-blue-600 text-white text-xs px-3 py-1 rounded-full"><i class="fas fa-pen mr-1"></i>再編集</div>';
+
                 const delBtn = document.createElement('button');
-                delBtn.className = 'absolute top-2 right-2 bg-red-600/90 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform';
+                delBtn.className = 'absolute top-2 right-2 bg-red-600/90 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10';
                 delBtn.innerHTML = '<i class="fas fa-trash-alt text-sm"></i>';
-                delBtn.onclick = async () => {
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation(); // 画像クリック(再編集)を防ぐ
                     const ok = await UI.confirm('画像を削除', 'この画像をスキャン結果から削除しますか？', '削除');
                     if (ok) {
                         URL.revokeObjectURL(item.dataUrl);
                         State.processedItems.splice(index, 1);
                         buildGallery();
-                        if (State.processedItems.length === 0) {
-                            UI.switchScreen('screen-home');
-                        }
+                        if (State.processedItems.length === 0) UI.switchScreen('screen-home');
                     }
                 };
                 
-                // 個別ダウンロードボタン (ZIPなし対応)
                 const dlBtn = document.createElement('button');
-                dlBtn.className = 'absolute bottom-2 right-2 bg-blue-600/90 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform';
+                dlBtn.className = 'absolute bottom-2 right-2 bg-blue-600/90 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10';
                 dlBtn.innerHTML = '<i class="fas fa-download"></i>';
-                dlBtn.onclick = () => downloadSingle(index);
+                dlBtn.onclick = (e) => { e.stopPropagation(); downloadSingle(index); };
 
                 div.appendChild(img);
+                div.appendChild(editBadge);
                 div.appendChild(delBtn);
                 div.appendChild(dlBtn);
                 grid.appendChild(div);
@@ -816,12 +837,10 @@
         document.querySelectorAll('.quality-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.quality-btn').forEach(b => {
-                    b.classList.remove('bg-blue-600', 'text-white', 'font-medium');
-                    b.classList.add('text-gray-400');
+                    b.classList.remove('bg-blue-600', 'text-white', 'font-medium'); b.classList.add('text-gray-400');
                 });
                 const t = e.currentTarget;
-                t.classList.remove('text-gray-400');
-                t.classList.add('bg-blue-600', 'text-white', 'font-medium');
+                t.classList.remove('text-gray-400'); t.classList.add('bg-blue-600', 'text-white', 'font-medium');
                 State.exportMaxSize = parseInt(t.dataset.size);
                 State.exportQuality = parseFloat(t.dataset.quality);
             });
@@ -829,82 +848,46 @@
 
         async function createExportBlob(sourceBlob, maxSize, quality) {
             return new Promise((resolve) => {
-                const img = new Image();
-                const url = URL.createObjectURL(sourceBlob);
+                const img = new Image(); const url = URL.createObjectURL(sourceBlob);
                 img.onload = () => {
-                    let w = img.width;
-                    let h = img.height;
-                    
+                    let w = img.width, h = img.height;
                     if (Math.max(w, h) > maxSize) {
-                        const ratio = maxSize / Math.max(w, h);
-                        w *= ratio;
-                        h *= ratio;
+                        const ratio = maxSize / Math.max(w, h); w *= ratio; h *= ratio;
                     } else if (quality >= 0.95) {
-                        // リサイズ不要かつ最高画質の場合は元Blobを返す
-                        URL.revokeObjectURL(url);
-                        resolve(sourceBlob);
-                        return;
+                        URL.revokeObjectURL(url); resolve(sourceBlob); return;
                     }
-
                     const canvas = document.createElement('canvas');
-                    canvas.width = w; 
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(b => {
-                        URL.revokeObjectURL(url);
-                        resolve(b);
-                    }, 'image/jpeg', quality);
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(b => { URL.revokeObjectURL(url); resolve(b); }, 'image/jpeg', quality);
                 };
                 img.src = url;
             });
         }
 
-        // 個別ダウンロード
         async function downloadSingle(index) {
             UI.showLoading('画像を作成中...');
-            const item = State.processedItems[index];
-            const finalBlob = await createExportBlob(item.blob, State.exportMaxSize, State.exportQuality);
-            
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(finalBlob);
-            a.download = `Scan_${Date.now()}_${index+1}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            
-            UI.hideLoading();
-            UI.showToast('保存しました');
+            const finalBlob = await createExportBlob(State.processedItems[index].blob, State.exportMaxSize, State.exportQuality);
+            const a = document.createElement('a'); a.href = URL.createObjectURL(finalBlob); a.download = `Scan_${Date.now()}_${index+1}.jpg`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+            UI.hideLoading(); UI.showToast('保存しました');
         }
 
-        // ZIP一括ダウンロード
         document.getElementById('btn-export-zip').addEventListener('click', async () => {
             if (State.processedItems.length === 0) return;
             UI.showLoading('ZIPを作成中... (画面を閉じないでください)');
-            
             try {
                 const zip = new JSZip();
                 for (let i = 0; i < State.processedItems.length; i++) {
                     const finalBlob = await createExportBlob(State.processedItems[i].blob, State.exportMaxSize, State.exportQuality);
                     zip.file(`RetroScan_${i+1}.jpg`, finalBlob);
                 }
-                
                 const content = await zip.generateAsync({type: 'blob'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(content);
-                a.download = `RetroScan_Archive_${Date.now()}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
-                
-                UI.hideLoading();
-                UI.showToast('ZIPファイルを保存しました');
+                const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `RetroScan_Archive_${Date.now()}.zip`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+                UI.hideLoading(); UI.showToast('ZIPファイルを保存しました');
             } catch (e) {
-                UI.hideLoading();
-                UI.showToast('エラーが発生しました');
-                console.error(e);
+                UI.hideLoading(); UI.showToast('エラーが発生しました'); console.error(e);
             }
         });
 
@@ -918,117 +901,62 @@
             }
         });
 
-        // --- File Input Handlers ---
-        
+        // --- File Handling ---
         async function normalizeImage(file) {
             return new Promise((resolve, reject) => {
-                const url = URL.createObjectURL(file);
-                const img = new Image();
+                const url = URL.createObjectURL(file); const img = new Image();
                 img.onload = () => {
-                    let w = img.width;
-                    let h = img.height;
-                    const MAX_SIZE = 3000;
-                    
-                    if (Math.max(w, h) > MAX_SIZE) {
-                        const ratio = MAX_SIZE / Math.max(w, h);
-                        w *= ratio;
-                        h *= ratio;
-                    }
-                    
+                    let w = img.width, h = img.height; const MAX_SIZE = 3000;
+                    if (Math.max(w, h) > MAX_SIZE) { const ratio = MAX_SIZE / Math.max(w, h); w *= ratio; h *= ratio; }
                     const canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-                    
-                    canvas.toBlob((blob) => {
-                        URL.revokeObjectURL(url);
-                        resolve(blob);
-                    }, 'image/jpeg', 0.95);
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.toBlob((blob) => { URL.revokeObjectURL(url); resolve(blob); }, 'image/jpeg', 0.95);
                 };
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    reject(new Error("Image load failed"));
-                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
                 img.src = url;
             });
         }
 
-        let isAppendingMode = false; // 追加スキャンフラグ
+        let isAppendingMode = false;
 
         async function handleFiles(files) {
             if (files.length === 0) return;
-            
             let targetFiles = Array.from(files);
             if (targetFiles.length > 20) {
-                UI.showToast('一度に処理できるのは20枚までです');
-                targetFiles = targetFiles.slice(0, 20);
+                UI.showToast('一度に処理できるのは20枚までです'); targetFiles = targetFiles.slice(0, 20);
             }
-            
             UI.showLoading('画像を最適化中...');
-            
-            if (!isAppendingMode) {
-                State.processedItems = [];
-            }
+            if (!isAppendingMode) State.processedItems = [];
             State.rawImages = [];
-            
             try {
                 for (let i = 0; i < targetFiles.length; i++) {
                     const blob = await normalizeImage(targetFiles[i]);
                     State.rawImages.push(blob);
                 }
-            } catch(e) {
-                console.error(e);
-                UI.showToast('一部の画像の読み込みに失敗しました');
-            }
-            
+            } catch(e) { console.error(e); UI.showToast('一部の画像の読み込みに失敗しました'); }
             UI.hideLoading();
             
-            if (State.rawImages.length > 0) {
-                loadEditScreen(0);
-            } else if (isAppendingMode && State.processedItems.length > 0) {
-                UI.switchScreen('screen-gallery');
-            }
-            
+            if (State.rawImages.length > 0) loadEditScreen(0);
+            else if (isAppendingMode && State.processedItems.length > 0) UI.switchScreen('screen-gallery');
             isAppendingMode = false;
         }
 
         document.getElementById('btn-camera').addEventListener('click', () => {
-            isAppendingMode = false;
-            document.getElementById('file-input').removeAttribute('capture');
-            document.getElementById('file-input').setAttribute('capture', 'environment');
-            document.getElementById('file-input').click();
+            isAppendingMode = false; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').setAttribute('capture', 'environment'); document.getElementById('file-input').click();
         });
-
         document.getElementById('btn-file').addEventListener('click', () => {
-            isAppendingMode = false;
-            document.getElementById('file-input').removeAttribute('capture');
-            document.getElementById('file-input').click();
+            isAppendingMode = false; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').click();
         });
-
-        // ギャラリーからの追加カメラ
         document.getElementById('btn-add-camera').addEventListener('click', () => {
-            isAppendingMode = true;
-            document.getElementById('file-input').removeAttribute('capture');
-            document.getElementById('file-input').setAttribute('capture', 'environment');
-            document.getElementById('file-input').click();
+            isAppendingMode = true; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').setAttribute('capture', 'environment'); document.getElementById('file-input').click();
         });
-
-        // ギャラリーからの追加ファイル
         document.getElementById('btn-add-file').addEventListener('click', () => {
-            isAppendingMode = true;
-            document.getElementById('file-input').removeAttribute('capture');
-            document.getElementById('file-input').click();
+            isAppendingMode = true; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').click();
         });
+        document.getElementById('file-input').addEventListener('change', (e) => { handleFiles(e.target.files); e.target.value = ''; });
 
-        document.getElementById('file-input').addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-            e.target.value = ''; // Reset
-        });
-
-        // PWA Offline Ready Signal (Adom's Lab Protocol)
-        console.log("[Adom's Lab] App Initialized. Safe to cache: index.html");
-
+        console.log("[Adom's Lab] Phase 2 Ultimate Architecture Initialized.");
     </script>
 </body>
 </html>
