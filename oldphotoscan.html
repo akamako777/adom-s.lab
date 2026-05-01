@@ -4,30 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RetroScan Omni</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Base styles */
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a1a; color: #f3f4f6; overscroll-behavior-y: none; }
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            background-color: #1a1a1a; 
+            color: #f3f4f6; 
+            overscroll-behavior-y: none; 
+        }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Loading Spinner */
-        .loader { border: 4px solid #374151; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader { 
+            border: 4px solid #374151; 
+            border-top: 4px solid #3b82f6; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
 
         /* Canvas interaction layer */
-        #crop-container { position: relative; width: 100%; height: calc(100vh - 200px); background: #000; touch-action: none; overflow: hidden; }
-        #image-canvas { position: absolute; z-index: 10; transform-origin: center center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #ui-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+        #crop-container { 
+            position: relative; 
+            width: 100%; 
+            height: calc(100vh - 200px); 
+            background: #000; 
+            touch-action: none; 
+            overflow: hidden; 
+        }
+        #image-canvas { 
+            position: absolute; 
+            z-index: 10; 
+            transform-origin: center center; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+        }
+        #ui-canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            pointer-events: none; 
+            z-index: 20; 
+        }
         
         /* Magnifier (ルーペ) */
-        #magnifier { position: absolute; width: 100px; height: 100px; border: 3px solid #3b82f6; border-radius: 50%; background-color: #000; pointer-events: none; display: none; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.8); z-index: 50; }
+        #magnifier { 
+            position: absolute; 
+            width: 100px; 
+            height: 100px; 
+            border: 3px solid #3b82f6; 
+            border-radius: 50%; 
+            background-color: #000; 
+            pointer-events: none; 
+            display: none; 
+            overflow: hidden; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8); 
+            z-index: 50; 
+        }
         #magnifier-canvas { width: 100%; height: 100%; }
-        #magnifier-crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; transform: translate(-50%, -50%); pointer-events: none; }
-        #magnifier-crosshair::before { content: ''; position: absolute; top: 50%; left: -5px; right: -5px; height: 1px; background: rgba(59, 130, 246, 0.8); }
-        #magnifier-crosshair::after { content: ''; position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: rgba(59, 130, 246, 0.8); }
+        #magnifier-crosshair { 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            width: 10px; height: 10px; 
+            transform: translate(-50%, -50%); 
+            pointer-events: none; 
+        }
+        #magnifier-crosshair::before { 
+            content: ''; position: absolute; 
+            top: 50%; left: -5px; right: -5px; height: 1px; 
+            background: rgba(59, 130, 246, 0.8); 
+        }
+        #magnifier-crosshair::after { 
+            content: ''; position: absolute; 
+            left: 50%; top: -5px; bottom: -5px; width: 1px; 
+            background: rgba(59, 130, 246, 0.8); 
+        }
 
         /* Hidden file input */
         #file-input { display: none; }
@@ -95,7 +159,7 @@
                 </button>
             </div>
 
-            <!-- Effect Options (Hidden by default) -->
+            <!-- Effect Options -->
             <div id="effect-options" class="hidden flex flex-wrap justify-center gap-2 pt-2 border-t border-gray-800">
                 <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-blue-600 text-white" data-effect="none">標準</button>
                 <button class="effect-btn px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-800 text-gray-300 border border-gray-700" data-effect="color-revive">退色復元</button>
@@ -116,7 +180,7 @@
             <div class="w-8"></div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-56">
+        <div class="flex-1 overflow-y-auto p-4 hide-scrollbar pb-[280px]">
             <div class="text-xs text-gray-400 mb-3 text-center"><i class="fas fa-info-circle mr-1"></i>画像をタップすると再編集できます</div>
             <div id="gallery-grid" class="grid grid-cols-2 gap-4">
                 <!-- Gallery items will be injected here -->
@@ -132,8 +196,16 @@
                 <button id="btn-add-file" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-white font-medium flex items-center justify-center transition-colors border border-gray-600"><i class="fas fa-images mr-2"></i>写真追加</button>
             </div>
 
-            <div class="mb-4">
-                <label class="block text-xs text-gray-400 mb-2">保存画質</label>
+            <!-- 出力設定領域 (Polaroid Toggle Added) -->
+            <div class="mb-4 space-y-3">
+                <div class="flex justify-between items-center px-1">
+                    <label class="text-xs text-gray-400">保存画質</label>
+                    <label class="flex items-center space-x-2 text-sm text-gray-200 cursor-pointer bg-gray-900/60 px-3 py-1.5 rounded-lg border border-gray-600 hover:bg-gray-700 transition active:scale-95">
+                        <input type="checkbox" id="cb-polaroid" class="w-4 h-4 text-blue-500 rounded border-gray-500 bg-gray-800 accent-blue-500">
+                        <span><i class="fas fa-camera-retro mr-1 text-gray-400"></i>ポラロイド枠</span>
+                    </label>
+                </div>
+                
                 <div class="flex bg-gray-900 rounded-lg p-1">
                     <button class="quality-btn flex-1 py-1 text-xs sm:text-sm rounded-md bg-blue-600 text-white font-medium" data-size="3000" data-quality="1.0">超高画質</button>
                     <button class="quality-btn flex-1 py-1 text-xs sm:text-sm rounded-md text-gray-400" data-size="2000" data-quality="0.9">高画質</button>
@@ -173,214 +245,268 @@
     <script>
         /**
          * RetroScan Omni - Core Logic
-         * Phase 2: Ultimate Architecture (Z-Index fix, Absolute Positioning, Non-Destructive Editing)
+         * Phase 2 & 3 Integrated: The 2027 Standards
+         * (Non-blocking Asynchronous Chunking, De-minified, PWA Ready)
          */
         
-        // --- System WakeLock ---
+        // --- Wake Lock Management ---
         let wakeLock = null;
-        async function requestWakeLock() {
-            try {
+        async function requestWakeLock() { 
+            try { 
                 if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock = await navigator.wakeLock.request('screen'); 
                 }
-            } catch (err) { console.warn('Wake Lock error:', err); }
+            } catch (err) {
+                console.warn('Wake Lock error:', err);
+            } 
         }
-        function releaseWakeLock() {
+        function releaseWakeLock() { 
             if (wakeLock !== null) {
-                wakeLock.release().then(() => { wakeLock = null; });
+                wakeLock.release().then(() => { wakeLock = null; }); 
             }
         }
 
-        // --- UI Utilities ---
+        // --- UI Manager ---
         const UI = {
-            showLoading: (msg = '処理中...') => {
-                document.getElementById('loading-text').innerText = msg;
-                document.getElementById('loading-overlay').style.display = 'flex';
-                requestWakeLock();
+            showLoading: (msg = '処理中...') => { 
+                document.getElementById('loading-text').innerText = msg; 
+                document.getElementById('loading-overlay').style.display = 'flex'; 
+                requestWakeLock(); 
             },
-            hideLoading: () => {
-                document.getElementById('loading-overlay').style.display = 'none';
-                releaseWakeLock();
+            hideLoading: () => { 
+                document.getElementById('loading-overlay').style.display = 'none'; 
+                releaseWakeLock(); 
             },
-            showToast: (msg, duration = 3000) => {
-                const t = document.getElementById('toast');
-                t.innerText = msg;
-                t.style.opacity = '1';
-                t.style.transform = 'translate(-50%, 0)';
-                setTimeout(() => {
-                    t.style.opacity = '0';
-                    t.style.transform = 'translate(-50%, -20px)';
-                }, duration);
+            showToast: (msg, dur = 3000) => { 
+                const t = document.getElementById('toast'); 
+                t.innerText = msg; 
+                t.style.opacity = '1'; 
+                t.style.transform = 'translate(-50%, 0)'; 
+                setTimeout(() => { 
+                    t.style.opacity = '0'; 
+                    t.style.transform = 'translate(-50%, -20px)'; 
+                }, dur); 
             },
             confirm: (title, desc, okText = 'OK', okColor = 'bg-red-600') => {
                 return new Promise((resolve) => {
-                    const m = document.getElementById('custom-modal');
+                    const modal = document.getElementById('custom-modal');
                     const content = document.getElementById('modal-content');
                     const btnOk = document.getElementById('modal-btn-ok');
                     const btnCancel = document.getElementById('modal-btn-cancel');
                     
-                    document.getElementById('modal-title').innerText = title;
-                    document.getElementById('modal-desc').innerText = desc;
-                    btnOk.innerText = okText;
+                    document.getElementById('modal-title').innerText = title; 
+                    document.getElementById('modal-desc').innerText = desc; 
+                    btnOk.innerText = okText; 
                     btnOk.className = `px-4 py-2 rounded-lg text-white font-medium ${okColor}`;
                     
-                    m.style.display = 'flex';
+                    modal.style.display = 'flex'; 
                     setTimeout(() => content.classList.replace('scale-95', 'scale-100'), 10);
-
-                    const cleanup = () => {
-                        content.classList.replace('scale-100', 'scale-95');
-                        setTimeout(() => { m.style.display = 'none'; }, 200);
-                        btnOk.removeEventListener('click', onOk);
-                        btnCancel.removeEventListener('click', onCancel);
+                    
+                    const cleanup = () => { 
+                        content.classList.replace('scale-100', 'scale-95'); 
+                        setTimeout(() => modal.style.display = 'none', 200); 
+                        btnOk.removeEventListener('click', onOk); 
+                        btnCancel.removeEventListener('click', onCancel); 
                     };
-
-                    const onOk = () => { cleanup(); resolve(true); };
+                    
+                    const onOk = () => { cleanup(); resolve(true); }; 
                     const onCancel = () => { cleanup(); resolve(false); };
-
-                    btnOk.addEventListener('click', onOk);
+                    
+                    btnOk.addEventListener('click', onOk); 
                     btnCancel.addEventListener('click', onCancel);
                 });
             },
-            switchScreen: (screenId) => {
-                ['screen-home', 'screen-edit', 'screen-gallery'].forEach(id => {
-                    document.getElementById(id).classList.add('hidden');
-                });
-                document.getElementById(screenId).classList.remove('hidden');
+            switchScreen: (id) => { 
+                ['screen-home', 'screen-edit', 'screen-gallery'].forEach(s => {
+                    document.getElementById(s).classList.add('hidden');
+                }); 
+                document.getElementById(id).classList.remove('hidden'); 
             }
         };
 
-        // --- State Management ---
+        // --- Application State ---
         const State = {
             rawImages: [], 
-            processedItems: [], // { dataUrl, blob, rawIndex, settings }
-            currentEditIndex: 0,
-            isReEditing: false,     // 非破壊再編集フラグ
-            reEditItemIndex: -1,    // ギャラリー内のインデックス
-            
+            processedItems: [], 
+            currentEditIndex: 0, 
+            isReEditing: false, 
+            reEditItemIndex: -1,
             currentImage: null, 
             previewScale: 1, 
             corners: [], 
-            activeCorner: -1,
+            activeCorner: -1, 
             rotation: 0, 
             effect: 'none', 
-            exportMaxSize: 3000,
-            exportQuality: 1.0,
-            currentTool: 'crop', // crop, filter
-            
-            resetEditState: () => {
-                State.corners = [];
-                State.activeCorner = -1;
-                State.rotation = 0;
-                State.effect = 'none';
-                State.currentTool = 'crop';
-                applyToolUI('crop');
-                applyEffectUI('none');
+            exportMaxSize: 3000, 
+            exportQuality: 1.0, 
+            currentTool: 'crop',
+            resetEditState: () => { 
+                State.corners = []; 
+                State.activeCorner = -1; 
+                State.rotation = 0; 
+                State.effect = 'none'; 
+                State.currentTool = 'crop'; 
+                applyToolUI('crop'); 
+                applyEffectUI('none'); 
             }
         };
 
-        // --- Canvas Setup ---
+        // --- Canvas Definitions ---
         const container = document.getElementById('crop-container');
         const imgCanvas = document.getElementById('image-canvas');
         const imgCtx = imgCanvas.getContext('2d', { willReadFrequently: true });
+        
         const uiCanvas = document.getElementById('ui-canvas');
         const uiCtx = uiCanvas.getContext('2d');
+        
         const magDiv = document.getElementById('magnifier');
         const magCanvas = document.getElementById('magnifier-canvas');
         const magCtx = magCanvas.getContext('2d');
 
-        // --- Core Algorithm: 遠近法補正 (Inverse Mapping) & Effects ---
+        // --- Core Engine: Asynchronous Perspective Mapping & Effects ---
+        // 処理の重いピクセル演算をチャンクに分割し、UIフリーズを回避します
         async function processPerspectiveAndEffect(sourceImg, srcCorners, destWidth, destHeight, effectType) {
             return new Promise((resolve) => {
-                const srcCanvas = document.createElement('canvas');
-                srcCanvas.width = sourceImg.width; srcCanvas.height = sourceImg.height;
-                const srcCtx = srcCanvas.getContext('2d', { willReadFrequently: true });
+                const srcCanvas = document.createElement('canvas'); 
+                srcCanvas.width = sourceImg.width; 
+                srcCanvas.height = sourceImg.height;
+                const srcCtx = srcCanvas.getContext('2d', { willReadFrequently: true }); 
                 srcCtx.drawImage(sourceImg, 0, 0);
+                
                 const srcDataObj = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
                 const srcData = srcDataObj.data;
-                const sw = srcCanvas.width; const sh = srcCanvas.height;
+                const sw = srcCanvas.width; 
+                const sh = srcCanvas.height;
 
-                const destW = Math.round(destWidth); const destH = Math.round(destHeight);
+                const destW = Math.round(destWidth);
+                const destH = Math.round(destHeight);
                 const destCanvas = document.createElement('canvas');
-                destCanvas.width = destW; destCanvas.height = destH;
+                destCanvas.width = destW; 
+                destCanvas.height = destH;
+                
                 const destCtx = destCanvas.getContext('2d', { willReadFrequently: true });
                 const destDataObj = destCtx.createImageData(destW, destH);
                 const destData = destDataObj.data;
 
                 const p0 = srcCorners[0], p1 = srcCorners[1], p2 = srcCorners[2], p3 = srcCorners[3];
 
-                // Inverse Mapping (Bilinear Interpolation)
-                for (let y = 0; y < destH; y++) {
-                    const v = y / (destH - 1 || 1); const invV = 1 - v;
-                    const p0x_v = invV * p0.x, p0y_v = invV * p0.y;
-                    const p1x_v = invV * p1.x, p1y_v = invV * p1.y;
-                    const p2x_v = v * p2.x,    p2y_v = v * p2.y;
-                    const p3x_v = v * p3.x,    p3y_v = v * p3.y;
+                // 1. Perspective Mapping (Asynchronous Chunking)
+                let currentY = 0;
+                const mappingChunkSize = 100; // 一度に処理する行数
 
-                    for (let x = 0; x < destW; x++) {
-                        const u = x / (destW - 1 || 1); const invU = 1 - u;
-                        const sx = invU * (p0x_v + p3x_v) + u * (p1x_v + p2x_v);
-                        const sy = invU * (p0y_v + p3y_v) + u * (p1y_v + p2y_v);
-
-                        const srcX = Math.round(sx); const srcY = Math.round(sy);
-                        const dstIdx = (y * destW + x) * 4;
-
-                        if (srcX >= 0 && srcX < sw && srcY >= 0 && srcY < sh) {
-                            const srcIdx = (srcY * sw + srcX) * 4;
-                            destData[dstIdx]     = srcData[srcIdx];
-                            destData[dstIdx + 1] = srcData[srcIdx + 1];
-                            destData[dstIdx + 2] = srcData[srcIdx + 2];
-                            destData[dstIdx + 3] = srcData[srcIdx + 3];
-                        } else {
-                            destData[dstIdx + 3] = 0;
+                function processMappingChunk() {
+                    const endY = Math.min(currentY + mappingChunkSize, destH);
+                    
+                    for (let y = currentY; y < endY; y++) {
+                        const v = y / (destH - 1 || 1); 
+                        const invV = 1 - v;
+                        const p0x_v = invV * p0.x, p0y_v = invV * p0.y;
+                        const p1x_v = invV * p1.x, p1y_v = invV * p1.y;
+                        const p2x_v = v * p2.x, p2y_v = v * p2.y;
+                        const p3x_v = v * p3.x, p3y_v = v * p3.y;
+                        
+                        for (let x = 0; x < destW; x++) {
+                            const u = x / (destW - 1 || 1); 
+                            const invU = 1 - u;
+                            const sx = invU * (p0x_v + p3x_v) + u * (p1x_v + p2x_v);
+                            const sy = invU * (p0y_v + p3y_v) + u * (p1y_v + p2y_v);
+                            
+                            const srcX = Math.round(sx); 
+                            const srcY = Math.round(sy); 
+                            const dstIdx = (y * destW + x) * 4;
+                            
+                            if (srcX >= 0 && srcX < sw && srcY >= 0 && srcY < sh) {
+                                const srcIdx = (srcY * sw + srcX) * 4;
+                                destData[dstIdx] = srcData[srcIdx]; 
+                                destData[dstIdx + 1] = srcData[srcIdx + 1]; 
+                                destData[dstIdx + 2] = srcData[srcIdx + 2]; 
+                                destData[dstIdx + 3] = srcData[srcIdx + 3];
+                            } else {
+                                destData[dstIdx + 3] = 0;
+                            }
                         }
+                    }
+                    
+                    currentY = endY;
+                    if (currentY < destH) {
+                        requestAnimationFrame(processMappingChunk);
+                    } else {
+                        startEffectProcessing(); // 次のフェーズへ
                     }
                 }
 
-                // Apply Extended Effects
-                if (effectType !== 'none') {
-                    if (effectType === 'grayscale') {
-                        for (let i = 0; i < destData.length; i += 4) {
-                            if (destData[i+3] === 0) continue;
-                            const avg = destData[i] * 0.299 + destData[i+1] * 0.587 + destData[i+2] * 0.114;
-                            destData[i] = destData[i+1] = destData[i+2] = avg;
-                        }
-                    } else if (effectType === 'sepia') {
-                        for (let i = 0; i < destData.length; i += 4) {
-                            if (destData[i+3] === 0) continue;
-                            const r = destData[i], g = destData[i+1], b = destData[i+2];
-                            destData[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
-                            destData[i+1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
-                            destData[i+2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
-                        }
-                    } else if (effectType.startsWith('color-revive')) {
-                        const strength = effectType === 'color-revive' ? 1.0 : 0.5; // 退色復元(弱)対応
-                        let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+                // 2. Effect Application (Asynchronous Chunking)
+                function startEffectProcessing() {
+                    if (effectType === 'none') {
+                        finishProcessing();
+                        return;
+                    }
+
+                    let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+                    
+                    // 退色復元用の事前スキャン (間引きで行うためここは同期で問題なし)
+                    if (effectType.startsWith('color-revive')) {
                         for (let i = 0; i < destData.length; i += 40) {
                             if (destData[i+3] === 0) continue;
-                            if(destData[i]<minR) minR=destData[i]; if(destData[i]>maxR) maxR=destData[i];
-                            if(destData[i+1]<minG) minG=destData[i+1]; if(destData[i+1]>maxG) maxG=destData[i+1];
+                            if(destData[i]<minR) minR=destData[i]; if(destData[i]>maxR) maxR=destData[i]; 
+                            if(destData[i+1]<minG) minG=destData[i+1]; if(destData[i+1]>maxG) maxG=destData[i+1]; 
                             if(destData[i+2]<minB) minB=destData[i+2]; if(destData[i+2]>maxB) maxB=destData[i+2];
                         }
-                        const rangeR = maxR - minR || 1, rangeG = maxG - minG || 1, rangeB = maxB - minB || 1;
-                        for (let i = 0; i < destData.length; i += 4) {
+                    }
+
+                    const rR = maxR - minR || 1, rG = maxG - minG || 1, rB = maxB - minB || 1;
+                    const strength = effectType === 'color-revive' ? 1.0 : 0.5;
+
+                    let currentIndex = 0;
+                    const effectChunkSize = 4 * destW * 100; // 100行分のピクセルデータ
+
+                    function processEffectChunk() {
+                        const endIndex = Math.min(currentIndex + effectChunkSize, destData.length);
+                        
+                        for (let i = currentIndex; i < endIndex; i += 4) {
                             if (destData[i+3] === 0) continue;
-                            const nr = (destData[i] - minR) * 255 / rangeR;
-                            const ng = (destData[i+1] - minG) * 255 / rangeG;
-                            const nb = (destData[i+2] - minB) * 255 / rangeB;
-                            destData[i]   = destData[i] * (1 - strength) + nr * strength;
-                            destData[i+1] = destData[i+1] * (1 - strength) + ng * strength;
-                            destData[i+2] = destData[i+2] * (1 - strength) + nb * strength;
+                            
+                            if (effectType === 'grayscale') {
+                                const avg = destData[i] * 0.299 + destData[i+1] * 0.587 + destData[i+2] * 0.114; 
+                                destData[i] = destData[i+1] = destData[i+2] = avg; 
+                            } else if (effectType === 'sepia') {
+                                const r = destData[i], g = destData[i+1], b = destData[i+2];
+                                destData[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189)); 
+                                destData[i+1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168)); 
+                                destData[i+2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+                            } else if (effectType.startsWith('color-revive')) {
+                                const nr = (destData[i] - minR) * 255 / rR;
+                                const ng = (destData[i+1] - minG) * 255 / rG;
+                                const nb = (destData[i+2] - minB) * 255 / rB;
+                                destData[i] = destData[i] * (1 - strength) + nr * strength; 
+                                destData[i+1] = destData[i+1] * (1 - strength) + ng * strength; 
+                                destData[i+2] = destData[i+2] * (1 - strength) + nb * strength;
+                            }
+                        }
+
+                        currentIndex = endIndex;
+                        if (currentIndex < destData.length) {
+                            requestAnimationFrame(processEffectChunk);
+                        } else {
+                            finishProcessing();
                         }
                     }
+
+                    processEffectChunk();
                 }
 
-                destCtx.putImageData(destDataObj, 0, 0);
-                resolve(destCanvas);
+                // 3. Finalize
+                function finishProcessing() {
+                    destCtx.putImageData(destDataObj, 0, 0); 
+                    resolve(destCanvas);
+                }
+
+                // キックオフ
+                processMappingChunk();
             });
         }
 
-        // --- Edit Screen Logic (Absolute Positioning Override) ---
-
+        // --- Editing UI Handlers ---
         function applyEffectStyle() {
             const el = imgCanvas;
             if(State.effect === 'grayscale') el.style.filter = 'grayscale(100%)';
@@ -393,570 +519,687 @@
         function loadEditScreen(index, isRestore = false) {
             State.currentEditIndex = index;
             
-            if (!isRestore) {
-                document.getElementById('edit-counter').innerText = `${index + 1} / ${State.rawImages.length}`;
-                State.resetEditState();
-            } else {
-                document.getElementById('edit-counter').innerText = `再編集`;
-                applyToolUI(State.currentTool);
-                applyEffectUI(State.effect);
+            if (!isRestore) { 
+                document.getElementById('edit-counter').innerText = `${index + 1} / ${State.rawImages.length}`; 
+                State.resetEditState(); 
+            } else { 
+                document.getElementById('edit-counter').innerText = `再編集`; 
+                applyToolUI(State.currentTool); 
+                applyEffectUI(State.effect); 
             }
             
             UI.showLoading(isRestore ? '設定を復元中...' : '画像展開中...');
             
-            const file = State.rawImages[index];
-            const url = URL.createObjectURL(file);
+            const url = URL.createObjectURL(State.rawImages[index]);
             const img = new Image();
             
             img.onload = () => {
-                State.currentImage = img;
-                const MAX_PREVIEW = 1200;
-                let w = img.width, h = img.height;
-                if (Math.max(w, h) > MAX_PREVIEW) {
-                    const ratio = MAX_PREVIEW / Math.max(w, h);
-                    w *= ratio; h *= ratio;
+                State.currentImage = img; 
+                let w = img.width, h = img.height, max = 1200;
+                
+                if (Math.max(w, h) > max) { 
+                    const r = max / Math.max(w, h); 
+                    w *= r; 
+                    h *= r; 
                 }
                 
-                imgCanvas.width = w;
-                imgCanvas.height = h;
+                imgCanvas.width = w; 
+                imgCanvas.height = h; 
                 imgCtx.drawImage(img, 0, 0, w, h);
+                applyEffectStyle(); 
                 
-                applyEffectStyle();
                 imgCanvas.style.transform = `rotate(${State.rotation}deg)`;
-                
                 UI.switchScreen('screen-edit');
                 
-                // 画面展開後に絶対座標を計算
                 requestAnimationFrame(() => {
                     updateUIBounds();
-
-                    if (!isRestore) {
-                        const marginX = w * 0.15;
-                        const marginY = h * 0.15;
+                    if (!isRestore) { 
+                        const mx = w * 0.15, my = h * 0.15; 
                         State.corners = [
-                            { x: marginX, y: marginY },
-                            { x: w - marginX, y: marginY },
-                            { x: w - marginX, y: h - marginY },
-                            { x: marginX, y: h - marginY }
-                        ];
+                            {x: mx, y: my}, 
+                            {x: w-mx, y: my}, 
+                            {x: w-mx, y: h-my}, 
+                            {x: mx, y: h-my}
+                        ]; 
                     }
-                    drawUI();
+                    drawUI(); 
                     UI.hideLoading();
                 });
                 URL.revokeObjectURL(url);
-            };
+            }; 
             img.src = url;
         }
 
-        // JSによる絶対座標計算 (セーフエリア確保とズレ防止)
         let containerRect = null;
         function updateUIBounds() {
             containerRect = container.getBoundingClientRect();
-            const padding = 30; // セーフエリア(余白)
-            const cw = containerRect.width;
-            const ch = containerRect.height;
-            const availW = cw - padding * 2;
-            const availH = ch - padding * 2;
-
-            const iw = imgCanvas.width;
-            const ih = imgCanvas.height;
-
-            // 回転を考慮した専有エリアの計算
-            let drawW = iw, drawH = ih;
-            if (State.rotation === 90 || State.rotation === 270) {
-                drawW = ih; drawH = iw;
+            const pad = 30;
+            const cw = containerRect.width, ch = containerRect.height;
+            const aw = cw - pad * 2, ah = ch - pad * 2;
+            const iw = imgCanvas.width, ih = imgCanvas.height;
+            
+            let dw = iw, dh = ih; 
+            if (State.rotation === 90 || State.rotation === 270) { 
+                dw = ih; dh = iw; 
             }
-
-            // 余白内に収まるスケールを計算
-            const scale = Math.min(availW / drawW, availH / drawH);
+            
+            const scale = Math.min(aw / dw, ah / dh); 
             State.previewScale = scale;
-
-            const finalW = iw * scale;
-            const finalH = ih * scale;
-
-            // コンテナの中央に絶対配置
-            const left = (cw - finalW) / 2;
-            const top = (ch - finalH) / 2;
-
-            imgCanvas.style.width = `${finalW}px`;
-            imgCanvas.style.height = `${finalH}px`;
-            imgCanvas.style.left = `${left}px`;
+            
+            const fw = iw * scale, fh = ih * scale;
+            const left = (cw - fw) / 2, top = (ch - fh) / 2;
+            
+            imgCanvas.style.width = `${fw}px`; 
+            imgCanvas.style.height = `${fh}px`; 
+            imgCanvas.style.left = `${left}px`; 
             imgCanvas.style.top = `${top}px`;
-
-            uiCanvas.width = cw;
+            
+            uiCanvas.width = cw; 
             uiCanvas.height = ch;
         }
 
-        // 中心基準の厳密な座標変換
         function imgToScreen(x, y) {
-            let cx = imgCanvas.width / 2;
-            let cy = imgCanvas.height / 2;
-            let dx = x - cx;
-            let dy = y - cy;
-
+            let cx = imgCanvas.width / 2, cy = imgCanvas.height / 2;
+            let dx = x - cx, dy = y - cy;
             let rad = State.rotation * Math.PI / 180;
             let nx = dx * Math.cos(rad) - dy * Math.sin(rad);
             let ny = dx * Math.sin(rad) + dy * Math.cos(rad);
-
-            nx *= State.previewScale;
-            ny *= State.previewScale;
-
-            let cw = uiCanvas.width / 2;
-            let ch = uiCanvas.height / 2;
-
-            return { x: cw + nx, y: ch + ny };
+            nx *= State.previewScale; ny *= State.previewScale; 
+            return { x: uiCanvas.width / 2 + nx, y: uiCanvas.height / 2 + ny };
         }
 
         function screenToImg(sx, sy) {
-            let cw = uiCanvas.width / 2;
-            let ch = uiCanvas.height / 2;
-            let nx = sx - cw;
-            let ny = sy - ch;
-
-            nx /= State.previewScale;
-            ny /= State.previewScale;
-
+            let nx = (sx - uiCanvas.width / 2) / State.previewScale;
+            let ny = (sy - uiCanvas.height / 2) / State.previewScale;
             let rad = -State.rotation * Math.PI / 180;
             let px = nx * Math.cos(rad) - ny * Math.sin(rad);
-            let py = nx * Math.sin(rad) + ny * Math.cos(rad);
-
-            let cx = imgCanvas.width / 2;
-            let cy = imgCanvas.height / 2;
-
-            return { x: px + cx, y: py + cy };
+            let py = nx * Math.sin(rad) + ny * Math.cos(rad); 
+            return { x: px + imgCanvas.width / 2, y: py + imgCanvas.height / 2 };
         }
 
         function drawUI() {
             uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
-            // トリミングツール以外が選ばれている時はUI（青い点）を隠す
             if (State.currentTool !== 'crop' || State.corners.length !== 4) return;
-
+            
             const sc = State.corners.map(c => imgToScreen(c.x, c.y));
-
-            // オーバーレイ
-            uiCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            
+            // Background Overlay
+            uiCtx.fillStyle = 'rgba(0, 0, 0, 0.6)'; 
             uiCtx.beginPath();
-            uiCtx.moveTo(0, 0); uiCtx.lineTo(uiCanvas.width, 0); uiCtx.lineTo(uiCanvas.width, uiCanvas.height); uiCtx.lineTo(0, uiCanvas.height); uiCtx.closePath();
-            uiCtx.moveTo(sc[0].x, sc[0].y); uiCtx.lineTo(sc[3].x, sc[3].y); uiCtx.lineTo(sc[2].x, sc[2].y); uiCtx.lineTo(sc[1].x, sc[1].y); uiCtx.closePath();
+            uiCtx.moveTo(0, 0); 
+            uiCtx.lineTo(uiCanvas.width, 0); 
+            uiCtx.lineTo(uiCanvas.width, uiCanvas.height); 
+            uiCtx.lineTo(0, uiCanvas.height); 
+            uiCtx.closePath();
+            uiCtx.moveTo(sc[0].x, sc[0].y); 
+            uiCtx.lineTo(sc[3].x, sc[3].y); 
+            uiCtx.lineTo(sc[2].x, sc[2].y); 
+            uiCtx.lineTo(sc[1].x, sc[1].y); 
+            uiCtx.closePath(); 
             uiCtx.fill('evenodd');
-
-            // 枠とハンドル
-            uiCtx.strokeStyle = '#3b82f6';
-            uiCtx.lineWidth = 2;
+            
+            // Frame
+            uiCtx.strokeStyle = '#3b82f6'; 
+            uiCtx.lineWidth = 2; 
             uiCtx.beginPath();
-            uiCtx.moveTo(sc[0].x, sc[0].y); uiCtx.lineTo(sc[1].x, sc[1].y); uiCtx.lineTo(sc[2].x, sc[2].y); uiCtx.lineTo(sc[3].x, sc[3].y); uiCtx.closePath();
+            uiCtx.moveTo(sc[0].x, sc[0].y); 
+            uiCtx.lineTo(sc[1].x, sc[1].y); 
+            uiCtx.lineTo(sc[2].x, sc[2].y); 
+            uiCtx.lineTo(sc[3].x, sc[3].y); 
+            uiCtx.closePath(); 
             uiCtx.stroke();
-
-            sc.forEach((c, i) => {
-                uiCtx.beginPath();
-                uiCtx.arc(c.x, c.y, 14, 0, Math.PI * 2); // タップしやすく少し大きく
-                uiCtx.fillStyle = i === State.activeCorner ? '#60a5fa' : '#3b82f6';
-                uiCtx.fill();
-                uiCtx.strokeStyle = '#fff';
-                uiCtx.lineWidth = 2;
-                uiCtx.stroke();
+            
+            // Handles
+            sc.forEach((c, i) => { 
+                uiCtx.beginPath(); 
+                uiCtx.arc(c.x, c.y, 14, 0, Math.PI * 2); 
+                uiCtx.fillStyle = i === State.activeCorner ? '#60a5fa' : '#3b82f6'; 
+                uiCtx.fill(); 
+                uiCtx.strokeStyle = '#fff'; 
+                uiCtx.lineWidth = 2; 
+                uiCtx.stroke(); 
             });
         }
 
         function updateMagnifier(sx, sy, imgP) {
-            magDiv.style.display = 'block';
-            if (sx < window.innerWidth / 2) magDiv.style.left = (window.innerWidth - 120) + 'px';
-            else magDiv.style.left = '20px';
+            magDiv.style.display = 'block'; 
+            magDiv.style.left = sx < window.innerWidth / 2 ? (window.innerWidth - 120) + 'px' : '20px'; 
             magDiv.style.top = '20px';
-
-            const zoom = 2;
-            const mw = magCanvas.width = 100;
-            const mh = magCanvas.height = 100;
             
-            magCtx.clearRect(0,0,mw,mh);
-            magCtx.fillStyle = '#000';
+            const mw = magCanvas.width = 100, mh = magCanvas.height = 100; 
+            magCtx.clearRect(0,0,mw,mh); 
+            magCtx.fillStyle = '#000'; 
             magCtx.fillRect(0,0,mw,mh);
-
-            magCtx.save();
-            magCtx.translate(mw/2, mh/2);
+            
+            magCtx.save(); 
+            magCtx.translate(mw/2, mh/2); 
             magCtx.rotate(State.rotation * Math.PI / 180);
             
-            const srcSize = 100 / zoom / State.previewScale;
-            magCtx.drawImage(
-                imgCanvas, 
-                imgP.x - srcSize/2, imgP.y - srcSize/2, srcSize, srcSize,
-                -mw/2, -mh/2, mw, mh
-            );
+            const size = 100 / 2 / State.previewScale; 
+            magCtx.drawImage(imgCanvas, imgP.x - size/2, imgP.y - size/2, size, size, -mw/2, -mh/2, mw, mh); 
             magCtx.restore();
             
-            if(State.effect !== 'none') {
-                applyEffectStyle(); // 見た目の同期
-                magCanvas.style.filter = imgCanvas.style.filter;
-            } else {
-                magCanvas.style.filter = 'none';
-            }
+            magCanvas.style.filter = State.effect !== 'none' ? imgCanvas.style.filter : 'none';
         }
 
-        // --- Touch Events ---
+        // --- Touch & Mouse Events ---
         let isDragging = false;
-        
-        function getEventPos(e) {
-            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX - containerRect.left, y: e.touches[0].clientY - containerRect.top };
-            return { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top };
+        function getEventPos(e) { 
+            return e.touches && e.touches.length > 0 ? 
+                { x: e.touches[0].clientX - containerRect.left, y: e.touches[0].clientY - containerRect.top } : 
+                { x: e.clientX - containerRect.left, y: e.clientY - containerRect.top }; 
         }
-
+        
         function onDown(e) {
             if (State.currentTool !== 'crop' || State.corners.length !== 4) return;
-            const pos = getEventPos(e);
+            const p = getEventPos(e); 
+            let minD = 40, active = -1;
             
-            let minDist = 40;
-            let active = -1;
-            
-            const sc = State.corners.map(c => imgToScreen(c.x, c.y));
-            sc.forEach((c, i) => {
-                const dist = Math.hypot(c.x - pos.x, c.y - pos.y);
-                if (dist < minDist) { minDist = dist; active = i; }
+            State.corners.map(c => imgToScreen(c.x, c.y)).forEach((c, i) => { 
+                const d = Math.hypot(c.x - p.x, c.y - p.y); 
+                if (d < minD) { minD = d; active = i; } 
             });
-
-            if (active !== -1) {
-                isDragging = true;
-                State.activeCorner = active;
-                drawUI();
-                e.preventDefault();
+            
+            if (active !== -1) { 
+                isDragging = true; 
+                State.activeCorner = active; 
+                drawUI(); 
+                e.preventDefault(); 
             }
         }
-
+        
         function onMove(e) {
-            if (!isDragging || State.activeCorner === -1) return;
+            if (!isDragging || State.activeCorner === -1) return; 
             e.preventDefault();
+            const p = getEventPos(e);
+            let imgP = screenToImg(p.x, p.y);
             
-            const pos = getEventPos(e);
-            let imgP = screenToImg(pos.x, pos.y);
-            imgP.x = Math.max(0, Math.min(imgCanvas.width, imgP.x));
+            imgP.x = Math.max(0, Math.min(imgCanvas.width, imgP.x)); 
             imgP.y = Math.max(0, Math.min(imgCanvas.height, imgP.y));
             
-            State.corners[State.activeCorner] = imgP;
-            drawUI();
-            updateMagnifier(pos.x + containerRect.left, pos.y + containerRect.top, imgP);
+            State.corners[State.activeCorner] = imgP; 
+            drawUI(); 
+            updateMagnifier(p.x + containerRect.left, p.y + containerRect.top, imgP);
+        }
+        
+        function onUp(e) { 
+            if (isDragging) { 
+                isDragging = false; 
+                State.activeCorner = -1; 
+                magDiv.style.display = 'none'; 
+                drawUI(); 
+            } 
         }
 
-        function onUp(e) {
-            if (isDragging) {
-                isDragging = false;
-                State.activeCorner = -1;
-                magDiv.style.display = 'none';
-                drawUI();
+        container.addEventListener('mousedown', onDown); 
+        window.addEventListener('mousemove', onMove); 
+        window.addEventListener('mouseup', onUp);
+        container.addEventListener('touchstart', onDown, {passive: false}); 
+        window.addEventListener('touchmove', onMove, {passive: false}); 
+        window.addEventListener('touchend', onUp);
+        
+        window.addEventListener('resize', () => { 
+            if (!document.getElementById('screen-edit').classList.contains('hidden')) { 
+                updateUIBounds(); 
+                drawUI(); 
+            } 
+        });
+
+        // --- Toolbar Functions ---
+        function applyToolUI(name) {
+            document.querySelectorAll('.tool-btn').forEach(b => { 
+                b.classList.remove('text-blue-400'); 
+                b.classList.add('text-gray-400'); 
+            });
+            const t = document.querySelector(`.tool-btn[data-tool="${name}"]`); 
+            if(t) { 
+                t.classList.remove('text-gray-400'); 
+                t.classList.add('text-blue-400'); 
+            }
+            if (name === 'filter') { 
+                document.getElementById('effect-options').classList.remove('hidden'); 
+                document.getElementById('tool-hint').innerText = "お好みのエフェクトを選択してください"; 
+            } else { 
+                document.getElementById('effect-options').classList.add('hidden'); 
+                document.getElementById('tool-hint').innerText = "四隅の青い丸をドラッグして枠に合わせてください"; 
             }
         }
 
-        container.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
-        container.addEventListener('touchstart', onDown, {passive: false}); window.addEventListener('touchmove', onMove, {passive: false}); window.addEventListener('touchend', onUp);
-        window.addEventListener('resize', () => {
-            if (!document.getElementById('screen-edit').classList.contains('hidden')) { updateUIBounds(); drawUI(); }
-        });
-
-        // --- Tools UI ---
-        function applyToolUI(toolName) {
-            document.querySelectorAll('.tool-btn').forEach(b => {
-                b.classList.remove('text-blue-400'); b.classList.add('text-gray-400');
+        function applyEffectUI(name) {
+            document.querySelectorAll('.effect-btn').forEach(b => { 
+                b.classList.remove('bg-blue-600', 'text-white'); 
+                b.classList.add('bg-gray-800', 'text-gray-300'); 
             });
-            const t = document.querySelector(`.tool-btn[data-tool="${toolName}"]`);
-            if(t) { t.classList.remove('text-gray-400'); t.classList.add('text-blue-400'); }
-            
-            if (toolName === 'filter') {
-                document.getElementById('effect-options').classList.remove('hidden');
-                document.getElementById('tool-hint').innerText = "お好みのエフェクトを選択してください";
-            } else {
-                document.getElementById('effect-options').classList.add('hidden');
-                document.getElementById('tool-hint').innerText = "四隅の青い丸をドラッグして、写真の枠に合わせてください";
+            const t = document.querySelector(`.effect-btn[data-effect="${name}"]`); 
+            if(t) { 
+                t.classList.remove('bg-gray-800', 'text-gray-300'); 
+                t.classList.add('bg-blue-600', 'text-white'); 
             }
         }
 
-        function applyEffectUI(effectName) {
-            document.querySelectorAll('.effect-btn').forEach(b => {
-                b.classList.remove('bg-blue-600', 'text-white');
-                b.classList.add('bg-gray-800', 'text-gray-300');
-            });
-            const t = document.querySelector(`.effect-btn[data-effect="${effectName}"]`);
-            if(t) { t.classList.remove('bg-gray-800', 'text-gray-300'); t.classList.add('bg-blue-600', 'text-white'); }
-        }
-
-        document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                State.currentTool = e.currentTarget.dataset.tool;
-                applyToolUI(State.currentTool);
-                drawUI(); // 切り抜きツール以外では青い点を隠す
-            });
+        document.querySelectorAll('.tool-btn').forEach(btn => { 
+            btn.addEventListener('click', (e) => { 
+                State.currentTool = e.currentTarget.dataset.tool; 
+                applyToolUI(State.currentTool); 
+                drawUI(); 
+            }); 
+        });
+        
+        document.querySelectorAll('.effect-btn').forEach(btn => { 
+            btn.addEventListener('click', (e) => { 
+                State.effect = e.currentTarget.dataset.effect; 
+                applyEffectUI(State.effect); 
+                applyEffectStyle(); 
+            }); 
+        });
+        
+        document.getElementById('btn-rotate').addEventListener('click', () => { 
+            State.currentTool = 'rotate'; 
+            applyToolUI('rotate'); 
+            State.rotation = (State.rotation + 90) % 360; 
+            imgCanvas.style.transform = `rotate(${State.rotation}deg)`; 
+            updateUIBounds(); 
+            drawUI(); 
         });
 
-        document.querySelectorAll('.effect-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                State.effect = e.currentTarget.dataset.effect;
-                applyEffectUI(State.effect);
-                applyEffectStyle();
-            });
-        });
-
-        document.getElementById('btn-rotate').addEventListener('click', () => {
-            State.currentTool = 'rotate';
-            applyToolUI('rotate');
-            State.rotation = (State.rotation + 90) % 360;
-            imgCanvas.style.transform = `rotate(${State.rotation}deg)`;
-            updateUIBounds();
-            drawUI();
-        });
-
-        // "確定" 処理 (Non-Destructive Save)
+        // --- Editing Completion ---
         document.getElementById('btn-edit-done').addEventListener('click', async () => {
-            UI.showLoading('画像処理中... (高画質演算)');
+            UI.showLoading('画像処理中...');
             
-            const file = State.rawImages[State.currentEditIndex];
-            const url = URL.createObjectURL(file);
+            const url = URL.createObjectURL(State.rawImages[State.currentEditIndex]);
             const img = new Image();
             
             await new Promise((resolve) => {
                 img.onload = async () => {
-                    const scaleX = img.width / imgCanvas.width;
-                    const scaleY = img.height / imgCanvas.height;
-                    const fullCorners = State.corners.map(c => ({ x: c.x * scaleX, y: c.y * scaleY }));
+                    const sx = img.width / imgCanvas.width;
+                    const sy = img.height / imgCanvas.height;
+                    const fc = State.corners.map(c => ({ x: c.x * sx, y: c.y * sy }));
                     
-                    let finalCorners = [...fullCorners];
-                    if (State.rotation === 90) finalCorners = [fullCorners[3], fullCorners[0], fullCorners[1], fullCorners[2]];
-                    else if (State.rotation === 180) finalCorners = [fullCorners[2], fullCorners[3], fullCorners[0], fullCorners[1]];
-                    else if (State.rotation === 270) finalCorners = [fullCorners[1], fullCorners[2], fullCorners[3], fullCorners[0]];
-
-                    const w1 = Math.hypot(finalCorners[0].x - finalCorners[1].x, finalCorners[0].y - finalCorners[1].y);
-                    const w2 = Math.hypot(finalCorners[2].x - finalCorners[3].x, finalCorners[2].y - finalCorners[3].y);
-                    const h1 = Math.hypot(finalCorners[1].x - finalCorners[2].x, finalCorners[1].y - finalCorners[2].y);
-                    const h2 = Math.hypot(finalCorners[3].x - finalCorners[0].x, finalCorners[3].y - finalCorners[0].y);
-                    const destW = Math.max(w1, w2); const destH = Math.max(h1, h2);
-
-                    const resultCanvas = await processPerspectiveAndEffect(img, finalCorners, destW, destH, State.effect);
+                    let fin = [...fc]; 
+                    if (State.rotation === 90) fin = [fc[3], fc[0], fc[1], fc[2]]; 
+                    else if (State.rotation === 180) fin = [fc[2], fc[3], fc[0], fc[1]]; 
+                    else if (State.rotation === 270) fin = [fc[1], fc[2], fc[3], fc[0]];
                     
-                    resultCanvas.toBlob((blob) => {
-                        const dataUrl = URL.createObjectURL(blob);
-                        const newItem = {
-                            blob, dataUrl, rawIndex: State.currentEditIndex,
-                            settings: { corners: JSON.parse(JSON.stringify(State.corners)), rotation: State.rotation, effect: State.effect }
+                    const w1 = Math.hypot(fin[0].x - fin[1].x, fin[0].y - fin[1].y);
+                    const w2 = Math.hypot(fin[2].x - fin[3].x, fin[2].y - fin[3].y);
+                    const h1 = Math.hypot(fin[1].x - fin[2].x, fin[1].y - fin[2].y);
+                    const h2 = Math.hypot(fin[3].x - fin[0].x, fin[3].y - fin[0].y);
+                    
+                    // Asynchronous Processing Call
+                    const resCanvas = await processPerspectiveAndEffect(
+                        img, fin, Math.max(w1, w2), Math.max(h1, h2), State.effect
+                    );
+                    
+                    resCanvas.toBlob((blob) => {
+                        const item = { 
+                            blob, 
+                            dataUrl: URL.createObjectURL(blob), 
+                            rawIndex: State.currentEditIndex, 
+                            settings: { 
+                                corners: JSON.parse(JSON.stringify(State.corners)), 
+                                rotation: State.rotation, 
+                                effect: State.effect 
+                            } 
                         };
-
-                        if (State.isReEditing) {
-                            URL.revokeObjectURL(State.processedItems[State.reEditItemIndex].dataUrl);
-                            State.processedItems[State.reEditItemIndex] = newItem;
+                        
+                        if (State.isReEditing) { 
+                            URL.revokeObjectURL(State.processedItems[State.reEditItemIndex].dataUrl); 
+                            State.processedItems[State.reEditItemIndex] = item; 
                         } else {
-                            State.processedItems.push(newItem);
+                            State.processedItems.push(item);
                         }
-                        URL.revokeObjectURL(url);
+                        
+                        URL.revokeObjectURL(url); 
                         resolve();
                     }, 'image/jpeg', 0.9);
-                };
+                }; 
                 img.src = url;
             });
-
-            UI.hideLoading();
-            imgCanvas.style.filter = 'none'; imgCanvas.style.transform = 'none';
-
-            if (State.isReEditing) {
-                State.isReEditing = false; State.reEditItemIndex = -1;
-                buildGallery(); UI.switchScreen('screen-gallery');
+            
+            UI.hideLoading(); 
+            imgCanvas.style.filter = 'none'; 
+            imgCanvas.style.transform = 'none';
+            
+            if (State.isReEditing) { 
+                State.isReEditing = false; 
+                State.reEditItemIndex = -1; 
+                buildGallery(); 
+                UI.switchScreen('screen-gallery'); 
             } else if (State.currentEditIndex + 1 < State.rawImages.length) {
                 loadEditScreen(State.currentEditIndex + 1);
-            } else {
-                buildGallery(); UI.switchScreen('screen-gallery');
+            } else { 
+                buildGallery(); 
+                UI.switchScreen('screen-gallery'); 
             }
         });
 
         document.getElementById('btn-edit-cancel').addEventListener('click', async () => {
             const isRe = State.isReEditing;
-            const ok = await UI.confirm(isRe ? '再編集の中止' : '編集をスキップ', isRe ? '変更を破棄して戻りますか？' : 'この画像の編集をスキップしますか？', isRe ? '戻る' : 'スキップ');
+            const ok = await UI.confirm(
+                isRe ? '再編集の中止' : '編集をスキップ', 
+                isRe ? '変更を破棄して戻りますか？' : 'この画像をスキップしますか？', 
+                isRe ? '戻る' : 'スキップ'
+            );
+            
             if (ok) {
-                imgCanvas.style.filter = 'none'; imgCanvas.style.transform = 'none';
-                if (isRe) {
-                    State.isReEditing = false; State.reEditItemIndex = -1;
-                    UI.switchScreen('screen-gallery');
+                imgCanvas.style.filter = 'none'; 
+                imgCanvas.style.transform = 'none';
+                
+                if (isRe) { 
+                    State.isReEditing = false; 
+                    State.reEditItemIndex = -1; 
+                    UI.switchScreen('screen-gallery'); 
                 } else if (State.currentEditIndex + 1 < State.rawImages.length) {
                     loadEditScreen(State.currentEditIndex + 1);
-                } else {
-                    if (State.processedItems.length > 0) { buildGallery(); UI.switchScreen('screen-gallery'); }
-                    else { UI.switchScreen('screen-home'); State.rawImages = []; }
+                } else { 
+                    if (State.processedItems.length > 0) { 
+                        buildGallery(); 
+                        UI.switchScreen('screen-gallery'); 
+                    } else { 
+                        UI.switchScreen('screen-home'); 
+                        State.rawImages = []; 
+                    } 
                 }
             }
         });
 
         // --- Gallery & Export ---
         function buildGallery() {
-            const grid = document.getElementById('gallery-grid');
-            grid.innerHTML = '';
+            const grid = document.getElementById('gallery-grid'); 
+            grid.innerHTML = ''; 
             document.getElementById('gallery-count').innerText = State.processedItems.length;
-
+            
             State.processedItems.forEach((item, index) => {
-                const div = document.createElement('div');
+                const div = document.createElement('div'); 
                 div.className = 'relative aspect-[3/4] bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-md group cursor-pointer';
                 
-                const img = document.createElement('img');
-                img.src = item.dataUrl;
+                const img = document.createElement('img'); 
+                img.src = item.dataUrl; 
                 img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
                 
-                // 再編集トリガー
-                img.onclick = () => {
-                    State.isReEditing = true;
-                    State.reEditItemIndex = index;
-                    State.corners = JSON.parse(JSON.stringify(item.settings.corners));
-                    State.rotation = item.settings.rotation;
-                    State.effect = item.settings.effect;
-                    loadEditScreen(item.rawIndex, true);
-                };
-
-                // 再編集バッジ表示
-                const editBadge = document.createElement('div');
-                editBadge.className = 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none';
-                editBadge.innerHTML = '<div class="bg-blue-600 text-white text-xs px-3 py-1 rounded-full"><i class="fas fa-pen mr-1"></i>再編集</div>';
-
-                const delBtn = document.createElement('button');
-                delBtn.className = 'absolute top-2 right-2 bg-red-600/90 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10';
-                delBtn.innerHTML = '<i class="fas fa-trash-alt text-sm"></i>';
-                delBtn.onclick = async (e) => {
-                    e.stopPropagation(); // 画像クリック(再編集)を防ぐ
-                    const ok = await UI.confirm('画像を削除', 'この画像をスキャン結果から削除しますか？', '削除');
-                    if (ok) {
-                        URL.revokeObjectURL(item.dataUrl);
-                        State.processedItems.splice(index, 1);
-                        buildGallery();
-                        if (State.processedItems.length === 0) UI.switchScreen('screen-home');
-                    }
+                img.onclick = () => { 
+                    State.isReEditing = true; 
+                    State.reEditItemIndex = index; 
+                    State.corners = JSON.parse(JSON.stringify(item.settings.corners)); 
+                    State.rotation = item.settings.rotation; 
+                    State.effect = item.settings.effect; 
+                    loadEditScreen(item.rawIndex, true); 
                 };
                 
-                const dlBtn = document.createElement('button');
-                dlBtn.className = 'absolute bottom-2 right-2 bg-blue-600/90 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10';
+                const eBadge = document.createElement('div'); 
+                eBadge.className = 'absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none'; 
+                eBadge.innerHTML = '<div class="bg-blue-600 text-white text-xs px-3 py-1 rounded-full"><i class="fas fa-pen mr-1"></i>再編集</div>';
+                
+                const delBtn = document.createElement('button'); 
+                delBtn.className = 'absolute top-2 right-2 bg-red-600/90 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10'; 
+                delBtn.innerHTML = '<i class="fas fa-trash-alt text-sm"></i>';
+                
+                delBtn.onclick = async (e) => { 
+                    e.stopPropagation(); 
+                    const ok = await UI.confirm('画像を削除', '削除しますか？', '削除'); 
+                    if (ok) { 
+                        URL.revokeObjectURL(item.dataUrl); 
+                        State.processedItems.splice(index, 1); 
+                        buildGallery(); 
+                        if (State.processedItems.length === 0) UI.switchScreen('screen-home'); 
+                    } 
+                };
+                
+                const dlBtn = document.createElement('button'); 
+                dlBtn.className = 'absolute bottom-2 right-2 bg-blue-600/90 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform z-10'; 
                 dlBtn.innerHTML = '<i class="fas fa-download"></i>';
-                dlBtn.onclick = (e) => { e.stopPropagation(); downloadSingle(index); };
-
-                div.appendChild(img);
-                div.appendChild(editBadge);
-                div.appendChild(delBtn);
-                div.appendChild(dlBtn);
+                
+                dlBtn.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    downloadSingle(index); 
+                };
+                
+                div.appendChild(img); 
+                div.appendChild(eBadge); 
+                div.appendChild(delBtn); 
+                div.appendChild(dlBtn); 
                 grid.appendChild(div);
             });
         }
 
         document.querySelectorAll('.quality-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.quality-btn').forEach(b => {
-                    b.classList.remove('bg-blue-600', 'text-white', 'font-medium'); b.classList.add('text-gray-400');
+                document.querySelectorAll('.quality-btn').forEach(b => { 
+                    b.classList.remove('bg-blue-600', 'text-white', 'font-medium'); 
+                    b.classList.add('text-gray-400'); 
                 });
-                const t = e.currentTarget;
-                t.classList.remove('text-gray-400'); t.classList.add('bg-blue-600', 'text-white', 'font-medium');
-                State.exportMaxSize = parseInt(t.dataset.size);
+                const t = e.currentTarget; 
+                t.classList.remove('text-gray-400'); 
+                t.classList.add('bg-blue-600', 'text-white', 'font-medium');
+                State.exportMaxSize = parseInt(t.dataset.size); 
                 State.exportQuality = parseFloat(t.dataset.quality);
             });
         });
 
-        async function createExportBlob(sourceBlob, maxSize, quality) {
+        // 🌟 Polaroid Frame Generation Logic
+        async function createExportBlob(sourceBlob, maxSize, quality, isPolaroid) {
             return new Promise((resolve) => {
-                const img = new Image(); const url = URL.createObjectURL(sourceBlob);
+                const img = new Image();
+                const url = URL.createObjectURL(sourceBlob);
+                
                 img.onload = () => {
                     let w = img.width, h = img.height;
-                    if (Math.max(w, h) > maxSize) {
-                        const ratio = maxSize / Math.max(w, h); w *= ratio; h *= ratio;
-                    } else if (quality >= 0.95) {
-                        URL.revokeObjectURL(url); resolve(sourceBlob); return;
+                    
+                    if (Math.max(w, h) > maxSize) { 
+                        const ratio = maxSize / Math.max(w, h); 
+                        w *= ratio; 
+                        h *= ratio; 
                     }
+                    
+                    if (!isPolaroid && quality >= 0.95 && Math.max(img.width, img.height) <= maxSize) { 
+                        URL.revokeObjectURL(url); 
+                        resolve(sourceBlob); 
+                        return; 
+                    }
+                    
                     const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(b => { URL.revokeObjectURL(url); resolve(b); }, 'image/jpeg', quality);
-                };
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (isPolaroid) {
+                        const border = Math.max(w, h) * 0.05; // 枠の太さ(5%)
+                        const bottomBorder = border * 4;      // 下の余白
+                        canvas.width = w + border * 2; 
+                        canvas.height = h + border + bottomBorder;
+                        
+                        // ポラロイドの白い背景
+                        ctx.fillStyle = '#fcfcfa'; 
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // 写真を描画
+                        ctx.drawImage(img, border, border, w, h);
+                        
+                        // 写真の内側にわずかな影(リアリティ向上)
+                        ctx.strokeStyle = 'rgba(0,0,0,0.1)'; 
+                        ctx.lineWidth = 2; 
+                        ctx.strokeRect(border, border, w, h);
+                    } else {
+                        canvas.width = w; 
+                        canvas.height = h; 
+                        ctx.drawImage(img, 0, 0, w, h);
+                    }
+                    
+                    canvas.toBlob(b => { 
+                        URL.revokeObjectURL(url); 
+                        resolve(b); 
+                    }, 'image/jpeg', quality);
+                }; 
+                
                 img.src = url;
             });
         }
 
         async function downloadSingle(index) {
             UI.showLoading('画像を作成中...');
-            const finalBlob = await createExportBlob(State.processedItems[index].blob, State.exportMaxSize, State.exportQuality);
-            const a = document.createElement('a'); a.href = URL.createObjectURL(finalBlob); a.download = `Scan_${Date.now()}_${index+1}.jpg`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
-            UI.hideLoading(); UI.showToast('保存しました');
+            const isPolaroid = document.getElementById('cb-polaroid').checked;
+            const finalBlob = await createExportBlob(
+                State.processedItems[index].blob, 
+                State.exportMaxSize, 
+                State.exportQuality, 
+                isPolaroid
+            );
+            
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(finalBlob); 
+            a.download = `Scan_${Date.now()}_${index+1}.jpg`;
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a); 
+            URL.revokeObjectURL(a.href);
+            
+            UI.hideLoading(); 
+            UI.showToast('保存しました');
         }
 
         document.getElementById('btn-export-zip').addEventListener('click', async () => {
             if (State.processedItems.length === 0) return;
             UI.showLoading('ZIPを作成中... (画面を閉じないでください)');
+            const isPolaroid = document.getElementById('cb-polaroid').checked;
+            
             try {
                 const zip = new JSZip();
                 for (let i = 0; i < State.processedItems.length; i++) {
-                    const finalBlob = await createExportBlob(State.processedItems[i].blob, State.exportMaxSize, State.exportQuality);
+                    const finalBlob = await createExportBlob(
+                        State.processedItems[i].blob, 
+                        State.exportMaxSize, 
+                        State.exportQuality, 
+                        isPolaroid
+                    );
                     zip.file(`RetroScan_${i+1}.jpg`, finalBlob);
                 }
                 const content = await zip.generateAsync({type: 'blob'});
-                const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `RetroScan_Archive_${Date.now()}.zip`;
-                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
-                UI.hideLoading(); UI.showToast('ZIPファイルを保存しました');
-            } catch (e) {
-                UI.hideLoading(); UI.showToast('エラーが発生しました'); console.error(e);
+                const a = document.createElement('a'); 
+                a.href = URL.createObjectURL(content); 
+                a.download = `RetroScan_Archive_${Date.now()}.zip`;
+                document.body.appendChild(a); 
+                a.click(); 
+                document.body.removeChild(a); 
+                URL.revokeObjectURL(a.href);
+                
+                UI.hideLoading(); 
+                UI.showToast('ZIPファイルを保存しました');
+            } catch (e) { 
+                UI.hideLoading(); 
+                UI.showToast('エラーが発生しました'); 
+                console.error(e); 
             }
         });
 
         document.getElementById('btn-gallery-back').addEventListener('click', async () => {
             const ok = await UI.confirm('終了しますか？', 'ホームに戻ると、スキャンしたデータは全て消去されます。', '終了して戻る');
-            if (ok) {
-                State.rawImages = [];
-                State.processedItems.forEach(i => URL.revokeObjectURL(i.dataUrl));
-                State.processedItems = [];
-                UI.switchScreen('screen-home');
+            if (ok) { 
+                State.rawImages = []; 
+                State.processedItems.forEach(i => URL.revokeObjectURL(i.dataUrl)); 
+                State.processedItems = []; 
+                UI.switchScreen('screen-home'); 
             }
         });
 
         // --- File Handling ---
         async function normalizeImage(file) {
             return new Promise((resolve, reject) => {
-                const url = URL.createObjectURL(file); const img = new Image();
+                const url = URL.createObjectURL(file);
+                const img = new Image();
                 img.onload = () => {
-                    let w = img.width, h = img.height; const MAX_SIZE = 3000;
-                    if (Math.max(w, h) > MAX_SIZE) { const ratio = MAX_SIZE / Math.max(w, h); w *= ratio; h *= ratio; }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
+                    let w = img.width, h = img.height, max = 3000; 
+                    if (Math.max(w, h) > max) { 
+                        const r = max / Math.max(w, h); w *= r; h *= r; 
+                    }
+                    const canvas = document.createElement('canvas'); 
+                    canvas.width = w; canvas.height = h; 
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob((blob) => { URL.revokeObjectURL(url); resolve(blob); }, 'image/jpeg', 0.95);
-                };
-                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
+                    canvas.toBlob((blob) => { 
+                        URL.revokeObjectURL(url); 
+                        resolve(blob); 
+                    }, 'image/jpeg', 0.95);
+                }; 
+                img.onerror = () => { 
+                    URL.revokeObjectURL(url); 
+                    reject(new Error("Image load failed")); 
+                }; 
                 img.src = url;
             });
         }
 
         let isAppendingMode = false;
-
         async function handleFiles(files) {
-            if (files.length === 0) return;
-            let targetFiles = Array.from(files);
-            if (targetFiles.length > 20) {
-                UI.showToast('一度に処理できるのは20枚までです'); targetFiles = targetFiles.slice(0, 20);
-            }
-            UI.showLoading('画像を最適化中...');
-            if (!isAppendingMode) State.processedItems = [];
-            State.rawImages = [];
-            try {
-                for (let i = 0; i < targetFiles.length; i++) {
-                    const blob = await normalizeImage(targetFiles[i]);
-                    State.rawImages.push(blob);
-                }
-            } catch(e) { console.error(e); UI.showToast('一部の画像の読み込みに失敗しました'); }
-            UI.hideLoading();
+            if (files.length === 0) return; 
+            let tf = Array.from(files);
             
-            if (State.rawImages.length > 0) loadEditScreen(0);
-            else if (isAppendingMode && State.processedItems.length > 0) UI.switchScreen('screen-gallery');
+            if (tf.length > 20) { 
+                UI.showToast('一度に処理できるのは20枚までです'); 
+                tf = tf.slice(0, 20); 
+            }
+            
+            UI.showLoading('画像を最適化中...'); 
+            if (!isAppendingMode) State.processedItems = []; 
+            State.rawImages = [];
+            
+            try { 
+                for (let i = 0; i < tf.length; i++) {
+                    State.rawImages.push(await normalizeImage(tf[i])); 
+                }
+            } catch(e) { 
+                UI.showToast('一部の画像の読み込みに失敗しました'); 
+            }
+            
+            UI.hideLoading(); 
+            if (State.rawImages.length > 0) {
+                loadEditScreen(0); 
+            } else if (isAppendingMode && State.processedItems.length > 0) {
+                UI.switchScreen('screen-gallery');
+            }
             isAppendingMode = false;
         }
 
-        document.getElementById('btn-camera').addEventListener('click', () => {
-            isAppendingMode = false; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').setAttribute('capture', 'environment'); document.getElementById('file-input').click();
+        // Event Listeners for File Inputs
+        document.getElementById('btn-camera').addEventListener('click', () => { 
+            isAppendingMode = false; 
+            document.getElementById('file-input').removeAttribute('capture'); 
+            document.getElementById('file-input').setAttribute('capture', 'environment'); 
+            document.getElementById('file-input').click(); 
         });
-        document.getElementById('btn-file').addEventListener('click', () => {
-            isAppendingMode = false; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').click();
+        
+        document.getElementById('btn-file').addEventListener('click', () => { 
+            isAppendingMode = false; 
+            document.getElementById('file-input').removeAttribute('capture'); 
+            document.getElementById('file-input').click(); 
         });
-        document.getElementById('btn-add-camera').addEventListener('click', () => {
-            isAppendingMode = true; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').setAttribute('capture', 'environment'); document.getElementById('file-input').click();
+        
+        document.getElementById('btn-add-camera').addEventListener('click', () => { 
+            isAppendingMode = true; 
+            document.getElementById('file-input').removeAttribute('capture'); 
+            document.getElementById('file-input').setAttribute('capture', 'environment'); 
+            document.getElementById('file-input').click(); 
         });
-        document.getElementById('btn-add-file').addEventListener('click', () => {
-            isAppendingMode = true; document.getElementById('file-input').removeAttribute('capture'); document.getElementById('file-input').click();
+        
+        document.getElementById('btn-add-file').addEventListener('click', () => { 
+            isAppendingMode = true; 
+            document.getElementById('file-input').removeAttribute('capture'); 
+            document.getElementById('file-input').click(); 
         });
-        document.getElementById('file-input').addEventListener('change', (e) => { handleFiles(e.target.files); e.target.value = ''; });
+        
+        document.getElementById('file-input').addEventListener('change', (e) => { 
+            handleFiles(e.target.files); 
+            e.target.value = ''; 
+        });
 
-        console.log("[Adom's Lab] Phase 2 Ultimate Architecture Initialized.");
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        console.log("RetroScan Omni [Phase 2/3 Integrated] Loaded successfully.");
     </script>
 </body>
 </html>
