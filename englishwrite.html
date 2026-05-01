@@ -1054,6 +1054,18 @@ to eating cake. / ケーキを食べるのを / トゥ イーティング ケー
             };
             reader.readAsText(file);
         }
+// --- PWA Service Worker Registration (ハイブリッド版Ver16対応) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // ルートにあるハイブリッド版の sw.js を読み込む
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
     </script>
 </body>
 </html>
