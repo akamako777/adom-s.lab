@@ -7,226 +7,179 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Dancing+Script:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&family=Playpen+Sans:wght@400;700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* カスタムフォントと基本設定 */
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #f3f4f6;
-        }
+        /* 基本設定 */
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f3f4f6; }
 
-        /* 英語用のフォント */
+        /* 英語用フォント */
         .font-block { font-family: 'Comic Neue', cursive; }
         .font-standard { font-family: Arial, Helvetica, sans-serif; }
         .font-cursive { font-family: 'Dancing Script', cursive; }
         .font-playpen { font-family: 'Playpen Sans', cursive; }
         .font-quicksand { font-family: 'Quicksand', sans-serif; }
 
-        /* プレビュー領域（全体）のベース */
+        /* なぞり書き用文字色 */
+        .color-black { color: #000000 !important; }
+        .color-trace-dark { color: #6b7280 !important; }
+        .color-trace-normal { color: #9ca3af !important; }
+        .color-trace-light { color: #d1d5db !important; }
+        .color-transparent { color: transparent !important; }
+
+        /* プレビュー領域 */
         .preview-container {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            background: #e5e7eb;
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: 100%; height: 100%; overflow: auto; background: #e5e7eb;
+            padding: 2rem 1rem; box-sizing: border-box; text-align: center;
         }
 
-        /* 複数ページを格納するコンテナ */
         #pages-container {
-            transform-origin: top center;
-            transition: transform 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2rem; /* ページ同士の隙間 */
-            padding-bottom: 4rem;
-            cursor: text; /* テキスト入力できる感覚を持たせる */
+            display: inline-flex; flex-direction: column; align-items: center; gap: 2rem;
+            padding-bottom: 4rem; cursor: text;
+            margin: 0 auto; text-align: left;
         }
 
-        /* 個別のA4用紙のスタイル */
+        /* A4用紙のスタイル */
         .a4-page {
-            background-color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            /* A4比率 (縦: 210mm x 297mm) */
-            width: 794px; /* 210mm at 96dpi */
-            height: 1123px; /* 297mm at 96dpi */
-            position: relative;
-            padding: 40px; /* 余白 */
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
+            background-color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 794px; height: 1123px; position: relative; padding: 40px;
+            box-sizing: border-box; display: flex; flex-direction: column;
         }
-        
-        .a4-page.landscape {
-            width: 1123px;
-            height: 794px;
-        }
+        .a4-page.landscape { width: 1123px; height: 794px; }
 
-        /* ヘッダー領域 */
+        /* ヘッダー */
         .print-header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-bottom: 2px solid #333;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-            font-family: 'Noto Sans JP', sans-serif; /* ヘッダーは日本語フォント固定 */
-            height: 45px; /* 高さを固定してレイアウト計算を安定させる */
-            box-sizing: content-box;
+            width: 100%; display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 2px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem;
+            font-family: 'Noto Sans JP', sans-serif; height: 45px; box-sizing: content-box;
         }
         .print-header-title { font-size: 1.5rem; font-weight: bold; }
         .print-header-info { font-size: 1.1rem; display: flex; gap: 1.5rem; }
 
-        /* 4線と文字のコンテナ（段組みの1列分） */
-        .column {
-            position: relative;
-            height: 100%;
-            overflow: hidden;
-        }
+        /* 段組みコンテナ */
+        .column { position: relative; height: 100%; overflow: hidden; }
+        .line-row { position: relative; width: 100%; }
 
-        /* 1行分の4線と文字 */
-        .line-row {
-            position: relative;
-            width: 100%;
-        }
-
-        /* 4線の描画（背景） */
-        .four-lines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            pointer-events: none; /* クリックを阻害しない */
-        }
-
-        .four-lines .line {
-            width: 100%;
-            border-bottom: 1px solid;
-            position: absolute;
-        }
-
-        .four-lines .line-top { top: 0%; border-color: #ff9999; }
-        .four-lines .line-mid1 { top: 33.33%; border-color: #99ccff; border-style: dashed; } 
-        .four-lines .line-mid2 { top: 66.66%; border-color: #ff9999; } 
-        .four-lines .line-bottom { top: 100%; border-color: #ff9999; }
-
-        /* 文字領域 */
-        .text-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            line-height: 1; 
-            white-space: pre; 
-            color: #000;
-            pointer-events: none;
-        }
+        /* 4線と文字領域 */
+        .four-lines-svg { position: absolute; left: 0; width: 100%; z-index: 1; pointer-events: none; }
+        .text-content { position: absolute; left: 0; width: 100%; z-index: 2; line-height: 1; white-space: pre; pointer-events: none; }
         
-        /* ページ番号（ノンブル）のスタイル */
-        .page-number {
-            position: absolute;
-            font-family: 'Noto Sans JP', sans-serif;
-            font-size: 14px;
-            color: #4b5563; /* text-gray-600 */
-        }
-        .page-number.top-right {
-            top: 20px;
-            right: 40px;
-            text-align: right;
-        }
-        .page-number.bottom-center {
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-        }
-        
-        .trace-mode {
-            color: #d1d5db !important; 
+        /* ルビ領域 (自動縮小のための設定を追加) */
+        .ruby-content {
+            position: absolute; left: 0; width: 100%; font-family: 'Noto Sans JP', sans-serif; font-size: 12px;
+            color: #4b5563; z-index: 3; pointer-events: none; display: flex; align-items: flex-end;
+            padding-bottom: 2px; box-sizing: border-box;
+            white-space: nowrap; transform-origin: left bottom;
         }
 
-        /* カスタムスクロールバー */
+        .page-number { position: absolute; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: #4b5563; }
+        .page-number.top-right { top: 20px; right: 40px; text-align: right; }
+        .page-number.bottom-center { bottom: 20px; left: 0; width: 100%; text-align: center; }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* ローディングオーバーレイ */
         #loading {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8);
-            z-index: 50;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 50; justify-content: center; align-items: center; flex-direction: column;
         }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden bg-gray-200">
 
     <!-- ローディング -->
     <div id="loading">
         <div class="spinner"></div>
-        <p class="mt-4 text-gray-700 font-medium">AIが翻訳・生成中です...</p>
+        <p id="loading-text" class="mt-4 text-gray-700 font-medium">AIが処理中です...</p>
     </div>
 
+    <!-- トースト通知 -->
+    <div id="toast" class="fixed bottom-4 right-4 px-4 py-3 rounded shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 z-50 text-white font-medium text-sm pointer-events-none">
+        メッセージ
+    </div>
+
+    <!-- モバイル用トップバー -->
+    <div class="md:hidden bg-blue-600 text-white p-3 flex justify-between items-center shadow-md z-20">
+        <div class="font-bold text-lg">AI英語プリントメーカー</div>
+        <button onclick="toggleSidebar()" class="bg-blue-700 px-3 py-1 rounded text-sm border border-blue-500 hover:bg-blue-800 transition">設定メニュー</button>
+    </div>
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden transition-opacity"></div>
+
     <!-- 左側：操作パネル -->
-    <div class="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 flex flex-col h-full overflow-y-auto shadow-lg z-10 relative">
-        <div class="p-6 bg-blue-600 text-white">
-            <h1 class="text-xl font-bold mb-1">AI英語プリントメーカー</h1>
-            <p class="text-xs text-blue-200">4線ノートのレイアウト自動生成</p>
+    <div id="sidebar" class="fixed md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 w-[85%] sm:w-80 md:w-1/3 lg:w-1/4 bg-white border-r border-gray-200 flex flex-col h-full overflow-y-auto shadow-2xl md:shadow-lg z-30 transition-transform duration-300 ease-in-out">
+        <div class="p-5 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-10">
+            <div>
+                <h1 class="text-xl font-bold mb-1">AI英語プリント</h1>
+                <p class="text-xs text-blue-200">ルビ・なぞり書き・音声対応</p>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-white bg-blue-700 hover:bg-blue-800 w-8 h-8 flex items-center justify-center rounded-full transition">✕</button>
         </div>
 
-        <div class="p-6 flex-1 flex flex-col gap-6">
+        <div class="p-5 flex-1 flex flex-col gap-6">
             
-            <!-- AI翻訳機能 -->
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <!-- AI・音声ツールパネル -->
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-sm">
                 <div class="flex justify-between items-center cursor-pointer" onclick="toggleAIPanel()">
                     <h2 class="text-sm font-bold text-blue-800 flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        AIで日本語から生成
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        AI自動作成 ＆ 音声読み上げ
                     </h2>
-                    <span id="ai-toggle-icon" class="text-blue-500 text-xl">+</span>
+                    <span id="ai-toggle-icon" class="text-blue-600 text-xl font-bold">-</span>
                 </div>
                 
-                <div id="ai-panel" class="hidden mt-4 space-y-3">
+                <div id="ai-panel" class="mt-4 space-y-4">
+                    <!-- APIキー入力欄 -->
                     <div>
-                        <label class="block text-xs text-gray-600 mb-1">Gemini APIキー</label>
-                        <input type="password" id="api-key" placeholder="AI-..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="block text-xs font-bold text-gray-700">Gemini APIキー<span class="text-gray-500 font-normal">（空欄でOK）</span></label>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-[10px] text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                                ▶ 取得はこちら（無料）
+                            </a>
+                        </div>
+                        <input type="password" id="api-key" placeholder="未入力の場合は自動設定されます" class="w-full p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">日本語で入力（単語・文章）</label>
-                        <textarea id="ja-text" rows="3" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例：りんご、みかん&#10;例：私は昨日公園に行きました。"></textarea>
-                    </div>
-                    <div class="flex gap-2">
-                        <select id="ai-level" class="p-2 border rounded text-sm bg-white flex-1 outline-none">
-                            <option value="単語リスト">単語として</option>
-                            <option value="中学生レベル">中学レベルの英文</option>
-                            <option value="ネイティブレベル">自然な英文</option>
-                        </select>
-                        <button onclick="generateEnglish()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">
-                            翻訳して流し込む
+
+                    <div class="border-t border-blue-200 pt-3">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">① テーマからおまかせ生成</label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <select id="preset-target" onchange="updatePresetThemes()" class="p-2 border rounded text-xs bg-white w-full sm:w-1/3 outline-none">
+                                <option value="小学生">小学生</option>
+                                <option value="中学生">中学生</option>
+                                <option value="高校・一般">高校・一般</option>
+                            </select>
+                            <select id="preset-theme" class="p-2 border rounded text-xs bg-white flex-1 min-w-[120px] outline-none"></select>
+                        </div>
+                        <button onclick="generatePreset()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition flex justify-center items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            プリセットで生成
                         </button>
+                    </div>
+
+                    <div class="border-t border-blue-200 pt-3">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">② 自由入力で生成</label>
+                        <textarea id="ja-text" rows="2" class="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例：私は昨日公園に行きました。"></textarea>
+                        <button onclick="generateEnglish()" class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium transition">翻訳して追加</button>
+                    </div>
+
+                    <div class="border-t border-blue-200 pt-3">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">③ 音声読み上げ (TTS)</label>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="tts-speed" class="p-2 border rounded text-xs bg-white flex-1 min-w-[80px] outline-none">
+                                <option value="0.5">とてもゆっくり</option>
+                                <option value="0.75">ゆっくり</option>
+                                <option value="1.0" selected>ふつう</option>
+                                <option value="1.25">はやい</option>
+                            </select>
+                            <button id="btn-tts" onclick="playTTS()" class="flex-1 min-w-[110px] bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                                再生
+                            </button>
+                            <button onclick="stopTTS()" class="flex-none bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition">停止</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -238,19 +191,17 @@
                     <div class="space-y-3">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" id="show-header" checked onchange="toggleHeaderInputs()" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-700">各ページにヘッダーを表示する</span>
+                            <span class="ml-2 text-sm text-gray-700">各ページにヘッダーを表示</span>
                         </label>
                         <div id="header-inputs" class="space-y-2">
                             <input type="text" id="header-title" value="英語練習プリント" oninput="updateLayout()" class="w-full p-2 border rounded text-sm outline-none" placeholder="タイトル">
-                            <div class="flex gap-2">
-                                <input type="text" id="header-class" value="　年　組" oninput="updateLayout()" class="w-1/2 p-2 border rounded text-sm outline-none" placeholder="学年・組">
-                                <input type="text" id="header-name" value="名前：" oninput="updateLayout()" class="w-1/2 p-2 border rounded text-sm outline-none" placeholder="名前">
+                            <div class="flex flex-wrap gap-2">
+                                <input type="text" id="header-class" value="　年　組" oninput="updateLayout()" class="w-full sm:flex-1 p-2 border rounded text-sm outline-none" placeholder="学年・組">
+                                <input type="text" id="header-name" value="名前：" oninput="updateLayout()" class="w-full sm:flex-1 p-2 border rounded text-sm outline-none" placeholder="名前">
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- ページ番号設定 -->
-                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-100">
                         <div>
                             <label class="block text-xs text-gray-600 mb-1">ページ番号の位置</label>
                             <select id="page-num-pos" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
@@ -275,14 +226,12 @@
             <!-- レイアウト設定 -->
             <div>
                 <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">レイアウト設定</h2>
-                
                 <div class="space-y-4">
                     <div class="flex gap-2">
-                        <button onclick="setOrientation('portrait')" id="btn-portrait" class="flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium">縦 (A4)</button>
-                        <button onclick="setOrientation('landscape')" id="btn-landscape" class="flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50">横 (A4)</button>
+                        <button onclick="setOrientation('portrait')" id="btn-portrait" class="flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium transition">縦 (A4)</button>
+                        <button onclick="setOrientation('landscape')" id="btn-landscape" class="flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50 transition">横 (A4)</button>
                     </div>
-
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs text-gray-600 mb-1">段組み（列）</label>
                             <select id="columns" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
@@ -294,12 +243,9 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-600 mb-1">行数（1列あたり）</label>
-                            <select id="rows" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
-                                <!-- JSで動的生成 -->
-                            </select>
+                            <select id="rows" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500"></select>
                         </div>
                     </div>
-                    
                     <div>
                         <label class="block text-xs text-gray-600 mb-1">行間の広さ（余白）</label>
                         <select id="row-gap" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
@@ -312,60 +258,121 @@
                 </div>
             </div>
 
-            <!-- フォント・表示設定 -->
+            <!-- 文字・ルビ設定 -->
             <div>
-                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">文字の設定</h2>
-                
+                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">文字・ルビ設定</h2>
                 <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">フォント種類</label>
-                        <select id="font-family" onchange="fontChanged()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
-                            <option value="font-block">ブロック体風 (Comic Neue)</option>
-                            <option value="font-standard">標準活字体 (Arial)</option>
-                            <option value="font-cursive">筆記体 (Dancing Script)</option>
-                            <option value="font-playpen" selected>手書き風 (Playpen Sans)</option>
-                            <option value="font-quicksand">丸ゴシック風 (Quicksand)</option>
-                        </select>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">フォント種類</label>
+                            <select id="font-family" onchange="fontChanged()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <option value="font-block">ブロック体 (Comic Neue)</option>
+                                <option value="font-standard">標準活字体 (Arial)</option>
+                                <option value="font-cursive">筆記体 (Dancing Script)</option>
+                                <option value="font-playpen" selected>手書き風 (Playpen Sans)</option>
+                                <option value="font-quicksand">丸ゴシック (Quicksand)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">文字の濃さ（なぞり書き）</label>
+                            <select id="text-color" onchange="updateLayout()" class="w-full p-2 border rounded text-sm bg-white outline-none focus:border-blue-500">
+                                <option value="color-black" selected>通常（黒）</option>
+                                <option value="color-trace-dark">なぞり書き（濃いめ）</option>
+                                <option value="color-trace-normal">なぞり書き（普通）</option>
+                                <option value="color-trace-light">なぞり書き（薄め）</option>
+                                <option value="color-transparent">透明（テスト用）</option>
+                            </select>
+                        </div>
                     </div>
-                    
                     <div class="bg-gray-50 p-3 rounded border border-gray-200 space-y-3">
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <label class="text-xs text-gray-600">文字の大きさ（はみ出し防止）</label>
-                                <span id="val-font-size" class="text-xs text-gray-500">85%</span>
+                                <label class="text-xs text-gray-600">文字の大きさ</label>
+                                <span id="val-font-size" class="text-xs text-gray-500">80%</span>
                             </div>
-                            <input type="range" id="font-scale" min="0.5" max="1.2" step="0.01" value="0.85" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                            <input type="range" id="font-scale" min="0.5" max="1.2" step="0.01" value="0.80" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <label class="text-xs text-gray-600">上下位置（ベースライン微調整）</label>
-                                <span id="val-font-offset" class="text-xs text-gray-500">-12%</span>
+                                <label class="text-xs text-gray-600">上下位置微調整</label>
+                                <span id="val-font-offset" class="text-xs text-gray-500">-15%</span>
                             </div>
-                            <input type="range" id="font-offset" min="-50" max="50" step="1" value="-12" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                            <input type="range" id="font-offset" min="-50" max="50" step="1" value="-15" oninput="updateLayoutUI()" class="w-full h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                    
+                    <!-- ルビの表示と切り替えUI -->
+                    <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
+                        <label class="flex items-center cursor-pointer mb-1">
+                            <input type="checkbox" id="show-ruby" checked onchange="toggleRubyOptions()" class="w-4 h-4 text-yellow-600 rounded border-gray-300 focus:ring-yellow-500">
+                            <span class="ml-2 text-xs text-gray-700 font-bold">ルビ領域を作る</span>
+                        </label>
+                        <div id="ruby-options" class="pl-6 space-y-1">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="inline-flex items-center text-xs text-gray-600 cursor-pointer">
+                                    <input type="radio" name="ruby-type" value="ja" checked onchange="updateLayout()" class="w-3 h-3 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                                    <span class="ml-1">日本語訳</span>
+                                </label>
+                                <label class="inline-flex items-center text-xs text-gray-600 cursor-pointer">
+                                    <input type="radio" name="ruby-type" value="kana" onchange="updateLayout()" class="w-3 h-3 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                                    <span class="ml-1">カタカナ発音</span>
+                                </label>
+                                <label class="inline-flex items-center text-xs text-gray-600 cursor-pointer mt-1 sm:mt-0">
+                                    <input type="radio" name="ruby-type" value="both" onchange="updateLayout()" class="w-3 h-3 text-yellow-600 border-gray-300 focus:ring-yellow-500">
+                                    <span class="ml-1">両方（カタカナ＋日本語）</span>
+                                </label>
+                            </div>
+                            <p class="text-[10px] text-gray-500 mt-1">※長文は意味の塊（チャンク）で改行すると綺麗に配置されます。</p>
                         </div>
                     </div>
 
-                    <label class="flex items-center cursor-pointer pt-2">
-                        <input type="checkbox" id="trace-mode" onchange="updateLayout()" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                        <span class="ml-2 text-sm text-gray-700">なぞり書き用（色を薄くする）</span>
-                    </label>
                 </div>
             </div>
 
             <!-- テキスト入力 -->
             <div class="flex-1 flex flex-col pb-4">
-                <div class="flex justify-between items-end mb-1">
-                    <label class="block text-sm font-bold text-gray-700">印刷するテキスト</label>
-                    <span class="text-xs text-gray-500">自動改ページ対応</span>
+                <label class="block text-sm font-bold text-gray-700 mb-1">印刷するテキスト</label>
+                <!-- ★ プレースホルダーと初期値にチャンクの提案を追加 ★ -->
+                <textarea id="main-text" oninput="updateLayout()" class="w-full flex-1 min-h-[150px] p-3 border-2 border-blue-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none font-sans transition" placeholder="ここに英語を入力してください。&#10;&#10;【入力フォーマット】&#10;英語 / 日本語訳 / カタカナ発音&#10;&#10;【💡長文入力のコツ】&#10;長文は意味の塊（チャンク）ごとに改行して入力すると、ルビが綺麗に配置され、生徒も読みやすくなります！&#10;例：&#10;Today is my birthday. / 今日は私の誕生日です。 / トゥデイ イズ マイ バースデー.&#10;So, I'm looking forward / だから楽しみにしています / ソー アイム ルッキング フォワード&#10;to eating cake. / ケーキを食べるのを / トゥ イーティング ケーキ.">Apple / りんご / アップル
+Banana / バナナ / バナナ
+Cherry / さくらんぼ / チェリー
+
+I am a student. / 私は学生です。 / アイ アム ア スチューデント.
+I like playing baseball. / 私は野球をするのが好きです。 / アイ ライク プレイング ベースボール.
+
+Today is my birthday. / 今日は私の誕生日です。 / トゥデイ イズ マイ バースデー.
+So, I'm looking forward / だから楽しみにしています / ソー アイム ルッキング フォワード
+to eating cake. / ケーキを食べるのを / トゥ イーティング ケーキ.</textarea>
+            </div>
+
+            <!-- データ管理 -->
+            <div class="pb-2">
+                <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-1">データ管理</h2>
+                <div class="space-y-3">
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                        <button onclick="saveToHistory()" class="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-300 py-1.5 px-3 rounded text-xs font-medium transition mb-2 flex items-center justify-center gap-1">
+                            📌 今の状態を履歴に記憶（最大5件）
+                        </button>
+                        <div class="flex gap-2">
+                            <select id="history-select" class="flex-1 p-1.5 border rounded text-xs bg-white outline-none focus:border-blue-500">
+                                <option value="">🕒 履歴から復元...</option>
+                            </select>
+                            <button onclick="loadFromHistory()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs font-medium transition">復元</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportData()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1">
+                            ⬇️ ファイルに保存
+                        </button>
+                        <button onclick="document.getElementById('import-file').click()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 py-2 rounded text-xs font-medium transition flex items-center justify-center gap-1">
+                            ⬆️ ファイルを開く
+                        </button>
+                        <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+                    </div>
                 </div>
-                <textarea id="main-text" oninput="updateLayout()" class="w-full flex-1 min-h-[150px] p-3 border-2 border-blue-200 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none font-sans transition" placeholder="ここに英語を入力してください。&#10;長文は列の幅に合わせて自動で次の行に折り返され、用紙が足りなくなれば自動で次のページが追加されます。">Apple
-Banana
-Cherry
-I have a pen.
-This is a very very long sentence to test the auto-wrap feature of this application.</textarea>
             </div>
             
-            <!-- 下部固定アクションボタン（スクロールしても常に見える） -->
+            <!-- 印刷ボタン -->
             <div class="sticky bottom-0 bg-white pt-2 pb-6 border-t mt-auto">
                 <button onclick="printPage()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded flex justify-center items-center gap-2 shadow-sm transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
@@ -376,154 +383,155 @@ This is a very very long sentence to test the auto-wrap feature of this applicat
     </div>
 
     <!-- 右側：プレビュー -->
-    <div class="flex-1 relative bg-gray-200 overflow-hidden">
+    <div class="flex-1 relative bg-gray-200 overflow-hidden flex flex-col">
         <!-- ズームコントロール -->
-        <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md flex p-1 z-20">
-            <button onclick="changeZoom(-0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600">-</button>
-            <span id="zoom-level" class="w-12 flex items-center justify-center text-sm text-gray-700">100%</span>
-            <button onclick="changeZoom(0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600">+</button>
+        <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md flex p-1 z-10">
+            <button onclick="changeZoom(-0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600 transition">-</button>
+            <span id="zoom-level" class="w-12 flex items-center justify-center text-sm text-gray-700 font-medium">100%</span>
+            <button onclick="changeZoom(0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600 transition">+</button>
         </div>
 
-        <!-- プレビューコンテナ（スクロール領域） -->
         <div class="preview-container" id="scroll-area">
-            <!-- 複数ページ描画用コンテナ。クリックで左の入力欄にフォーカス -->
-            <div id="pages-container" onclick="focusTextArea()">
-                <!-- JSで .a4-page が動的に生成される -->
-            </div>
+            <div id="pages-container" onclick="focusTextArea()"></div>
         </div>
     </div>
 
-    <!-- 折り返し計算用（非表示） -->
     <div id="measure-div" style="visibility: hidden; position: absolute; top: -9999px; left: -9999px; white-space: pre; line-height: 1;"></div>
 
     <script>
-        // --- 状態管理 ---
-        const state = {
-            orientation: 'portrait', 
-            columns: 1, 
-            rows: 10,
-            zoom: 1.0,
-            text: ""
+        let currentAudioSource = null;
+        let audioContext = null;
+
+        const state = { orientation: 'portrait', columns: 1, rows: 10, zoom: 1.0, text: "" };
+
+        const presetData = {
+            "小学生": [
+                { label: "A〜Z アルファベット一覧", prompt: "大文字と小文字のペア（Aa, Bb...）をZまで出力してください。", random: false },
+                { label: "曜日・月・季節", prompt: "曜日（Monday〜）、月（January〜）、季節（Spring〜）の英単語を出力してください。", random: false },
+                { label: "身近な動物・果物", prompt: "小学生が習う基本的な動物と果物の英単語を合計15個出力してください。", random: true }
+            ],
+            "中学生": [
+                { label: "中1 基本動詞20選", prompt: "中学1年生で習う最も基本的な動詞を20個出力してください。", random: true },
+                { label: "不規則動詞変化表", prompt: "代表的な不規則動詞の現在形・過去形・過去分詞形（例：go went gone）を10セット出力してください。", random: true },
+                { label: "自己紹介フレーズ", prompt: "中学生レベルの簡単な自己紹介フレーズ（趣味、好きなものなど）を5文出力してください。", random: true }
+            ],
+            "高校・一般": [
+                { label: "入試頻出・重要単語", prompt: "高校入試や大学入試によく出る重要な英単語を15個出力してください。", random: true },
+                { label: "日常会話フレーズ", prompt: "旅行や日常でよく使う実用的な英語フレーズを10文出力してください。", random: true },
+                { label: "名言・ことわざ", prompt: "有名な英語の名言やことわざを5文出力してください。", random: true }
+            ]
         };
 
-        // --- 初期化 ---
         window.onload = () => {
-            fontChanged();
-            initRowOptions();
-            toggleHeaderInputs();
-            
-            // ウィンドウリサイズでズームを自動調整
-            autoZoom();
+            fontChanged(); initRowOptions(); toggleHeaderInputs(); updatePresetThemes(); autoZoom();
+            updateHistorySelect();
+            toggleRubyOptions();
             window.addEventListener('resize', autoZoom);
         };
 
-        // --- UI操作系 ---
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded shadow-lg transform transition-all duration-300 z-50 text-white font-medium text-sm pointer-events-none ${isError ? 'bg-red-600' : 'bg-gray-800'}`;
+            
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-20', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            if (sidebar.classList.contains('-translate-x-full')) overlay.classList.add('hidden');
+            else overlay.classList.remove('hidden');
+        }
+
         function toggleAIPanel() {
             const panel = document.getElementById('ai-panel');
             const icon = document.getElementById('ai-toggle-icon');
-            if (panel.classList.contains('hidden')) {
-                panel.classList.remove('hidden');
-                icon.textContent = '-';
-            } else {
-                panel.classList.add('hidden');
-                icon.textContent = '+';
-            }
+            if (panel.classList.contains('hidden')) { panel.classList.remove('hidden'); icon.textContent = '-'; }
+            else { panel.classList.add('hidden'); icon.textContent = '+'; }
         }
-        
+
+        function updatePresetThemes() {
+            const target = document.getElementById('preset-target').value;
+            const themeSelect = document.getElementById('preset-theme');
+            themeSelect.innerHTML = '';
+            presetData[target].forEach((item, index) => {
+                const opt = document.createElement('option'); opt.value = index; opt.textContent = item.label;
+                themeSelect.appendChild(opt);
+            });
+        }
+
         function toggleHeaderInputs() {
             const show = document.getElementById('show-header').checked;
-            document.getElementById('header-inputs').style.display = show ? 'block' : 'none';
+            document.getElementById('header-inputs').style.display = show ? 'block' : 'none'; updateLayout();
+        }
+
+        function toggleRubyOptions() {
+            const show = document.getElementById('show-ruby').checked;
+            document.getElementById('ruby-options').style.display = show ? 'block' : 'none';
             updateLayout();
         }
 
-        // プレビューをクリックした際にテキストエリアにフォーカス
         function focusTextArea() {
-            document.getElementById('main-text').focus();
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('-translate-x-full')) toggleSidebar();
+            setTimeout(() => { document.getElementById('main-text').focus(); }, 300);
         }
 
         function setOrientation(type) {
             state.orientation = type;
-            
-            const btnP = document.getElementById('btn-portrait');
-            const btnL = document.getElementById('btn-landscape');
+            const btnP = document.getElementById('btn-portrait'); const btnL = document.getElementById('btn-landscape');
             
             if (type === 'portrait') {
-                btnP.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium";
-                btnL.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50";
+                btnP.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium transition";
+                btnL.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50 transition";
             } else {
-                btnL.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium";
-                btnP.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50";
+                btnL.className = "flex-1 py-2 border border-blue-600 bg-blue-50 text-blue-700 rounded text-sm font-medium transition";
+                btnP.className = "flex-1 py-2 border border-gray-300 bg-white text-gray-600 rounded text-sm font-medium hover:bg-gray-50 transition";
             }
-            
-            initRowOptions();
-            updateLayout();
-            autoZoom();
+            initRowOptions(); updateLayout(); autoZoom();
         }
 
         function initRowOptions() {
-            const rowSelect = document.getElementById('rows');
-            const cols = parseInt(document.getElementById('columns').value);
-            const isPortrait = state.orientation === 'portrait';
-            
-            const currentVal = rowSelect.value;
+            const rowSelect = document.getElementById('rows'); const cols = parseInt(document.getElementById('columns').value);
+            const isPortrait = state.orientation === 'portrait'; const currentVal = rowSelect.value;
             rowSelect.innerHTML = '';
-
-            let maxRows = isPortrait ? 25 : 15;
-            let defaultRows = isPortrait ? (cols === 1 ? 15 : 12) : 8; 
-
+            let maxRows = isPortrait ? 25 : 15; let defaultRows = isPortrait ? (cols === 1 ? 15 : 12) : 8; 
             for (let i = 1; i <= maxRows; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = `${i} 行`;
+                const opt = document.createElement('option'); opt.value = i; opt.textContent = `${i} 行`;
                 if (i === defaultRows && !currentVal) opt.selected = true;
                 if (currentVal && i == currentVal) opt.selected = true;
                 rowSelect.appendChild(opt);
             }
-            
             if (currentVal > maxRows) rowSelect.value = maxRows;
         }
 
-        // ズーム制御
-        function changeZoom(delta) {
-            state.zoom = Math.max(0.3, Math.min(2.0, state.zoom + delta));
-            applyZoom();
-        }
+        function changeZoom(delta) { state.zoom = Math.max(0.3, Math.min(2.0, state.zoom + delta)); applyZoom(); }
         function autoZoom() {
-            const container = document.getElementById('scroll-area');
-            const availableWidth = container.clientWidth - 40; 
+            const container = document.getElementById('scroll-area'); const availableWidth = container.clientWidth - 40; 
             const pageWidth = state.orientation === 'portrait' ? 794 : 1123;
-            
-            if (availableWidth < pageWidth) {
-                state.zoom = availableWidth / pageWidth;
-            } else {
-                state.zoom = 1.0;
-            }
-            applyZoom();
+            state.zoom = availableWidth < pageWidth ? availableWidth / pageWidth : 1.0; applyZoom();
         }
         function applyZoom() {
-            const container = document.getElementById('pages-container');
-            container.style.transform = `scale(${state.zoom})`;
+            document.getElementById('pages-container').style.zoom = state.zoom;
             document.getElementById('zoom-level').textContent = Math.round(state.zoom * 100) + '%';
         }
 
-        // フォント微調整制御
         function fontChanged() {
             const fontFamily = document.getElementById('font-family').value;
-            const scaleInput = document.getElementById('font-scale');
-            const offsetInput = document.getElementById('font-offset');
-            
-            if (fontFamily === 'font-block') {
-                scaleInput.value = 0.85; offsetInput.value = -12;
-            } else if (fontFamily === 'font-cursive') {
-                scaleInput.value = 0.9; offsetInput.value = -18;
-            } else if (fontFamily === 'font-playpen') {
-                scaleInput.value = 0.8; offsetInput.value = -15;
-            } else if (fontFamily === 'font-quicksand') {
-                scaleInput.value = 0.85; offsetInput.value = -14;
-            } else {
-                scaleInput.value = 0.85; offsetInput.value = -15;
-            }
-            
+            const scaleInput = document.getElementById('font-scale'); const offsetInput = document.getElementById('font-offset');
+            if (fontFamily === 'font-block') { scaleInput.value = 0.85; offsetInput.value = -12; }
+            else if (fontFamily === 'font-cursive') { scaleInput.value = 0.9; offsetInput.value = -18; }
+            else if (fontFamily === 'font-playpen') { scaleInput.value = 0.80; offsetInput.value = -15; }
+            else if (fontFamily === 'font-quicksand') { scaleInput.value = 0.85; offsetInput.value = -14; }
+            else { scaleInput.value = 0.85; offsetInput.value = -15; }
             updateLayoutUI(); 
         }
 
@@ -533,7 +541,6 @@ This is a very very long sentence to test the auto-wrap feature of this applicat
             updateLayout();
         }
 
-        // --- コア描画ロジック（複数ページ対応） ---
         function updateLayout() {
             state.columns = parseInt(document.getElementById('columns').value);
             state.rows = parseInt(document.getElementById('rows').value);
@@ -544,207 +551,200 @@ This is a very very long sentence to test the auto-wrap feature of this applicat
             const fontOffset = parseInt(document.getElementById('font-offset').value);
 
             const fontFamily = document.getElementById('font-family').value;
-            const isTrace = document.getElementById('trace-mode').checked;
+            const textColorClass = document.getElementById('text-color').value;
             const showHeader = document.getElementById('show-header').checked;
-
-            const container = document.getElementById('pages-container');
-            container.innerHTML = '';
-
-            // 利用可能な高さを計算
-            const padding = 40 * 2; // top + bottom
-            const pageHeight = (state.orientation === 'portrait' ? 1123 : 794) - padding;
+            const showRuby = document.getElementById('show-ruby').checked;
             
-            // ヘッダー領域の計算 (表示する場合: content 45px + pb 8px + mb 16px + border 2px = 約71px)
-            const headerTotalHeight = showHeader ? 71 : 0; 
-            const availableGridHeight = pageHeight - headerTotalHeight;
-            
-            // 行の高さ計算 (余白を考慮)
+            const rubyType = document.querySelector('input[name="ruby-type"]:checked').value;
+
+            const container = document.getElementById('pages-container'); container.innerHTML = '';
+
+            const padding = 40 * 2; const pageHeight = (state.orientation === 'portrait' ? 1123 : 794) - padding;
+            const headerTotalHeight = showHeader ? 71 : 0; const availableGridHeight = pageHeight - headerTotalHeight;
             const rowHeightPx = (availableGridHeight - (rowGap * (state.rows - 1))) / state.rows;
-            const fontSizePx = rowHeightPx * fontScale; 
+            const rubyHeightPx = showRuby ? 18 : 0; const fourLinesHeightPx = rowHeightPx - rubyHeightPx; 
+            const fontSizePx = fourLinesHeightPx * fontScale; 
 
-            // テキストを処理して行(Line)の配列にする
-            const processedLines = processTextForWrapping(state.text, fontFamily, fontSizePx, state.columns);
-
-            // 必要なページ数を計算（1ページの最大行数 = rows * columns）
+            const processedLines = processTextForWrapping(state.text, fontFamily, fontSizePx, state.columns, rubyType);
             const linesPerPage = state.rows * state.columns;
             const totalPages = Math.max(1, Math.ceil(processedLines.length / linesPerPage));
-
             let lineIndex = 0;
 
-            // ページごとの生成ループ
             for (let p = 0; p < totalPages; p++) {
                 const page = document.createElement('div');
                 page.className = `a4-page ${fontFamily}`;
                 if (state.orientation === 'landscape') page.classList.add('landscape');
                 
-                // ヘッダーの描画
                 if (showHeader) {
                     const titleVal = document.getElementById('header-title').value;
                     const classVal = document.getElementById('header-class').value;
                     const nameVal = document.getElementById('header-name').value;
-                    
                     const headerDiv = document.createElement('div');
                     headerDiv.className = 'print-header';
-                    headerDiv.innerHTML = `
-                        <div class="print-header-title">${titleVal}</div>
-                        <div class="print-header-info">
-                            <span>${classVal}</span>
-                            <span style="min-width: 150px;">${nameVal}</span>
-                        </div>
-                    `;
+                    headerDiv.innerHTML = `<div class="print-header-title">${titleVal}</div><div class="print-header-info"><span>${classVal}</span><span style="min-width: 150px;">${nameVal}</span></div>`;
                     page.appendChild(headerDiv);
                 }
 
-                // グリッド（段組み）のコンテナ
                 const gridDiv = document.createElement('div');
-                gridDiv.style.display = 'grid';
-                gridDiv.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
-                gridDiv.style.gap = '20px';
-                gridDiv.style.flex = '1';
+                gridDiv.style.display = 'grid'; gridDiv.style.gridTemplateColumns = `repeat(${state.columns}, 1fr)`;
+                gridDiv.style.gap = '20px'; gridDiv.style.flex = '1';
 
-                // 列の生成
                 for (let c = 0; c < state.columns; c++) {
-                    const colDiv = document.createElement('div');
-                    colDiv.className = 'column';
-                    
-                    // その列内の行を生成
+                    const colDiv = document.createElement('div'); colDiv.className = 'column';
                     for (let r = 0; r < state.rows; r++) {
-                        const lineDiv = document.createElement('div');
-                        lineDiv.className = 'line-row';
+                        const lineDiv = document.createElement('div'); lineDiv.className = 'line-row';
                         lineDiv.style.height = `${rowHeightPx}px`; 
                         if (r < state.rows - 1) lineDiv.style.marginBottom = `${rowGap}px`;
 
-                        // 4線の背景を描画
                         const linesBg = document.createElement('div');
-                        linesBg.className = 'four-lines';
+                        linesBg.className = 'four-lines-svg';
+                        linesBg.style.top = `${rubyHeightPx}px`; linesBg.style.height = `${fourLinesHeightPx}px`;
                         linesBg.innerHTML = `
-                            <div class="line line-top"></div>
-                            <div class="line line-mid1"></div>
-                            <div class="line line-mid2"></div>
-                            <div class="line line-bottom"></div>
+                            <svg width="100%" height="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="0" y1="0%" x2="100%" y2="0%" stroke="#ff9999" stroke-width="1"/>
+                                <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="#99ccff" stroke-width="1" stroke-dasharray="6,4"/>
+                                <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="#ff9999" stroke-width="1"/>
+                                <line x1="0" y1="100%" x2="100%" y2="100%" stroke="#ff9999" stroke-width="1"/>
+                            </svg>
                         `;
                         lineDiv.appendChild(linesBg);
 
-                        // 文字がある場合は配置
                         if (lineIndex < processedLines.length) {
+                            const lineData = processedLines[lineIndex];
                             const textSpan = document.createElement('div');
-                            textSpan.className = 'text-content';
-                            if (isTrace) textSpan.classList.add('trace-mode');
-                            
-                            textSpan.style.fontSize = `${fontSizePx}px`;
-                            textSpan.style.transform = `translateY(${fontOffset}%)`;
-                            
-                            textSpan.textContent = processedLines[lineIndex];
+                            textSpan.className = `text-content ${textColorClass}`;
+                            textSpan.style.fontSize = `${fontSizePx}px`; textSpan.style.top = `${rubyHeightPx}px`; textSpan.style.height = `${fourLinesHeightPx}px`;
+                            textSpan.style.transform = `translateY(${fontOffset}%)`; textSpan.textContent = lineData.text;
                             lineDiv.appendChild(textSpan);
-                        }
-                        lineIndex++;
 
-                        colDiv.appendChild(lineDiv);
+                            if (showRuby && lineData.ruby) {
+                                const rubySpan = document.createElement('div');
+                                rubySpan.className = 'ruby-content'; 
+                                rubySpan.style.top = '0'; 
+                                rubySpan.style.height = `${rubyHeightPx}px`;
+                                
+                                // ★ 解決策A: ルビが長すぎる場合は自動で縮小して枠内に収める
+                                if (lineData.rubyScale < 1) {
+                                    rubySpan.style.transform = `scale(${lineData.rubyScale})`;
+                                }
+                                
+                                rubySpan.textContent = lineData.ruby;
+                                lineDiv.appendChild(rubySpan);
+                            }
+                        }
+                        lineIndex++; colDiv.appendChild(lineDiv);
                     }
                     gridDiv.appendChild(colDiv);
                 }
-                
                 page.appendChild(gridDiv);
 
-                // ページ番号の描画
                 const pageNumPos = document.getElementById('page-num-pos').value;
                 if (pageNumPos !== 'none') {
                     const pageNumFormat = document.getElementById('page-num-format').value;
-                    let pageText = '';
-                    const current = p + 1;
-                    
+                    let pageText = ''; const current = p + 1;
                     if (pageNumFormat === 'simple') pageText = current;
                     else if (pageNumFormat === 'hyphen') pageText = `- ${current} -`;
                     else if (pageNumFormat === 'fraction') pageText = `${current} / ${totalPages}`;
                     else if (pageNumFormat === 'english') pageText = `Page ${current}`;
-
                     const pageNumDiv = document.createElement('div');
-                    pageNumDiv.className = `page-number ${pageNumPos}`;
-                    pageNumDiv.textContent = pageText;
+                    pageNumDiv.className = `page-number ${pageNumPos}`; pageNumDiv.textContent = pageText;
                     page.appendChild(pageNumDiv);
                 }
-
                 container.appendChild(page);
             }
         }
 
-        function processTextForWrapping(rawText, fontClass, fontSize, colCount) {
+        function processTextForWrapping(rawText, fontClass, fontSize, colCount, rubyType) {
             if (!rawText) return [];
-            
-            const padding = 40 * 2; 
-            const gap = 20 * (colCount - 1);
+            const padding = 40 * 2; const gap = 20 * (colCount - 1);
             const pageWidth = state.orientation === 'portrait' ? 794 : 1123;
             const maxLineWidth = (pageWidth - padding - gap) / colCount;
 
             const measureDiv = document.getElementById('measure-div');
-            measureDiv.className = fontClass;
-            measureDiv.style.fontSize = `${fontSize}px`;
-            measureDiv.style.whiteSpace = 'pre'; 
 
-            const rawLines = rawText.split('\n');
-            const wrappedLines = [];
+            const rawLines = rawText.split('\n'); const wrappedLines = [];
 
             for (let i = 0; i < rawLines.length; i++) {
                 const line = rawLines[i];
-                if (line === '') {
-                    wrappedLines.push('');
-                    continue;
+                if (line === '') { wrappedLines.push({ text: '', ruby: '', rubyScale: 1.0 }); continue; }
+
+                const parts = line.split('/'); 
+                const englishPart = parts[0].trim();
+                
+                let rubyPart = '';
+                if (parts.length > 1) {
+                    const jaPart = parts[1].trim();
+                    const kanaPart = parts.length > 2 ? parts[2].trim() : jaPart; 
+                    
+                    if (rubyType === 'kana') {
+                        rubyPart = kanaPart;
+                    } else if (rubyType === 'both') {
+                        rubyPart = `${kanaPart}（${jaPart}）`;
+                    } else {
+                        rubyPart = jaPart;
+                    }
                 }
 
-                const words = line.split(' ');
-                let currentLine = '';
+                // ★ 解決策A: ルビの幅を測定し、はみ出る場合の縮小率（スケール）を計算
+                let rubyScale = 1.0;
+                if (rubyPart) {
+                    measureDiv.className = ''; // 英語のフォントを外す
+                    measureDiv.style.fontFamily = "'Noto Sans JP', sans-serif";
+                    measureDiv.style.fontSize = '12px';
+                    measureDiv.style.whiteSpace = 'nowrap';
+                    measureDiv.textContent = rubyPart;
+                    const rubyWidth = measureDiv.offsetWidth;
+                    if (rubyWidth > maxLineWidth) {
+                        rubyScale = maxLineWidth / rubyWidth;
+                    }
+                }
+
+                if (englishPart === '') { wrappedLines.push({ text: '', ruby: rubyPart, rubyScale: rubyScale }); continue; }
+
+                // 英語用の測定設定に戻す
+                measureDiv.className = fontClass; measureDiv.style.fontSize = `${fontSize}px`; measureDiv.style.whiteSpace = 'pre'; 
+
+                const words = englishPart.split(' '); let currentLine = ''; let isFirstLineOfBlock = true;
 
                 for (let j = 0; j < words.length; j++) {
-                    const word = words[j];
-                    const testLine = currentLine === '' ? word : currentLine + ' ' + word;
-                    
-                    measureDiv.textContent = testLine;
-                    const width = measureDiv.offsetWidth;
+                    const word = words[j]; const testLine = currentLine === '' ? word : currentLine + ' ' + word;
+                    measureDiv.textContent = testLine; const width = measureDiv.offsetWidth;
 
                     if (width > maxLineWidth) {
                         if (currentLine !== '') {
-                            wrappedLines.push(currentLine);
-                            currentLine = '';
-                            j--; 
+                            wrappedLines.push({ text: currentLine, ruby: isFirstLineOfBlock ? rubyPart : '', rubyScale: isFirstLineOfBlock ? rubyScale : 1.0 });
+                            currentLine = ''; isFirstLineOfBlock = false; j--; 
                         } else {
                             let tempLine = '';
                             for (let char of word) {
                                 measureDiv.textContent = tempLine + char;
                                 if (measureDiv.offsetWidth > maxLineWidth && tempLine !== '') {
-                                    wrappedLines.push(tempLine);
-                                    tempLine = char; 
-                                } else {
-                                    tempLine += char;
-                                }
+                                    wrappedLines.push({ text: tempLine, ruby: isFirstLineOfBlock ? rubyPart : '', rubyScale: isFirstLineOfBlock ? rubyScale : 1.0 });
+                                    tempLine = char; isFirstLineOfBlock = false;
+                                } else { tempLine += char; }
                             }
                             currentLine = tempLine; 
                         }
-                    } else {
-                        currentLine = testLine;
-                    }
+                    } else { currentLine = testLine; }
                 }
-                if (currentLine !== '') {
-                    wrappedLines.push(currentLine);
-                }
+                if (currentLine !== '') wrappedLines.push({ text: currentLine, ruby: isFirstLineOfBlock ? rubyPart : '', rubyScale: isFirstLineOfBlock ? rubyScale : 1.0 });
             }
             return wrappedLines;
         }
 
-        // --- 印刷処理（別ウィンドウで確実に出力） ---
         function printPage() {
-            // iframeの制約を回避するため、新しいウィンドウを開いてそこで印刷する
             const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                alert('印刷ウィンドウが開けませんでした。ブラウザのポップアップブロックを解除して再度お試しください。');
-                return;
+            if (!printWindow) { 
+                showToast('ブラウザのポップアップブロックを解除してください。', true); 
+                return; 
             }
-
-            // プレビューコンテナに描画されている複数ページの中身を取得
+            
+            showToast("印刷の準備をしています...");
+            
             const containerHTML = document.getElementById('pages-container').innerHTML;
-            const isPortrait = state.orientation === 'portrait';
+            const isPortrait = state.orientation === 'portrait'; 
             const pageSize = isPortrait ? 'A4 portrait' : 'A4 landscape';
 
-            // 印刷専用のクリーンなHTMLを構築
             const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -753,143 +753,146 @@ This is a very very long sentence to test the auto-wrap feature of this applicat
     <title>印刷 - AI英語プリントメーカー</title>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Dancing+Script:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&family=Playpen+Sans:wght@400;700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* 印刷専用のリセットと設定 */
-        body { 
-            margin: 0; padding: 0; 
-            background: white;
-            font-family: 'Noto Sans JP', sans-serif;
-            /* 背景の線や色を確実に印刷させる魔法のプロパティ */
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
+        body { margin: 0; padding: 0; background: white; font-family: 'Noto Sans JP', sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         @page { size: ${pageSize}; margin: 0; }
-        
-        /* ページごとのスタイル */
-        .a4-page {
-            width: ${isPortrait ? '794px' : '1123px'};
-            height: ${isPortrait ? '1123px' : '794px'};
-            padding: 40px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            page-break-after: always; /* ここで改ページを指示 */
-            position: relative;
-            margin: 0 auto;
-        }
-        
-        /* フォントクラスの定義 */
-        .font-block { font-family: 'Comic Neue', cursive; }
-        .font-standard { font-family: Arial, Helvetica, sans-serif; }
-        .font-cursive { font-family: 'Dancing Script', cursive; }
-        .font-playpen { font-family: 'Playpen Sans', cursive; }
-        .font-quicksand { font-family: 'Quicksand', sans-serif; }
-        
-        /* ヘッダーのスタイル */
-        .print-header {
-            width: 100%; display: flex; justify-content: space-between; align-items: flex-end;
-            border-bottom: 2px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem;
-            font-family: 'Noto Sans JP', sans-serif;
-            height: 45px; box-sizing: content-box;
-        }
-        .print-header-title { font-size: 1.5rem; font-weight: bold; }
-        .print-header-info { font-size: 1.1rem; display: flex; gap: 1.5rem; }
-
-        /* レイアウトのスタイル */
-        .column { position: relative; height: 100%; overflow: hidden; }
-        .line-row { position: relative; width: 100%; }
-        
-        .four-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .four-lines .line { width: 100%; border-bottom: 1px solid; position: absolute; }
-        .four-lines .line-top { top: 0%; border-color: #ff9999; }
-        .four-lines .line-mid1 { top: 33.33%; border-color: #99ccff; border-style: dashed; }
-        .four-lines .line-mid2 { top: 66.66%; border-color: #ff9999; }
-        .four-lines .line-bottom { top: 100%; border-color: #ff9999; }
-
-        .text-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; line-height: 1; white-space: pre; color: #000; }
-        
+        .a4-page { width: ${isPortrait ? '794px' : '1123px'}; height: ${isPortrait ? '1123px' : '794px'}; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; page-break-after: always; position: relative; margin: 0 auto; box-shadow: none; }
+        .font-block { font-family: 'Comic Neue', cursive; } .font-standard { font-family: Arial, Helvetica, sans-serif; } .font-cursive { font-family: 'Dancing Script', cursive; } .font-playpen { font-family: 'Playpen Sans', cursive; } .font-quicksand { font-family: 'Quicksand', sans-serif; }
+        .color-black { color: #000000 !important; } .color-trace-dark { color: #6b7280 !important; } .color-trace-normal { color: #9ca3af !important; } .color-trace-light { color: #d1d5db !important; } .color-transparent { color: transparent !important; }
+        .print-header { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; font-family: 'Noto Sans JP', sans-serif; height: 45px; box-sizing: content-box; }
+        .print-header-title { font-size: 1.5rem; font-weight: bold; } .print-header-info { font-size: 1.1rem; display: flex; gap: 1.5rem; }
+        .column { position: relative; height: 100%; overflow: hidden; } .line-row { position: relative; width: 100%; }
+        .four-lines-svg { position: absolute; left: 0; width: 100%; z-index: 1; pointer-events: none; }
+        .text-content { position: absolute; left: 0; width: 100%; z-index: 2; line-height: 1; white-space: pre; pointer-events: none; }
+        .ruby-content { position: absolute; left: 0; width: 100%; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: #4b5563; z-index: 3; display: flex; align-items: flex-end; padding-bottom: 2px; box-sizing: border-box; pointer-events: none; white-space: nowrap; transform-origin: left bottom; }
         .page-number { position: absolute; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: #4b5563; }
-        .page-number.top-right { top: 20px; right: 40px; text-align: right; }
-        .page-number.bottom-center { bottom: 20px; left: 0; width: 100%; text-align: center; }
-
-        .trace-mode { color: #d1d5db !important; }
+        .page-number.top-right { top: 20px; right: 40px; text-align: right; } .page-number.bottom-center { bottom: 20px; left: 0; width: 100%; text-align: center; }
     </style>
 </head>
 <body>
     ${containerHTML}
     <script>
-        // フォントが完全に読み込まれるのを待ってから印刷ダイアログを開く
-        window.onload = () => {
-            document.fonts.ready.then(() => {
-                setTimeout(() => {
-                    window.print();
-                }, 500); // 描画安定のためのわずかな遅延
-            });
-        };
+        window.onload = () => { document.fonts.ready.then(() => { setTimeout(() => { window.print(); }, 500); }); };
     <\/script>
 </body>
-</html>
-            `;
-
-            // 書き込んで表示
-            printWindow.document.open();
-            printWindow.document.write(html);
-            printWindow.document.close();
+</html>`;
+            printWindow.document.open(); printWindow.document.write(html); printWindow.document.close();
         }
 
-        // --- AI機能 ---
+        function showLoading(text) { document.getElementById('loading-text').textContent = text; document.getElementById('loading').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+        async function generatePreset() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            
+            const target = document.getElementById('preset-target').value; const themeIndex = document.getElementById('preset-theme').value;
+            const preset = presetData[target][themeIndex];
+            const promptBase = preset.prompt;
+            
+            let prompt = `あなたは英語教師です。以下の指示に従い出力してください。\n指示: ${promptBase}\n\n重要ルール:\n出力は必ず「英語 / 日本語訳 / カタカナ発音」の形式（間に半角スペースとスラッシュ）にし、1行に1つのペアを書いてください。カタカナ発音は英単語ごとにスペースを空けてください。余計な挨拶や説明は一切含めないでください。`;
+
+            if (preset.random) {
+                const currentText = document.getElementById('main-text').value.trim();
+                if (currentText) {
+                    prompt += `\n\n【重要】以下の単語やフレーズはすでに出題済みのため、これらとは絶対に重複しない、ランダムで新しい単語を選んで出力してください。\n---\n${currentText}\n---`;
+                }
+            }
+
+            await callGeminiAPI(apiKey, prompt, true);
+        }
+
         async function generateEnglish() {
             const jaText = document.getElementById('ja-text').value.trim();
-            if (!jaText) {
-                alert('日本語のテキストを入力してください。');
-                return;
-            }
-
-            let apiKey = document.getElementById('api-key').value.trim();
-            if (!apiKey) {
-                try { apiKey = ""; } catch(e) {}
-            }
+            if (!jaText) { showToast('日本語のテキストを入力してください。', true); return; }
             
-            document.getElementById('loading').style.display = 'flex';
-
-            const level = document.getElementById('ai-level').value;
-            let prompt = "";
+            const apiKey = document.getElementById('api-key').value.trim();
             
-            if (level === "単語リスト") {
-                prompt = `以下の日本語を英語の単語に翻訳し、各単語を改行区切りのリストで出力してください。余計な説明は一切不要です。\n\n${jaText}`;
-            } else if (level === "中学生レベル") {
-                prompt = `以下の日本語を、日本の一般的な中学生が習うレベルの簡単な英単語と文法を使って、自然な英文に翻訳してください。結果の英文のみを出力し、説明は不要です。\n\n${jaText}`;
-            } else {
-                prompt = `以下の日本語を、自然で適切な英語の文章に翻訳してください。結果の英文のみを出力し、説明は不要です。\n\n${jaText}`;
-            }
+            const prompt = `以下の日本語を、自然で適切な英語に翻訳してください。\n重要ルール:\n出力は必ず「英語 / 日本語訳 / カタカナ発音」の形式（間に半角スペースとスラッシュ）にしてください。カタカナ発音は英単語ごとにスペースを空けてください。余計な説明は不要です。\n\n${jaText}`;
+            await callGeminiAPI(apiKey, prompt, true);
+        }
 
+        async function callGeminiAPI(apiKey, prompt, append) {
+            showLoading("AIがプリント内容を生成中です...");
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                const modelName = apiKey ? "gemini-2.5-flash" : "gemini-2.5-flash-preview-09-2025";
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
                 
+                const response = await fetchWithRetry(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) throw new Error(`API Request failed`);
+                const result = await response.json(); const englishText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (englishText) {
+                    const currentText = document.getElementById('main-text').value;
+                    if (append) document.getElementById('main-text').value = currentText ? currentText + '\n\n' + englishText.trim() : englishText.trim();
+                    else document.getElementById('main-text').value = englishText.trim();
+                    updateLayout();
+                    showToast("テキストを生成しました！");
+                }
+            } catch (error) { 
+                console.warn("API Error:", error.message); 
+                showToast("エラーが発生しました。APIキーが正しいか確認してください。", true); 
+            } finally { hideLoading(); }
+        }
+
+        async function playTTS() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            
+            const rawText = document.getElementById('main-text').value; if (!rawText.trim()) return;
+            const englishOnlyText = rawText.split('\n').map(line => line.split('/')[0].trim()).filter(line => line).join('. ');
+            if (!englishOnlyText) { showToast("読み上げる英語テキストがありません。", true); return; }
+
+            showLoading("音声を準備しています...");
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
                 const response = await fetchWithRetry(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        systemInstruction: { parts: [{ text: "あなたは優秀な英語教師です。指示に従い、英語のテキストのみを出力します。" }] }
+                        contents: [{ parts: [{ text: englishOnlyText }] }],
+                        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } }
                     })
                 });
-
-                if (!response.ok) throw new Error(`API Request failed`);
+                if (!response.ok) throw new Error("TTS API Error");
                 const result = await response.json();
-                const englishText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (englishText) {
-                    // 入力欄に追記してレイアウト更新（上書きではなく追記で長文プリントに対応）
-                    const currentText = document.getElementById('main-text').value;
-                    document.getElementById('main-text').value = currentText ? currentText + '\n\n' + englishText.trim() : englishText.trim();
-                    updateLayout();
+                const base64Data = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                const mimeType = result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType; 
+                
+                if (base64Data) {
+                    let sampleRate = 24000;
+                    if (mimeType && mimeType.includes('rate=')) {
+                        const match = mimeType.match(/rate=(\d+)/); if (match) sampleRate = parseInt(match[1]);
+                    }
+                    playAudioFromBase64PCM(base64Data, sampleRate);
+                    showToast("再生を開始しました");
                 }
+            } catch (error) { 
+                console.warn("TTS Error:", error.message); 
+                showToast("音声の生成に失敗しました。APIキーを確認してください。", true); 
+            } finally { hideLoading(); }
+        }
 
-            } catch (error) {
-                console.error(error);
-                alert("エラーが発生しました。APIキーを確認してください。");
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+        function playAudioFromBase64PCM(base64Data, sampleRate) {
+            stopTTS(); 
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
+
+            const binaryString = atob(base64Data); const length = binaryString.length / 2;
+            const audioBuffer = audioContext.createBuffer(1, length, sampleRate); const channelData = audioBuffer.getChannelData(0);
+
+            for (let i = 0; i < length; i++) {
+                const byte1 = binaryString.charCodeAt(i * 2); const byte2 = binaryString.charCodeAt(i * 2 + 1);
+                let int16 = byte1 | (byte2 << 8); 
+                if (int16 >= 0x8000) int16 -= 0x10000; 
+                channelData[i] = int16 / 0x8000; 
+            }
+
+            currentAudioSource = audioContext.createBufferSource(); currentAudioSource.buffer = audioBuffer;
+            const speed = parseFloat(document.getElementById('tts-speed').value); currentAudioSource.playbackRate.value = speed;
+            currentAudioSource.connect(audioContext.destination); currentAudioSource.start();
+            currentAudioSource.onended = () => { currentAudioSource = null; };
+        }
+
+        function stopTTS() {
+            if (currentAudioSource) { 
+                currentAudioSource.stop(); currentAudioSource.disconnect(); currentAudioSource = null; 
+                showToast("再生を停止しました");
             }
         }
 
@@ -897,14 +900,159 @@ This is a very very long sentence to test the auto-wrap feature of this applicat
             const delays = [1000, 2000, 4000, 8000, 16000];
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(url, options);
+                    const response = await fetch(url, options); 
                     if (response.ok) return response;
-                    if (i === retries - 1) throw new Error(response.statusText);
+                    
+                    if (response.status >= 400 && response.status < 500) {
+                        throw new Error(`Client Error: ${response.status}`);
+                    }
+                    if (i === retries - 1) throw new Error(`Server Error: ${response.status}`);
+                    
                 } catch (error) {
-                    if (i === retries - 1) throw error;
+                    if (error.message && error.message.includes('Client Error')) throw error;
+                    
+                    if (i === retries - 1) throw error; 
                     await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
             }
+        }
+
+        const HISTORY_KEY = 'ai_english_print_history';
+        const MAX_HISTORY = 5;
+
+        function getCurrentState() {
+            return {
+                text: document.getElementById('main-text').value,
+                orientation: state.orientation,
+                columns: document.getElementById('columns').value,
+                rows: document.getElementById('rows').value,
+                rowGap: document.getElementById('row-gap').value,
+                fontFamily: document.getElementById('font-family').value,
+                textColor: document.getElementById('text-color').value,
+                fontScale: document.getElementById('font-scale').value,
+                fontOffset: document.getElementById('font-offset').value,
+                showHeader: document.getElementById('show-header').checked,
+                headerTitle: document.getElementById('header-title').value,
+                headerClass: document.getElementById('header-class').value,
+                headerName: document.getElementById('header-name').value,
+                pageNumPos: document.getElementById('page-num-pos').value,
+                pageNumFormat: document.getElementById('page-num-format').value,
+                showRuby: document.getElementById('show-ruby').checked,
+                rubyType: document.querySelector('input[name="ruby-type"]:checked').value,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        function applyState(data) {
+            if (!data) return;
+            
+            if (data.text !== undefined) document.getElementById('main-text').value = data.text;
+            if (data.orientation) { setOrientation(data.orientation); }
+            
+            if (data.columns) document.getElementById('columns').value = data.columns;
+            initRowOptions();
+            if (data.rows) document.getElementById('rows').value = data.rows;
+            
+            if (data.rowGap) document.getElementById('row-gap').value = data.rowGap;
+            if (data.fontFamily) document.getElementById('font-family').value = data.fontFamily;
+            if (data.textColor) document.getElementById('text-color').value = data.textColor;
+            if (data.fontScale) document.getElementById('font-scale').value = data.fontScale;
+            if (data.fontOffset) document.getElementById('font-offset').value = data.fontOffset;
+            
+            if (data.showHeader !== undefined) {
+                document.getElementById('show-header').checked = data.showHeader;
+                toggleHeaderInputs();
+            }
+            if (data.headerTitle !== undefined) document.getElementById('header-title').value = data.headerTitle;
+            if (data.headerClass !== undefined) document.getElementById('header-class').value = data.headerClass;
+            if (data.headerName !== undefined) document.getElementById('header-name').value = data.headerName;
+            
+            if (data.pageNumPos) document.getElementById('page-num-pos').value = data.pageNumPos;
+            if (data.pageNumFormat) document.getElementById('page-num-format').value = data.pageNumFormat;
+            
+            if (data.showRuby !== undefined) {
+                document.getElementById('show-ruby').checked = data.showRuby;
+                toggleRubyOptions();
+            }
+            if (data.rubyType !== undefined) {
+                const radio = document.querySelector(`input[name="ruby-type"][value="${data.rubyType}"]`);
+                if(radio) radio.checked = true;
+            }
+
+            document.getElementById('val-font-size').textContent = Math.round(data.fontScale * 100) + '%';
+            document.getElementById('val-font-offset').textContent = data.fontOffset + '%';
+            
+            updateLayout();
+        }
+
+        function saveToHistory() {
+            const currentState = getCurrentState();
+            let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            history.unshift(currentState);
+            if (history.length > MAX_HISTORY) { history = history.slice(0, MAX_HISTORY); }
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            updateHistorySelect();
+            showToast('状態を履歴に記憶しました');
+        }
+
+        function updateHistorySelect() {
+            const select = document.getElementById('history-select');
+            if (!select) return;
+            select.innerHTML = '<option value="">🕒 履歴から復元...</option>';
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            history.forEach((item, index) => {
+                const date = new Date(item.timestamp);
+                const label = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+                const opt = document.createElement('option');
+                opt.value = index; opt.textContent = `[${index + 1}] ${label} の状態`;
+                select.appendChild(opt);
+            });
+        }
+
+        function loadFromHistory() {
+            const select = document.getElementById('history-select');
+            const index = select.value;
+            if (index === "") return;
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            if (history[index]) {
+                applyState(history[index]);
+                showToast('履歴から復元しました');
+                select.value = "";
+            }
+        }
+
+        function exportData() {
+            const currentState = getCurrentState();
+            const dataStr = JSON.stringify(currentState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            
+            const date = new Date();
+            const dateStr = `${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
+            a.download = `print-data_${dateStr}.json`;
+            
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ファイルに保存しました');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    applyState(data);
+                    showToast('ファイルから復元しました');
+                } catch (err) {
+                    console.error(err);
+                    showToast('ファイルの読み込みに失敗しました', true);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
