@@ -433,17 +433,26 @@ to eating cake. / ケーキを食べるのを / トゥ イーティング ケー
             "小学生": [
                 { label: "A〜Z アルファベット一覧", prompt: "大文字と小文字のペア（Aa, Bb...）をZまで出力してください。", random: false },
                 { label: "曜日・月・季節", prompt: "曜日（Monday〜）、月（January〜）、季節（Spring〜）の英単語を出力してください。", random: false },
-                { label: "身近な動物・果物", prompt: "小学生が習う基本的な動物と果物の英単語を合計15個出力してください。", random: true }
+                { label: "身近な動物・果物", prompt: "小学生が習う基本的な動物と果物の英単語を合計15個出力してください。", random: true },
+                { label: "色・数字（1〜20）", prompt: "基本的な色（red, blueなど）と1から20までの数字の英単語を合計15個出力してください。", random: true },
+                { label: "家族・身近な職業", prompt: "小学生が習う家族の呼称（father, motherなど）と身近な職業（teacher, doctorなど）の英単語を合計15個出力してください。", random: true },
+                { label: "基本的な挨拶・声かけ", prompt: "小学生向けの簡単な挨拶や教室で使う短い英語フレーズ（Good morning, Thank youなど）を7文出力してください。", random: true }
             ],
             "中学生": [
                 { label: "中1 基本動詞20選", prompt: "中学1年生で習う最も基本的な動詞を20個出力してください。", random: true },
                 { label: "不規則動詞変化表", prompt: "代表的な不規則動詞の現在形・過去形・過去分詞形（例：go went gone）を10セット出力してください。", random: true },
-                { label: "自己紹介フレーズ", prompt: "中学生レベルの簡単な自己紹介フレーズ（趣味、好きなものなど）を5文出力してください。", random: true }
+                { label: "自己紹介フレーズ", prompt: "中学生レベルの簡単な自己紹介フレーズ（趣味、好きなものなど）を5文出力してください。", random: true },
+                { label: "疑問詞(5W1H)の疑問文", prompt: "中学生で習う疑問詞（What, Where, When, Who, Why, How）を使った実践的な疑問文とその答えのセットを5組（計10文）出力してください。", random: true },
+                { label: "場所・時間を示す前置詞", prompt: "in, on, at などの前置詞を使った、場所や時間を表す中学生レベルの短い例文を8文出力してください。", random: true },
+                { label: "中2・中3 重要構文（不定詞・比較など）", prompt: "中学2〜3年生で習う重要文法（不定詞、動名詞、比較、受け身など）を含んだ実践的な例文を7文出力してください。", random: true }
             ],
             "高校・一般": [
                 { label: "入試頻出・重要単語", prompt: "高校入試や大学入試によく出る重要な英単語を15個出力してください。", random: true },
                 { label: "日常会話フレーズ", prompt: "旅行や日常でよく使う実用的な英語フレーズを10文出力してください。", random: true },
-                { label: "名言・ことわざ", prompt: "有名な英語の名言やことわざを5文出力してください。", random: true }
+                { label: "名言・ことわざ", prompt: "有名な英語の名言やことわざを5文出力してください。", random: true },
+                { label: "頻出イディオム・熟語（英検準2級〜）", prompt: "大学入試や英検準2級〜2級でよく出題される重要なイディオムや熟語（例: look forward to, depend on など）を使った短い例文を8文出力してください。", random: true },
+                { label: "長文読解のための繋ぎ言葉（副詞・接続詞）", prompt: "However, Therefore, For example など、長文読解で重要になる論理展開を示す副詞や接続詞（ディスコースマーカー）を使った例文を7文出力してください。", random: true },
+                { label: "日本人が間違えやすい英語表現", prompt: "日本人が間違えやすい英語表現や、和製英語の正しい英語表現（例: クレーム -> complaint）を使った例文を6文出力してください。", random: true }
             ]
         };
 
@@ -1198,3 +1207,4 @@ to eating cake. / ケーキを食べるのを / トゥ イーティング ケー
     </script>
 </body>
 </html>
+
