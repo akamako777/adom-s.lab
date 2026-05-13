@@ -104,6 +104,58 @@
             font-weight: bold;
         }
     </style>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-messaging.js";
+
+  // 1つ目のカギ
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDi3IdcvyBh4R3nh7_bMQkabpWfcZpPFk",
+    authDomain: "goto-gomi-app.firebaseapp.com",
+    projectId: "goto-gomi-app",
+    storageBucket: "goto-gomi-app.firebasestorage.app",
+    messagingSenderId: "730896181153",
+    appId: "1:730896181153:web:eeaa805011a4a807250de0"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  // 通知の許可を求めて、宛先（トークン）を取得する関数
+  window.requestPushPermission = async () => {
+    try {
+      showToast("通知の設定を準備中...");
+      // ブラウザに「通知を許可しますか？」のポップアップを出す
+      const permission = await Notification.requestPermission();
+      
+      if (permission === 'granted') {
+        // 許可されたら、2つ目のカギ（VAPIDキー）を使ってトークンを取得
+        const token = await getToken(messaging, {
+          vapidKey: "BN_MZSBPt-j5E8hocQDDk7FNvm5V66VkqEW6lieOpC4cDVN0UghZWiKnhZ2XDnhPGuG4c6sS9M3JffkGtdP2MfA"
+        });
+        
+        if (token) {
+          console.log("★トークン取得成功:", token);
+          showToast("通知がオンになりました！");
+          
+          // ※TODO: 次のフェーズで、この token をGAS（名簿）に送る処理を書きます
+        }
+      } else {
+        showToast("通知が許可されませんでした");
+      }
+    } catch (error) {
+      console.error("トークン取得エラー:", error);
+      showToast("通知の設定に失敗しました");
+    }
+  };
+
+  // アプリを開いている時に通知が届いた場合の処理
+  onMessage(messaging, (payload) => {
+    showToast("🔔 お知らせ: " + payload.notification.title);
+  });
+</script>
+
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans antialiased select-none overflow-hidden fixed inset-0">
 
@@ -151,26 +203,38 @@
         <main id="main-content" class="flex-1 overflow-y-auto overflow-x-hidden p-4 relative scroll-smooth pb-24 w-full">
             </main>
 
-        <nav class="flex-none bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 pb-safe z-30 absolute bottom-0 w-full max-w-5xl mx-auto left-0 right-0">
-            <div class="flex justify-around items-center h-16">
-                <button onclick="navTo('home')" class="nav-btn active flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="home">
-                    <i class="fa-solid fa-house text-lg mb-1"></i>
-                    <span class="text-[10px] font-medium" data-t="nav_home">ホーム</span>
-                </button>
-                <button onclick="navTo('search')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="search">
-                    <i class="fa-solid fa-magnifying-glass text-lg mb-1"></i>
-                    <span class="text-[10px] font-medium" data-t="nav_search">分別検索</span>
-                </button>
-                <button onclick="navTo('guide')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="guide">
-                    <i class="fa-solid fa-book-open text-lg mb-1"></i>
-                    <span class="text-[10px] font-medium" data-t="nav_guide">ガイド</span>
-                </button>
-                <button onclick="navTo('settings')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="settings">
-                    <i class="fa-solid fa-gear text-lg mb-1"></i>
-                    <span class="text-[10px] font-medium" data-t="nav_settings">設定</span>
-                </button>
-            </div>
-        </nav>
+<nav class="flex-none bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 pb-safe z-30 absolute bottom-0 w-full max-w-5xl mx-auto left-0 right-0">
+    <div class="flex justify-around items-center h-16">
+        <button onclick="navTo('home')" class="nav-btn active flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="home">
+            <i class="fa-solid fa-house text-lg mb-1"></i>
+            <span class="text-[10px] font-medium" data-t="nav_home">ホーム</span>
+        </button>
+        
+        <button onclick="openNews()" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors relative" data-target="news">
+            <i class="fa-solid fa-bell text-lg mb-1 relative">
+                <span id="news-badge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border border-white dark:border-gray-800 rounded-full animate-pulse"></span>
+            </i>
+            <span class="text-[10px] font-medium">お知らせ</span>
+        </button>
+
+        <button onclick="navTo('search')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="search">
+            <i class="fa-solid fa-magnifying-glass text-lg mb-1"></i>
+            <span class="text-[10px] font-medium" data-t="nav_search">分別検索</span>
+        </button>
+
+        <button onclick="navTo('guide')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="guide">
+            <i class="fa-solid fa-book-open text-lg mb-1"></i>
+            <span class="text-[10px] font-medium" data-t="nav_guide">ガイド</span>
+        </button>
+
+        <button onclick="navTo('settings')" class="nav-btn flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-brand transition-colors" data-target="settings">
+            <i class="fa-solid fa-gear text-lg mb-1"></i>
+            <span class="text-[10px] font-medium" data-t="nav_settings">設定</span>
+        </button>
+    </div>
+</nav>
+
+
 
         <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300 p-4">
             <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
@@ -200,8 +264,7 @@
 // 🖥️ System Signature
 console.log("%c GOTO GOMI-NAVI Ver 5.4 %c Developed by Adom's Lab ", "background:#22c55e; color:white; padding:4px; border-radius:4px; font-weight:bold;", "color:#22c55e; font-weight:bold;");
 
-// --- 🔑 API Key (Canvas Privilege) ---
-const apiKey = ""; 
+
 // ▼ GAS URL (Step 1で取得したURLをここに貼る) ▼
 // 両端に " をつけました
 const CAM_API = "https://script.google.com/macros/s/AKfycbzsg_EHB1609DO8KleVzNIOH8ncVExeGoAyX-VRrqvSh16X387ZpUt_sxN5sJruOs6q/exec";
@@ -1747,6 +1810,10 @@ const GEMINI_LINK = "https://gemini.google.com/gem/15Gkw-McQdmGYmMBgRJXyruIjhGoZ
                 }
             } catch(e) { console.error("Storage Error"); }
 
+	// アプリ初期化時に未読ニュースをチェック
+checkUnreadNews();
+
+
             applyTheme();
             
             if(!state.region) {
@@ -2487,12 +2554,38 @@ const d = ('0' + todayDate.getDate()).slice(-2);
 
 
 
-      function renderSearch() {
+function renderSearch() {
+            // ▼ AIボタン用の多言語辞書 (新規追加) ▼
+            const SRCH_TXT = {
+                ja: { aiBtn: "AIに写真で分別相談する", aiSub: "「これ何ゴミ？」迷ったらカメラで確認" },
+                en: { aiBtn: "Ask AI with Photo", aiSub: "Use camera to check sorting" },
+                es: { aiBtn: "Consultar a la IA con foto", aiSub: "Usa la cámara para verificar" },
+                zh: { aiBtn: "用照片向 AI 諮詢", aiSub: "不知道怎麼分？用相機確認" },
+                my: { aiBtn: "AI ကို ဓာတ်ပုံဖြင့် မေးမည်", aiSub: "ကင်မရာဖြင့် အမှိုက်ခွဲခြားမှုစစ်ဆေးရန်" },
+                vi: { aiBtn: "Hỏi AI bằng ảnh", aiSub: "Dùng máy ảnh để kiểm tra phân loại" }
+            };
+            const s = SRCH_TXT[state.lang] || SRCH_TXT.ja;
+
             const hasSpeech = !!SpeechRecognition;
             
             let html = `
                 <div class="fade-in h-full flex flex-col">
                     <div class="sticky top-0 bg-gray-50 dark:bg-gray-900 pb-4 z-20">
+                        <div class="max-w-2xl mx-auto w-full px-2 mt-2 mb-4">
+                            <button onclick="showGeminiConsent()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-between group">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-white/20 p-2 rounded-lg group-hover:rotate-12 transition-transform">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="text-sm font-bold">${s.aiBtn}</div>
+                                        <div class="text-[10px] text-indigo-100 font-normal">${s.aiSub}</div>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-indigo-200"></i>
+                            </button>
+                            </div>
+
                         <div class="relative group max-w-2xl mx-auto w-full flex gap-2">
                             <div class="relative flex-1">
                                 <input type="search" id="sInput" placeholder="${t('search_ph')}" 
@@ -2530,7 +2623,7 @@ const d = ('0' + todayDate.getDate()).slice(-2);
             main.innerHTML = html;
         }
 
-        // ▼ 音声検索ロジック (新規追加) ▼
+        // ▼ 音声検索ロジック (既存のまま) ▼
         function startVoiceSearch() {
             if (!SpeechRecognition) return;
             
@@ -2567,7 +2660,6 @@ const d = ('0' + todayDate.getDate()).slice(-2);
                 showToast("音声認識できませんでした");
             };
         }
-
 
         function doSearch(q) {
             const el = document.getElementById('sResults');
@@ -2643,6 +2735,7 @@ const d = ('0' + todayDate.getDate()).slice(-2);
         }
 
 
+
     function renderGuide() {
             const sodaiContact = getCurrentSodaiContact();
             const sodaiName = sodaiContact.name[state.lang] || sodaiContact.name.ja;
@@ -2702,93 +2795,152 @@ const d = ('0' + todayDate.getDate()).slice(-2);
         }
 
 
-      function renderSettings() {
-// ▼ Local Dictionary for Settings UI ▼
+	function renderSettings() {
+    // ▼ Local Dictionary for Settings UI (多言語対応辞書) ▼
     const SET_TXT = {
-        ja: { undoMsg: "間違えて登録した場合や、予定を消したい場合", undoBtn: "カレンダーから削除する (解除用)" },
-        en: { undoMsg: "Mistake or want to delete?", undoBtn: "Remove from Calendar (Undo)" },
-        es: { undoMsg: "¿Error o desea eliminar?", undoBtn: "Eliminar del calendario (Deshacer)" },
-        zh: { undoMsg: "如果註冊錯誤或想刪除", undoBtn: "從行事曆刪除 (解除用)" },
-        my: { undoMsg: "မှားယွင်းထည့်သွင်းမိပါက (သို့) ဖျက်လိုပါက", undoBtn: "ပြက္ခဒိန်မှဖယ်ရှားမည် (Undo)" },
-        vi: { undoMsg: "Nếu nhầm hoặc muốn xóa", undoBtn: "Xóa khỏi lịch (Hoàn tác)" }
+        ja: { 
+            undoMsg: "間違えて登録した場合や、予定を消したい場合", 
+            undoBtn: "カレンダーから削除する (解除用)",
+            notifyTitle: "市からのお知らせ通知",
+            notifyDesc: "台風接近によるごみ収集の急な中止など、重要なお知らせをスマホの通知（プッシュ通知）で直接受け取ることができます。",
+            notifyBtn: "通知を受け取る",
+            notifyNote: "※iPhoneをお使いの場合、アプリを「ホーム画面に追加」していただく必要があります。"
+        },
+        en: { 
+            undoMsg: "Mistake or want to delete?", 
+            undoBtn: "Remove from Calendar (Undo)",
+            notifyTitle: "City News Notification",
+            notifyDesc: "Receive important announcements like sudden changes in garbage collection due to typhoons directly via push notifications.",
+            notifyBtn: "Receive Notifications",
+            notifyNote: "*For iPhone users, you need to 'Add to Home Screen'."
+        },
+        es: { 
+            undoMsg: "¿Error o desea eliminar?", 
+            undoBtn: "Eliminar del calendario (Deshacer)",
+            notifyTitle: "Notificaciones de la ciudad",
+            notifyDesc: "Reciba avisos importantes, como cambios repentinos en la recogida por tifones, directamente mediante notificaciones push.",
+            notifyBtn: "Recibir notificaciones",
+            notifyNote: "*Usuarios de iPhone: deben 'Añadir a la pantalla de inicio'."
+        },
+        zh: { 
+            undoMsg: "如果註冊錯誤或想刪除", 
+            undoBtn: "從行事曆刪除 (解除用)",
+            notifyTitle: "市政消息通知",
+            notifyDesc: "透過手機推送通知直接接收重要消息，例如因颱風導致的垃圾收集臨時取消等。",
+            notifyBtn: "接收通知",
+            notifyNote: "※使用 iPhone 時，需將應用程式「加入主畫面」。"
+        },
+        my: { 
+            undoMsg: "မှားယွင်းထည့်သွင်းမိပါက (သို့) ဖျက်လိုပါက", 
+            undoBtn: "ပြက္ခဒိန်မှဖယ်ရှားမည် (Undo)",
+            notifyTitle: "မြို့တော်သတင်းအချက်အလက်",
+            notifyDesc: "တိုင်ဖွန်းမုန်တိုင်းကြောင့် အမှိုက်သိမ်းဆည်းမှု ရုတ်တရက်ရပ်ဆိုင်းခြင်းကဲ့သို့သော အရေးကြီးသတင်းများကို ဖုန်းအကြောင်းကြားချက်ဖြင့် တိုက်ရိုက်လက်ခံရရှိနိုင်ပါသည်။",
+            notifyBtn: "အကြောင်းကြားချက်ရယူမည်",
+            notifyNote: "※iPhone အသုံးပြုသူများအတွက် App ကို Home Screen တွင် ထည့်သွင်းရန် လိုအပ်သည်။"
+        },
+        vi: { 
+            undoMsg: "Nếu nhầm hoặc muốn xóa", 
+            undoBtn: "Xóa khỏi lịch (Hoàn tác)",
+            notifyTitle: "Thông báo từ thành phố",
+            notifyDesc: "Nhận thông báo quan trọng như thay đổi lịch thu gom rác do bão trực tiếp qua thông báo đẩy trên điện thoại.",
+            notifyBtn: "Nhận thông báo",
+            notifyNote: "※Người dùng iPhone cần 'Thêm vào màn hình chính'."
+        }
     };
     const st = SET_TXT[state.lang] || SET_TXT.ja;
     // ▲ End Dictionary ▲
 
-            main.innerHTML = `
-                <div class="fade-in space-y-6 max-w-lg mx-auto pb-10">
-                    <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">${t('nav_settings')}</h2>
+    main.innerHTML = `
+        <div class="fade-in space-y-6 max-w-lg mx-auto pb-10">
+            <h2 class="text-xl font-bold px-2 text-gray-800 dark:text-gray-100">${t('nav_settings')}</h2>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div class="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 font-bold text-xs text-gray-500">Language</div>
+                ${Object.keys(LANGS).map(k => `
+                    <button onclick="setLang('${k}')" class="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <span class="font-bold text-sm text-gray-700 dark:text-gray-200">${LANGS[k]}</span>
+                        ${state.lang === k ? '<span class="text-brand text-lg">●</span>' : ''}
+                    </button>
+                `).join('')}
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-check text-blue-500"></i>
+                    <span class="font-bold text-xs text-blue-700 dark:text-blue-300">${t('cal_title')}</span>
+                </div>
+                <div class="p-4 space-y-3">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">${t('cal_desc')}</p>
                     
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 font-bold text-xs text-gray-500">Language</div>
-                        ${Object.keys(LANGS).map(k => `
-                            <button onclick="setLang('${k}')" class="w-full p-4 text-left flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                <span class="font-bold text-sm text-gray-700 dark:text-gray-200">${LANGS[k]}</span>
-                                ${state.lang === k ? '<span class="text-brand text-lg">●</span>' : ''}
-                            </button>
-                        `).join('')}
+                    <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl mb-4">
+                        <div class="text-[10px] font-bold text-gray-400 mb-2">通知タイミング</div>
+                        <label class="flex items-center gap-3 p-1 cursor-pointer">
+                            <input type="checkbox" id="cal-notify-18" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                            <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_18')}</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-1 cursor-pointer">
+                            <input type="checkbox" id="cal-notify-0700" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                            <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0700')}</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-1 cursor-pointer">
+                            <input type="checkbox" id="cal-notify-0730" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
+                            <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0730')}</span>
+                        </label>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center gap-2">
-                            <i class="fa-regular fa-calendar-check text-blue-500"></i>
-                            <span class="font-bold text-xs text-blue-700 dark:text-blue-300">${t('cal_title')}</span>
-                        </div>
-                        <div class="p-4 space-y-3">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                ${t('cal_desc')}
-                            </p>
-                            
-                            <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl mb-4">
-                                <div class="text-[10px] font-bold text-gray-400 mb-2">通知タイミング</div>
-                                <label class="flex items-center gap-3 p-1 cursor-pointer">
-                                    <input type="checkbox" id="cal-notify-18" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
-                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_18')}</span>
-                                </label>
-                                <label class="flex items-center gap-3 p-1 cursor-pointer">
-                                    <input type="checkbox" id="cal-notify-0700" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
-                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0700')}</span>
-                                </label>
-                                <label class="flex items-center gap-3 p-1 cursor-pointer">
-                                    <input type="checkbox" id="cal-notify-0730" checked class="w-4 h-4 text-brand rounded focus:ring-brand">
-                                    <span class="text-sm text-gray-700 dark:text-gray-200">${t('cal_opt_0730')}</span>
-                                </label>
-                            </div>
-
-                            <button onclick="exportCalendar()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-file-export"></i> ${t('cal_export')}
-                            </button>
-
-                            <hr class="border-gray-100 dark:border-gray-700 my-2">
-
-                            <div class="text-center">
-                                <p class="text-[10px] text-gray-400 mb-2">${st.undoMsg}</p>
-                                <button onclick="showCancelMenu()" class="text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-full transition-colors border border-red-100 dark:border-red-900 active:scale-95">
-                                    <i class="fa-solid fa-trash-can mr-1"></i> ${st.undoBtn}
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <button onclick="state.region=null;save();location.reload()" class="w-full py-4 text-red-500 font-bold bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-sm hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700">
-                        ${t('settings_reset')}
+                    <button onclick="exportCalendar()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-export"></i> ${t('cal_export')}
                     </button>
 
-                    <div class="text-center mt-6">
-                        <button onclick="showPrivacyPolicy()" class="text-xs text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors">
-                            プライバシーポリシー (Privacy Policy)
-                        </button>
-		<span class="text-gray-300">|</span> <button onclick="showCredits()" class="text-[12px] text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors"> ライセンス・謝辞 </button>
-                    </div>
-                    <div class="text-center text-xs text-gray-300 pt-4 font-mono">
-                        GOTO GOMI-NAVI Ver 5.4<br>
+                    <hr class="border-gray-100 dark:border-gray-700 my-2">
 
-                        Aurora Architecture
+                    <div class="text-center">
+                        <p class="text-[10px] text-gray-400 mb-2">${st.undoMsg}</p>
+                        <button onclick="showCancelMenu()" class="text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 px-4 py-2 rounded-full transition-colors border border-red-100 dark:border-red-900 active:scale-95">
+                            <i class="fa-solid fa-trash-can mr-1"></i> ${st.undoBtn}
+                        </button>
                     </div>
                 </div>
-            `;
-        }
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div class="p-3 bg-brand-light dark:bg-brand-900/20 border-b border-brand-light flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-brand"></i>
+                    <span class="font-bold text-xs text-brand-dark dark:text-brand">${st.notifyTitle}</span>
+                </div>
+                <div class="p-4">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                        ${st.notifyDesc}
+                    </p>
+                    <button onclick="requestPushPermission()" class="w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> ${st.notifyBtn}
+                    </button>
+                    <p class="text-[10px] text-gray-400 mt-3 text-center">
+                        ${st.notifyNote}
+                    </p>
+                </div>
+            </div>
+            <button onclick="state.region=null;save();location.reload()" class="w-full py-4 text-red-500 font-bold bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-sm hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700">
+                ${t('settings_reset')}
+            </button>
+
+            <div class="text-center mt-6">
+                <button onclick="showPrivacyPolicy()" class="text-xs text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors">
+                    プライバシーポリシー (Privacy Policy)
+                </button>
+                <span class="text-gray-300 mx-1">|</span> 
+                <button onclick="showCredits()" class="text-xs text-gray-400 hover:text-brand underline decoration-gray-300 underline-offset-4 transition-colors">
+                    ライセンス・謝辞
+                </button>
+            </div>
+            <div class="text-center text-xs text-gray-300 pt-4 font-mono">
+                GOTO GOMI-NAVI Ver 5.4<br>
+                Aurora Architecture
+            </div>
+        </div>
+    `;
+}
+
 
         function showCancelMenu() {
             const html = `
@@ -2940,136 +3092,287 @@ function showIconTip(e, labelText) {
             showModal("AI用パターンデータ", html, `<button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-brand text-white font-bold text-sm">閉じる</button>`);
         }
 
+
 // --- NEWS SYSTEM (Gomi-News) ---
-        async function loadNews() {
-            const container = document.getElementById('news-feed');
-            if(!container) return;
+async function loadNews() {
+    const container = document.getElementById('news-feed');
+    if(!container) return;
 
-            // 1. まずキャッシュを表示 (オフライン対策)
-            const cached = localStorage.getItem('news_cache');
-            if (cached) renderNewsList(JSON.parse(cached), container);
+    // 1. まずキャッシュを表示 (オフライン対策)
+    const cached = localStorage.getItem('news_cache');
+    if (cached) renderNewsList(JSON.parse(cached), container);
 
-            // 2. 最新データを取得
-            try {
-                // ?t=... でキャッシュ回避
-                const res = await fetch(NEWS_API + '?t=' + new Date().getTime());
-                const data = await res.json();
-                
-                // 3. データが「配列」なら処理する（0件でもOKにする）
-                if (Array.isArray(data)) {
-                    // キャッシュを最新状態（0件なら空）に上書き
-                    localStorage.setItem('news_cache', JSON.stringify(data));
+    // 2. 最新データを取得
+    try {
+        // ?t=... でキャッシュ回避
+        const res = await fetch(NEWS_API + '?t=' + new Date().getTime());
+        const data = await res.json();
+        
+        // 3. データが「配列」なら処理する（0件でもOKにする）
+        if (Array.isArray(data)) {
+            // キャッシュを最新状態（0件なら空）に上書き
+            localStorage.setItem('news_cache', JSON.stringify(data));
 
-                    if (data.length === 0) {
-                        // ▼ データが0件なら、画面のお知らせも消す
-                        container.innerHTML = ''; 
-                    } else {
-                        // ▼ データがあるなら描画する
-                        renderNewsList(data, container);
-                    }
-                }
-            } catch (e) {
-                // オフライン時はキャッシュのみで静かに耐える
-                if (!cached) container.innerHTML = `<div class="text-center text-xs text-gray-400 py-4">お知らせの読み込みに失敗しました</div>`;
+            if (data.length === 0) {
+                // ▼ データが0件なら、画面のお知らせも消す
+                container.innerHTML = ''; 
+            } else {
+                // ▼ データがあるなら描画する
+                renderNewsList(data, container);
             }
         }
+    } catch (e) {
+        // オフライン時はキャッシュのみで静かに耐える
+        if (!cached) container.innerHTML = `<div class="text-center text-xs text-gray-400 py-4">お知らせの読み込みに失敗しました</div>`;
+    }
+}
 
-        function renderNewsList(data, container) {
-            if(!data.length) return;
+function renderNewsList(data, container) {
+    if(!data || !data.length) {
+        container.innerHTML = '<div class="text-center text-gray-500 py-8">現在お知らせはありません</div>';
+        return;
+    }
+    
+    // 最新10件を表示（5件だと少ないため少し増やしました。全て表示したい場合は slice を消してください）
+    const html = data.slice(0, 10).map((item, index) => {
+        const safeCategory = escapeHtml(item.category || "");
+        const safeTitle = escapeHtml(item.title || "");
+        const safeBody = escapeHtml(item.body || "");
+        const safeDate = escapeHtml(item.date || "");
+
+        // カテゴリ別色分け
+        let badgeColor = "bg-gray-100 text-gray-600";
+        if(safeCategory.includes("重要")) badgeColor = "bg-red-100 text-red-600";
+        if(safeCategory.includes("イベント")) badgeColor = "bg-green-100 text-green-600";
+        if(safeCategory.includes("お知らせ")) badgeColor = "bg-blue-100 text-blue-600";
+
+        return `
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all mb-4">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${badgeColor}">${safeCategory}</span>
+                <span class="text-xs text-gray-400 font-mono">${safeDate}</span>
+            </div>
             
-            const html = data.slice(0, 5).map((item, index) => { // 最新5件のみ
-                // カテゴリ別色分け
-                let badgeColor = "bg-gray-100 text-gray-600";
-                if(item.category.includes("重要")) badgeColor = "bg-red-100 text-red-600";
-                if(item.category.includes("イベント")) badgeColor = "bg-green-100 text-green-600";
-                if(item.category.includes("お知らせ")) badgeColor = "bg-blue-100 text-blue-600";
+            <h4 class="font-bold text-base text-gray-900 dark:text-white mb-3 leading-tight">
+                ${safeTitle}
+            </h4>
+            
+            ${safeBody ? `
+            <div class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap pt-3 border-t border-gray-50 dark:border-gray-700">
+                ${safeBody}
+            </div>
+            ` : ''}
+        </div>
+        `;
+    }).join('');
 
-                return `
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:border-brand">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor}">${item.category}</span>
-                        <span class="text-xs text-gray-400 font-mono">${item.date}</span>
-                    </div>
-                    <div class="font-bold text-sm text-gray-800 dark:text-gray-200 mb-1">${item.title}</div>
-                    ${item.body ? `<div class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 hidden" id="news-${index}">${item.body}</div>
-                    <button onclick="document.getElementById('news-${index}').classList.toggle('hidden')" class="text-[10px] text-brand font-bold mt-1 w-full text-right">詳細を見る ▼</button>` : ''}
-                </div>
-                `;
-            }).join('');
+    container.innerHTML = `<div class="pb-8">${html}</div>`;
+}
 
-            container.innerHTML = `<div class="space-y-3">${html}</div>`;
+
+// --- 🔔 パターンB: アプリ内バッジ通知システム ---
+
+// 1. アプリ起動時に裏で未読チェックを行う関数
+async function checkUnreadNews() {
+    try {
+        // バックグラウンドで最新データをこっそり取得
+        const res = await fetch(NEWS_API + '?check=unread&t=' + new Date().getTime());
+        const data = await res.json();
+        
+        if (Array.isArray(data) && data.length > 0) {
+            // 一番新しいお知らせの日付 (例: "2024.05.12")
+            const latestNewsDate = data[0].date; 
+            // 端末に記録されている「最後に見た日付」
+            const lastReadDate = localStorage.getItem('last_read_news_date');
+
+            // 「最後に見た日付」がない（初回）、または最新のお知らせの方が新しい場合
+            if (!lastReadDate || latestNewsDate > lastReadDate) {
+                // バッジを表示する
+                const badge = document.getElementById('news-badge');
+                if (badge) badge.classList.remove('hidden');
+            }
         }
+    } catch (e) {
+        console.log("未読チェック失敗 (オフライン等):", e);
+        // バックグラウンド処理なので、エラー時は何もしない（静かに耐える）
+    }
+}
+
+// 2. お知らせを「既読」にする関数
+function markNewsAsRead(data) {
+    if (Array.isArray(data) && data.length > 0) {
+        const latestNewsDate = data[0].date;
+        // 最新の日付を「最後に見た日付」として端末に保存
+        localStorage.setItem('last_read_news_date', latestNewsDate);
+        
+        // バッジを隠す
+        const badge = document.getElementById('news-badge');
+        if (badge) badge.classList.add('hidden');
+    }
+}
+
+// 3. 既存の loadNews() を少し修正して、既読処理を組み込む
+async function loadNews() {
+    const container = document.getElementById('news-feed');
+    if(!container) return;
+
+    // キャッシュ表示 (省略せずに既存のコードを残します)
+    const cached = localStorage.getItem('news_cache');
+    if (cached) renderNewsList(JSON.parse(cached), container);
+
+    try {
+        const res = await fetch(NEWS_API + '?t=' + new Date().getTime());
+        const data = await res.json();
+        
+        if (Array.isArray(data)) {
+            localStorage.setItem('news_cache', JSON.stringify(data));
+
+            if (data.length === 0) {
+                container.innerHTML = ''; 
+            } else {
+                // 描画処理 (前回の修正版 renderNewsList を使用)
+                renderNewsList(data, container);
+                
+                // ★追加: 画面に描画した＝お知らせを見たので「既読」にする！
+                markNewsAsRead(data); 
+            }
+        }
+    } catch (e) {
+        if (!cached) container.innerHTML = `<div class="text-center text-xs text-gray-400 py-4">お知らせの読み込みに失敗しました</div>`;
+    }
+}
+
+// --- お知らせ画面の表示処理 ---
+function openNews() {
+    // 1. メニューの見た目を「お知らせ」がアクティブ（色付き）になるように変更
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-brand'));
+    const newsBtn = document.querySelector('button[data-target="news"]');
+    if (newsBtn) newsBtn.classList.add('active', 'text-brand');
+
+    // 2. モーダルでお知らせを開く (これまでの openNewsModal と同じような処理)
+    showModal(
+        `<div class="flex items-center gap-2"><i class="fa-solid fa-bell text-brand"></i> 市からのお知らせ</div>`,
+        `<div id="news-feed-modal" class="min-h-[200px] flex items-center justify-center">
+            <i class="fa-solid fa-spinner fa-spin text-gray-300 text-3xl"></i>
+         </div>`,
+        `<button onclick="closeNewsModal()" class="w-full bg-gray-200 dark:bg-gray-700 py-2 rounded-lg font-bold text-gray-600 dark:text-gray-300">閉じる</button>`
+    );
+
+    // 3. ニュースを読み込んでモーダル内に表示
+    const modalContainer = document.getElementById('news-feed-modal');
+    if (modalContainer) {
+        // loadNews 関数を呼び出して、結果を modalContainer に描画する
+        loadNewsToContainer(modalContainer);
+    }
+}
+
+// ニュースを閉じた時にホームに戻る処理
+function closeNewsModal() {
+    closeModal();
+    navTo('home'); // モーダルを閉じたらホームのメニュー状態に戻す
+}
+
+// ニュースを特定の場所に読み込むための関数（既存の loadNews を少し改変）
+async function loadNewsToContainer(container) {
+    const cached = localStorage.getItem('news_cache');
+    if (cached) renderNewsList(JSON.parse(cached), container);
+
+    try {
+        const res = await fetch(NEWS_API + '?t=' + new Date().getTime());
+        const data = await res.json();
+        
+        if (Array.isArray(data)) {
+            localStorage.setItem('news_cache', JSON.stringify(data));
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-4">現在お知らせはありません</div>';
+            } else {
+                renderNewsList(data, container);
+                
+                // ★お知らせを画面に表示したので、既読にする！
+                markNewsAsRead(data);
+            }
+        }
+    } catch (e) {
+        if (!cached) container.innerHTML = `<div class="text-center text-xs text-gray-400 py-4">お知らせの読み込みに失敗しました</div>`;
+    }
+}
 
 
 // --- Gemini Gate (Safety Modal: Multi-Language Edition) ---
-        function showGeminiConsent() {
+function showGeminiConsent() {
             // このモーダル専用の翻訳辞書 (Capsulated i18n)
             const TXT = {
                 ja: {
                     title: "AIごみ分別相談",
                     head: "「これ、何ゴミ？」",
                     desc: "判断に迷うゴミの写真を撮って送るだけ。<br>五島市専用のAI (Gemini) が分別をサポートします！",
-                    hintTitle: "ご利用のヒント",
+                    hintTitle: "ご利用のヒントと注意事項", // 少し名称を変更
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>【Proモード推奨】</span>より正確な回答が得られます。",
-                    hint2: "個人情報（顔や名前）は写さないようご注意ください。",
+                    hint2: "個人情報（顔や宛名など）は写さないようご注意ください。",
                     hint3: "会話データはGoogleの規約に基づいて処理されます。",
+                    hint4: "<span class='font-bold text-red-500'>【重要】AIの判定は参考情報です。最終的な分別は市の公式ルールに従ってください。</span>", // ★追加
                     btnCancel: "キャンセル",
-                    btnGo: "AIに写真で聞く"
+                    btnGo: "同意してAIに聞く" // ★「同意して」というニュアンスを追加
                 },
                 en: {
                     title: "AI Waste Sorting Help",
                     head: "What trash is this?",
                     desc: "Just take a photo of the item.<br>Goto City's AI (Gemini) will help you sort it!",
-                    hintTitle: "Usage Hints",
+                    hintTitle: "Tips & Terms",
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> Recommended for better accuracy.",
-                    hint2: "Please avoid including faces or names in the photo.",
+                    hint2: "Please avoid including personal info (faces, names) in the photo.",
                     hint3: "Data is processed based on Google's terms.",
+                    hint4: "<span class='font-bold text-red-500'>[Important] AI judgment is for reference only. Please follow the official sorting rules.</span>", // ★追加
                     btnCancel: "Cancel",
-                    btnGo: "Ask AI with Photo"
+                    btnGo: "Agree & Ask AI"
                 },
                 es: {
                     title: "Consulta con IA",
                     head: "¿Qué basura es?",
                     desc: "Simplemente tome una foto.<br>¡La IA de Goto (Gemini) le ayudará a clasificarla!",
-                    hintTitle: "Consejos",
+                    hintTitle: "Consejos y Términos",
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Modo Pro]</span> Recomendado para mayor precisión.",
-                    hint2: "Evite incluir caras o nombres en la foto.",
+                    hint2: "Evite incluir información personal en la foto.",
                     hint3: "Los datos se procesan según los términos de Google.",
+                    hint4: "<span class='font-bold text-red-500'>[Importante] La IA es solo referencial. Siga las reglas oficiales de clasificación.</span>", // ★追加
                     btnCancel: "Cancelar",
-                    btnGo: "Preguntar con foto"
+                    btnGo: "Aceptar y Preguntar"
                 },
                 zh: {
                     title: "AI 垃圾分類諮詢",
                     head: "這是什麼垃圾？",
                     desc: "只需拍照上傳。<br>五島市專用 AI (Gemini) 將協助您分類！",
-                    hintTitle: "使用提示",
+                    hintTitle: "使用提示與注意事項",
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>【推薦 Pro 模式】</span>可獲得更準確的回答。",
                     hint2: "請勿拍攝臉部或姓名等個人資訊。",
                     hint3: "對話數據將根據 Google 條款處理。",
+                    hint4: "<span class='font-bold text-red-500'>【重要】AI 判定僅供參考，請以市府官方分類規定為準。</span>", // ★追加
                     btnCancel: "取消",
-                    btnGo: "拍照詢問 AI"
+                    btnGo: "同意並詢問 AI"
                 },
                 my: {
                     title: "AI အမှိုက်ခွဲခြင်း",
                     head: "ဒါ ဘာအမှိုက်လဲ။",
                     desc: "ဓာတ်ပုံရိုက်ပြီး ပို့လိုက်ရုံပါပဲ။<br>Goto City AI (Gemini) က ကူညီပါလိမ့်မယ်။",
-                    hintTitle: "အကြံပြုချက်",
+                    hintTitle: "အကြံပြုချက်နှင့် စည်းကမ်းချက်များ",
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> ပိုမိုတိကျသော အဖြေများရနိုင်သည်",
                     hint2: "မျက်နှာနှင့် အမည်များ မပါဝင်ပါစေနှင့်။",
                     hint3: "Google ၏ စည်းကမ်းချက်များနှင့်အညီ ဆောင်ရွက်ပါသည်။",
+                    hint4: "<span class='font-bold text-red-500'>[အရေးကြီးသည်] AI ၏အဖြေသည် အကြံပြုချက်သာဖြစ်သည်။ တရားဝင်စည်းမျဉ်းများကိုသာ လိုက်နာပါ။</span>", // ★追加
                     btnCancel: "မလုပ်ပါ",
-                    btnGo: "ဓာတ်ပုံဖြင့်မေးမည်"
+                    btnGo: "သဘောတူပြီး မေးမည်"
                 },
                 vi: {
                     title: "Tư vấn rác AI",
                     head: "Đây là rác gì?",
                     desc: "Chỉ cần chụp ảnh.<br>AI của Goto (Gemini) sẽ giúp bạn phân loại!",
-                    hintTitle: "Mẹo sử dụng",
+                    hintTitle: "Mẹo & Điều khoản",
                     hint1: "<span class='font-bold text-indigo-600 dark:text-indigo-400'>[Pro Mode]</span> Khuyên dùng để chính xác hơn.",
-                    hint2: "Tránh chụp khuôn mặt hoặc tên riêng.",
+                    hint2: "Tránh chụp thông tin cá nhân (khuôn mặt, tên).",
                     hint3: "Dữ liệu được xử lý theo điều khoản Google.",
+                    hint4: "<span class='font-bold text-red-500'>[Quan trọng] Đánh giá của AI chỉ mang tính tham khảo. Vui lòng làm theo quy định chính thức.</span>", // ★追加
                     btnCancel: "Hủy",
-                    btnGo: "Hỏi AI bằng ảnh"
+                    btnGo: "Đồng ý & Hỏi AI"
                 }
             };
 
@@ -3102,7 +3405,7 @@ function showIconTip(e, labelText) {
                             <li>${t.hint1}</li>
                             <li>${t.hint2}</li>
                             <li>${t.hint3}</li>
-                        </ul>
+                            <li>${t.hint4}</li> </ul>
                     </div>
                 </div>`,
 
@@ -3114,6 +3417,7 @@ function showIconTip(e, labelText) {
                  </a>`
             );
         }
+
 
 // --- Navigation Bar Localization ---
         function updateNavLabels() {
@@ -3347,7 +3651,25 @@ const GOTO_BARRIER = {
     W: 128.50  // 嵯峨島以西
 };
 
-// 1. セッション開始（ここはAdomさんの元のコードのまま！）
+// ▼ 新規追加: セキュリティのための文字列エスケープ関数 (XSS対策) ▼
+function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[&'`"<>]/g, function(match) {
+        return {
+            '&': '&amp;',
+            "'": '&#x27;',
+            '`': '&#x60;',
+            '"': '&quot;',
+            '<': '&lt;',
+            '>': '&gt;'
+        }[match];
+    });
+}
+
+// ▼ 新規追加: 二重送信防止フラグ ▼
+let isSendingImage = false;
+
+// 1. セッション開始（Adomさんの元のコードのまま！）
 // --- 🛡️ Operator Gate (Multi-Language) ---
 function startCamSession() {
     // 1. このモーダル専用の辞書
@@ -3378,8 +3700,7 @@ function startCamSession() {
     );
 }
 
-
-// 2. 位置情報チェック（ここを屋内対策版にパワーアップ）
+// 2. 位置情報チェック（屋内対策版）
 function verifyLocation() {
     if (!navigator.geolocation) {
         // GPS非対応端末の場合は、自己申告に回す（救済措置）
@@ -3412,7 +3733,6 @@ function verifyLocation() {
             }
 
             // エリア内ならOK → 次のステップ（GAS通信）へ
-            // ★ここで元の処理につなぎます！
             checkReceptionStatus();
         },
         // Error: 取得失敗（屋内でタイムアウト等）
@@ -3430,7 +3750,7 @@ function verifyLocation() {
     );
 }
 
-// 3. 【新規追加】最終手段：自己申告モーダル
+// 3. 最終手段：自己申告モーダル
 function askSelfDeclaration(reason) {
     showModal("位置情報の確認", 
         `<div class="text-center space-y-3">
@@ -3446,7 +3766,6 @@ function askSelfDeclaration(reason) {
          </div>`
     );
 }
-
 
 async function checkReceptionStatus() {
     showToast("受付状態を確認中...");
@@ -3472,7 +3791,7 @@ async function checkReceptionStatus() {
     }
 }
 
-// ▼ 新規追加: 起動時にアイコンの点滅を制御する関数 ▼
+// 起動時にアイコンの点滅を制御する関数
 async function syncIndicator() {
     const dot = document.getElementById('cam-status-dot');
     if (!dot) return;
@@ -3495,7 +3814,6 @@ async function syncIndicator() {
     }
 }
 
-
 function launchCamera() {
     // 隠しinputを作成してクリック
     const input = document.createElement('input');
@@ -3509,7 +3827,7 @@ function launchCamera() {
 
         showToast("画像を送信準備中...");
         
-        // 画像圧縮処理
+        // 画像圧縮処理 (ここでEXIFも自動的に削除されます)
         const compressedBase64 = await compressImage(file);
         
         // 送信
@@ -3553,16 +3871,19 @@ function compressImage(file) {
     });
 }
 
-// ▼ 写真送信関係の機能の一部
+// ▼ 写真送信関係の機能 (セキュリティ強化版)
 async function sendImageToGas(base64) {
-    showToast("送信中...");
+    // 【新規追加】二重送信防止：既に送信中なら何もしない
+    if (isSendingImage) return;
+    isSendingImage = true;
+
+    showToast("送信中...画面を閉じずにお待ちください");
     try {
         const res = await fetch(CAM_API, {
             method: 'POST',
             body: JSON.stringify({ image: base64 })
         });
         
-        // ▼ 修正点: サーバーからの返事(JSON)をちゃんと開けて読む
         const data = await res.json();
 
         if (data.success) {
@@ -3575,14 +3896,16 @@ async function sendImageToGas(base64) {
             );
         } else {
             // ② 拒否された場合 (A1がOFF)
-            // GASから返ってきた "受付時間外です..." というメッセージを表示します
+            // 【新規追加】XSS対策：外部から受け取ったエラーメッセージを無害化
+            const safeErrorMsg = escapeHtml(data.error);
+
             showModal("送信できません", 
                 `<div class="text-center text-red-500 font-bold py-4">
                     <i class="fa-solid fa-ban text-4xl mb-2"></i><br>
                     受け付けられませんでした
                  </div>
                  <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-600 dark:text-gray-300 text-center">
-                    理由: ${data.error}
+                    理由: ${safeErrorMsg}
                  </div>`,
                 `<button onclick="closeModal()" class="w-full bg-gray-200 dark:bg-gray-600 py-2 rounded font-bold">閉じる</button>`
             );
@@ -3592,8 +3915,12 @@ async function sendImageToGas(base64) {
         // ③ 通信エラー (ネットが切れているなど)
         showToast("送信に失敗しました (通信エラー)");
         console.error(e);
+    } finally {
+        // 【新規追加】通信が終了したら（成功でも失敗でも）フラグをリセットして次の送信を許可する
+        isSendingImage = false;
     }
 }
+
 
 // --- CALENDAR EXPORT LOGIC (iCal) - RFC 5545 Compliant & Undo Support ---
         
@@ -3866,3 +4193,7 @@ END:VCALENDAR`;
 </script>
 </body>
 </html>
+
+
+
+
