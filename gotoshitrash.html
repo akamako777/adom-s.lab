@@ -3419,28 +3419,32 @@ function showGeminiConsent() {
         }
 
 
-// --- Navigation Bar Localization ---
-        function updateNavLabels() {
-            // 省スペース最適化された翻訳
-            const NAV_TXT = {
-                ja: ["ホーム", "分別検索", "ガイド", "設定"],
-                en: ["Home", "Search", "Guide", "Set."],    // Settings -> Set.
-                es: ["Inicio", "Buscar", "Guía", "Conf."],   // Configuración -> Conf.
-                zh: ["首頁", "搜尋", "指南", "設定"],
-                my: ["အိမ်", "ရှာဖွေ", "လမ်းညွှန်", "ပြင်ဆင်"], // 短縮表現
-                vi: ["Home", "Tìm kiếm", "Guide", "Cài đặt"] // Home/Guideは英語のままの方が短く直感的
-            };
-            const labels = NAV_TXT[state.lang] || NAV_TXT.ja;
-            
-            // ナビボタンのテキストを一括更新
-            const spans = document.querySelectorAll('nav .nav-btn span');
-            if(spans.length >= 4) {
-                spans[0].innerText = labels[0];
-                spans[1].innerText = labels[1];
-                spans[2].innerText = labels[2];
-                spans[3].innerText = labels[3];
-            }
-        }
+// --- Navigation Bar Localization (5ボタン対応版) ---
+function updateNavLabels() {
+    // 5つのボタン（ホーム、お知らせ、分別検索、ガイド、設定）に合わせた辞書
+    const NAV_TXT = {
+        ja: ["ホーム", "お知らせ", "分別検索", "ガイド", "設定"],
+        en: ["Home", "News", "Search", "Guide", "Set."],
+        es: ["Inicio", "Avisos", "Buscar", "Guía", "Conf."],
+        zh: ["首頁", "消息", "搜尋", "指南", "設定"],
+        my: ["အိမ်", "သတင်း", "ရှာဖွေ", "လမ်းညွှန်", "ပြင်ဆင်"],
+        vi: ["Home", "Tin tức", "Tìm kiếm", "Guide", "Cài đặt"]
+    };
+    const labels = NAV_TXT[state.lang] || NAV_TXT.ja;
+    
+    // ナビボタン内の全てのspanタグを取得
+    const spans = document.querySelectorAll('nav .nav-btn span');
+    
+    // 5つのボタン全てに対して正しいラベルを順番に割り当て
+    if(spans.length >= 5) {
+        spans[0].innerText = labels[0]; // ホーム
+        spans[1].innerText = labels[1]; // お知らせ
+        spans[2].innerText = labels[2]; // 分別検索
+        spans[3].innerText = labels[3]; // ガイド
+        spans[4].innerText = labels[4]; // 設定
+    }
+}
+
 
 // --- Privacy Policy Modal (Multi-Language & Future Proof) ---
         function showPrivacyPolicy() {
