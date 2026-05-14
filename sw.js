@@ -128,10 +128,16 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+
 // --- 通信処理 (キャッシュ優先) ---
 self.addEventListener('fetch', (event) => {
     // http/https 以外のリクエストは無視
     if (!event.request.url.startsWith('http')) return;
+
+    // ★★★ここを追加★★★
+    // GETリクエスト（取得）以外（POSTでの送信など）はキャッシュ処理をせず、そのまま通す
+    if (event.request.method !== 'GET') return;
+
 
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
