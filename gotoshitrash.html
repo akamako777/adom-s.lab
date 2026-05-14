@@ -3457,7 +3457,7 @@ function updateNavLabels() {
     const labels = NAV_TXT[state.lang] || NAV_TXT.ja;
     
     // ナビボタン内の全てのspanタグを取得
-    const spans = document.querySelectorAll('nav .nav-btn span');
+    const spans = document.querySelectorAll('nav .nav-btn > span'); 
     
     // 5つのボタン全てに対して正しいラベルを順番に割り当て
     if(spans.length >= 5) {
