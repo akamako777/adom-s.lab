@@ -144,10 +144,12 @@
           console.log("★トークン取得成功:", token);
           showToast("通知をオンにしています...");
 
+         // ▼ ここから追加: 取得したトークンをGASに送信する ▼
           try {
-            const res = await fetch(NEWS_API, {
+            const res = await fetch(NEWS_API, { 
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              // ★修正: application/json だとCORSエラーになるので text/plain で回避する
+              headers: { 'Content-Type': 'text/plain' }, 
               body: JSON.stringify({ type: 'saveToken', token: token })
             });
             const result = await res.json();
@@ -159,6 +161,8 @@
             console.error("GASへの送信エラー:", e);
             showToast("サーバーとの通信に失敗しました");
           }
+          // ▲ ここまで追加 ▲
+
         }
       } else {
         showToast("通知が許可されませんでした");
