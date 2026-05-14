@@ -126,20 +126,39 @@
   window.requestPushPermission = async () => {
     try {
       showToast("通知の設定を準備中...");
-      // ブラウザに「通知を許可しますか？」のポップアップを出す
       const permission = await Notification.requestPermission();
       
       if (permission === 'granted') {
-        // 許可されたら、2つ目のカギ（VAPIDキー）を使ってトークンを取得
+        
+        // ★★★ ここが一番重要！★★★
+        // ページ下部で登録した ./sw.js の「登録証」が完了するのを待って取得する
+        const registration = await navigator.serviceWorker.ready;
+
+        // 取得した登録証をFirebaseに渡して「このSWを使ってね」と指定する
         const token = await getToken(messaging, {
-          vapidKey: "BN_MZSBPt-j5E8hocQDDk7FNvm5V66VkqEW6lieOpC4cDVN0UghZWiKnhZ2XDnhPGuG4c6sS9M3JffkGtdP2MfA"
+          vapidKey: "BN_MZSBPt-j5E8hocQDDk7FNvm5V66VkqEW6lieOpC4cDVN0UghZWiKnhZ2XDnhPGuG4c6sS9M3JffkGtdP2MfA",
+          serviceWorkerRegistration: registration // ★橋渡し完了！
         });
         
         if (token) {
           console.log("★トークン取得成功:", token);
-          showToast("通知がオンになりました！");
-          
-          // ※TODO: 次のフェーズで、この token をGAS（名簿）に送る処理を書きます
+          showToast("通知をオンにしています...");
+
+          try {
+            const res = await fetch(NEWS_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'saveToken', token: token })
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success' || result.status === 'already_exists') {
+               showToast("通知がオンになりました！");
+            }
+          } catch(e) {
+            console.error("GASへの送信エラー:", e);
+            showToast("サーバーとの通信に失敗しました");
+          }
         }
       } else {
         showToast("通知が許可されませんでした");
@@ -152,9 +171,10 @@
 
   // アプリを開いている時に通知が届いた場合の処理
   onMessage(messaging, (payload) => {
-    showToast("🔔 お知らせ: " + payload.notification.title);
+    showToast("🔔 お知らせ: " + (payload.notification?.title || "新着メッセージ"));
   });
 </script>
+
 
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans antialiased select-none overflow-hidden fixed inset-0">
