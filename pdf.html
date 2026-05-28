@@ -159,6 +159,11 @@
                 pos_left: "左",
                 pos_center: "中",
                 pos_right: "右",
+                protect_title: "保護されたPDF",
+                protect_desc: "このPDFは保護（編集制限）されています。文字データとして処理できませんが、画像化して強制読み込みますか？（テキスト選択は不可になります）",
+                btn_rasterize: "画像化して続行",
+                btn_skip: "除外する",
+                rasterizing: "画像化中...",
             },
             en: {
                 title_pro: "Pro Merge & Edit",
@@ -220,6 +225,11 @@
                 pos_left: "Left",
                 pos_center: "Center",
                 pos_right: "Right",
+                protect_title: "Protected PDF",
+                protect_desc: "This PDF is protected. Convert to images to force read? (Text selection will be disabled)",
+                btn_rasterize: "Convert & Continue",
+                btn_skip: "Skip",
+                rasterizing: "Converting...",
             },
             pt: {
                 title_pro: "Fusão Pro e Edição",
@@ -281,6 +291,11 @@
                 pos_left: "Esq.",
                 pos_center: "Centro",
                 pos_right: "Dir.",
+                protect_title: "PDF Protegido",
+                protect_desc: "Este PDF está protegido. Converter em imagens para forçar a leitura? (A seleção de texto será desativada)",
+                btn_rasterize: "Converter e Continuar",
+                btn_skip: "Pular",
+                rasterizing: "Convertendo...",
             },
             es: {
                 title_pro: "Fusión Pro y Edición",
@@ -329,7 +344,7 @@
                 long_png: "PNG Largo",
                 long_png_desc: "Imagen de desplazamiento vertical",
                 cancel: "Cancelar",
-                back: "Volver",
+                back: "Volvolver",
                 theme_light: "Claro",
                 theme_dark: "Oscuro",
                 lang_sel: "Idioma",
@@ -342,6 +357,11 @@
                 pos_left: "Izq.",
                 pos_center: "Centro",
                 pos_right: "Der.",
+                protect_title: "PDF Protegido",
+                protect_desc: "Este PDF está protegido. ¿Convertir a imágenes para forzar la lectura? (La selección de texto se desactivará)",
+                btn_rasterize: "Convertir y Continuar",
+                btn_skip: "Saltar",
+                rasterizing: "Convirtiendo...",
             },
             hi: {
                 title_pro: "प्रो मर्ज और संपादन",
@@ -403,6 +423,11 @@
                 pos_left: "बायां",
                 pos_center: "केंद्र",
                 pos_right: "दायां",
+                protect_title: "संरक्षित PDF",
+                protect_desc: "यह PDF संरक्षित है। क्या पढ़ने के लिए इसे छवियों में बदलें? (टेक्स्ट चयन अक्षम हो जाएगा)",
+                btn_rasterize: "छवियों में बदलें",
+                btn_skip: "छोड़ें",
+                rasterizing: "बदल रहा है...",
             },
             tw: {
                 title_pro: "專業合併與編輯",
@@ -464,6 +489,11 @@
                 pos_left: "左",
                 pos_center: "中",
                 pos_right: "右",
+                protect_title: "受保護的 PDF",
+                protect_desc: "此 PDF 受保護。是否轉換為圖片以強制讀取？（文字選擇將被停用）",
+                btn_rasterize: "轉換並繼續",
+                btn_skip: "跳過",
+                rasterizing: "轉換中...",
             }
         };
 
@@ -618,6 +648,11 @@
             // Settings
             const [splitCount, setSplitCount] = useState(1);
             const [totalPages, setTotalPages] = useState(0); 
+
+            // Security & Rasterization State
+            const [protectAlert, setProtectAlert] = useState(null);
+            const [isRasterizing, setIsRasterizing] = useState(false);
+            const [rasterizeProgress, setRasterizeProgress] = useState(0);
             
             // Convert Mode State
             const [generatedImages, setGeneratedImages] = useState([]);
@@ -666,6 +701,58 @@
                 }
             };
 
+            const askRasterize = (filename) => {
+                return new Promise((resolve) => {
+                    setProtectAlert({ filename, resolve });
+                });
+            };
+
+            const doRasterize = async (file) => {
+                setIsRasterizing(true);
+                setRasterizeProgress(0);
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    const totalPages = pdf.numPages;
+                    const newPdf = await PDFLib.PDFDocument.create();
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const page = await pdf.getPage(i);
+                        // 解像度を 1.5 -> 2.5 に大幅アップし、文字潰れを解消
+                        const viewport = page.getViewport({ scale: 2.5 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport }).promise;
+
+                        // 画質を 0.9 -> 0.92 に微調整し、サイズと品質のバランスを取る
+                        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                        const jpgImage = await newPdf.embedJpg(imgData);
+
+                        // PDFのページサイズ自体は元のサイズ（論理サイズ）を維持する
+                        const logicalViewport = page.getViewport({ scale: 1.0 });
+                        const newPage = newPdf.addPage([logicalViewport.width, logicalViewport.height]);
+                        newPage.drawImage(jpgImage, {
+                            x: 0,
+                            y: 0,
+                            width: logicalViewport.width,
+                            height: logicalViewport.height,
+                        });
+                        setRasterizeProgress(Math.round((i / totalPages) * 100));
+                    }
+
+                    const bytes = await newPdf.save();
+                    setIsRasterizing(false);
+                    return new File([bytes], file.name, { type: 'application/pdf' });
+                } catch (err) {
+                    console.error("Rasterize Error:", err);
+                    setIsRasterizing(false);
+                    alert(t.error); 
+                    return null;
+                }
+            };
+
             const addFiles = async (newFiles) => {
                 const validFiles = newFiles.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
                 if (validFiles.length === 0) {
@@ -673,18 +760,45 @@
                     return;
                 }
 
+                const processedFiles = [];
+                for (const file of validFiles) {
+                    let currentFile = file;
+                    try {
+                        const ab = await currentFile.arrayBuffer();
+                        // 暗号化チェック (ここでエラーが出ればcatchへ)
+                        await PDFLib.PDFDocument.load(ab);
+                    } catch (e) {
+                        if (e.message.toLowerCase().includes('encrypted')) {
+                            const shouldRasterize = await askRasterize(currentFile.name);
+                            if (shouldRasterize) {
+                                const rasterized = await doRasterize(currentFile);
+                                if (rasterized) currentFile = rasterized;
+                                else continue;
+                            } else {
+                                continue;
+                            }
+                        } else {
+                            console.error(e);
+                            continue;
+                        }
+                    }
+                    processedFiles.push(currentFile);
+                }
+
+                if (processedFiles.length === 0) return;
+
                 if (mode === 'pro_merge') {
-                    setFiles(prev => [...prev, ...validFiles]);
-                    await addToProMerge(validFiles);
+                    setFiles(prev => [...prev, ...processedFiles]);
+                    await addToProMerge(processedFiles);
                     setStatus('idle');
                 } else if (mode === 'convert') {
-                    setFiles([validFiles[0]]); 
-                    startProcessingConvert(validFiles[0]);
+                    setFiles([processedFiles[0]]); 
+                    startProcessingConvert(processedFiles[0]);
                 } else {
                     if (mode === 'split') {
-                        setFiles([validFiles[0]]);
+                        setFiles([processedFiles[0]]);
                         try {
-                            const arrayBuffer = await validFiles[0].arrayBuffer();
+                            const arrayBuffer = await processedFiles[0].arrayBuffer();
                             const loadingTask = pdfjsLib.getDocument(arrayBuffer);
                             const pdf = await loadingTask.promise;
                             const pages = pdf.numPages;
@@ -693,7 +807,7 @@
                         } catch (e) { console.error(e); setTotalPages(0); }
                     }
                     else {
-                        setFiles(prev => [...prev, ...validFiles]);
+                        setFiles(prev => [...prev, ...processedFiles]);
                     }
                     setStatus('idle');
                 }
@@ -826,20 +940,15 @@
 
             const processProMerge = async () => {
                 setStatusMessage(t.processing);
-                const mergedPdf = await PDFLib.PDFDocument.create();
                 
-                let font;
-                if (addPageNumbers) {
-                    font = await mergedPdf.embedFont(PDFLib.StandardFonts.Helvetica);
-                }
+                // 【第1段階】: ページの結合と回転を確定させる
+                let tempPdf = await PDFLib.PDFDocument.create();
                 
                 const pdfLibDocs = {}; 
-                let loadedCount = 0;
                 for (const doc of sourceDocs) {
                     if (cancelRef.current) return;
                     const ab = await doc.file.arrayBuffer();
                     pdfLibDocs[doc.id] = await PDFLib.PDFDocument.load(ab);
-                    loadedCount++;
                 }
 
                 const activeItems = pageItems.filter(p => !p.deleted);
@@ -850,62 +959,77 @@
                     
                     const item = activeItems[i];
                     const srcDoc = pdfLibDocs[item.docId];
-                    const [copiedPage] = await mergedPdf.copyPages(srcDoc, [item.origPageIndex]);
+                    const [copiedPage] = await tempPdf.copyPages(srcDoc, [item.origPageIndex]);
                     
                     if (item.rotation !== 0) {
                          const currentRotation = copiedPage.getRotation().angle;
                          copiedPage.setRotation(PDFLib.degrees((currentRotation + item.rotation) % 360));
                     }
                     
-                    mergedPdf.addPage(copiedPage);
-                    
-                    // ページ番号の描画
-                    const currentPageIndex = i + 1; // 1-based index
-                    if (addPageNumbers && currentPageIndex >= pageNumStartPage) {
-                         const { width, height } = copiedPage.getSize();
-                         
-                         let fontSize = 12;
-                         if (pageNumFontSize === 'small') fontSize = 9;
-                         else if (pageNumFontSize === 'large') fontSize = 16;
-
-                         const margin = 20;
-
-                         // 表示する数値
-                         const displayNum = (currentPageIndex - pageNumStartPage) + pageNumStartNum;
-                         
-                         let text = `${displayNum}`;
-                         if (pageNumFormat === 'hyphen') text = `- ${displayNum} -`;
-                         else if (pageNumFormat === 'slash_total') text = `${displayNum} / ${total}`;
-                         else if (pageNumFormat === 'p_slash_total') text = `${displayNum}p / ${total}p`;
-
-                         const textWidth = font.widthOfTextAtSize(text, fontSize);
-                         const textHeight = font.heightAtSize(fontSize);
-
-                         let x, y;
-                         // 横位置
-                         if (pageNumPosH === 'left') x = margin;
-                         else if (pageNumPosH === 'right') x = width - textWidth - margin;
-                         else x = width / 2 - textWidth / 2;
-
-                         // 縦位置
-                         if (pageNumPosV === 'top') y = height - margin - textHeight;
-                         else y = margin;
-
-                         copiedPage.drawText(text, {
-                             x,
-                             y,
-                             size: fontSize,
-                             font: font,
-                             color: PDFLib.rgb(0, 0, 0),
-                         });
-                    }
-
-                    setProgress(Math.round(((i + 1) / total) * 100));
+                    tempPdf.addPage(copiedPage);
+                    setProgress(Math.round(((i + 1) / total) * (addPageNumbers ? 50 : 100))); // ページ番号がある場合は前半50%
                     if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
                 }
 
-                const bytes = await mergedPdf.save();
-                setResultBlob(new Blob([bytes], {type:'application/pdf'}));
+                // 一度セーブして回転や構造を「確定（焼き付け）」する（ユーザー様ご提案の最強回避策）
+                let finalBytes = await tempPdf.save();
+
+                // 【第2段階】: 確定したクリーンなPDFを読み込み直し、ページ番号を付与する
+                if (addPageNumbers) {
+                    const finalPdf = await PDFLib.PDFDocument.load(finalBytes);
+                    const font = await finalPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+                    const pages = finalPdf.getPages();
+
+                    for (let i = 0; i < pages.length; i++) {
+                        if (cancelRef.current) return;
+                        
+                        const page = pages[i];
+                        const currentPageIndex = i + 1;
+
+                        if (currentPageIndex >= pageNumStartPage) {
+                             const { width, height } = page.getSize(); // 確定済みなので素直な幅と高さが取れる
+                             
+                             let fontSize = 12;
+                             if (pageNumFontSize === 'small') fontSize = 9;
+                             else if (pageNumFontSize === 'large') fontSize = 16;
+
+                             const margin = 20;
+
+                             const displayNum = (currentPageIndex - pageNumStartPage) + pageNumStartNum;
+                             let text = `${displayNum}`;
+                             if (pageNumFormat === 'hyphen') text = `- ${displayNum} -`;
+                             else if (pageNumFormat === 'slash_total') text = `${displayNum} / ${total}`;
+                             else if (pageNumFormat === 'p_slash_total') text = `${displayNum}p / ${total}p`;
+
+                             const textWidth = font.widthOfTextAtSize(text, fontSize);
+                             const textHeight = font.heightAtSize(fontSize);
+
+                             // 複雑なマトリックス計算は不要。単純なX, Y座標だけで済む。
+                             let x, y;
+                             if (pageNumPosH === 'left') x = margin;
+                             else if (pageNumPosH === 'right') x = width - textWidth - margin;
+                             else x = width / 2 - textWidth / 2;
+
+                             if (pageNumPosV === 'top') y = height - margin - textHeight;
+                             else y = margin;
+
+                             page.drawText(text, {
+                                 x,
+                                 y,
+                                 size: fontSize,
+                                 font: font,
+                                 color: PDFLib.rgb(0, 0, 0),
+                             });
+                        }
+                        
+                        setProgress(50 + Math.round(((i + 1) / total) * 50)); // 後半50%
+                        if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
+                    }
+                    // 番号を打ち終わったPDFを再セーブ
+                    finalBytes = await finalPdf.save();
+                }
+
+                setResultBlob(new Blob([finalBytes], {type:'application/pdf'}));
                 setResultName("merged_pro.pdf");
                 setResultCount(1);
                 setStatus('complete');
@@ -1535,6 +1659,54 @@
                                     <button onClick={()=>setStatus('idle')} className="px-6 py-2 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white rounded-xl hover:bg-slate-300 dark:hover:bg-white/20 transition-all text-sm font-bold">{t.back}</button>
                                 </div>
                             )}
+
+                             {/* Protect Alert Modal */}
+                             {(protectAlert || isRasterizing) && (
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 w-full max-w-md overflow-hidden animate-fade-in-up">
+                                        <div className="p-6 text-center">
+                                            {isRasterizing ? (
+                                                <div className="py-6 flex flex-col items-center">
+                                                    <div className="relative w-16 h-16 mb-4">
+                                                        <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 100 100">
+                                                            <circle className="text-slate-200 dark:text-slate-700 stroke-current" strokeWidth="6" cx="50" cy="50" r="44" fill="transparent"></circle>
+                                                            <circle className="text-blue-500 dark:text-blue-400 stroke-current transition-all duration-300" strokeWidth="6" strokeLinecap="round" cx="50" cy="50" r="44" fill="transparent" strokeDasharray={`${276.46 * (rasterizeProgress / 100)} 276.46`}></circle>
+                                                        </svg>
+                                                        <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">{rasterizeProgress}%</div>
+                                                    </div>
+                                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{t.rasterizing}</h3>
+                                                    <p className="text-xs text-slate-500">{protectAlert?.filename}</p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-500/30 text-amber-500 dark:text-amber-400 rounded-full flex items-center justify-center mb-4">
+                                                        <AlertTriangle className="w-6 h-6" />
+                                                    </div>
+                                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t.protect_title}</h3>
+                                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">{protectAlert.filename}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-white/5 text-left">
+                                                        {t.protect_desc}
+                                                    </p>
+                                                    <div className="flex w-full gap-3">
+                                                        <button 
+                                                            onClick={() => { protectAlert.resolve(false); setProtectAlert(null); }}
+                                                            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                                        >
+                                                            {t.btn_skip}
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => { protectAlert.resolve(true); setProtectAlert(null); }}
+                                                            className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30 transition-all transform active:scale-95"
+                                                        >
+                                                            {t.btn_rasterize}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                             )}
 
                         </div>
                         
