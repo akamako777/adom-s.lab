@@ -1004,21 +1004,54 @@
                              const textWidth = font.widthOfTextAtSize(text, fontSize);
                              const textHeight = font.heightAtSize(fontSize);
 
-                             // 複雑なマトリックス計算は不要。単純なX, Y座標だけで済む。
-                             let x, y;
-                             if (pageNumPosH === 'left') x = margin;
-                             else if (pageNumPosH === 'right') x = width - textWidth - margin;
-                             else x = width / 2 - textWidth / 2;
+                             // --- ここから座標と回転の補正ロジック ---
+                             const { width: W, height: H } = page.getSize();
+                             const R = page.getRotation().angle || 0; // 0, 90, 180, 270
 
-                             if (pageNumPosV === 'top') y = height - margin - textHeight;
-                             else y = margin;
+                             // 見かけの(ビューアで見た時の)幅と高さを計算
+                             let w_prime = W;
+                             let h_prime = H;
+                             if (R === 90 || R === 270) {
+                                 w_prime = H;
+                                 h_prime = W;
+                             }
+
+                             // 見かけの座標系でのアンカー位置 (ax, ay) を計算
+                             let ax, ay;
+                             if (pageNumPosH === 'left') ax = margin;
+                             else if (pageNumPosH === 'right') ax = w_prime - textWidth - margin;
+                             else ax = w_prime / 2 - textWidth / 2;
+
+                             if (pageNumPosV === 'top') ay = h_prime - margin - textHeight;
+                             else ay = margin;
+
+                             // 物理座標系 (x, y) への変換と、テキスト自体の回転 (T)
+                             let x, y, T;
+                             if (R === 0 || R === 360) {
+                                 x = ax;
+                                 y = ay;
+                                 T = 0;
+                             } else if (R === 90) {
+                                 x = W - ay;
+                                 y = ax;
+                                 T = 90;
+                             } else if (R === 180) {
+                                 x = W - ax;
+                                 y = H - ay;
+                                 T = 180;
+                             } else if (R === 270) {
+                                 x = ay;
+                                 y = H - ax;
+                                 T = 270;
+                             }
 
                              page.drawText(text, {
-                                 x,
-                                 y,
+                                 x: x,
+                                 y: y,
                                  size: fontSize,
                                  font: font,
                                  color: PDFLib.rgb(0, 0, 0),
+                                 rotate: PDFLib.degrees(T)
                              });
                         }
                         
