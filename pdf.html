@@ -155,7 +155,9 @@
                 font_md: "中",
                 font_lg: "大",
                 pos_top: "上",
+                pos_top_edge: "最上",
                 pos_btm: "下",
+                pos_btm_edge: "最下",
                 pos_left: "左",
                 pos_center: "中",
                 pos_right: "右",
@@ -221,7 +223,9 @@
                 font_md: "Medium",
                 font_lg: "Large",
                 pos_top: "Top",
+                pos_top_edge: "Top Edge",
                 pos_btm: "Bottom",
+                pos_btm_edge: "Bottom Edge",
                 pos_left: "Left",
                 pos_center: "Center",
                 pos_right: "Right",
@@ -287,7 +291,9 @@
                 font_md: "Méd.",
                 font_lg: "Gde.",
                 pos_top: "Topo",
+                pos_top_edge: "Extremo Sup.",
                 pos_btm: "Base",
+                pos_btm_edge: "Extremo Inf.",
                 pos_left: "Esq.",
                 pos_center: "Centro",
                 pos_right: "Dir.",
@@ -353,7 +359,9 @@
                 font_md: "Med.",
                 font_lg: "Gde.",
                 pos_top: "Arriba",
+                pos_top_edge: "Borde Sup.",
                 pos_btm: "Abajo",
+                pos_btm_edge: "Borde Inf.",
                 pos_left: "Izq.",
                 pos_center: "Centro",
                 pos_right: "Der.",
@@ -419,7 +427,9 @@
                 font_md: "मध्यम",
                 font_lg: "बड़ा",
                 pos_top: "ऊपर",
+                pos_top_edge: "सबसे ऊपर",
                 pos_btm: "नीचे",
+                pos_btm_edge: "सबसे नीचे",
                 pos_left: "बायां",
                 pos_center: "केंद्र",
                 pos_right: "दायां",
@@ -485,7 +495,9 @@
                 font_md: "中",
                 font_lg: "大",
                 pos_top: "上",
+                pos_top_edge: "最上",
                 pos_btm: "下",
+                pos_btm_edge: "最下",
                 pos_left: "左",
                 pos_center: "中",
                 pos_right: "右",
@@ -993,7 +1005,12 @@
                              if (pageNumFontSize === 'small') fontSize = 9;
                              else if (pageNumFontSize === 'large') fontSize = 16;
 
+                             // 標準マージンとエッジ（最上・最下）用のマージンを設定
                              const margin = 20;
+                             let marginV = 20;
+                             if (pageNumPosV === 'top_edge' || pageNumPosV === 'bottom_edge') {
+                                 marginV = 5; // 印刷の限界に近い5ptを設定
+                             }
 
                              const displayNum = (currentPageIndex - pageNumStartPage) + pageNumStartNum;
                              let text = `${displayNum}`;
@@ -1004,7 +1021,7 @@
                              const textWidth = font.widthOfTextAtSize(text, fontSize);
                              const textHeight = font.heightAtSize(fontSize);
 
-                             // --- ここから座標と回転の補正ロジック ---
+                             // --- 座標と回転の補正ロジック ---
                              const { width: W, height: H } = page.getSize();
                              const R = page.getRotation().angle || 0; // 0, 90, 180, 270
 
@@ -1022,8 +1039,9 @@
                              else if (pageNumPosH === 'right') ax = w_prime - textWidth - margin;
                              else ax = w_prime / 2 - textWidth / 2;
 
-                             if (pageNumPosV === 'top') ay = h_prime - margin - textHeight;
-                             else ay = margin;
+                             // 縦方向の座標決定 (エッジマージン適用)
+                             if (pageNumPosV === 'top' || pageNumPosV === 'top_edge') ay = h_prime - marginV - textHeight;
+                             else ay = marginV;
 
                              // 物理座標系 (x, y) への変換と、テキスト自体の回転 (T)
                              let x, y, T;
@@ -1428,7 +1446,9 @@
                                                     <div className="flex gap-2">
                                                         <select value={pageNumPosV} onChange={(e) => setPageNumPosV(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 text-xs rounded p-1.5 text-slate-700 dark:text-slate-200 focus:border-blue-500 outline-none flex-1">
                                                             <option value="top">{t.pos_top}</option>
+                                                            <option value="top_edge">{t.pos_top_edge}</option>
                                                             <option value="bottom">{t.pos_btm}</option>
+                                                            <option value="bottom_edge">{t.pos_btm_edge}</option>
                                                         </select>
                                                         <select value={pageNumPosH} onChange={(e) => setPageNumPosH(e.target.value)} className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 text-xs rounded p-1.5 text-slate-700 dark:text-slate-200 focus:border-blue-500 outline-none flex-1">
                                                             <option value="left">{t.pos_left}</option>
