@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>English Buddy 2.0 - Immersive AI</title>
+<title>英会話＆日本語バディ - Language Training</title>
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
 <style>
-    /* 全要素にborder-boxを適用して、パディングによるはみ出しを防止 */
-    *, *::before, *::after {
-        box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     :root {
         --primary-color: #4A90E2;
@@ -37,7 +34,6 @@
     header {
         background: white;
         padding: 8px 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -56,12 +52,7 @@
     }
     .app-title span.sub { font-size: 0.7em; color: #888; font-family: 'Nunito', sans-serif; }
 
-    .status-bar {
-        display: flex;
-        gap: 5px; /* ボタン間隔を少し狭める */
-        align-items: center;
-        font-size: 0.8rem;
-    }
+    .status-bar { display: flex; gap: 5px; align-items: center; font-size: 0.8rem; }
 
     .level-badge {
         background: var(--primary-color);
@@ -79,36 +70,54 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        min-width: 80px; /* 少し縮小 */
-        cursor: pointer; /* Clickable for stats */
+        min-width: 80px;
+        cursor: pointer;
         padding: 2px 5px;
         border-radius: 5px;
         transition: background 0.2s;
     }
     .xp-container:hover { background: #f0f0f0; }
+    .xp-container.hidden { visibility: hidden; }
 
     .xp-label { font-size: 0.7em; color: #666; margin-bottom: 2px; font-weight: bold; }
     
-    .xp-bar-bg {
-        width: 100%;
-        height: 8px;
-        background: #ddd;
-        border-radius: 5px;
-        overflow: hidden;
-    }
+    .xp-bar-bg { width: 100%; height: 8px; background: #ddd; border-radius: 5px; overflow: hidden; }
+    .xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--secondary-color), var(--primary-color)); width: 0%; transition: width 0.5s ease; }
 
-    .xp-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
-        width: 0%;
-        transition: width 0.5s ease;
+    /* --- User Tabs --- */
+    .user-tabs {
+        display: flex;
+        background: white;
+        border-bottom: 1px solid #eee;
+        padding: 0 10px;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px 5px;
+        font-size: 0.9rem;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tab:hover { background: #fafafa; }
+    .tab.active {
+        color: var(--primary-color);
+        font-weight: bold;
+        border-bottom: 3px solid var(--primary-color);
     }
 
     /* --- Main Chat Area --- */
     #chat-container {
         flex-grow: 1;
         padding: 20px;
-        padding-bottom: 90px;
+        padding-bottom: 140px; /* Space for Hint & Controls */
         overflow-y: auto;
         display: flex;
         flex-direction: column;
@@ -134,10 +143,9 @@
         background-color: var(--ai-msg-bg);
         border-bottom-left-radius: 4px;
         padding-bottom: 35px;
-        margin-left: 10px; /* アイコン分の余白確保 */
+        margin-left: 10px;
     }
     
-    /* アイコン位置調整: leftを-28pxから-22pxに変更して右寄せ */
     .message.ai::before {
         content: '🤖';
         position: absolute;
@@ -163,6 +171,8 @@
         transition: all 0.2s;
     }
     .speak-btn:hover { background: #f0f8ff; color: var(--primary-color); border-color: var(--primary-color); }
+    /* Loading animation for speak button */
+    .speak-btn.loading { opacity: 0.5; pointer-events: none; }
 
     .message.user {
         align-self: flex-end;
@@ -171,26 +181,8 @@
         text-align: right;
     }
 
-    .translation {
-        display: block;
-        margin-top: 5px;
-        font-size: 0.85em;
-        color: #555;
-        border-top: 1px dashed #ccc;
-        padding-top: 4px;
-        text-align: left;
-    }
-
-    .correction {
-        margin-top: 8px;
-        padding: 8px;
-        background: #fff;
-        border-left: 4px solid var(--accent-color);
-        font-size: 0.9em;
-        color: #333;
-        border-radius: 4px;
-        text-align: left;
-    }
+    .translation { display: block; margin-top: 5px; font-size: 0.85em; color: #555; border-top: 1px dashed #ccc; padding-top: 4px; text-align: left; }
+    .correction { margin-top: 8px; padding: 8px; background: #fff; border-left: 4px solid var(--accent-color); font-size: 0.9em; color: #333; border-radius: 4px; text-align: left; }
 
     .score-popup {
         position: absolute;
@@ -203,18 +195,34 @@
     }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
 
-    /* --- Controls --- */
-    .controls {
-        background: white;
-        padding: 10px 10px;
-        border-top: 1px solid #eee;
-        display: flex;
-        gap: 8px;
-        align-items: center;
+    /* --- Controls & Hint --- */
+    .controls-wrapper {
         position: fixed;
         bottom: 0;
         width: 100%;
         z-index: 20;
+        background: white;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hint-area {
+        width: 100%;
+        padding: 6px 15px;
+        font-size: 0.85rem;
+        color: #888;
+        background: #fffdf5;
+        border-top: 1px solid #eee;
+        display: none;
+        font-style: italic;
+    }
+
+    .controls {
+        padding: 10px 10px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
 
     input[type="text"] {
@@ -246,301 +254,154 @@
 
     .btn-send { background: var(--primary-color); color: white; }
     .btn-mic { background: #f0f0f0; color: #555; }
-    .btn-mic.listening { 
-        background: var(--accent-color); 
-        color: white; 
-        animation: pulse 1.5s infinite;
-        border: 2px solid #fff;
-    }
+    .btn-mic.listening { background: var(--accent-color); color: white; animation: pulse 1.5s infinite; border: 2px solid #fff; }
 
     .btn-end { 
-        background: #fff0f0; 
-        color: var(--accent-color); 
-        border: 1px solid #ffcccc;
-        border-radius: 12px;
-        padding: 5px 12px;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 45px;
-        min-width: 60px;
+        background: #fff0f0; color: var(--accent-color); border: 1px solid #ffcccc;
+        border-radius: 12px; padding: 5px 12px; cursor: pointer; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; height: 45px; min-width: 60px;
     }
     .btn-end span.main { font-weight: bold; font-size: 0.9rem; line-height: 1; }
     .btn-end span.sub { font-size: 0.65rem; opacity: 0.8; font-family: 'Nunito', sans-serif; }
 
-    /* Kids Music Toggle Button (New) */
     .btn-music-toggle {
-        display: none; /* Initially hidden */
-        position: absolute;
-        left: 10px;
-        top: -40px; /* Above controls */
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ddd;
-        border-radius: 20px;
-        padding: 5px 12px;
-        font-size: 0.8rem;
-        color: #555;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        z-index: 15;
+        display: none; position: absolute; left: 10px; top: -40px;
+        background: rgba(255, 255, 255, 0.9); border: 1px solid #ddd; border-radius: 20px;
+        padding: 5px 12px; font-size: 0.8rem; color: #555; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 15;
     }
 
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); } }
 
-    /* --- Webcam Overlay --- */
-    /* 不要なため非表示または削除 */
-    #webcam-container {
-        display: none !important; 
-    }
-
     /* --- Modals --- */
     .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        backdrop-filter: blur(2px);
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+        z-index: 1000; backdrop-filter: blur(2px);
     }
     .modal {
-        background: white;
-        padding: 25px;
-        border-radius: 20px;
-        width: 90%;
-        max-width: 500px;
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        max-height: 90vh;
-        overflow-y: auto;
+        background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 500px;
+        text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;
     }
     .modal h2 { margin-top: 0; color: var(--primary-color); font-family: 'Zen Maru Gothic', sans-serif; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;}
 
-    /* Tools Menu (Top Right) */
+    /* Tools Menu */
     .tools-menu { 
-        position: absolute; 
-        top: 65px; 
-        right: 10px; 
-        background: white; 
-        border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
-        display: none; 
-        flex-direction: column; 
-        overflow: hidden; 
-        z-index: 90; 
-        min-width: 280px; 
+        position: absolute; top: 65px; right: 10px; background: white; border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; flex-direction: column; 
+        overflow-y: auto; max-height: calc(100vh - 80px); z-index: 90; min-width: 280px; 
     }
     .tools-menu-item {
-        width: 100%; 
-        border-radius: 0; 
-        text-align: left; 
-        padding: 12px 15px; 
-        background: white; 
-        color: #333; 
-        font-size: 0.95rem; 
-        justify-content: flex-start; 
-        height: auto; 
-        border: none;
-        border-bottom: 1px solid #f0f0f0;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        cursor: pointer;
+        width: 100%; border-radius: 0; text-align: left; padding: 12px 15px; background: white; 
+        color: #333; font-size: 0.95rem; justify-content: flex-start; height: auto; border: none; border-bottom: 1px solid #f0f0f0; display: flex; flex-direction: column; align-items: flex-start; cursor: pointer;
     }
     .tools-menu-item:last-child { border-bottom: none; }
     .tools-menu-item:hover { background: #f9f9f9; }
     .tools-menu-item span.sub-text { font-size: 0.75rem; color: #888; font-family: 'Nunito', sans-serif; margin-left: 0; margin-top: 2px; }
 
-    /* Speed Control in Menu */
-    .speed-control {
-        display: flex;
-        gap: 3px; 
-        margin-top: 5px;
-        width: 100%;
-    }
-    .speed-btn {
-        flex: 1;
-        padding: 5px 2px;
-        font-size: 0.75rem; 
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        background: #f5f5f5;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-    .speed-btn.active {
-        background: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
-    }
+    /* Speed Control */
+    .speed-control { display: flex; gap: 3px; margin-top: 5px; width: 100%; }
+    .speed-btn { flex: 1; padding: 5px 2px; font-size: 0.75rem; border: 1px solid #ddd; border-radius: 5px; background: #f5f5f5; cursor: pointer; white-space: nowrap; }
+    .speed-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
 
-    /* Level Selection Buttons */
+    /* Level Buttons */
     .level-btn {
-        width: 100%; 
-        border-radius: 15px; 
-        margin-bottom: 12px; 
-        height: auto; 
-        padding: 15px; 
-        text-align: left;
-        background: #fff;
-        border: 2px solid #eee;
-        display: block;
-        transition: all 0.2s;
-        cursor: pointer;
+        width: 100%; border-radius: 15px; margin-bottom: 12px; height: auto; padding: 15px; text-align: left;
+        background: #fff; border: 2px solid #eee; display: block; transition: all 0.2s; cursor: pointer;
     }
     .level-btn:hover { border-color: var(--primary-color); background: #fdfdfd; transform: translateY(-2px); }
     .level-btn b { display: block; font-size: 1.1em; margin-bottom: 4px; color: var(--primary-color); }
     .level-btn small { color: #555; line-height: 1.4; display: block; }
     .level-btn .en-label { font-size: 0.8em; color: #888; margin-left: 5px; font-weight: normal; font-family: 'Nunito', sans-serif; }
-
-    /* Kids Mode Button Style */
-    .level-btn.kids {
-        border-color: #FFD700;
-        background: #FFFBE6;
-    }
-    .level-btn.kids:hover {
-        background: #FFF8C5;
-        border-color: #FFC107;
-    }
+    .level-btn.kids { border-color: #FFD700; background: #FFFBE6; }
+    .level-btn.kids:hover { background: #FFF8C5; border-color: #FFC107; }
     .level-btn.kids b { color: #F5A623; }
+    
+    .level-btn.ja-mode { border-color: #FFB6C1; background: #FFF0F5; }
+    .level-btn.ja-mode:hover { background: #FFE4E1; border-color: #FF69B4; }
+    .level-btn.ja-mode b { color: #D02090; }
 
     /* Scenario Grid */
-    .scenario-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .scenario-btn {
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        background: #f9f9f9;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: all 0.2s;
-    }
-    .scenario-btn:hover {
-        background: #eef6ff;
-        border-color: var(--primary-color);
-        transform: scale(1.02);
-    }
+    .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .scenario-btn { padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: #f9f9f9; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+    .scenario-btn:hover { background: #eef6ff; border-color: var(--primary-color); transform: scale(1.02); }
 
     /* Stats Bars */
-    .stat-row {
-        margin-bottom: 15px;
-        text-align: left;
-    }
-    .stat-label {
-        font-size: 0.9rem;
-        font-weight: bold;
-        color: #555;
-        display: flex;
-        justify-content: space-between;
-    }
-    .stat-bg {
-        height: 10px;
-        background: #eee;
-        border-radius: 5px;
-        margin-top: 5px;
-        overflow: hidden;
-    }
-    .stat-fill {
-        height: 100%;
-        background: var(--secondary-color);
-        width: 0%;
-        transition: width 0.8s ease;
-    }
+    .stat-row { margin-bottom: 15px; text-align: left; }
+    .stat-label { font-size: 0.9rem; font-weight: bold; color: #555; display: flex; justify-content: space-between; }
+    .stat-bg { height: 10px; background: #eee; border-radius: 5px; margin-top: 5px; overflow: hidden; }
+    .stat-fill { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.8s ease; }
 
-    /* Report Card Styles */
-    .report-card-content {
-        text-align: left;
-        background: #fdfdfd;
-        border: 2px dashed #ddd;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        font-family: 'Nunito', 'Zen Maru Gothic', sans-serif;
-    }
-    /* レポート内の要素用スタイル (AI出力HTML用) */
-    .report-card-content h3 { 
-        border-bottom: 2px solid var(--primary-color); 
-        padding-bottom: 5px; 
-        color: #444; 
-        margin-top: 15px; 
-        margin-bottom: 10px;
-        font-size: 1.1rem;
-    }
-    .report-card-content p {
-        margin-bottom: 10px;
-        line-height: 1.6;
-        color: #555;
-    }
-    .report-card-content ul { 
-        padding-left: 20px; 
-        margin-bottom: 10px;
-        list-style-type: disc;
-    }
-    .report-card-content li {
-        margin-bottom: 5px;
-        color: #555;
-    }
+    .report-card-content { text-align: left; background: #fdfdfd; border: 2px dashed #ddd; padding: 20px; border-radius: 10px; margin-bottom: 20px; font-family: 'Nunito', 'Zen Maru Gothic', sans-serif; }
+    .report-card-content h3 { border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; color: #444; margin-top: 15px; margin-bottom: 10px; font-size: 1.1rem; }
+    .report-card-content p { margin-bottom: 10px; line-height: 1.6; color: #555; }
+    .report-card-content ul { padding-left: 20px; margin-bottom: 10px; list-style-type: disc; }
+    .report-card-content li { margin-bottom: 5px; color: #555; }
 
-    /* Hidden Print Area */
     #print-area { display: none; }
-
 </style>
 </head>
 <body>
 
 <header>
     <div class="app-title" onclick="toggleTools()">
-        英会話バディ
-        <span class="sub">English Buddy</span>
+        英会話＆日本語バディ
+        <span class="sub">Language Training</span>
     </div>
     <div class="status-bar">
         <div class="level-badge" id="level-display" onclick="changeLevel()">
             初級 <small>Beginner</small>
         </div>
-        <div class="xp-container" title="詳細スコアを見る" onclick="showStats()">
+        <div class="xp-container" id="xp-container-ui" title="詳細スコアを見る" onclick="showStats()">
             <div class="xp-label">Total Score: <span id="total-score-display">0</span></div>
             <div class="xp-bar-bg">
                 <div class="xp-bar-fill" id="xp-bar" style="width: 0%"></div>
             </div>
         </div>
-        <!-- 鍵ボタン (API Key) -->
         <button onclick="showApiKeyModal()" class="btn-icon" style="width:36px; height:36px; font-size:1rem; background:white; color:#aaa;" title="APIキー設定 (Settings)">🔑</button>
-        <!-- メニューボタン -->
-        <button onclick="toggleTools()" class="btn-icon" style="width:36px; height:36px; font-size:1rem; background:white;" title="メニュー (Menu)">⚙️</button>
+        <button id="menu-toggle-btn" onclick="toggleTools(event)" class="btn-icon" style="width:36px; height:36px; font-size:1rem; background:white;" title="メニュー (Menu)">⚙️</button>
     </div>
 </header>
 
-<div class="tools-menu" id="tools-menu">
-    <!-- Save -->
-    <button class="tools-menu-item" onclick="saveData(true)">
-        💾 バックアップを保存
-        <span class="sub-text">Save Backup File</span>
-    </button>
-    
-    <!-- Load -->
-    <button class="tools-menu-item" onclick="document.getElementById('restore-file').click()">
-        📂 データを復元
-        <span class="sub-text">Load Backup File</span>
-    </button>
-    <input type="file" id="restore-file" style="display:none" onchange="loadDataFromFile(this)" accept=".json">
+<div class="user-tabs">
+    <div class="tab active" id="tab-1" onclick="switchUser(1)">User 1</div>
+    <div class="tab" id="tab-2" onclick="switchUser(2)">User 2</div>
+    <div class="tab" id="tab-3" onclick="switchUser(3)">User 3</div>
+</div>
 
-    <!-- Reset Chat Only -->
-    <button class="tools-menu-item" onclick="resetChatOnly()">
-        💬 会話をはじめからやり直す
-        <span class="sub-text">Reset Chat Only (Keep Score)</span>
+<div class="tools-menu" id="tools-menu">
+    <!-- User Name -->
+    <button class="tools-menu-item" onclick="renameUser()">
+        ✏️ なまえを変更
+        <span class="sub-text">Rename User</span>
     </button>
+
+    <!-- Hint Toggle -->
+    <div class="tools-menu-item" style="cursor: default;">
+        💡 ヒント機能 (Hints)
+        <label style="margin-top:5px; display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer;">
+            <input type="checkbox" id="hint-toggle" onchange="toggleHint(this.checked)" style="cursor:pointer;">
+            表示する (※獲得XP 0.5倍)
+        </label>
+    </div>
+
+    <!-- NEW: Gemini Voice Selection -->
+    <div class="tools-menu-item" style="cursor: default;">
+        🗣️ ナレーター声種 (Gemini Voice)
+        <select id="voice-select" onchange="changeVoice(this.value)" style="margin-top:5px; width:100%; padding:5px; border-radius:5px; border:1px solid #ddd; font-size: 0.85rem;">
+            <option value="Kore">Kore（知性的で落ち着いた大人の女性）</option>
+            <option value="Zephyr">Zephyr（明るくさわやかな元気な女性）</option>
+            <option value="Aoede">Aoede（優しく親しみやすい包容力のある女性）</option>
+            <option value="Leda">Leda（クリアで上品なアナウンサー風女性）</option>
+            <option value="Charon">Charon（誠実で落ち着いた大人の男性）</option>
+            <option value="Fenrir">Fenrir（少し渋みや深みのある男性）</option>
+            <option value="Orus">Orus（温かみがあり優しいお兄さん風男性）</option>
+            <option value="Puck">Puck（少し高めで軽快な中性的なトーン）</option>
+        </select>
+    </div>
 
     <!-- Speed -->
     <div class="tools-menu-item" style="cursor: default;">
-        🗣️ 音声速度 (Voice Speed)
+        ⏱️ 音声速度 (Speed)
         <div class="speed-control">
             <button class="speed-btn" id="spd-0.6" onclick="setSpeed(0.6)">遅い</button>
             <button class="speed-btn" id="spd-0.8" onclick="setSpeed(0.8)">ゆっくり</button>
@@ -551,41 +412,61 @@
 
     <!-- Level -->
     <button class="tools-menu-item" onclick="changeLevel()">
-        📶 レベルを変更する
-        <span class="sub-text">Change Level</span>
+        📶 言語・レベルを変更
+        <span class="sub-text">Change Level / Language</span>
+    </button>
+
+    <!-- Backup -->
+    <button class="tools-menu-item" onclick="exportData()">
+        💾 家族データをバックアップ
+        <span class="sub-text">Save All Data</span>
+    </button>
+    
+    <button class="tools-menu-item" onclick="document.getElementById('restore-file').click()">
+        📂 データを復元
+        <span class="sub-text">Load Backup</span>
+    </button>
+    <input type="file" id="restore-file" style="display:none" onchange="loadDataFromFile(this)" accept=".json">
+
+    <!-- Reset Chat -->
+    <button class="tools-menu-item" onclick="resetChatOnly()">
+        💬 会話をやり直す
+        <span class="sub-text">Reset Chat Only</span>
     </button>
 
     <!-- Full Reset -->
     <button class="tools-menu-item" onclick="resetApp()" style="color: #ff4444;">
-        ⚠️ 全データをリセット
-        <span class="sub-text">Reset All Data</span>
+        ⚠️ 全初期化
+        <span class="sub-text">Delete All Data</span>
+    </button>
+    
+    <button class="tools-menu-item" onclick="toggleTools()" style="justify-content: center; text-align: center; color: #888; background: #fafafa;">
+        × 閉じる (Close)
     </button>
 </div>
 
-<div id="webcam-container">
-    <video id="webcam-video" autoplay playsinline muted></video>
-</div>
+<div id="chat-container"></div>
 
-<div id="chat-container">
-    <!-- Messages will appear here -->
-</div>
-
-<div class="controls">
-    <!-- Music Toggle Button (Kids only) -->
-    <button id="music-toggle" class="btn-music-toggle" onclick="toggleKidsMusic()">🎵 音楽オフ</button>
-
-    <button class="btn-end" onclick="finishLesson()" title="レッスンを終了して成績を見る">
-        <span class="main">終了</span>
-        <span class="sub">End</span>
-    </button>
+<div class="controls-wrapper">
+    <!-- Hint Area -->
+    <div class="hint-area" id="hint-area">
+        💡 ヒント: <span id="hint-text">...</span>
+    </div>
     
-    <input type="text" id="user-input" placeholder="ここに入力 (Type here)..." onkeypress="handleKeyPress(event)" autocomplete="off">
-    
-    <button class="btn-icon btn-mic" id="mic-btn" onclick="toggleMic()" title="音声入力 (Speak)">🎙️</button>
-    <button class="btn-icon btn-send" onclick="sendMessage()" title="送信 (Send)">➤</button>
+    <!-- Input Controls -->
+    <div class="controls">
+        <button id="music-toggle" class="btn-music-toggle" onclick="toggleKidsMusic()">🎵 音楽オフ</button>
+        <button class="btn-end" onclick="finishLesson()" title="レッスンを終了して成績を見る">
+            <span class="main">終了</span>
+            <span class="sub">End</span>
+        </button>
+        <input type="text" id="user-input" placeholder="ここに入力 (Type here)..." onkeypress="handleKeyPress(event)" autocomplete="off">
+        <button class="btn-icon btn-mic" id="mic-btn" onclick="toggleMic()" title="音声入力 (Speak)">🎙️</button>
+        <button class="btn-icon btn-send" onclick="sendMessage()" title="送信 (Send)">➤</button>
+    </div>
 </div>
 
-<!-- Report Card Modal (Lesson End) -->
+<!-- Modals -->
 <div class="modal-overlay" id="report-modal">
     <div class="modal" id="report-card">
         <h2>🎉 レッスン完了！<br><span style="font-size:0.6em; color:#888;">Lesson Complete</span></h2>
@@ -593,34 +474,24 @@
             <p style="text-align:center; color:#888;">レポートを作成中...<br><small>Generating report...</small></p>
         </div>
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-            <button class="btn-icon btn-send" onclick="prepareAndPrint()" style="width: auto; padding: 0 20px; border-radius: 20px;">
-                🖨️ 印刷 (Print)
-            </button>
-            <button class="btn-end" onclick="closeReport()" style="width: auto; padding: 0 20px; border-radius: 20px; background:#eee; color:#333; border:none; height: 45px;">
-                <span class="main">閉じる</span>
-                <span class="sub">Close</span>
-            </button>
+            <button class="btn-icon btn-send" onclick="prepareAndPrint()" style="width: auto; padding: 0 20px; border-radius: 20px;">🖨️ 印刷 (Print)</button>
+            <button class="btn-end" onclick="closeReport()" style="width: auto; padding: 0 20px; border-radius: 20px; background:#eee; color:#333; border:none; height: 45px;"><span class="main">閉じる</span></button>
         </div>
     </div>
 </div>
 
-<!-- Stats Modal -->
 <div class="modal-overlay" id="stats-modal">
     <div class="modal" style="max-width: 450px;">
         <h2>能力レポート<br><span style="font-size:0.6em; color:#888;">Your Ability Stats</span></h2>
-        <div class="report-card-content" id="stats-content">
-            <!-- Bars will be injected here -->
-        </div>
-        <button class="btn-end" onclick="document.getElementById('stats-modal').style.display='none'" style="width: 100%; border-radius: 10px; background:#eee; color:#333; border:none;">
-            <span class="main">閉じる (Close)</span>
-        </button>
+        <div class="report-card-content" id="stats-content"></div>
+        <button class="btn-end" onclick="document.getElementById('stats-modal').style.display='none'" style="width: 100%; border-radius: 10px; background:#eee; color:#333; border:none;"><span class="main">閉じる (Close)</span></button>
     </div>
 </div>
 
-<!-- Custom Confirm Modal -->
+<!-- Universal Confirm Modal -->
 <div class="modal-overlay" id="confirm-modal" style="z-index: 2000;">
     <div class="modal" style="max-width: 400px;">
-        <h2 id="confirm-title">確認</h2>
+        <h2 id="confirm-title">確認 (Confirm)</h2>
         <p id="confirm-msg" style="margin: 20px 0;">よろしいですか？</p>
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button class="btn-send" id="confirm-yes" style="width: auto; padding: 0 25px; border-radius: 20px;">はい (Yes)</button>
@@ -629,7 +500,18 @@
     </div>
 </div>
 
-<!-- API Key Input Modal (Updated for Privacy) -->
+<!-- Universal Input Prompt Modal -->
+<div class="modal-overlay" id="prompt-modal" style="z-index: 2000;">
+    <div class="modal" style="max-width: 400px;">
+        <h2 id="prompt-title">入力</h2>
+        <input type="text" id="prompt-input" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc; margin: 15px 0;">
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button class="btn-send" id="prompt-yes" style="width: auto; padding: 0 25px; border-radius: 20px;">決定</button>
+            <button class="btn-end" id="prompt-no" style="width: auto; padding: 0 25px; border-radius: 20px;">キャンセル</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="apikey-modal" style="z-index: 3000;">
     <div class="modal" style="max-width: 450px;">
         <h2>🔑 APIキー設定</h2>
@@ -638,378 +520,138 @@
             以下のリンクからキーを取得して入力してください。<br>
             <small style="color:#888;">(※キーはブラウザ内にのみ保存されます)</small>
         </p>
-        
         <div style="margin: 15px 0; text-align:center;">
-             <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display:inline-block; padding:8px 15px; background:#f0f0f0; border-radius:5px; text-decoration:none; color:#4A90E2; font-weight:bold; border:1px solid #ddd;">
-                🔗 Google AI Studioでキーを取得
-             </a>
+             <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display:inline-block; padding:8px 15px; background:#f0f0f0; border-radius:5px; text-decoration:none; color:#4A90E2; font-weight:bold; border:1px solid #ddd;">🔗 Google AI Studioでキーを取得</a>
         </div>
-
         <div style="position:relative; margin-bottom:15px;">
-            <input type="password" id="manual-api-key" placeholder="ここにAPIキーを貼り付け (Paste API Key here)" style="width:100%; box-sizing:border-box; padding:12px; padding-right:45px; border:2px solid #ddd; border-radius:8px;">
+            <input type="password" id="manual-api-key" placeholder="ここにAPIキーを貼り付け" style="width:100%; box-sizing:border-box; padding:12px; padding-right:45px; border:2px solid #ddd; border-radius:8px;">
             <button onclick="toggleApiKeyVisibility()" title="表示/非表示" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:none; cursor:pointer; font-size:1.2rem; color:#888;">👁️</button>
         </div>
-        
         <div style="display: flex; gap: 10px;">
-            <button class="btn-send" id="apikey-submit" style="flex:1; border-radius: 20px;">保存して開始 (Save & Start)</button>
-            <button class="btn-end" id="apikey-delete" onclick="deleteApiKey()" style="flex:0 0 auto; display:none; border-radius:20px;">削除 (Delete)</button>
+            <button class="btn-send" id="apikey-submit" style="flex:1; border-radius: 20px;">保存して開始</button>
+            <button class="btn-end" id="apikey-delete" onclick="deleteApiKey()" style="flex:0 0 auto; display:none; border-radius:20px;">削除</button>
         </div>
-        <button id="apikey-close" onclick="closeApiKeyModal()" style="margin-top:10px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer; display:none;">
-            閉じる (Close)
-        </button>
+        <button id="apikey-close" onclick="closeApiKeyModal()" style="margin-top:10px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer; display:none;">閉じる</button>
     </div>
 </div>
 
-<!-- Level Select Modal -->
 <div class="modal-overlay" id="level-modal" style="display: none;" onclick="closeLevelModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
-        <div id="level-step-1">
-            <h2>レベルを選んでね<br><span style="font-size:0.6em; color:#888;">Select Your Level</span></h2>
-            
-            <!-- Kids Level (Music) -->
-            <button class="level-btn kids" onclick="showScenarios(0)">
-                <b>🐣 キッズ <span class="en-label">Kids</span></b>
-                <small>🎵 たのしいおんがく・ひらがなモード<br>(ようじ〜しょうがっこうていがくねん)</small>
+        
+        <!-- Step 0: Language Selection -->
+        <div id="level-step-0">
+            <h2>どちらをまなぶ？<br><span style="font-size:0.6em; color:#888;">Select Mode</span></h2>
+            <button class="level-btn" onclick="selectLanguage('en')">
+                <b>🇺🇸 英会話 (English)</b>
+                <small>英語でのコミュニケーションを学びます</small>
             </button>
-
-            <button class="level-btn" onclick="showScenarios(1)">
-                <b>🌱 初級 <span class="en-label">Beginner</span></b>
-                <small>日本語訳付き。やさしく。<br>(小学生〜中1向け)</small>
+            <button class="level-btn ja-mode" onclick="selectLanguage('ja')">
+                <b>🇯🇵 日本語 (Japanese)</b>
+                <small>やさしい会話や、語彙力アップクイズを楽しみます</small>
             </button>
-            
-            <button class="level-btn" onclick="showScenarios(2)">
-                <b>✈️ 中級 <span class="en-label">Intermediate</span></b>
-                <small>日常会話・ロールプレイ。<br>(中2〜高1向け)</small>
-            </button>
-            
-            <button class="level-btn" onclick="showScenarios(3)">
-                <b>🚀 上級 <span class="en-label">Advanced</span></b>
-                <small>All English. 議論やビジネス。<br>(高校生以上)</small>
-            </button>
-
-            <!-- キャンセルボタン -->
-            <button id="level-cancel-btn" onclick="closeLevelModal(null, true)" style="display:none; width: 100%; margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">
-                × 閉じる (Cancel)
-            </button>
+            <button id="level-cancel-btn-0" onclick="closeLevelModal(null, true)" style="display:none; width: 100%; margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">× 閉じる (Cancel)</button>
         </div>
 
+        <!-- Step 1-EN: English Levels -->
+        <div id="level-step-1-en" style="display:none;">
+            <h2>レベルを選んでね (英語)<br><span style="font-size:0.6em; color:#888;">Select Your Level</span></h2>
+            <button class="level-btn kids" onclick="showScenarios(0)"><b>🐣 キッズ <span class="en-label">Kids</span></b><small>🎵 たのしいおんがく・ひらがなモード</small></button>
+            <button class="level-btn" onclick="showScenarios(1)"><b>🌱 初級 <span class="en-label">Beginner</span></b><small>日本語訳付き。やさしく。</small></button>
+            <button class="level-btn" onclick="showScenarios(2)"><b>🔰 中級プレ <span class="en-label">Pre-Intermediate</span></b><small>日本語訳付き。実践ロールプレイ。</small></button>
+            <button class="level-btn" onclick="showScenarios(3)"><b>✈️ 中級 <span class="en-label">Intermediate</span></b><small>英語のみ。日常会話・ロールプレイ。</small></button>
+            <button class="level-btn" onclick="showScenarios(4)"><b>🚀 上級 <span class="en-label">Advanced</span></b><small>All English. 議論やビジネス。</small></button>
+            <button onclick="backToLanguage()" style="width: 100%; margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">← モード選択に戻る</button>
+        </div>
+
+        <!-- Step 1-JA: Japanese Levels -->
+        <div id="level-step-1-ja" style="display:none;">
+            <h2>レベルを選んでね (日本語)<br><span style="font-size:0.6em; color:#888;">Select Your Level</span></h2>
+            <button class="level-btn kids" onclick="showScenarios(0)"><b>🌸 やさしいおはなし</b><small>🎵 評価なし。ひらがなで優しくお話します。</small></button>
+            <button class="level-btn ja-mode" onclick="showScenarios(1)"><b>🌱 ことばあそび (小学生〜)</b><small>なぞなぞや、しりとりで語彙を増やします。</small></button>
+            <button class="level-btn ja-mode" onclick="showScenarios(2)"><b>✈️ 表現力アップ (中学生〜)</b><small>ことわざや、言い換えクイズに挑戦します。</small></button>
+            <button class="level-btn ja-mode" onclick="showScenarios(3)"><b>🚀 議論・高度な語彙 (高校生〜)</b><small>ニュースやお悩み相談を通じた論理的対話。</small></button>
+            <button onclick="backToLanguage()" style="width: 100%; margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">← モード選択に戻る</button>
+        </div>
+
+        <!-- Step 2: Scenario Selection -->
         <div id="level-step-2" style="display:none;">
             <h2>シチュエーション<br><span style="font-size:0.6em; color:#888;">Select a Scenario</span></h2>
-            <div id="scenario-list" class="scenario-grid">
-                <!-- Buttons injected by JS -->
-            </div>
-            <button onclick="backToLevels()" style="margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">
-                ← レベル選択に戻る (Back)
-            </button>
+            <div id="scenario-list" class="scenario-grid"></div>
+            <button onclick="backToLevels()" style="margin-top:15px; background:none; border:none; color:#888; text-decoration:underline; cursor:pointer;">← レベル選択に戻る</button>
         </div>
     </div>
 </div>
 
-<!-- Dedicated Print Area (Invisible normally) -->
 <div id="print-area">
     <h2>English Buddy - Report Card</h2>
     <div style="display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
         <span>Date: <span id="print-date"></span></span>
         <span>Total Score: <span id="print-score"></span></span>
     </div>
-    
-    <!-- ここにレポート内容が入る -->
     <div id="print-content" class="report-card-content"></div>
-
-    <div style="margin-top: 30px;">
-        <h3>能力スコア (Ability Stats)</h3>
-        <div id="print-stats"></div>
-    </div>
+    <div style="margin-top: 30px;"><h3>能力スコア (Ability Stats)</h3><div id="print-stats"></div></div>
 </div>
 
 <script>
-    // --- 1. Configuration & State ---
-    const defaultApiKey = ""; 
-    
+    // --- Phase 2: Canvas Integration & Data Architecture ---
+    const API_KEY = ""; // Implicitly provided by Canvas
+    const DB_NAME = "EnglishBuddyDB";
+    let db;
+    let currentUser = 1; 
     let chatHistory = [];
-    let state = {
+    
+    const defaultState = {
+        name: "User",
+        languageMode: "en", // 'en' or 'ja'
         level: 1, 
         scenarioName: "General",
         xp: 0,
         totalScore: 0,
-        speechRate: 0.8, // Default set to Slow
-        detailedScores: {
-            knowledge: 0,
-            thinking: 0,
-            expression: 0,
-            attitude: 0,
-            vocabulary: 0
-        }
+        speechRate: 1.0,
+        geminiVoice: "Kore", // NEW: Use Gemini TTS specific voice selection
+        hintEnabled: true,
+        detailedScores: { knowledge: 0, thinking: 0, expression: 0, attitude: 0, vocabulary: 0 }
+    };
+    let state = { ...defaultState };
+
+    const intermediateScenarios = [ { id: "airport", label: "空港 (Airport)" }, { id: "hotel", label: "ホテル (Hotel)" }, { id: "doctor", label: "病院 (Hospital)" }, { id: "directions", label: "道案内 (Directions)" }, { id: "cooking", label: "料理 (Cooking)" }, { id: "phone", label: "電話 (Phone Call)" }, { id: "cinema", label: "映画館 (Cinema)" }, { id: "lost_found", label: "落とし物 (Lost & Found)" }, { id: "weekend", label: "週末の予定 (Weekend Plans)" }, { id: "dreams", label: "将来の夢 (Future Dreams)" } ];
+
+    const SCENARIOS_EN = {
+        0: [ { id: "animals", label: "どうぶつ (Animals)" }, { id: "colors", label: "いろ (Colors)" }, { id: "fruits", label: "くだもの (Fruits)" }, { id: "numbers", label: "かず (Numbers)" }, { id: "greetings", label: "あいさつ (Greetings)" }, { id: "body", label: "からだ (Body)" } ],
+        1: [ { id: "self_intro", label: "自己紹介 (Self Intro)" }, { id: "school", label: "学校で (At School)" }, { id: "shopping", label: "お買い物 (Shopping)" }, { id: "pet_shop", label: "ペットショップ (Pet Shop)" }, { id: "restaurant", label: "レストラン (Restaurant)" }, { id: "friends", label: "友達と (With Friends)" }, { id: "family", label: "家族 (Family)" }, { id: "weather", label: "天気 (Weather)" }, { id: "park", label: "公園で (At the Park)" }, { id: "food", label: "好きな食べ物 (Favorite Food)" } ],
+        2: intermediateScenarios,
+        3: intermediateScenarios,
+        4: [ { id: "interview", label: "面接 (Job Interview)" }, { id: "environment", label: "環境問題 (Environment)" }, { id: "tech", label: "テクノロジー (Tech)" }, { id: "debate", label: "討論 (Debate)" }, { id: "culture", label: "文化 (Culture)" }, { id: "news", label: "ニュース (News)" }, { id: "ai_future", label: "AIの未来 (Future of AI)" }, { id: "space", label: "宇宙旅行 (Space Travel)" }, { id: "health", label: "健康的な生活 (Healthy Lifestyle)" }, { id: "education", label: "教育について (Education)" } ]
     };
 
-    const SCENARIOS = {
-        0: [ // Kids
-            { id: "animals", label: "どうぶつ (Animals)" },
-            { id: "colors", label: "いろ (Colors)" },
-            { id: "fruits", label: "くだもの (Fruits)" },
-            { id: "numbers", label: "かず (Numbers)" },
-            { id: "greetings", label: "あいさつ (Greetings)" },
-            { id: "body", label: "からだ (Body)" }
-        ],
-        1: [
-            { id: "self_intro", label: "自己紹介 (Self Intro)" },
-            { id: "school", label: "学校で (At School)" },
-            { id: "shopping", label: "お買い物 (Shopping)" },
-            { id: "pet_shop", label: "ペットショップ (Pet Shop)" },
-            { id: "restaurant", label: "レストラン (Restaurant)" },
-            { id: "friends", label: "友達と (With Friends)" },
-            { id: "family", label: "家族 (Family)" },
-            { id: "weather", label: "天気 (Weather)" },
-            { id: "park", label: "公園で (At the Park)" },
-            { id: "food", label: "好きな食べ物 (Favorite Food)" }
-        ],
-        2: [
-            { id: "airport", label: "空港 (Airport)" },
-            { id: "hotel", label: "ホテル (Hotel)" },
-            { id: "doctor", label: "病院 (Hospital)" },
-            { id: "directions", label: "道案内 (Directions)" },
-            { id: "cooking", label: "料理 (Cooking)" },
-            { id: "phone", label: "電話 (Phone Call)" },
-            { id: "cinema", label: "映画館 (Cinema)" },
-            { id: "lost_found", label: "落とし物 (Lost & Found)" },
-            { id: "weekend", label: "週末の予定 (Weekend Plans)" },
-            { id: "dreams", label: "将来の夢 (Future Dreams)" }
-        ],
-        3: [
-            { id: "interview", label: "面接 (Job Interview)" },
-            { id: "environment", label: "環境問題 (Environment)" },
-            { id: "tech", label: "テクノロジー (Tech)" },
-            { id: "debate", label: "討論 (Debate)" },
-            { id: "culture", label: "文化 (Culture)" },
-            { id: "news", label: "ニュース (News)" },
-            { id: "ai_future", label: "AIの未来 (Future of AI)" },
-            { id: "space", label: "宇宙旅行 (Space Travel)" },
-            { id: "health", label: "健康的な生活 (Healthy Lifestyle)" },
-            { id: "education", label: "教育について (Education)" }
-        ]
+    const SCENARIOS_JA = {
+        0: [ { id: "today", label: "きょうのできごと" }, { id: "likes", label: "すきなもの" }, { id: "shop", label: "おみせやさん" } ],
+        1: [ { id: "riddle", label: "なぞなぞ" }, { id: "shiritori", label: "しりとり" }, { id: "opposites", label: "はんたいことば" }, { id: "feelings", label: "いろんなきもち" } ],
+        2: [ { id: "proverb", label: "ことわざ・慣用句" }, { id: "paraphrase", label: "言い換えチャレンジ" }, { id: "four_idioms", label: "四字熟語バトル" } ],
+        3: [ { id: "news", label: "最近のニュース" }, { id: "consultation", label: "お悩み相談" }, { id: "debate", label: "架空ディベート" } ]
     };
 
-    // --- 2. Helper Functions (Defined BEFORE Usage) ---
+    // --- HTML Modal Replacements for alert/confirm/prompt ---
+    function showAlert(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-msg');
+            const yesBtn = document.getElementById('confirm-yes');
+            const noBtn = document.getElementById('confirm-no');
+            document.getElementById('confirm-title').innerText = "お知らせ (Notice)";
+            msgEl.innerText = message;
+            modal.style.display = 'flex';
+            noBtn.style.display = 'none';
+            yesBtn.innerText = "OK";
 
-    // Simple Synth for Kids BGM (Web Audio API)
-    // 外部ファイルを使わず、プログラムで優しいオルゴール風の音を生成します
-    const KidsMusic = {
-        ctx: null,
-        isPlaying: false,
-        timeoutId: null,
-        userEnabled: true, // ユーザーによるON/OFF
-        
-        // 明るい音階 (Pentatonic): C, D, E, G, A (High C, High D)
-        // 少し高めのオクターブでキラキラ感を出す
-        notes: [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50], 
-        
-        init: function() {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        },
-        
-        playNote: function(freq, duration) {
-            if (!this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            
-            osc.type = 'sine'; // 優しいサイン波
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            
-            // エンベロープ (ぽろーんという音 - 明るく短めに)
-            gain.gain.setValueAtTime(0, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05); // Attack
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration); // Decay
-            
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            
-            osc.start();
-            osc.stop(this.ctx.currentTime + duration);
-        },
-
-        loop: function() {
-            if (!this.isPlaying || !this.userEnabled) return;
-            
-            // ランダムに音を選ぶ (和音っぽく2音出すことも)
-            const note = this.notes[Math.floor(Math.random() * this.notes.length)];
-            
-            // 明るいテンポ (0.8秒〜2.0秒間隔)
-            const wait = 800 + Math.random() * 1200;
-            
-            this.playNote(note, 2.0); 
-            
-            // たまに2音目を鳴らす (キラキラ感)
-            if (Math.random() > 0.7) {
-                setTimeout(() => {
-                    const note2 = this.notes[Math.floor(Math.random() * this.notes.length)];
-                    this.playNote(note2, 2.0);
-                }, 200);
-            }
-
-            this.timeoutId = setTimeout(() => this.loop(), wait);
-        },
-
-        start: function() {
-            if (!this.userEnabled) return; // ユーザーがOFFにしてたら鳴らさない
-            
-            this.init();
-            if (this.isPlaying) return;
-            this.isPlaying = true;
-            if (this.ctx.state === 'suspended') this.ctx.resume();
-            this.loop();
-        },
-
-        stop: function() {
-            this.isPlaying = false;
-            if (this.timeoutId) clearTimeout(this.timeoutId);
-        },
-
-        toggle: function() {
-            this.userEnabled = !this.userEnabled;
-            if (this.userEnabled) {
-                this.start();
-                return true;
-            } else {
-                this.stop();
-                return false;
-            }
-        }
-    };
-
-
-    // API Key Management
-    function getStoredApiKey() {
-        return localStorage.getItem('geminiApiKey') || defaultApiKey;
+            yesBtn.onclick = () => {
+                modal.style.display = 'none'; yesBtn.onclick = null;
+                noBtn.style.display = 'block'; yesBtn.innerText = "はい (Yes)";
+                document.getElementById('confirm-title').innerText = "確認 (Confirm)";
+                resolve();
+            };
+        });
     }
-
-    function toggleApiKeyVisibility() {
-        const input = document.getElementById('manual-api-key');
-        if (input.type === "password") {
-            input.type = "text";
-        } else {
-            input.type = "password";
-        }
-    }
-
-    function showApiKeyModal(isInitial = false) {
-        const modal = document.getElementById('apikey-modal');
-        const input = document.getElementById('manual-api-key');
-        const closeBtn = document.getElementById('apikey-close');
-        const deleteBtn = document.getElementById('apikey-delete');
-        
-        input.value = getStoredApiKey();
-        // 初期状態は必ず非表示(password)に戻す
-        input.type = "password";
-        modal.style.display = 'flex';
-        
-        if (isInitial) {
-            closeBtn.style.display = 'none';
-        } else {
-            closeBtn.style.display = 'block';
-        }
-
-        if (localStorage.getItem('geminiApiKey')) {
-            deleteBtn.style.display = 'block';
-        } else {
-            deleteBtn.style.display = 'none';
-        }
-
-        document.getElementById('apikey-submit').onclick = () => {
-            const val = input.value.trim();
-            if (val) {
-                localStorage.setItem('geminiApiKey', val);
-                modal.style.display = 'none';
-                if(isInitial) {
-                    checkFirstRun();
-                }
-            } else {
-                alert("APIキーを入力してください (Please enter an API Key)");
-            }
-        };
-    }
-
-    function closeApiKeyModal() {
-        document.getElementById('apikey-modal').style.display = 'none';
-    }
-
-    function deleteApiKey() {
-        if(confirm("保存されたAPIキーを削除しますか？")) {
-            localStorage.removeItem('geminiApiKey');
-            document.getElementById('manual-api-key').value = '';
-            document.getElementById('apikey-delete').style.display = 'none';
-            alert("削除しました。");
-        }
-    }
-
-
-    // 【高機能印刷関数】
-    const handlePrint = (targetId, orientation = 'portrait') => {
-        const content = document.getElementById(targetId);
-        if (!content) return;
-        const contentHtml = content.outerHTML;
-
-        const printWindow = window.open('', '_blank', 'height=800,width=1000');
-        if (!printWindow) return;
-
-        const pageStyle = orientation === 'landscape' 
-            ? '@page { size: landscape; margin: 10mm; }' 
-            : '@page { size: portrait; margin: 10mm; }';
-
-        printWindow.document.write(`
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>印刷プレビュー</title>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
-                <style>
-                    body { 
-                        font-family: 'Zen Maru Gothic', sans-serif;
-                        background-color: white;
-                        margin: 0; padding: 20px;
-                        -webkit-print-color-adjust: exact; 
-                        print-color-adjust: exact;
-                    }
-                    ${pageStyle}
-                    #${targetId} {
-                        transform: none !important;
-                        margin: 0 auto !important;
-                        box-shadow: none !important;
-                        width: 100% !important;
-                        height: auto !important;
-                        display: block !important;
-                    }
-                    .report-card-content {
-                        border: 2px solid #333;
-                        padding: 20px;
-                        border-radius: 10px;
-                    }
-                    .report-card-content h3 { 
-                        border-bottom: 1px solid #333; 
-                        margin-top: 15px; 
-                        font-size: 1.1rem;
-                    }
-                    .stat-row { margin-bottom: 10px; }
-                    .stat-label { display: flex; justify-content: space-between; font-weight: bold; }
-                    .stat-bg { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; border: 1px solid #ccc; }
-                    .stat-fill { height: 100%; background: #666; } 
-                </style>
-            </head>
-            <body>
-                ${contentHtml}
-                <script>
-                    setTimeout(function() { 
-                        window.focus();
-                        window.print();
-                    }, 1000);
-                <\/script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-    };
 
     function showConfirm(message) {
         return new Promise((resolve) => {
@@ -1017,71 +659,411 @@
             const msgEl = document.getElementById('confirm-msg');
             const yesBtn = document.getElementById('confirm-yes');
             const noBtn = document.getElementById('confirm-no');
-
             msgEl.innerText = message;
             modal.style.display = 'flex';
-
-            const close = (result) => {
-                modal.style.display = 'none';
-                yesBtn.onclick = null;
-                noBtn.onclick = null;
-                resolve(result);
-            };
-
+            const close = (result) => { modal.style.display = 'none'; yesBtn.onclick = null; noBtn.onclick = null; resolve(result); };
             yesBtn.onclick = () => close(true);
             noBtn.onclick = () => close(false);
         });
     }
 
-    // Save/Load Logic
-    function saveData(isFile = false) {
-        localStorage.setItem('englishBuddyState', JSON.stringify(state));
-        localStorage.setItem('englishBuddyHistory', JSON.stringify(chatHistory));
-        if(isFile) {
-            const data = JSON.stringify({state, chatHistory}, null, 2);
-            const blob = new Blob([data], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `english_buddy_backup_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        }
+    function showPrompt(title, defaultValue = "") {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('prompt-modal');
+            const titleEl = document.getElementById('prompt-title');
+            const inputEl = document.getElementById('prompt-input');
+            const yesBtn = document.getElementById('prompt-yes');
+            const noBtn = document.getElementById('prompt-no');
+            titleEl.innerText = title; inputEl.value = defaultValue;
+            modal.style.display = 'flex'; inputEl.focus();
+            const close = (result) => { modal.style.display = 'none'; yesBtn.onclick = null; noBtn.onclick = null; resolve(result); };
+            yesBtn.onclick = () => close(inputEl.value);
+            noBtn.onclick = () => close(null);
+        });
     }
 
-    function loadData() {
+    // --- IndexedDB Management ---
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
+            };
+            request.onsuccess = (e) => { db = e.target.result; resolve(); };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    function saveUserToDB(userId, data) {
+        return new Promise((resolve, reject) => {
+            if (!db) return resolve(); // Prevent errors if DB is not initialized yet
+            const tx = db.transaction('users', 'readwrite');
+            const store = tx.objectStore('users');
+            store.put({ id: userId, ...data });
+            tx.oncomplete = () => resolve();
+            tx.onerror = (e) => reject(e);
+        });
+    }
+
+    function loadUserFromDB(userId) {
+        return new Promise((resolve, reject) => {
+            if (!db) return resolve(null);
+            const tx = db.transaction('users', 'readonly');
+            const store = tx.objectStore('users');
+            const req = store.get(userId);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = (e) => reject(e);
+        });
+    }
+
+    function saveCurrentState() {
+        if (!db) return; // Prevent saving if DB is not yet initialized during startup
+        saveUserToDB(currentUser, { state, chatHistory }).catch(e => console.error(e));
+    }
+
+    async function migrateFromLocalStorage() {
         const s = localStorage.getItem('englishBuddyState');
-        const h = localStorage.getItem('englishBuddyHistory');
-        if(s) {
-            const loadedState = JSON.parse(s);
-            state = { ...state, ...loadedState }; 
+        if (s) {
+            const legacyState = JSON.parse(s);
+            const legacyHistory = JSON.parse(localStorage.getItem('englishBuddyHistory') || "[]");
+            const mergedState = { ...defaultState, ...legacyState };
+            if(!mergedState.languageMode) mergedState.languageMode = 'en';
+            if(!mergedState.geminiVoice) mergedState.geminiVoice = 'Kore'; // Set default voice
+            mergedState.name = "User 1";
+            await saveUserToDB(1, { state: mergedState, chatHistory: legacyHistory });
+            await saveUserToDB(2, { state: { ...defaultState, name: "User 2" }, chatHistory: [] });
+            await saveUserToDB(3, { state: { ...defaultState, name: "User 3" }, chatHistory: [] });
+            localStorage.removeItem('englishBuddyState');
+            localStorage.removeItem('englishBuddyHistory');
         }
-        if(h) chatHistory = JSON.parse(h);
     }
 
-    // UI Updates
-    function updateUI() {
-        const levelDisplay = document.getElementById('level-display');
-        const xpBar = document.getElementById('xp-bar');
-        const totalScoreDisplay = document.getElementById('total-score-display');
+    // --- User Switching ---
+    window.switchUser = async (id) => {
+        await saveCurrentState();
+        let data = await loadUserFromDB(id);
+        if (!data) data = { state: { ...defaultState, name: `User ${id}` }, chatHistory: [] };
         
-        const levels = ["キッズ Kids", "初級 Beginner", "中級 Intermediate", "上級 Advanced"];
-        const levelLabels = {0: "キッズ Kids", 1: "初級 Beginner", 2: "中級 Intermediate", 3: "上級 Advanced"};
+        currentUser = id;
+        state = { ...defaultState, ...data.state };
+        if(!state.languageMode) state.languageMode = 'en';
+        if(!state.geminiVoice) state.geminiVoice = 'Kore';
+        chatHistory = data.chatHistory || [];
+        
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.add('active');
+        
+        for(let i=1; i<=3; i++) {
+            let uData = await loadUserFromDB(i);
+            document.getElementById(`tab-${i}`).innerText = uData ? uData.state.name : `User ${i}`;
+        }
 
-        levelDisplay.innerHTML = `${levelLabels[state.level]}<br><small>${state.scenarioName}</small>`;
+        updateUI();
+        setSpeedUI(state.speechRate);
+        updateVoiceUI();
+        document.getElementById('hint-toggle').checked = state.hintEnabled;
+        renderChatHistory();
         
-        const xpPercent = Math.min(100, Math.max(0, state.xp));
-        xpBar.style.width = `${xpPercent}%`;
-        totalScoreDisplay.innerText = state.totalScore || 0;
+        document.getElementById('hint-area').style.display = 'none';
+        if (state.level === 0) { showMusicButton(true); KidsMusic.start(); } 
+        else { showMusicButton(false); KidsMusic.stop(); }
+        
+        if (chatHistory.length === 0) {
+            changeLevel(); // Open modal at step 0
+        }
+    };
+
+
+    // --- Audio Utilities (PCM to WAV) for Gemini TTS ---
+    function pcmBase64ToWavBlob(base64, sampleRate = 24000) {
+        const binaryString = window.atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const pcmData = new Int16Array(bytes.buffer);
+
+        const numChannels = 1;
+        const byteRate = sampleRate * numChannels * 2;
+        const blockAlign = numChannels * 2;
+        const dataSize = pcmData.length * 2;
+        const buffer = new ArrayBuffer(44 + dataSize);
+        const view = new DataView(buffer);
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataSize, true);
+
+        let offset = 44;
+        for (let i = 0; i < pcmData.length; i++, offset += 2) {
+            view.setInt16(offset, pcmData[i], true);
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+    }
+
+    let currentAudio = null;
+
+    // The central speaking function
+    async function speakText(text, btnElement = null) {
+        const cleanText = text.replace(/\(.*?\)/g, "").replace(/<[^>]*>?/gm, '').replace(/[*":_`~#]/g, "").trim(); 
+        if (!cleanText) return;
+
+        // Stop current audio if playing
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+
+        if (btnElement) {
+            btnElement.classList.add('loading');
+            btnElement.innerText = "⏳ 準備中...";
+        }
+
+        try {
+            // Fetch high-quality audio from Gemini TTS
+            const voiceName = state.geminiVoice || "Kore";
+            const keyToUse = getStoredApiKey();
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${keyToUse}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: cleanText }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName }
+                        }
+                    }
+                }
+            };
+
+            const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error("TTS API Error");
+            
+            const data = await res.json();
+            const base64Audio = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (!base64Audio) throw new Error("No audio data returned");
+
+            const wavBlob = pcmBase64ToWavBlob(base64Audio, 24000); // Default Gemini TTS sample rate is 24kHz
+            const audioUrl = URL.createObjectURL(wavBlob);
+            
+            currentAudio = new Audio(audioUrl);
+            currentAudio.playbackRate = state.speechRate || 1.0;
+            
+            currentAudio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                if (btnElement) { btnElement.classList.remove('loading'); btnElement.innerText = "🔊 聞く"; }
+            };
+            currentAudio.onerror = () => {
+                URL.revokeObjectURL(audioUrl);
+                if (btnElement) { btnElement.classList.remove('loading'); btnElement.innerText = "🔊 聞く"; }
+            };
+            
+            if (btnElement) { btnElement.classList.remove('loading'); btnElement.innerText = "🔊 再生中"; }
+            currentAudio.play();
+
+        } catch (e) {
+            console.warn("Gemini TTS Failed, falling back to browser TTS", e);
+            if (btnElement) { btnElement.classList.remove('loading'); btnElement.innerText = "🔊 聞く"; }
+            
+            // Fallback to old browser Web Speech API
+            if (!window.speechSynthesis) return;
+            const u = new SpeechSynthesisUtterance(cleanText);
+            u.lang = state.languageMode === 'ja' ? 'ja-JP' : 'en-US';
+            u.rate = state.speechRate || 1.0;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+        }
+    }
+
+
+    const KidsMusic = {
+        ctx: null, isPlaying: false, timeoutId: null, userEnabled: true,
+        notes: [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50], 
+        init: function() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+        playNote: function(freq, duration) {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime + duration);
+        },
+        loop: function() {
+            if (!this.isPlaying || !this.userEnabled) return;
+            this.playNote(this.notes[Math.floor(Math.random() * this.notes.length)], 2.0); 
+            if (Math.random() > 0.7) setTimeout(() => this.playNote(this.notes[Math.floor(Math.random() * this.notes.length)], 2.0), 200);
+            this.timeoutId = setTimeout(() => this.loop(), 800 + Math.random() * 1200);
+        },
+        start: function() { if(!this.userEnabled) return; this.init(); if(this.isPlaying) return; this.isPlaying = true; if(this.ctx.state === 'suspended') this.ctx.resume(); this.loop(); },
+        stop: function() { this.isPlaying = false; if (this.timeoutId) clearTimeout(this.timeoutId); },
+        toggle: function() { this.userEnabled = !this.userEnabled; if (this.userEnabled) { this.start(); return true; } else { this.stop(); return false; } }
+    };
+
+    // --- Gemini API (JSON Schema + Fallback) ---
+    function getStoredApiKey() { return localStorage.getItem('geminiApiKey') || API_KEY; }
+
+    const MODELS = {
+        text: {
+            primary: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`,
+            fallback: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=`
+        }
+    };
+
+    const getSystemPrompt = () => {
+        const safetyInstruction = `\n- SAFETY & MODERATION (CRITICAL): If the user uses abusive language, profanity, or inappropriate words, gracefully deflect and ignore it. Do not scold or engage in arguments. Gently change the subject to something positive and relevant to the scenario.\n`;
+
+        if (state.languageMode === 'ja') {
+            const levelNames = {0: "やさしいおはなし", 1: "ことばあそび", 2: "表現力アップ", 3: "議論"};
+            const currentLevelName = levelNames[state.level];
+            let levelInstruction = "";
+            if (state.level === 0) {
+                levelInstruction = "- Level 0 (特別支援・幼児): ひらがなメインで優しく傾聴・共感すること。クイズや評価はしない。話を自然に広げること。";
+            } else if (state.level === 1) {
+                levelInstruction = "- Level 1 (小学生): 楽しみながら語彙を増やす。会話の流れで「なぞなぞ」や「しりとり」など、言葉のクイズを自然に1つ出すこと。";
+            } else if (state.level === 2) {
+                levelInstruction = "- Level 2 (中学生): 表現力を高める。会話の中に、ことわざ、慣用句、言い換えのクイズを自然に混ぜること。";
+            } else {
+                levelInstruction = "- Level 3 (高校生以上): 大人向けの論理的な対話。高度な語彙を用いて、少し議論の要素を含めること。";
+            }
+
+            return `
+            You are "日本語バディ" (Japanese Buddy), a friendly AI conversational partner.
+            CONTEXT: Level: ${currentLevelName}, Scenario: ${state.scenarioName}
+            LEVEL RULES: ${levelInstruction}
+            ${safetyInstruction}
+            
+            CORE INSTRUCTIONS:
+            1. Act out the scenario role naturally in Japanese.
+            2. Evaluate previous response and calculate scores (Except for Level 0, you can give positive scores for good communication).
+            3. Generate a "next_hint" - a short phrase the user can reply with (in Japanese).
+            
+            FORMAT (STRICT JSON ONLY):
+            {
+              "ai_reply": "Your message in Japanese.",
+              "next_hint": "User's possible hint reply in Japanese.",
+              "score": 10,
+              "details": { "knowledge": 2, "thinking": 2, "expression": 2, "attitude": 2, "vocabulary": 2 }
+            }
+            Do NOT wrap in \`\`\`json markdown. Just pure JSON.
+            `;
+        } else {
+            const levelNames = {0: "Kids", 1: "Beginner", 2: "Pre-Intermediate", 3: "Intermediate", 4: "Advanced"};
+            const currentLevelName = levelNames[state.level];
+            let levelInstruction = state.level === 0 ? "- Kids Level: HIRAGANA (Japanese) ONLY. NO KANJI. Super energetic!" :
+                                   state.level === 1 ? "- Beginner: ALWAYS provide Japanese translation in parenthesis. Short sentences." :
+                                   state.level === 2 ? "- Pre-Intermediate: Act out the scenario. ALWAYS provide Japanese translation in parenthesis." :
+                                   state.level === 3 ? "- Intermediate: English mostly. Act out the scenario. Provide 'One Point Advice'." :
+                                                       "- Advanced: English only. Sophisticated. Act out the scenario.";
+
+            return `
+            You are "English Buddy", a friendly AI tutor.
+            CONTEXT: Level: ${currentLevelName}, Scenario: ${state.scenarioName}
+            LEVEL RULES: ${levelInstruction}
+            ${safetyInstruction}
+            
+            CORE INSTRUCTIONS:
+            1. Act out the scenario role. Evaluate previous response and calculate scores.
+            2. Generate a "next_hint" - a short English phrase the user can reply with.
+            
+            FORMAT (STRICT JSON ONLY):
+            {
+              "ai_reply": "Your message to the user here.",
+              "next_hint": "I want to buy apples.",
+              "score": 10,
+              "details": { "knowledge": 2, "thinking": 2, "expression": 2, "attitude": 2, "vocabulary": 2 }
+            }
+            Do NOT wrap in \`\`\`json markdown. Just pure JSON.
+            `;
+        }
+    };
+
+    async function callGeminiAPI(history, systemInstructionText, retryKey = null) {
+        const keyToUse = retryKey !== null ? retryKey : getStoredApiKey();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const payload = {
+            contents: history,
+            systemInstruction: { parts: [{ text: systemInstructionText }] },
+            generationConfig: { responseMimeType: "application/json" }
+        };
+
+        try {
+            let res = await fetch(MODELS.text.primary + keyToUse, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal });
+            if (!res.ok && MODELS.text.fallback) {
+                console.warn("Primary API failed. Falling back...");
+                res = await fetch(MODELS.text.fallback + keyToUse, { method: 'POST', body: JSON.stringify(payload), signal: controller.signal });
+            }
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) {
+                if ((res.status === 400 || res.status === 401 || res.status === 403) && !retryKey) {
+                    showApiKeyModal(); throw new Error("API Key required or invalid.");
+                }
+                throw new Error(`API Error: ${res.status}`);
+            }
+            const data = await res.json();
+            let jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+            jsonStr = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, ''); // Strip markdown
+            return JSON.parse(jsonStr);
+        } catch (e) { clearTimeout(timeoutId); throw e; }
+    }
+
+    // --- UI Interactions ---
+    function updateUI() {
+        let levelName = "";
+        if (state.languageMode === 'en') {
+            const levels = ["キッズ Kids", "初級 Beginner", "中級プレ Pre-Intermediate", "中級 Intermediate", "上級 Advanced"];
+            levelName = levels[state.level];
+        } else {
+            const levels = ["やさしいおはなし", "ことばあそび", "表現力アップ", "議論・高度な語彙"];
+            levelName = levels[state.level];
+        }
+        
+        const flag = state.languageMode === 'ja' ? '🇯🇵' : '🇺🇸';
+        document.getElementById('level-display').innerHTML = `${flag} ${levelName}<br><small>${state.scenarioName}</small>`;
+        
+        // Hide XP UI for JA Level 0
+        const xpContainer = document.getElementById('xp-container-ui');
+        if (state.languageMode === 'ja' && state.level === 0) {
+            xpContainer.classList.add('hidden');
+        } else {
+            xpContainer.classList.remove('hidden');
+            document.getElementById('xp-bar').style.width = `${Math.min(100, Math.max(0, state.xp))}%`;
+            document.getElementById('total-score-display').innerText = state.totalScore || 0;
+        }
     }
 
     function setSpeedUI(rate) {
         document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-        const btnId = `spd-${rate}`;
-        const target = document.getElementById(btnId);
+        const target = document.getElementById(`spd-${rate}`) || document.getElementById('spd-0.8');
         if (target) target.classList.add('active');
-        else {
-             const fb = document.getElementById('spd-0.8');
-             if(fb) fb.classList.add('active');
+    }
+
+    function updateVoiceUI() {
+        const select = document.getElementById('voice-select');
+        if(select) {
+            select.value = state.geminiVoice || "Kore";
         }
     }
 
@@ -1089,25 +1071,13 @@
         const chatContainer = document.getElementById('chat-container');
         const div = document.createElement('div');
         div.className = `message ${sender}`;
-        
         if (sender === 'ai') {
-            let formatted = text
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                .replace(/(\(.*?\))/g, '<span class="translation">$1</span>')
-                .replace(/(One Point Advice:|One point advice!)/i, '<br><b>💡 Advice:</b>');
-            
-            div.innerHTML = formatted;
-
+            div.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/(\(.*?\))/g, '<span class="translation">$1</span>').replace(/(One Point Advice:|One point advice!)/i, '<br><b>💡 Advice:</b>');
             const btn = document.createElement('button');
-            btn.className = 'speak-btn';
-            btn.innerHTML = '🔊 聞く';
-            btn.onclick = () => speakText(text);
+            btn.className = 'speak-btn'; btn.innerHTML = '🔊 聞く'; 
+            btn.onclick = (e) => speakText(text, e.target);
             div.appendChild(btn);
-        } else {
-            div.innerText = text;
-        }
-
+        } else { div.innerText = text; }
         chatContainer.appendChild(div);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -1116,159 +1086,13 @@
         const chatContainer = document.getElementById('chat-container');
         chatContainer.innerHTML = '';
         chatHistory.forEach(msg => {
+            // For older histories before strict JSON
             let txt = msg.parts[0].text;
-            txt = txt.replace(/<<<JSON[\s\S]*?JSON>>>/, '').replace(/<<<SCORE:.*?>>>/, '');
+            if(msg.role === 'model') {
+                try { const p = JSON.parse(txt); txt = p.ai_reply || txt; } catch(e){}
+            }
             addMessage(txt, msg.role === 'model' ? 'ai' : 'user');
         });
-    }
-
-    // System Prompt
-    const getSystemPrompt = () => {
-        const levelNames = {0: "Kids", 1: "Beginner", 2: "Intermediate", 3: "Advanced"};
-        const currentLevelName = levelNames[state.level];
-        
-        let levelInstruction = "";
-        if (state.level === 0) {
-            levelInstruction = `
-            - **Kids Level (Important)**:
-            - TALK IN "HIRAGANA" (Japanese) ONLY. NO KANJI.
-            - Teach 1 English word at a time. (e.g., "りんご！ Apple! 🍎")
-            - Be super energetic and friendly! Use many Emojis!
-            - Ask simple quiz questions. (e.g., "これ なーんだ？")
-            `;
-        } else if (state.level === 1) {
-            levelInstruction = `- **Beginner**: ALWAYS provide Japanese translation in parenthesis. Short sentences. Do NOT make Japanese translation bold.`;
-        } else if (state.level === 2) {
-            levelInstruction = `- **Intermediate**: English mostly. Provide "One Point Advice" for mistakes.`;
-        } else {
-            levelInstruction = `- **Advanced**: English only. Sophisticated.`;
-        }
-
-        return `
-        You are "English Buddy", a friendly AI tutor.
-        
-        CONTEXT:
-        - Level: ${currentLevelName} (Level ${state.level})
-        - Scenario: ${state.scenarioName}
-        
-        CORE INSTRUCTIONS:
-        1. **Scoring (JSON)**: 
-           - Evaluate the user's response.
-           - At the END of your response, strictly output a JSON block like this (HIDDEN from user):
-           <<<JSON
-           {
-             "score": 10,
-             "details": {
-               "knowledge": 2,
-               "thinking": 1,
-               "expression": 2,
-               "attitude": 3,
-               "vocabulary": 1
-             }
-           }
-           JSON>>>
-        
-        2. **Scenario**:
-           - Act out the role: ${state.scenarioName}.
-           - If this is the first message, start by setting the scene for ${state.scenarioName}.
-
-        3. **Level Rules**:
-           ${levelInstruction}
-
-        4. **Safety**:
-           - If user says "Cow", "Potato" etc. abruptly, ask "Is that your name?" nicely. 
-           - Never scold.
-        `;
-    };
-
-    // API Call
-    async function callGeminiAPI(history, systemInstructionText, retryKey = null) {
-        const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-        
-        const storedKey = getStoredApiKey();
-        const keyToUse = retryKey !== null ? retryKey : storedKey;
-        
-        const url = `${baseUrl}?key=${keyToUse}`;
-        
-        const payload = {
-            contents: history,
-            systemInstruction: { parts: [{ text: systemInstructionText }] }
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                if ((response.status === 400 || response.status === 401 || response.status === 403) && !retryKey) {
-                    showApiKeyModal(); 
-                    throw new Error("API Key required. Please check settings.");
-                }
-                throw new Error(`API Error: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't understand that.";
-            
-        } catch (e) {
-            throw e; 
-        }
-    }
-
-    // --- 3. Initialization (onload) ---
-    window.onload = () => {
-        const key = getStoredApiKey();
-        if (!key) {
-            showApiKeyModal(true); 
-        } else {
-            checkFirstRun();
-        }
-    };
-
-    function checkFirstRun() {
-        loadData();
-        
-        if (typeof state.speechRate === 'undefined') state.speechRate = 0.8;
-        if (!state.detailedScores) {
-            state.detailedScores = { knowledge:0, thinking:0, expression:0, attitude:0, vocabulary:0 };
-        }
-        if (!state.scenarioName) state.scenarioName = "General";
-
-        updateUI();
-        setSpeedUI(state.speechRate);
-        
-        // もしロードした状態でKidsモードならBGM開始
-        if (state.level === 0) {
-            showMusicButton(true);
-            KidsMusic.start();
-        } else {
-            showMusicButton(false);
-        }
-
-        if (!localStorage.getItem('englishBuddyState')) {
-            document.getElementById('level-modal').style.display = 'flex';
-        } else {
-            renderChatHistory();
-        }
-    }
-
-    // --- 4. Event Handlers ---
-
-    window.toggleKidsMusic = () => {
-        const isPlaying = KidsMusic.toggle();
-        const btn = document.getElementById('music-toggle');
-        if (isPlaying) {
-            btn.innerText = "🎵 音楽オフ";
-        } else {
-            btn.innerText = "🔇 音楽オン";
-        }
-    };
-    
-    function showMusicButton(show) {
-        document.getElementById('music-toggle').style.display = show ? 'block' : 'none';
     }
 
     window.sendMessage = async () => {
@@ -1281,184 +1105,213 @@
         chatHistory.push({ role: "user", parts: [{ text: text }] });
         
         const chatContainer = document.getElementById('chat-container');
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message ai';
-        loadingDiv.innerText = '...';
-        loadingDiv.id = 'loading-msg';
-        chatContainer.appendChild(loadingDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        const loader = document.createElement('div');
+        loader.className = 'message ai'; loader.innerText = '...'; loader.id = 'loading-msg';
+        chatContainer.appendChild(loader); chatContainer.scrollTop = chatContainer.scrollHeight;
+        document.getElementById('hint-area').style.display = 'none';
 
         try {
-            const rawText = await callGeminiAPI(chatHistory, getSystemPrompt());
+            const aiResponseObj = await callGeminiAPI(chatHistory, getSystemPrompt());
+            if(document.getElementById('loading-msg')) document.getElementById('loading-msg').remove();
 
-            const loader = document.getElementById('loading-msg');
-            if(loader) loader.remove();
+            const displayText = aiResponseObj.ai_reply || "Hello!";
+            const nextHint = aiResponseObj.next_hint || "";
+            let earnedScore = aiResponseObj.score || 0;
 
-            let displayText = rawText;
-            const jsonMatch = rawText.match(/<<<JSON([\s\S]*?)JSON>>>/);
-            
-            if (jsonMatch) {
-                try {
-                    const scoreData = JSON.parse(jsonMatch[1]);
-                    updateScores(scoreData);
-                    displayText = rawText.replace(jsonMatch[0], '');
-                } catch(e) { console.error("Score Parse Error", e); }
-            } else {
-                const scoreMatch = rawText.match(/<<<SCORE:(-?\d+)>>>/);
-                if (scoreMatch) {
-                    updateScores({ score: parseInt(scoreMatch[1]) });
-                    displayText = rawText.replace(scoreMatch[0], '');
-                }
-            }
+            if (state.hintEnabled) earnedScore = Math.ceil(earnedScore / 2); // Hint Penalty
 
-            chatHistory.push({ role: "model", parts: [{ text: rawText }] });
+            updateScores({ score: earnedScore, details: aiResponseObj.details });
+            chatHistory.push({ role: "model", parts: [{ text: JSON.stringify(aiResponseObj) }] });
             addMessage(displayText, 'ai');
-            speakText(displayText);
-            saveData();
+            
+            // Find the newly added play button and auto-play
+            const lastMsg = chatContainer.lastElementChild;
+            const playBtn = lastMsg.querySelector('.speak-btn');
+            speakText(displayText, playBtn);
+            
+            saveCurrentState();
+
+            if (state.hintEnabled && nextHint) {
+                document.getElementById('hint-text').innerText = nextHint;
+                document.getElementById('hint-area').style.display = 'block';
+            }
 
         } catch (error) {
             console.error(error);
-            const loader = document.getElementById('loading-msg');
-            if(loader) {
-                loader.innerText = "⚠️ " + error.message;
-            }
+            if(document.getElementById('loading-msg')) document.getElementById('loading-msg').innerText = "⚠️ " + error.message;
         }
     };
 
     function updateScores(data) {
-        const points = data.score || 0;
-        state.xp += points;
-        state.totalScore = (state.totalScore || 0) + points;
+        // Skip score logic entirely for JA Level 0
+        if (state.languageMode === 'ja' && state.level === 0) return;
 
+        const points = data.score || 0;
+        state.xp += points; state.totalScore = (state.totalScore || 0) + points;
         if (data.details) {
             for (let key in data.details) {
-                if (state.detailedScores[key] !== undefined) {
-                    state.detailedScores[key] += data.details[key];
-                }
+                if (state.detailedScores[key] !== undefined) state.detailedScores[key] += data.details[key];
             }
         }
-
         const chatContainer = document.getElementById('chat-container');
         const popup = document.createElement('div');
-        popup.className = 'score-popup';
-        popup.innerText = points >= 0 ? `+${points} XP` : `${points} XP`;
+        popup.className = 'score-popup'; popup.innerText = points >= 0 ? `+${points} XP` : `${points} XP`;
         popup.style.color = points >= 0 ? '#50E3C2' : '#FF6B6B';
-        popup.style.right = (20 + Math.random()*40) + 'px';
-        popup.style.top = (chatContainer.scrollTop + 100) + 'px'; 
-        chatContainer.appendChild(popup);
-        setTimeout(() => popup.remove(), 1500);
+        popup.style.right = (20 + Math.random()*40) + 'px'; popup.style.top = (chatContainer.scrollTop + 100) + 'px'; 
+        chatContainer.appendChild(popup); setTimeout(() => popup.remove(), 1500);
 
         if (state.xp >= 100) {
             state.xp -= 100;
-            const celebrate = document.createElement('div');
-            celebrate.className = 'message ai';
-            celebrate.style.background = '#fff3cd';
-            celebrate.innerHTML = `🎉 <b>Level Up Bonus!</b><br>Good job! Keep going!`;
-            chatContainer.appendChild(celebrate);
+            const celebrate = document.createElement('div'); celebrate.className = 'message ai'; celebrate.style.background = '#fff3cd';
+            celebrate.innerHTML = `🎉 <b>Level Up Bonus!</b><br>Good job! Keep going!`; chatContainer.appendChild(celebrate);
         } else if (state.xp < 0) state.xp = 0;
-
         updateUI();
     }
 
-    window.showStats = () => {
-        const labels = {
-            knowledge: "知識・技能 (Knowledge)",
-            thinking: "思考・判断 (Logic)",
-            expression: "表現力 (Expression)",
-            attitude: "主体性 (Attitude)",
-            vocabulary: "語彙力 (Vocabulary)"
-        };
-        
-        let html = '';
-        const maxVal = Math.max(...Object.values(state.detailedScores), 50);
-
-        for (let key in state.detailedScores) {
-            const val = state.detailedScores[key];
-            const pct = Math.min(100, (val / maxVal) * 100);
-            html += `
-            <div class="stat-row">
-                <div class="stat-label">
-                    <span>${labels[key]}</span>
-                    <span>${val}</span>
-                </div>
-                <div class="stat-bg">
-                    <div class="stat-fill" style="width: ${pct}%"></div>
-                </div>
-            </div>`;
+    // --- Settings / Tools Menu Actions ---
+    window.renameUser = async () => {
+        document.getElementById('tools-menu').style.display = 'none';
+        const newName = await showPrompt("新しい名前を入力してください", state.name);
+        if (newName && newName.trim() !== "") {
+            state.name = newName.trim();
+            document.getElementById(`tab-${currentUser}`).innerText = state.name;
+            saveCurrentState();
         }
-        document.getElementById('stats-content').innerHTML = html;
-        document.getElementById('stats-modal').style.display = 'flex';
     };
 
-    window.changeLevel = () => {
-        // レベル変更時は音楽を止める
-        KidsMusic.stop();
+    window.toggleHint = (isChecked) => { state.hintEnabled = isChecked; saveCurrentState(); };
+    
+    window.changeVoice = (val) => { 
+        state.geminiVoice = val; 
+        saveCurrentState(); 
+    };
+    
+    window.setSpeed = (rate) => { state.speechRate = rate; setSpeedUI(rate); saveCurrentState(); };
+    
+    window.toggleTools = (e) => {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('tools-menu');
+        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+    };
 
-        document.getElementById('level-step-1').style.display = 'block';
+    // 画面外クリックでメニューを閉じる
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('tools-menu');
+        const toggleBtn = document.getElementById('menu-toggle-btn');
+        if (menu && menu.style.display === 'flex') {
+            if (!menu.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+                menu.style.display = 'none';
+            }
+        }
+    });
+
+    window.exportData = async () => {
+        const backup = { version: 2, users: {} };
+        for(let i=1; i<=3; i++) backup.users[i] = await loadUserFromDB(i);
+        const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `english_buddy_family_${new Date().toISOString().slice(0,10)}.json`;
+        a.click(); URL.revokeObjectURL(url);
+    };
+
+    window.loadDataFromFile = (input) => {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.version === 2 && data.users) {
+                    for(let i=1; i<=3; i++) if(data.users[i]) await saveUserToDB(i, data.users[i]);
+                    await showAlert("データを復元しました！ページを更新します。"); location.reload();
+                } else if (data.state && data.chatHistory) {
+                    await saveUserToDB(1, { state: data.state, chatHistory: data.chatHistory });
+                    await showAlert("旧バージョンのデータをUser 1に復元しました。"); location.reload();
+                } else await showAlert("対応していないファイル形式です。");
+            } catch (err) { await showAlert("読み込みエラーが発生しました。"); }
+        };
+        reader.readAsText(file); input.value = '';
+    };
+
+    window.resetChatOnly = async () => {
+        if(!await showConfirm("会話の履歴だけを消して、最初からやり直しますか？")) return;
+        chatHistory = []; state.xp = 0; document.getElementById('hint-area').style.display = 'none';
+        saveCurrentState(); renderChatHistory(); document.getElementById('tools-menu').style.display = 'none';
+        startScenarioAI();
+    };
+
+    window.resetApp = async () => {
+        if(await showConfirm("本当に全ての家族データを削除しますか？(Delete All Data?)")) {
+            indexedDB.deleteDatabase(DB_NAME); localStorage.removeItem('geminiApiKey'); location.reload();
+        }
+    };
+
+    // --- Scenario Flow ---
+    window.changeLevel = () => {
+        KidsMusic.stop(); 
+        document.getElementById('level-step-0').style.display = 'block';
+        document.getElementById('level-step-1-en').style.display = 'none';
+        document.getElementById('level-step-1-ja').style.display = 'none';
         document.getElementById('level-step-2').style.display = 'none';
+        
         document.getElementById('level-modal').style.display = 'flex';
         document.getElementById('tools-menu').style.display = 'none';
-        
-        const hasData = chatHistory.length > 0 || localStorage.getItem('englishBuddyState');
-        const cancelBtn = document.getElementById('level-cancel-btn');
-        if (cancelBtn) cancelBtn.style.display = hasData ? 'block' : 'none';
+        document.getElementById('level-cancel-btn-0').style.display = chatHistory.length > 0 ? 'block' : 'none';
     };
 
     window.closeLevelModal = (e, force = false) => {
-        const hasData = chatHistory.length > 0 || localStorage.getItem('englishBuddyState');
-        if (!hasData) return;
+        if (!force && e && e.target.id !== 'level-modal') return;
+        if (chatHistory.length === 0) return;
+        document.getElementById('level-modal').style.display = 'none';
+        if (state.level === 0) { showMusicButton(true); KidsMusic.start(); } else { showMusicButton(false); }
+    };
 
-        if (force || (e && e.target.id === 'level-modal')) {
-            document.getElementById('level-modal').style.display = 'none';
-            // 閉じたときにKidsモードなら音楽再開 (ユーザー設定を尊重)
-            if (state.level === 0) {
-                showMusicButton(true);
-                KidsMusic.start();
-            } else {
-                showMusicButton(false);
-            }
+    window.selectLanguage = (lang) => {
+        state.languageMode = lang;
+        document.getElementById('level-step-0').style.display = 'none';
+        if (lang === 'en') {
+            document.getElementById('level-step-1-en').style.display = 'block';
+        } else {
+            document.getElementById('level-step-1-ja').style.display = 'block';
         }
+    };
+
+    window.backToLanguage = () => {
+        document.getElementById('level-step-1-en').style.display = 'none';
+        document.getElementById('level-step-1-ja').style.display = 'none';
+        document.getElementById('level-step-0').style.display = 'block';
     };
 
     window.showScenarios = (lv) => {
         state.level = lv;
+        if (lv === 0) { showMusicButton(true); KidsMusic.start(); } else { showMusicButton(false); KidsMusic.stop(); }
+        const list = document.getElementById('scenario-list'); list.innerHTML = '';
         
-        // Kidsモード(0)なら音楽スタート、それ以外はストップ
-        if (lv === 0) {
-            showMusicButton(true);
-            KidsMusic.start();
-        } else {
-            showMusicButton(false);
-            KidsMusic.stop();
-        }
-
-        const list = document.getElementById('scenario-list');
-        list.innerHTML = '';
-        SCENARIOS[lv].forEach(sc => {
-            const btn = document.createElement('div');
-            btn.className = 'scenario-btn';
-            btn.innerText = sc.label;
-            btn.onclick = () => setScenario(sc.label);
-            list.appendChild(btn);
+        const scenarios = state.languageMode === 'en' ? SCENARIOS_EN[lv] : SCENARIOS_JA[lv];
+        
+        scenarios.forEach(sc => {
+            const btn = document.createElement('div'); btn.className = 'scenario-btn'; btn.innerText = sc.label;
+            btn.onclick = () => setScenario(sc.label); list.appendChild(btn);
         });
-        document.getElementById('level-step-1').style.display = 'none';
+        
+        document.getElementById('level-step-1-en').style.display = 'none';
+        document.getElementById('level-step-1-ja').style.display = 'none';
         document.getElementById('level-step-2').style.display = 'block';
     };
 
-    window.backToLevels = () => {
-        // 戻る時は一旦停止
-        KidsMusic.stop();
-        document.getElementById('level-step-1').style.display = 'block';
+    window.backToLevels = () => { 
+        KidsMusic.stop(); 
         document.getElementById('level-step-2').style.display = 'none';
+        if(state.languageMode === 'en') {
+            document.getElementById('level-step-1-en').style.display = 'block';
+        } else {
+            document.getElementById('level-step-1-ja').style.display = 'block';
+        }
     };
 
     window.setScenario = (name) => {
-        state.scenarioName = name;
-        state.xp = 0; 
-        chatHistory = []; 
-        saveData();
-        updateUI();
-        renderChatHistory();
+        state.scenarioName = name; state.xp = 0; chatHistory = []; 
+        document.getElementById('hint-area').style.display = 'none';
+        saveCurrentState(); updateUI(); renderChatHistory();
         document.getElementById('level-modal').style.display = 'none';
         setTimeout(() => { startScenarioAI(); }, 500);
     };
@@ -1467,202 +1320,162 @@
         try {
             const prompt = `(System: The user selected the scenario "${state.scenarioName}". Please start the conversation with a friendly greeting and set the scene.)`;
             const initialHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const aiText = await callGeminiAPI(initialHistory, getSystemPrompt());
-            let displayText = aiText.replace(/<<<JSON[\s\S]*?JSON>>>/, '').replace(/<<<SCORE:.*?>>>/, '');
-            chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-            addMessage(displayText, 'ai');
-            speakText(displayText);
-            saveData();
+            const aiObj = await callGeminiAPI(initialHistory, getSystemPrompt());
+            chatHistory.push({ role: "model", parts: [{ text: JSON.stringify(aiObj) }] });
+            
+            addMessage(aiObj.ai_reply, 'ai');
+            
+            // Find the newly added play button and auto-play
+            const chatContainer = document.getElementById('chat-container');
+            const lastMsg = chatContainer.lastElementChild;
+            const playBtn = lastMsg.querySelector('.speak-btn');
+            speakText(aiObj.ai_reply, playBtn);
+            
+            saveCurrentState();
+            
+            if (state.hintEnabled && aiObj.next_hint) {
+                document.getElementById('hint-text').innerText = aiObj.next_hint;
+                document.getElementById('hint-area').style.display = 'block';
+            }
         } catch(e) { console.error(e); }
     }
 
-    window.resetChatOnly = async () => {
-        const sure = await showConfirm("会話の履歴だけを消して、最初からやり直しますか？\n(Reset chat history? Score will be kept.)");
-        if(!sure) return;
-        chatHistory = [];
-        state.xp = 0;
-        saveData();
-        renderChatHistory();
-        document.getElementById('tools-menu').style.display = 'none';
-        startScenarioAI();
+    // --- Init ---
+    window.onload = async () => {
+        if (!getStoredApiKey()) showApiKeyModal(true);
+        else {
+            await initDB(); await migrateFromLocalStorage(); await switchUser(1);
+        }
     };
 
-    window.setSpeed = (rate) => {
-        state.speechRate = rate;
-        setSpeedUI(rate);
-        saveData();
-    };
+    function toggleApiKeyVisibility() { const i = document.getElementById('manual-api-key'); i.type = i.type === "password" ? "text" : "password"; }
+    function showApiKeyModal(isInit = false) {
+        document.getElementById('manual-api-key').value = getStoredApiKey(); document.getElementById('manual-api-key').type = "password";
+        document.getElementById('apikey-modal').style.display = 'flex';
+        document.getElementById('apikey-close').style.display = isInit ? 'none' : 'block';
+        document.getElementById('apikey-delete').style.display = localStorage.getItem('geminiApiKey') ? 'block' : 'none';
+        document.getElementById('apikey-submit').onclick = async () => {
+            const val = document.getElementById('manual-api-key').value.trim();
+            if (val) { localStorage.setItem('geminiApiKey', val); document.getElementById('apikey-modal').style.display = 'none'; if(isInit){ await initDB(); await migrateFromLocalStorage(); await switchUser(1); } }
+            else await showAlert("APIキーを入力してください");
+        };
+    }
+    function closeApiKeyModal() { document.getElementById('apikey-modal').style.display = 'none'; }
+    async function deleteApiKey() { if(await showConfirm("保存されたAPIキーを削除しますか？")) { localStorage.removeItem('geminiApiKey'); document.getElementById('manual-api-key').value = ''; document.getElementById('apikey-delete').style.display = 'none'; await showAlert("削除しました。"); } }
 
     window.toggleMic = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("このブラウザでは音声入力が使えません。");
-            return;
-        }
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        const micBtn = document.getElementById('mic-btn');
-        const userInput = document.getElementById('user-input');
-
-        recognition.onstart = () => micBtn.classList.add('listening');
-        recognition.onend = () => micBtn.classList.remove('listening');
-        recognition.onresult = (e) => {
-            userInput.value = e.results[0][0].transcript;
-            userInput.focus();
-        };
-        recognition.start();
+        if (!SpeechRecognition) { showAlert("このブラウザでは音声入力が使えません。"); return; }
+        const r = new SpeechRecognition(); r.lang = state.languageMode === 'ja' ? 'ja-JP' : 'en-US'; r.interimResults = false; r.maxAlternatives = 1;
+        r.onstart = () => document.getElementById('mic-btn').classList.add('listening');
+        r.onend = () => document.getElementById('mic-btn').classList.remove('listening');
+        r.onresult = (e) => { document.getElementById('user-input').value = e.results[0][0].transcript; document.getElementById('user-input').focus(); };
+        r.start();
     };
+    window.toggleKidsMusic = () => { document.getElementById('music-toggle').innerText = KidsMusic.toggle() ? "🎵 音楽オフ" : "🔇 音楽オン"; };
+    function showMusicButton(show) { document.getElementById('music-toggle').style.display = show ? 'block' : 'none'; }
+    window.handleKeyPress = (e) => { if(e.key === 'Enter') window.sendMessage(); };
 
-    function speakText(text) {
-        if (!window.speechSynthesis) return;
-        const cleanText = text
-            .replace(/\(.*?\)/g, "")
-            .replace(/<<<.*?>>>/g, "")
-            .replace(/[*":_`~#]/g, "")
-            .replace(/\s+/g, " ")
-            .replace(/[^\x00-\x7F]+/g, "")
-            .trim(); 
-        const u = new SpeechSynthesisUtterance(cleanText);
-        u.lang = 'en-US';
-        u.rate = state.speechRate || 1.0;
-        const voices = speechSynthesis.getVoices();
-        const enVoice = voices.find(v => v.lang.includes('en-US') && !v.name.includes('Google'));
-        if (enVoice) u.voice = enVoice;
-        speechSynthesis.cancel();
-        speechSynthesis.speak(u);
-    }
-
-    let stream = null;
-    window.toggleWebcam = async () => {
-        const webcamContainer = document.getElementById('webcam-container');
-        const webcamVideo = document.getElementById('webcam-video');
-        if (webcamContainer.style.display === 'block') {
-            webcamContainer.style.display = 'none';
-            if(stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-        } else {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                webcamVideo.srcObject = stream;
-                webcamContainer.style.display = 'block';
-            } catch (err) {
-                alert("カメラにアクセスできませんでした。");
-            }
-        }
-    };
-
-    window.loadDataFromFile = (input) => {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                if (data.state && data.chatHistory) {
-                    state = { ...state, ...data.state };
-                    chatHistory = data.chatHistory;
-                    if (!state.detailedScores) state.detailedScores = { knowledge:0, thinking:0, expression:0, attitude:0, vocabulary:0 };
-                    saveData();
-                    updateUI();
-                    setSpeedUI(state.speechRate);
-                    renderChatHistory();
-                    alert("データを復元しました！");
-                    document.getElementById('tools-menu').style.display = 'none';
-                }
-            } catch (err) { alert("読み込みエラーが発生しました。"); }
-        };
-        reader.readAsText(file);
-        input.value = '';
-    };
-
-    window.resetApp = async () => {
-        const sure = await showConfirm("本当に全てのデータを削除しますか？\n(Delete All Data?)");
-        if(sure) {
-            localStorage.removeItem('englishBuddyState');
-            localStorage.removeItem('englishBuddyHistory');
-            localStorage.removeItem('geminiApiKey'); // Reset Key
-            KidsMusic.stop(); // Stop Music
-            location.reload();
-        }
-    };
-
-    window.toggleTools = () => {
-        const toolsMenu = document.getElementById('tools-menu');
-        toolsMenu.style.display = toolsMenu.style.display === 'flex' ? 'none' : 'flex';
-    };
-
-    // --- Report & Print Updates ---
-
+    // --- Report / Print (Unchanged structure, using async alert) ---
     window.finishLesson = async () => {
-        addMessage("... 成績表を作成しています ...<br>(Generating Report Card...)", 'ai');
+        addMessage("... 成績表を作成しています ...", 'ai');
         try {
-            const historyText = chatHistory.map(m => `${m.role}: ${m.parts[0].text}`).join("\n");
+            const historyText = chatHistory.map(m => {
+                let txt = m.parts[0].text; if(m.role === 'model') { try { txt = JSON.parse(txt).ai_reply; } catch(e){} }
+                return `${m.role}: ${txt}`;
+            }).join("\n");
             
-            const prompt = `
-            Generate "Report Card" for the student.
-            Output format: HTML.
-            Use <h3> for section headers.
-            Use <ul> and <li> for lists.
-            Use <p> for normal text.
-            Do NOT use Markdown syntax (like ## or - or **).
-            
-            sections:
-            1. Overall Evaluation (Brief comment)
-            2. Score Summary
-            3. 3 Learned Words (with Japanese meaning)
-            4. Teacher's Message
-            
-            HISTORY: ${historyText.slice(-2000)}
-            `;
-            
+            let prompt = "";
+            if (state.languageMode === 'ja') {
+                prompt = `以下の会話履歴から成績表をJSON形式で作成してください。
+出力フォーマット:
+{
+  "evaluation": "総合評価（やさしいコメント）",
+  "words": [
+    {"word": "語彙1", "meaning": "意味"},
+    {"word": "語彙2", "meaning": "意味"},
+    {"word": "語彙3", "meaning": "意味"}
+  ],
+  "message": "先生からのメッセージ"
+}
+HISTORY: ${historyText.slice(-2000)}`;
+            } else {
+                prompt = `Generate a Report Card in JSON format based on the history.
+Output format:
+{
+  "evaluation": "Overall Evaluation",
+  "words": [
+    {"word": "word1", "meaning": "translation"},
+    {"word": "word2", "meaning": "translation"},
+    {"word": "word3", "meaning": "translation"}
+  ],
+  "message": "Teacher's Message"
+}
+HISTORY: ${historyText.slice(-2000)}`;
+            }
+
             const tempHistory = [{ role: 'user', parts: [{ text: prompt }] }];
-            const reportText = await callGeminiAPI(tempHistory, getSystemPrompt());
+            // チャットと同じ、堅牢なJSON専用API関数を利用する
+            const reportData = await callGeminiAPI(tempHistory, "You are an evaluator. Output strictly JSON.");
             
-            document.getElementById('report-content').innerHTML = reportText;
+            let html = `<h3>${state.languageMode === 'ja' ? '総合評価' : 'Overall Evaluation'}</h3>`;
+            html += `<p>${reportData.evaluation || ""}</p>`;
+            html += `<h3>${state.languageMode === 'ja' ? '学んだ言葉' : 'Learned Words'}</h3>`;
+            html += `<ul>`;
+            if (reportData.words && Array.isArray(reportData.words)) {
+                reportData.words.forEach(w => {
+                    html += `<li><b>${w.word}</b> : ${w.meaning}</li>`;
+                });
+            }
+            html += `</ul>`;
+            html += `<h3>${state.languageMode === 'ja' ? '先生より' : "Teacher's Message"}</h3>`;
+            html += `<p>${reportData.message || ""}</p>`;
+
+            // Lv0（特別支援）以外なら、スコアグラフもレポートに追記する
+            if (!(state.languageMode === 'ja' && state.level === 0)) {
+                const labels = { knowledge: "知識・技能", thinking: "思考・判断", expression: "表現力", attitude: "主体性", vocabulary: "語彙力" };
+                let statsHtml = `<h3 style="margin-top:20px;">${state.languageMode === 'ja' ? '能力スコア' : 'Ability Stats'}</h3>`;
+                const maxVal = Math.max(...Object.values(state.detailedScores), 50);
+                for (let key in state.detailedScores) {
+                    const val = state.detailedScores[key], pct = Math.min(100, (val / maxVal) * 100);
+                    statsHtml += `<div class="stat-row"><div class="stat-label"><span>${labels[key]}</span><span>${val}</span></div><div class="stat-bg"><div class="stat-fill" style="width: ${pct}%"></div></div></div>`;
+                }
+                html += statsHtml;
+            }
+
+            document.getElementById('report-content').innerHTML = html;
             document.getElementById('report-modal').style.display = 'flex';
-        } catch(e) {
-            document.getElementById('report-content').innerHTML = "<p>レポート作成に失敗しました。</p>";
-            document.getElementById('report-modal').style.display = 'flex';
+        } catch(e) { 
+            console.error(e);
+            document.getElementById('report-content').innerHTML = "<p>レポート作成に失敗しました。(APIエラー または 履歴不足)</p>"; 
+            document.getElementById('report-modal').style.display = 'flex'; 
         }
     };
-
-    window.closeReport = () => {
-        document.getElementById('report-modal').style.display = 'none';
+    window.closeReport = () => document.getElementById('report-modal').style.display = 'none';
+    window.showStats = () => {
+        const labels = { knowledge: "知識・技能", thinking: "思考・判断", expression: "表現力", attitude: "主体性", vocabulary: "語彙力" };
+        let html = ''; const maxVal = Math.max(...Object.values(state.detailedScores), 50);
+        for (let key in state.detailedScores) {
+            const val = state.detailedScores[key], pct = Math.min(100, (val / maxVal) * 100);
+            html += `<div class="stat-row"><div class="stat-label"><span>${labels[key]}</span><span>${val}</span></div><div class="stat-bg"><div class="stat-fill" style="width: ${pct}%"></div></div></div>`;
+        }
+        document.getElementById('stats-content').innerHTML = html; document.getElementById('stats-modal').style.display = 'flex';
     };
-
-    // 印刷実行
     window.prepareAndPrint = () => {
         document.getElementById('print-content').innerHTML = document.getElementById('report-content').innerHTML;
-        document.getElementById('print-date').innerText = new Date().toLocaleDateString();
-        document.getElementById('print-score').innerText = state.totalScore || 0;
-        
-        const labels = {
-            knowledge: "知識・技能", thinking: "思考・判断", expression: "表現力", attitude: "主体性", vocabulary: "語彙力"
-        };
-        let statsHtml = '';
-        const maxVal = Math.max(...Object.values(state.detailedScores), 50);
+        document.getElementById('print-date').innerText = new Date().toLocaleDateString(); document.getElementById('print-score').innerText = state.totalScore || 0;
+        const labels = { knowledge: "知識・技能", thinking: "思考・判断", expression: "表現力", attitude: "主体性", vocabulary: "語彙力" };
+        let statsHtml = ''; const maxVal = Math.max(...Object.values(state.detailedScores), 50);
         for (let key in state.detailedScores) {
-            const val = state.detailedScores[key];
-            const pct = Math.min(100, (val / maxVal) * 100);
-            statsHtml += `
-            <div class="stat-row">
-                <div class="stat-label"><span>${labels[key]}</span><span>${val}</span></div>
-                <div class="stat-bg"><div class="stat-fill" style="width: ${pct}%"></div></div>
-            </div>`;
+            const val = state.detailedScores[key], pct = Math.min(100, (val / maxVal) * 100);
+            statsHtml += `<div class="stat-row"><div class="stat-label"><span>${labels[key]}</span><span>${val}</span></div><div class="stat-bg"><div class="stat-fill" style="width: ${pct}%"></div></div></div>`;
         }
         document.getElementById('print-stats').innerHTML = statsHtml;
-        handlePrint('print-area', 'portrait');
+        const content = document.getElementById('print-area').outerHTML;
+        const printWindow = window.open('', '_blank', 'height=800,width=1000');
+        printWindow.document.write(`<html><head><title>Print</title><style>body{font-family:sans-serif;} #print-area{display:block !important;} .stat-bg{height:10px;background:#eee;border-radius:5px;} .stat-fill{height:100%;background:#666;}</style></head><body>${content}<script>setTimeout(()=>window.print(),1000);<\/script></body></html>`);
+        printWindow.document.close();
     };
-
-    window.handleKeyPress = (e) => {
-        if(e.key === 'Enter') window.sendMessage();
-    };
-
 </script>
 </body>
 </html>
-
