@@ -8,6 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- PDF.js for PDF import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- UTIF.js for TIFF image support -->
+    <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.min.js"></script>
+    <!-- heic2any for HEIC/HEIF (iPhone) image support -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <style>
         body {
             overscroll-behavior-y: none;
@@ -15,8 +21,29 @@
             user-select: none;
             touch-action: pan-y;
         }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* ギャラリー用カスタムスクロールバー (スタイリッシュな細身デザイン) */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px; /* PCでのクリックしやすさとスマホでの見やすさのバランス */
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 0.5); /* 馴染む暗いグレー */
+            border-radius: 8px;
+            margin: 0 10px; /* 両端に少し余白を持たせる */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(107, 114, 128, 0.8); /* つまみ部分 (gray-500相当) */
+            border-radius: 8px;
+            border: 2px solid #111827; /* 背景と同じ色のフチをつけて細く見せるハック */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 1); /* ホバー時は明るく */
+        }
+        /* Firefox用フォールバック */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #6b7280 transparent;
+        }
         
         @keyframes flash {
             0% { background-color: white; opacity: 1; }
@@ -85,6 +112,13 @@
         <!-- シャッターフラッシュ用オーバーレイ -->
         <div id="flash-overlay" class="absolute inset-0 pointer-events-none opacity-0 z-10"></div>
 
+        <!-- ドラッグ＆ドロップ オーバーレイ (追加) -->
+        <div id="drop-overlay" class="absolute inset-0 bg-blue-500/80 z-[40] hidden flex-col items-center justify-center backdrop-blur-sm transition-opacity border-4 border-dashed border-white m-4 rounded-xl pointer-events-none">
+            <svg class="w-20 h-20 text-white mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <p class="text-white text-2xl font-bold tracking-wider text-center">ここにファイルをドロップ</p>
+            <p class="text-gray-200 mt-2">画像・PDF対応</p>
+        </div>
+
         <!-- コントロール領域 -->
         <div class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-gray-950 via-gray-900/80 to-transparent z-20 flex flex-col items-center pb-6">
             
@@ -96,6 +130,12 @@
 
             <!-- シャッターボタン & カメラ切り替えボタン領域 -->
             <div class="relative w-full flex justify-center items-center max-w-sm">
+                <!-- インポートボタン (追加) -->
+                <button id="btn-import" class="absolute left-4 w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700" title="ファイルから読み込み">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </button>
+                <input type="file" id="file-input" class="hidden" multiple accept="image/*,application/pdf">
+
                 <!-- シャッターボタン -->
                 <button id="btn-capture" class="w-16 h-16 rounded-full bg-white border-4 border-gray-400 focus:outline-none active:scale-95 transition-transform flex items-center justify-center relative z-10">
                     <div class="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-lg"></div>
@@ -110,8 +150,10 @@
     </main>
 
     <!-- 下部：サムネイルギャラリー -->
-    <footer class="bg-gray-900 min-h-[160px] border-t border-gray-800 flex-shrink-0 flex items-center px-2 z-20 overflow-hidden">
-        <div id="gallery-container" class="flex overflow-x-auto hide-scrollbar w-full py-4 px-2 items-center h-full">
+    <!-- min-h を少し増やしてスクロールバーと干渉しないように調整 -->
+    <footer class="bg-gray-900 min-h-[170px] border-t border-gray-800 flex-shrink-0 flex flex-col justify-center px-2 z-20 overflow-hidden pb-1">
+        <!-- hide-scrollbar を custom-scrollbar に変更し、paddingを調整 -->
+        <div id="gallery-container" class="flex overflow-x-auto custom-scrollbar w-full pt-4 pb-2 px-2 items-center h-full">
             <p id="empty-state" class="text-gray-500 text-sm w-full text-center">撮影された画像はありません</p>
             <!-- サムネイルとインサートバーがここに追加される -->
         </div>
@@ -195,6 +237,24 @@
         </div>
     </div>
 
+    <!-- PDF向き選択モーダル (追加) -->
+    <div id="pdf-orientation-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-2xl max-w-sm w-[90%] text-center">
+            <h3 class="text-lg font-bold text-white mb-4">PDFの向きを選択</h3>
+            <div class="flex flex-col space-y-3">
+                <button id="btn-pdf-portrait" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>縦 (Portrait)</span>
+                </button>
+                <button id="btn-pdf-landscape" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5 transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>横 (Landscape)</span>
+                </button>
+                <button id="btn-pdf-cancel" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-2 rounded-lg font-semibold transition-colors mt-2">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         /**
          * 2027 Canvas Architecture: Single File SPA (Scan & Motion)
@@ -218,6 +278,13 @@
         let insertIndex = -1;
         let currentFacingMode = 'environment';
         let currentStream = null;
+
+        // PDF.js worker setup (Blob hack for CORS in iframe environments)
+        if (window.pdfjsLib) {
+            const workerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const workerBlob = new Blob([`importScripts("${workerUrl}");`], { type: 'text/javascript' });
+            pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(workerBlob);
+        }
 
         // UI Elements
         const video = document.getElementById('camera-stream');
@@ -246,7 +313,7 @@
                     }
                 };
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
+                request.onerror = () => reject(new Error("DB Connection Error"));
             });
         };
 
@@ -312,6 +379,242 @@
                 totalBytes += Math.floor(base64Length * 0.75);
             });
             return totalBytes / (1024 * 1024);
+        };
+
+        const checkStorageLimit = () => {
+            if (getStorageUsageMB() >= MAX_STORAGE_MB) {
+                showToast(`容量の上限（約${MAX_STORAGE_MB}MB）です。`, 'error');
+                return true;
+            }
+            return false;
+        };
+
+        // ==========================================
+        // File Import Logic (Image & PDF)
+        // ==========================================
+        const applyCaptureFilter = (ctx, w, h) => {
+            if (currentMode === 'document' && currentFilter === 'grayscale') {
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+                    // より強い2値化で文字をくっきりさせる
+                    const val = avg > 110 ? Math.min(255, avg * 1.3) : Math.max(0, avg * 0.7);
+                    data[i] = data[i+1] = data[i+2] = val;
+                }
+                ctx.putImageData(imgData, 0, 0);
+            }
+        };
+
+        const processImportedFiles = async (files) => {
+            if (!files || files.length === 0) return;
+            await requestWakeLock();
+            toggleLoading(true, 'ファイルを処理中...');
+            
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    if (checkStorageLimit()) break;
+                    
+                    const fileName = file.name ? file.name.toLowerCase() : '';
+
+                    if (fileName.endsWith('.tif') || fileName.endsWith('.tiff')) {
+                        toggleLoading(true, `TIFF変換中...`);
+                        await processTIFFImport(file);
+                    } else if (file.type === 'image/heic' || file.type === 'image/heif' || fileName.endsWith('.heic') || fileName.endsWith('.heif')) {
+                        toggleLoading(true, `HEIC/iPhone画像変換中...`);
+                        await processHEICImport(file);
+                    } else if (file.type.startsWith('image/')) {
+                        await processImageImport(file);
+                    } else if (file.type === 'application/pdf') {
+                        await processPDFImport(file);
+                    } else {
+                        showToast(`${file.name || '不明なファイル'} はサポート外の形式です。`, 'error');
+                    }
+                }
+                saveToDB(capturedImages);
+                updateUI();
+                showToast('インポートが完了しました。', 'success');
+            } catch (err) {
+                console.error("Import Error:", err.message || err);
+                showToast('インポート中にエラーが発生しました。', 'error');
+            } finally {
+                toggleLoading(false);
+                releaseWakeLock();
+                document.getElementById('file-input').value = ''; 
+                // スクロールを最新の位置へ移動
+                setTimeout(() => {
+                    if (insertIndex === -1) {
+                        galleryContainer.scrollLeft = galleryContainer.scrollWidth;
+                    } else {
+                        const insertedEl = galleryContainer.children[(insertIndex - 1) * 2 + 1];
+                        if (insertedEl) insertedEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    }
+                }, 50);
+            }
+        };
+
+        const processImageImport = async (file) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(file);
+                
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl); // メモリ解放
+                    try {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        
+                        // 画像リサイズ制限 (解像度上限に丸める)
+                        const maxDim = currentMode === 'document' ? MAX_IMAGE_DIMENSION_CROP : MAX_IMAGE_DIMENSION_FULL;
+                        if (w > maxDim || h > maxDim) {
+                            const ratio = Math.min(maxDim / w, maxDim / h);
+                            w = Math.floor(w * ratio);
+                            h = Math.floor(h * ratio);
+                        }
+                        
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = 'white'; // 透過PNG等を白背景にする
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        
+                        applyCaptureFilter(ctx, w, h);
+                        
+                        const newImg = {
+                            id: Date.now() + Math.random(),
+                            dataUrl: canvas.toDataURL('image/jpeg', 0.8) // JPEG圧縮
+                        };
+                        
+                        if (insertIndex !== -1) {
+                            capturedImages.splice(insertIndex, 0, newImg);
+                            insertIndex++;
+                        } else {
+                            capturedImages.push(newImg);
+                        }
+                        resolve();
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error("画像の読み込み・デコードに失敗しました"));
+                };
+                img.src = objectUrl;
+            });
+        };
+
+        const processHEICImport = async (file) => {
+            if (typeof heic2any === 'undefined') throw new Error("heic2anyライブラリが読み込まれていません");
+            // HEIC/HEIFをブラウザで扱えるJPEG(Blob)に変換
+            const jpegBlob = await heic2any({
+                blob: file,
+                toType: "image/jpeg",
+                quality: 0.8
+            });
+            // heic2anyはアニメーションHEICの場合配列を返すことがあるため先頭を取得
+            const blob = Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob;
+            await processImageImport(blob);
+        };
+
+        const processTIFFImport = async (file) => {
+            if (typeof UTIF === 'undefined') throw new Error("UTIFライブラリが読み込まれていません");
+            const buffer = await file.arrayBuffer();
+            const ifds = UTIF.decode(buffer);
+            if (ifds.length === 0) throw new Error("TIFF内に画像が見つかりません");
+            
+            UTIF.decodeImage(buffer, ifds[0]);
+            const rgba = UTIF.toRGBA8(ifds[0]);
+            const w = ifds[0].width;
+            const h = ifds[0].height;
+            
+            // UTIFが生成したピクセル配列を一時Canvasへ描画
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w; tempCanvas.height = h;
+            const tempCtx = tempCanvas.getContext('2d');
+            const imgData = tempCtx.createImageData(w, h);
+            imgData.data.set(rgba);
+            tempCtx.putImageData(imgData, 0, 0);
+
+            // リサイズとフィルターの適用
+            const maxDim = currentMode === 'document' ? MAX_IMAGE_DIMENSION_CROP : MAX_IMAGE_DIMENSION_FULL;
+            let targetW = w, targetH = h;
+            if (w > maxDim || h > maxDim) {
+                const ratio = Math.min(maxDim / w, maxDim / h);
+                targetW = Math.floor(w * ratio);
+                targetH = Math.floor(h * ratio);
+            }
+            
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = targetW; finalCanvas.height = targetH;
+            const finalCtx = finalCanvas.getContext('2d');
+            finalCtx.fillStyle = 'white'; // 透過部分への白背景処理
+            finalCtx.fillRect(0, 0, targetW, targetH);
+            finalCtx.drawImage(tempCanvas, 0, 0, targetW, targetH);
+            
+            applyCaptureFilter(finalCtx, targetW, targetH);
+            
+            const newImg = {
+                id: Date.now() + Math.random(),
+                dataUrl: finalCanvas.toDataURL('image/jpeg', 0.8)
+            };
+            
+            if (insertIndex !== -1) {
+                capturedImages.splice(insertIndex, 0, newImg);
+                insertIndex++;
+            } else {
+                capturedImages.push(newImg);
+            }
+        };
+
+        const processPDFImport = async (file) => {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdf.numPages;
+            
+            for (let i = 1; i <= numPages; i++) {
+                if (checkStorageLimit()) break;
+                toggleLoading(true, `PDFページ処理中... (${i}/${numPages})`);
+                
+                const page = await pdf.getPage(i);
+                let viewport = page.getViewport({ scale: 1.0 });
+                
+                // リサイズ制限に合わせたスケールを計算 (文字つぶれを防ぐため高画質2倍基準)
+                const maxDim = currentMode === 'document' ? MAX_IMAGE_DIMENSION_CROP : MAX_IMAGE_DIMENSION_FULL;
+                let scale = 2.0; 
+                if (viewport.width * scale > maxDim || viewport.height * scale > maxDim) {
+                    scale = Math.min(maxDim / viewport.width, maxDim / viewport.height);
+                }
+                
+                viewport = page.getViewport({ scale: scale });
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const ctx = canvas.getContext('2d');
+                
+                // 白背景でレンダリング
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                
+                applyCaptureFilter(ctx, canvas.width, canvas.height);
+                
+                const newImg = {
+                    id: Date.now() + Math.random(),
+                    dataUrl: canvas.toDataURL('image/jpeg', 0.8)
+                };
+                
+                if (insertIndex !== -1) {
+                    capturedImages.splice(insertIndex, 0, newImg);
+                    insertIndex++;
+                } else {
+                    capturedImages.push(newImg);
+                }
+            }
         };
 
         // ==========================================
@@ -500,7 +803,10 @@
                 currentStream = stream;
                 video.srcObject = stream;
                 video.onloadedmetadata = () => updateGuideline();
-            } catch (err) { showToast('カメラを利用できません。', 'error'); }
+            } catch (err) { 
+                console.warn("Camera init failed:", err.message || err);
+                showToast('カメラを利用できません。', 'error'); 
+            }
         };
 
         const switchCamera = () => {
@@ -512,10 +818,7 @@
         // Capture & Smart Crop
         // ==========================================
         const captureFrame = () => {
-            if (getStorageUsageMB() >= MAX_STORAGE_MB) {
-                showToast(`容量の上限（約${MAX_STORAGE_MB}MB）です。`, 'error');
-                return;
-            }
+            if (checkStorageLimit()) return;
             
             const flash = document.getElementById('flash-overlay');
             flash.classList.remove('animate-flash');
@@ -588,18 +891,8 @@
             canvas.height = drawH;
             ctx.drawImage(video, sourceX, sourceY, sourceW, sourceH, 0, 0, drawW, drawH);
 
-            // フィルター (白黒)
-            if (currentMode === 'document' && currentFilter === 'grayscale') {
-                const imgData = ctx.getImageData(0, 0, drawW, drawH);
-                const data = imgData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-                    // より強い2値化で文字をくっきりさせる
-                    const val = avg > 110 ? Math.min(255, avg * 1.3) : Math.max(0, avg * 0.7);
-                    data[i] = data[i+1] = data[i+2] = val;
-                }
-                ctx.putImageData(imgData, 0, 0);
-            }
+            // フィルター適用
+            applyCaptureFilter(ctx, drawW, drawH);
 
             const newImg = {
                 id: Date.now() + Math.random(),
@@ -804,13 +1097,18 @@
         // ==========================================
         // PDF Generation
         // ==========================================
-        const generatePDF = async () => {
+        const generatePDF = async (orientation) => {
             if (capturedImages.length === 0) return;
+            
+            // モーダルを閉じる
+            document.getElementById('pdf-orientation-modal').classList.add('hidden');
+            document.getElementById('pdf-orientation-modal').classList.remove('flex');
+            
             await requestWakeLock(); toggleLoading(true, 'PDFを生成中...');
             try {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdf = new jsPDF(orientation, 'mm', 'a4');
                 const pdfW = pdf.internal.pageSize.getWidth(), pdfH = pdf.internal.pageSize.getHeight();
                 const margin = 0; // クロップ済みなのでマージンをなくし全面に配置する
                 
@@ -861,7 +1159,21 @@
         });
 
         btnCapture.onclick = captureFrame;
-        btnExportPdf.onclick = generatePDF;
+        
+        // PDFエクスポート時のモーダル表示
+        btnExportPdf.onclick = () => {
+            if (capturedImages.length === 0) return;
+            document.getElementById('pdf-orientation-modal').classList.remove('hidden');
+            document.getElementById('pdf-orientation-modal').classList.add('flex');
+        };
+        // PDF向き選択イベント
+        document.getElementById('btn-pdf-portrait').onclick = () => generatePDF('p');
+        document.getElementById('btn-pdf-landscape').onclick = () => generatePDF('l');
+        document.getElementById('btn-pdf-cancel').onclick = () => {
+            document.getElementById('pdf-orientation-modal').classList.add('hidden');
+            document.getElementById('pdf-orientation-modal').classList.remove('flex');
+        };
+
         btnOpenVideoModal.onclick = startVideoPreview;
         document.getElementById('btn-close-video-modal').onclick = stopVideoPreview;
         document.getElementById('btn-start-export-video').onclick = generateVideo;
@@ -878,6 +1190,41 @@
         document.getElementById('modal-tap-right').onclick = () => navigateModal(1);
         document.getElementById('btn-modal-prev').onclick = () => navigateModal(-1);
         document.getElementById('btn-modal-next').onclick = () => navigateModal(1);
+
+        // Import Event Listeners (インポート機能)
+        const fileInput = document.getElementById('file-input');
+        const btnImport = document.getElementById('btn-import');
+        const dropOverlay = document.getElementById('drop-overlay');
+        
+        btnImport.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => processImportedFiles(e.target.files);
+
+        // Drag & Drop
+        let dragCounter = 0;
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            dropOverlay.classList.remove('hidden');
+            dropOverlay.classList.add('flex');
+        });
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                dropOverlay.classList.add('hidden');
+                dropOverlay.classList.remove('flex');
+            }
+        });
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dropOverlay.classList.add('hidden');
+            dropOverlay.classList.remove('flex');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processImportedFiles(e.dataTransfer.files);
+            }
+        });
 
         window.addEventListener('DOMContentLoaded', async () => {
             updateModeUI();
