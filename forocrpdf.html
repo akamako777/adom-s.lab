@@ -128,21 +128,21 @@
                 <button class="filter-btn text-gray-400 text-xs px-4 py-1.5 rounded-full transition-colors" data-filter="grayscale">白黒(軽量)</button>
             </div>
 
-            <!-- シャッターボタン & カメラ切り替えボタン領域 -->
-            <div class="relative w-full flex justify-center items-center max-w-sm">
-                <!-- インポートボタン (追加) -->
-                <button id="btn-import" class="absolute left-4 w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700" title="ファイルから読み込み">
+            <!-- シャッターボタン & カメラ切り替えボタン領域 (修正箇所: absolute廃止, z-10, shrink-0付与) -->
+            <div class="w-full flex justify-center items-center space-x-8 sm:space-x-12 max-w-md">
+                <!-- インポートボタン -->
+                <button id="btn-import" class="w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700 z-10 shrink-0" title="ファイルから読み込み">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </button>
                 <input type="file" id="file-input" class="hidden" multiple accept="image/*,application/pdf">
 
                 <!-- シャッターボタン -->
-                <button id="btn-capture" class="w-16 h-16 rounded-full bg-white border-4 border-gray-400 focus:outline-none active:scale-95 transition-transform flex items-center justify-center relative z-10">
+                <button id="btn-capture" class="w-16 h-16 rounded-full bg-white border-4 border-gray-400 focus:outline-none active:scale-95 transition-transform flex items-center justify-center relative z-10 shrink-0">
                     <div class="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-lg"></div>
                 </button>
                 
                 <!-- カメラ切り替えボタン -->
-                <button id="btn-switch-camera" class="absolute right-4 w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700">
+                <button id="btn-switch-camera" class="w-12 h-12 rounded-full bg-gray-800/80 text-white border border-gray-600 focus:outline-none active:scale-95 transition-transform flex items-center justify-center shadow-lg hover:bg-gray-700 z-10 shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
             </div>
