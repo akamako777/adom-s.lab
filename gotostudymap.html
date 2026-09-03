@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ごとうれっとう はっけんマップ</title>
+    
+    <!-- CDNバージョンの完全固定 (Lock-in) -->
+    <script src="https://cdn.tailwindcss.com/3.4.3"></script>
+    
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0fdf4;
+            margin: 0; padding: 0;
+            overscroll-behavior-y: none;
+        }
+
+        .safe-area-pb { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
+        .safe-area-pt { padding-top: env(safe-area-inset-top, 0px); }
+
+        /* カスタムマーカー */
+        .custom-marker { background-color: transparent; border: none; }
+        .marker-pin {
+            width: 36px; height: 36px;
+            border-radius: 50% 50% 50% 0;
+            background: #fff;
+            position: absolute; transform: rotate(-45deg);
+            left: 50%; top: 50%; margin: -18px 0 0 -18px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3); border: 3px solid;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s;
+        }
+        .custom-marker:active .marker-pin { transform: rotate(-45deg) scale(0.9); }
+        .marker-icon { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+
+        /* アーケードボタン */
+        .arcade-btn {
+            width: 44px; height: 44px; border-radius: 50%; border: 3px solid #27272a;
+            box-shadow: 0 4px 0 #27272a, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px rgba(255,255,255,0.6);
+            cursor: pointer; transition: all 0.1s ease; position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .arcade-btn:active {
+            box-shadow: 0 0px 0 #27272a, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px rgba(255,255,255,0.6);
+            transform: translateY(4px);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ドラッグ・回転可能な面積枠 */
+        .area-shape-inner {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            transform-origin: center center;
+            pointer-events: auto; cursor: move;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px; color: rgba(0,0,0,0.8);
+            text-shadow: 0 0 5px white, 0 0 3px white;
+            box-sizing: border-box; text-align: center;
+            transition: border-color 0.2s;
+        }
+        .area-shape-inner:active { filter: brightness(0.9); }
+        .area-shape-rect { border: 3px solid; }
+        .area-shape-circle { border: 3px solid; border-radius: 50%; }
+
+        /* トグルスイッチ */
+        .toggle-checkbox { border-color: #d1d5db; transition: all 0.2s ease; }
+        .toggle-checkbox:checked { transform: translateX(1.25rem); border-color: #22c55e; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #22c55e; }
+        .toggle-label { background-color: #d1d5db; transition: all 0.2s ease; }
+
+        /* 印刷モード (縦向き・横向きレスポンシブ対応) */
+        #print-area { display: none; }
+        @media print {
+            body { background: white; height: auto !important; overflow: visible !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            header, .bg-yellow-50, #list-drawer, #detail-modal, #create-modal, #data-modal, #btn-target-mode, .leaflet-control-container, #rotation-control, #toast-notification, #layer-controls {
+                display: none !important;
+            }
+            #map {
+                position: relative !important; width: 100% !important; 
+                height: 450px !important;
+                page-break-after: avoid !important; page-break-inside: avoid !important;
+                z-index: 1; border: 2px solid #333; box-sizing: border-box; display: block !important;
+            }
+            #print-area {
+                display: block !important; padding: 20px; page-break-before: auto !important;
+            }
+        }
+        /* 横向き印刷時の特別対応 (地図を大きく表示) */
+        @media print and (orientation: landscape) {
+            #map {
+                height: 650px !important; 
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-[100dvh] overflow-hidden">
+
+    <!-- 拠点校選択モーダル -->
+    <div id="base-school-modal" class="fixed inset-0 bg-green-800/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4 transition-opacity duration-300 opacity-0" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 text-center bg-green-50 border-b border-green-100">
+                <i class="ph-duotone ph-map-trifold text-5xl text-green-500 mb-2"></i>
+                <h2 class="text-2xl font-bold text-gray-800">きみの学校はどこ？</h2>
+                <p class="text-sm text-gray-600 mt-2">マップの中心になる「きょてん」を選ぼう！</p>
+            </div>
+            <div class="p-4 overflow-y-auto touch-pan-y" id="school-selection-list"></div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast-notification" class="fixed top-20 left-1/2 transform -translate-x-1/2 -translate-y-[-150%] opacity-0 transition-all duration-300 z-[2000] pointer-events-none">
+        <div class="bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold text-sm max-w-[90vw]">
+            <i class="ph-bold ph-warning-circle text-yellow-400 text-xl flex-shrink-0"></i>
+            <span id="toast-message" class="leading-relaxed"></span>
+        </div>
+    </div>
+
+    <!-- ヘッダー -->
+    <header class="safe-area-pt bg-green-500 text-white flex-shrink-0 shadow-md z-20">
+        <div class="h-16 flex items-center justify-between px-4">
+            <div class="flex items-center gap-2 overflow-hidden mr-2">
+                <i class="ph-fill ph-map-pin-line text-2xl flex-shrink-0"></i>
+                <h1 class="text-base md:text-xl font-bold tracking-wider truncate">ごとうれっとう はっけんマップ</h1>
+            </div>
+            <div class="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+                <button onclick="executePrint()" class="w-9 h-9 md:w-10 md:h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95" title="地図を印刷する">
+                    <i class="ph-bold ph-printer text-lg md:text-xl"></i>
+                </button>
+                <button id="btn-toggle-layer" class="w-9 h-9 md:w-10 md:h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95" title="航空写真きりかえ">
+                    <i id="icon-layer" class="ph-bold ph-images text-lg md:text-xl"></i>
+                </button>
+               <button onclick="openDataModal()" class="w-9 h-9 md:w-10 md:h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95" title="データ管理・バックアップ">
+                    <i class="ph-bold ph-gear text-lg md:text-xl"></i>
+                </button>
+                
+                <!-- 検索ボタン -->
+                <button onclick="openSearchModal()" class="w-9 h-9 md:w-10 md:h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95" title="世界を検索">
+                    <i class="ph-bold ph-magnifying-glass text-lg md:text-xl"></i>
+                </button>
+
+                <button onclick="openInfoModal()" class="w-9 h-9 md:w-10 md:h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/30 transition-colors active:scale-95" title="アプリについて">
+                    <i class="ph-bold ph-info text-lg md:text-xl"></i>
+                </button>
+
+                <button id="btn-show-list" class="bg-white text-green-600 font-bold py-1.5 px-3 md:py-2 md:px-4 rounded-full shadow hover:bg-green-100 transition-colors flex items-center gap-1 text-xs md:text-sm active:scale-95 ml-1">
+                    <i class="ph-bold ph-list-bullets"></i> いちらん
+                </button>
+
+
+            </div>
+        </div>
+    </header>
+
+    <!-- 地図コンテナ (HTMLの順序を変更: 印刷時に地図が先に出るようにする) -->
+    <div id="map" class="flex-1 w-full z-10 relative bg-green-50">
+        <!-- オリジナルスポット作成ボタン -->
+        <button id="btn-target-mode" onclick="enterTargetMode()" class="absolute bottom-48 right-4 z-[1000] bg-yellow-400 hover:bg-yellow-500 text-yellow-900 shadow-xl rounded-full w-14 h-14 flex items-center justify-center border-2 border-yellow-200 active:scale-95 transition-transform" title="新しく写真をとって追加する">
+            <i class="ph-bold ph-plus text-3xl"></i>
+        </button>
+
+
+        <!-- ターゲットUI (スナイパーモード) -->
+        <div id="target-ui" class="absolute inset-0 z-[1010] pointer-events-none hidden">
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-[-20px]">
+                <i class="ph-duotone ph-crosshair text-6xl text-red-500 drop-shadow-md"></i>
+            </div>
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-auto bg-white/95 p-4 rounded-2xl shadow-2xl border border-gray-200 flex flex-col items-center gap-3 w-80 max-w-[90vw] backdrop-blur-sm">
+                <div class="text-sm font-bold text-gray-800 flex items-center gap-2"><i class="ph-fill ph-navigation-arrow text-red-500"></i> 地図を動かして場所を合わせよう</div>
+                <div class="flex gap-2 w-full">
+                    <button onclick="cancelTargetMode()" class="flex-1 py-3 bg-gray-200 rounded-xl font-bold text-gray-700 active:scale-95 transition-transform">やめる</button>
+                    <button onclick="confirmTargetLocation()" class="flex-1 py-3 bg-red-500 rounded-xl font-bold text-white active:scale-95 shadow-md transition-transform">📍 ここで決定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 回転コントローラー -->
+        <div id="rotation-control" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-xl z-[1000] hidden flex-col items-center gap-1 border-2 border-green-400 w-[90%] max-w-sm transition-all">
+            <div class="text-xs font-bold text-gray-700 flex justify-between w-full px-2">
+                <span class="flex items-center gap-1"><i class="ph-bold ph-arrows-clockwise text-green-600"></i> わくを回す</span>
+                <span id="rotation-value" class="text-green-600">0°</span>
+            </div>
+            <input type="range" id="rotation-slider" min="0" max="360" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-500">
+        </div>
+
+        <!-- レイヤートグルスイッチ -->
+        <div id="layer-controls" class="absolute bottom-6 right-4 z-[1000] flex flex-col gap-2">
+            <div class="bg-white/95 backdrop-blur shadow-lg rounded-xl p-2.5 border border-gray-200 flex flex-col gap-3 w-40">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-700 flex items-center gap-1"><i class="ph-fill ph-graduation-cap text-amber-500"></i> がっこう</span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="toggle-school" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 left-0"/>
+                        <label for="toggle-school" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-700 flex items-center gap-1"><i class="ph-fill ph-map-pin text-orange-500"></i> ゆうめい</span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="toggle-famous" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 left-0"/>
+                        <label for="toggle-famous" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-700 flex items-center gap-1"><i class="ph-fill ph-star text-yellow-500"></i> マイスポット</span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="toggle-my" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 left-0"/>
+                        <label for="toggle-my" class="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 印刷用マイスポットリスト (画面非表示。地図の下に配置することで印刷順序を保つ) -->
+    <div id="print-area">
+        <h2 style="font-size: 24px; color: #166534; border-bottom: 2px solid #166534; padding-bottom: 8px; margin-bottom: 16px;">🌟 わたしの「はっけん」スポット一覧</h2>
+        <div id="print-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    </div>
+
+    <!-- 広さの学習パネル -->
+    <div class="bg-yellow-50 border-t-4 border-yellow-300 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-20 relative flex-shrink-0">
+        <div class="flex items-center px-4 gap-6 overflow-x-auto no-scrollbar pt-4 safe-area-pb">
+            
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="clearArea()">
+                <span class="text-[11px] font-bold text-blue-600">枠を消す</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb); border-color: #1e3a8a; box-shadow: 0 4px 0 #1e3a8a, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px rgba(255,255,255,0.6);"></div>
+            </div>
+            <div class="w-px h-16 bg-yellow-300 mx-1 flex-shrink-0"></div>
+
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('1a')">
+                <span class="text-[11px] font-bold text-gray-700">1a</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('1ha')">
+                <span class="text-[11px] font-bold text-gray-700">1ha</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #f97316, #c2410c);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('1km2')">
+                <span class="text-[11px] font-bold text-gray-700">1km²</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #facc15, #a16207);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('100km2')">
+                <span class="text-[11px] font-bold text-gray-700">100km²</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #a855f7, #7e22ce);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('japan')">
+                <span class="text-[11px] font-bold text-gray-700 text-rose-600">日本(広さ)</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #fb7185, #be123c); border-color: #be123c; box-shadow: 0 4px 0 #9f1239, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px rgba(255,255,255,0.6);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('pool')">
+                <span class="text-[11px] font-bold text-gray-700">プール</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #22d3ee, #0891b2);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="drawArea('tokyo_dome')">
+                <span class="text-[11px] font-bold text-gray-700">東京ドーム</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #f472b6, #be185d);"></div>
+            </div>
+
+            <div class="w-px h-16 bg-yellow-300 mx-1 flex-shrink-0"></div>
+
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="resetMap()">
+                <span class="text-[11px] font-bold text-gray-700">ホームへ</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #9ca3af, #374151);"></div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 pr-4" onclick="showSchoolSelectionModal(true)">
+                <span class="text-[11px] font-bold text-gray-700 text-orange-600">きょてん変更</span>
+                <div class="arcade-btn" style="background: radial-gradient(circle at 30% 30%, #fdba74, #ea580c); border-color: #ea580c; box-shadow: 0 4px 0 #c2410c, inset 0 -4px 6px rgba(0,0,0,0.3), inset 0 4px 6px rgba(255,255,255,0.6);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スポット一覧ドロワー -->
+    <div id="list-drawer" class="fixed inset-y-0 right-0 w-80 max-w-[85vw] bg-white shadow-2xl z-30 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="pt-4 px-4 bg-green-100 border-b border-green-200 safe-area-pt flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold text-green-800">スポットいちらん</h2>
+                <button id="btn-close-list" class="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-200 active:bg-green-300 transition-colors">
+                    <i class="ph-bold ph-x text-2xl"></i>
+                </button>
+            </div>
+            <!-- 3連タブUI -->
+            <div class="flex gap-1">
+                <button onclick="switchTab('school')" id="tab-school" class="flex-1 py-2 text-sm font-bold bg-white text-green-700 rounded-t-lg border-t border-l border-r border-green-200 shadow-[0_-2px_5px_rgba(0,0,0,0.05)] transition-colors flex items-center justify-center gap-1"><i class="ph-fill ph-graduation-cap"></i> がっこう</button>
+                <button onclick="switchTab('famous')" id="tab-famous" class="flex-1 py-2 text-sm font-bold bg-green-100 text-green-600 rounded-t-lg border-b border-green-200 hover:bg-green-50 transition-colors flex items-center justify-center gap-1"><i class="ph-fill ph-map-pin"></i> ゆうめい</button>
+                <button onclick="switchTab('my')" id="tab-my" class="flex-1 py-2 text-sm font-bold bg-green-100 text-green-600 rounded-t-lg border-b border-green-200 hover:bg-green-50 transition-colors flex items-center justify-center gap-1"><i class="ph-fill ph-star"></i> マイ</button>
+            </div>
+        </div>
+        
+        <div id="spot-list-school" class="flex-1 overflow-y-auto p-2 pb-24 touch-pan-y bg-gray-50"></div>
+        <div id="spot-list-famous" class="flex-1 overflow-y-auto p-2 pb-24 touch-pan-y bg-gray-50 hidden"></div>
+        <div id="spot-list-my" class="flex-1 overflow-y-auto p-2 pb-24 touch-pan-y bg-yellow-50/30 hidden relative">
+            <div id="my-spots-empty" class="text-center py-10 text-gray-500 text-sm hidden">
+                <i class="ph-duotone ph-star text-4xl mb-2 text-gray-300"></i><br>まだマイスポットがありません。<br>「➕」ボタンから新しく作ろう！
+            </div>
+            <div id="my-spots-container"></div>
+        </div>
+    </div>
+
+    <!-- 詳細モーダル (地図ボタンを削除し、テキストエリアを拡大) -->
+    <div id="detail-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] scale-95 opacity-0 transition-all duration-300 relative">
+            <div class="relative h-48 sm:h-56 bg-gray-200 flex-shrink-0">
+                <img id="modal-image" src="" alt="スポット画像" class="w-full h-full object-cover">
+                
+                <!-- 写真変更ボタン (撮る・選ぶに分割) -->
+                <div id="edit-image-buttons" class="hidden absolute bottom-3 right-3 flex gap-2">
+                    <button onclick="document.getElementById('edit-camera-input-capture').click()" class="bg-black/60 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-black/80 transition-colors shadow-md">
+                        <i class="ph-bold ph-camera"></i> 撮る
+                    </button>
+                    <button onclick="document.getElementById('edit-camera-input-file').click()" class="bg-black/60 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-black/80 transition-colors shadow-md">
+                        <i class="ph-bold ph-image"></i> 選ぶ
+                    </button>
+                </div>
+                <input type="file" id="edit-camera-input-capture" accept="image/*" capture="environment" class="hidden" onchange="handleEditImage(event)">
+                <input type="file" id="edit-camera-input-file" accept="image/*" class="hidden" onchange="handleEditImage(event)">
+
+                <div class="absolute top-3 left-3 bg-white/95 px-3 py-1 rounded-full text-xs font-bold shadow flex items-center gap-1" id="modal-category-badge"></div>
+                <button onclick="closeModal()" class="absolute top-3 right-3 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all shadow-md">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto touch-pan-y safe-area-pb flex flex-col gap-4">
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-800 leading-tight"></h2>
+                
+                <!-- 説明文エリア (テキストエリアを広く確保) -->
+                <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-200 text-gray-700 leading-relaxed text-sm shadow-inner relative group">
+                    <p id="modal-description" class="min-h-[4rem] whitespace-pre-wrap"></p>
+                    <textarea id="modal-description-edit" class="hidden w-full min-h-[8rem] p-2 rounded-lg border-2 border-yellow-400 bg-white resize-none focus:outline-none" placeholder="ここになにか発見したことをメモできるよ！"></textarea>
+                    
+                    <button id="btn-edit-desc" class="hidden absolute top-2 right-2 text-gray-400 hover:text-green-600 p-1 bg-white/80 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="ph-bold ph-pencil-simple text-lg"></i>
+                    </button>
+                    <button id="btn-save-desc" class="hidden absolute top-2 right-2 text-white font-bold bg-green-500 hover:bg-green-600 px-3 py-1.5 rounded-lg text-xs shadow-md">
+                        保存する
+                    </button>
+                </div>
+                
+                <button id="btn-toggle-myspot" class="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 rounded-xl transition-colors shadow-md flex justify-center items-center gap-2 active:scale-[0.98]">
+                    <i class="ph-bold ph-star text-lg"></i> <span id="myspot-btn-text">マイスポットに追加</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- オリジナルスポット作成モーダル (マーク選択機能追加) -->
+    <div id="create-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 opacity-0 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 bg-yellow-100 border-b border-yellow-200 flex justify-between items-center">
+                <h3 class="font-bold text-yellow-800 text-lg flex items-center gap-2"><i class="ph-fill ph-camera text-2xl"></i> スポットをつくる</h3>
+                <button onclick="closeCreateModal()" class="text-yellow-700 hover:bg-yellow-200 p-1 rounded-full"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto touch-pan-y flex flex-col gap-4">
+                
+                <!-- カメラ領域 (撮る・選ぶに分割) -->
+                <div class="relative w-full h-40 flex-shrink-0 bg-gray-100 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden transition-colors">
+                    <img id="create-preview" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                    
+                    <div id="create-placeholder" class="absolute inset-0 flex p-2 gap-2">
+                        <button onclick="document.getElementById('camera-input-capture').click()" class="flex-1 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm hover:bg-green-50 hover:text-green-600 transition-colors border border-gray-200 active:scale-95">
+                            <i class="ph-duotone ph-camera text-4xl mb-1 text-green-500"></i>
+                            <span class="font-bold text-xs">写真を撮る</span>
+                        </button>
+                        <button onclick="document.getElementById('camera-input-file').click()" class="flex-1 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200 active:scale-95">
+                            <i class="ph-duotone ph-image text-4xl mb-1 text-blue-500"></i>
+                            <span class="font-bold text-xs">ファイルから</span>
+                        </button>
+                    </div>
+                </div>
+                <input type="file" id="camera-input-capture" accept="image/*" capture="environment" class="hidden" onchange="handleCreateImage(event)">
+                <input type="file" id="camera-input-file" accept="image/*" class="hidden" onchange="handleCreateImage(event)">
+                <canvas id="compress-canvas" class="hidden"></canvas>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">スポットのなまえ</label>
+                    <input type="text" id="create-title" class="w-full p-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none font-bold" placeholder="（例）ひみつの花園">
+                </div>
+
+                <!-- カスタムマークの選択 (1行に6つ並べる) -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">スポットの種類 (マーク)</label>
+                    <div class="grid grid-cols-6 gap-1 sm:gap-1.5">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="しぜん|#10b981|ph-tree" class="peer hidden">
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-green-500 peer-checked:bg-green-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-tree text-lg sm:text-xl" style="color: #10b981;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600">しぜん</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="れきし・ぶんか|#ef4444|ph-bank" class="peer hidden">
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-bank text-lg sm:text-xl" style="color: #ef4444;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600">れきし</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="がっこう|#f59e0b|ph-graduation-cap" class="peer hidden">
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-orange-500 peer-checked:bg-orange-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-graduation-cap text-lg sm:text-xl" style="color: #f59e0b;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600">がっこう</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="おかいもの|#f43f5e|ph-shopping-cart" class="peer hidden">
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-rose-500 peer-checked:bg-rose-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-shopping-cart text-lg sm:text-xl" style="color: #f43f5e;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600 scale-90">かいもの</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="のりもの|#0ea5e9|ph-boat" class="peer hidden">
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-boat text-lg sm:text-xl" style="color: #0ea5e9;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600 scale-90">のりもの</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="spot-category" value="オリジナル|#eab308|ph-star" class="peer hidden" checked>
+                            <div class="rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 py-1.5 px-0.5 flex flex-col items-center justify-center transition-all active:scale-95">
+                                <i class="ph-fill ph-star text-lg sm:text-xl" style="color: #eab308;"></i>
+                                <span class="text-[9px] font-bold mt-1 text-gray-600">その他</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">はっけんメモ</label>
+                    <textarea id="create-desc" class="w-full p-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none min-h-[4rem] resize-none text-sm" placeholder="どんなどころだったかメモしよう！"></textarea>
+                </div>
+
+                <button id="btn-save-create" onclick="saveOriginalSpot()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3.5 rounded-xl transition-colors shadow-md flex justify-center items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="ph-bold ph-check-circle text-xl"></i> マイスポットにほぞん
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- データ管理(エクスポート・インポート) モーダル -->
+    <div id="data-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 opacity-0 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i class="ph-fill ph-database text-2xl text-blue-500"></i> データ管理</h3>
+                <button onclick="closeDataModal()" class="text-gray-500 hover:bg-gray-200 p-1 rounded-full"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-6">
+                <!-- JSONバックアップ -->
+                <div class="flex flex-col gap-2">
+                    <h4 class="font-bold text-sm text-gray-700 border-l-4 border-blue-500 pl-2">完全バックアップ (写真付き)</h4>
+                    <p class="text-xs text-gray-500">別の端末に引き継ぐときはこの「JSON形式」をつかいます。</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1 flex bg-blue-500 rounded-xl shadow overflow-hidden">
+                            <button onclick="exportJSON('download')" id="btn-export-json" class="flex-1 py-2.5 hover:bg-blue-600 text-white font-bold active:scale-95 flex items-center justify-center gap-1 text-sm border-r border-blue-600 transition-colors"><i class="ph-bold ph-download-simple"></i> 保存</button>
+                            <button onclick="exportJSON('share')" class="px-3 hover:bg-blue-600 text-white font-bold active:scale-95 flex items-center justify-center transition-colors" title="共有 (AirDrop等)"><i class="ph-bold ph-export"></i></button>
+                        </div>
+                        <button onclick="document.getElementById('import-json-input').click()" class="flex-1 py-2.5 bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 font-bold rounded-xl active:scale-95 flex items-center justify-center gap-1 text-sm transition-colors"><i class="ph-bold ph-upload-simple"></i> 読み込み</button>
+                        <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </div>
+                </div>
+
+                <!-- CSVテキスト入出力 -->
+                <div class="flex flex-col gap-2">
+                    <h4 class="font-bold text-sm text-gray-700 border-l-4 border-green-500 pl-2">リスト出力 (テキストのみ)</h4>
+                    <p class="text-xs text-gray-500">Excel等でスポットの文字データをまとめたい場合は「CSV形式」をつかいます。写真は出力されません。</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1 flex bg-green-500 rounded-xl shadow overflow-hidden">
+                            <button onclick="exportCSV('download')" class="flex-1 py-2.5 hover:bg-green-600 text-white font-bold active:scale-95 flex items-center justify-center gap-1 text-sm border-r border-green-600 transition-colors"><i class="ph-bold ph-download-simple"></i> 保存</button>
+                            <button onclick="exportCSV('share')" class="px-3 hover:bg-green-600 text-white font-bold active:scale-95 flex items-center justify-center transition-colors" title="共有 (AirDrop等)"><i class="ph-bold ph-export"></i></button>
+                        </div>
+                        <button onclick="document.getElementById('import-csv-input').click()" class="flex-1 py-2.5 bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 font-bold rounded-xl active:scale-95 flex items-center justify-center gap-1 text-sm transition-colors"><i class="ph-bold ph-upload-simple"></i> 読込</button>
+                        <input type="file" id="import-csv-input" accept=".csv" class="hidden" onchange="importCSV(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 免責事項・アプリ説明 モーダル -->
+    <div id="info-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 opacity-0 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="p-4 bg-green-100 border-b border-green-200 flex justify-between items-center">
+                <h3 class="font-bold text-green-800 text-lg flex items-center gap-2"><i class="ph-fill ph-info text-2xl text-green-600"></i> アプリについて</h3>
+                <button onclick="closeInfoModal()" class="text-green-700 hover:bg-green-200 p-1 rounded-full active:scale-95"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4 text-sm text-gray-700 leading-relaxed overflow-y-auto max-h-[70vh]">
+                <p>この「ごとうれっとう はっけんマップ」は、五島市の広さ（1a、1haなど）を地図上で感覚的に学ぶために作成された学習用アプリをベースに、自分だけの「はっけん」を記録できるマイマップとして進化させたものです。</p>
+                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-inner">
+                    <h4 class="font-bold text-yellow-800 mb-2 flex items-center gap-1"><i class="ph-bold ph-warning-circle text-lg"></i> ご注意・免責事項</h4>
+                    <ul class="list-disc pl-5 space-y-1.5 text-xs">
+                        <li>本アプリの地図データやスポット情報は学習用・個人利用を目的としており、必ずしも最新・正確なものではありません。</li>
+                        <li>実際の地形、施設の位置、名称などと異なる場合があります。</li>
+                        <li>本アプリの利用によって生じたトラブルや損害について、作成者は一切の責任を負いません。</li>
+                    </ul>
+                </div>
+                <p class="text-center font-bold text-green-600 mt-2">ルールを守って、楽しく探検しよう！</p>
+                <button onclick="closeInfoModal()" class="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl active:scale-95 transition-colors shadow-md text-base">確認しました</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地名検索 モーダル -->
+    <div id="search-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 opacity-0 hidden transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="p-4 bg-blue-100 border-b border-blue-200 flex justify-between items-center">
+                <h3 class="font-bold text-blue-800 text-lg flex items-center gap-2"><i class="ph-fill ph-globe-hemisphere-west text-2xl text-blue-600"></i> 検索してさがす</h3>
+                <button onclick="closeSearchModal()" class="text-blue-700 hover:bg-blue-200 p-1 rounded-full active:scale-95"><i class="ph-bold ph-x text-xl"></i></button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <!-- オフライン時の警告メッセージ -->
+                <div id="search-offline-warning" class="hidden bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-xs font-bold flex items-center gap-2">
+                    <i class="ph-bold ph-wifi-slash text-lg flex-shrink-0"></i> オフラインのため、今は検索できません。
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">地名・国名（例：五島市、イギリス）</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="search-input" class="flex-1 p-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none font-bold text-sm" placeholder="どこへ行きたい？" onkeypress="if(event.key === 'Enter') executeSearch()">
+                        <button id="btn-execute-search" onclick="executeSearch()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 rounded-xl active:scale-95 transition-colors shadow-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="ph-bold ph-magnifying-glass text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 text-right mt-1">※OpenStreetMapの検索機能を利用します</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        /* =========================================================================
+           1. 基本ユーティリティと IndexedDB (ストレージ・メモリ管理)
+        ========================================================================= */
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-message').innerHTML = message;
+            toast.classList.remove('-translate-y-[-150%]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-[-150%]', 'opacity-0');
+            }, 4000);
+        }
+
+        function safeStorageGet(key, defaultVal) {
+            try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : defaultVal; }
+            catch(e) { return defaultVal; }
+        }
+        function safeStorageSet(key, val) {
+            try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error("Storage Error", e); }
+        }
+
+        // IndexedDB: 画像バイナリの保存領域
+        const DB_NAME = 'ExploreMapDB';
+        const STORE_NAME = 'images';
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        async function saveImageToDB(id, blob) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(blob, id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e);
+            });
+        }
+
+        async function getImageFromDB(id) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const req = tx.objectStore(STORE_NAME).get(id);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => reject(e);
+            });
+        }
+
+        async function deleteImageFromDB(id) {
+            const db = await initDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).delete(id);
+                tx.oncomplete = () => resolve();
+            });
+        }
+
+        /* 
+=========================================================================
+           2. データ構造 (拠点・有名スポット)
+        ========================================================================= */
+        const SCHOOL_DATA = [
+            // 1. 五島市 小学校
+            { id: 60, title: "奥浦小学校", lat: 32.7370701, lng: 128.827786, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "みんなの学校。ここを中心に色々な広さをはかってみよう！グラウンドの広さはどれくらいかな？" },
+            { id: 53, title: "本山小学校", lat: 32.6685911, lng: 128.8207213, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市堤町にある公立小学校。略称は本小。" },
+            { id: 54, title: "三井楽小学校", lat: 32.7451062, lng: 128.6899426, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市三井楽町にある公立小学校。1874年創立。" },
+            { id: 55, title: "富江小学校", lat: 32.613653, lng: 128.765182, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "富江地区にある小学校です。近くには美しい海やキャンプ場などの自然が広がっています。" },
+            { id: 56, title: "盈進小学校", lat: 32.5996988, lng: 128.7451147, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市富江町黒瀬にある公立小学校。" },
+            { id: 57, title: "緑丘小学校", lat: 32.6952396, lng: 128.8311991, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市木場町にある公立小学校。1956年に福江小学校の第二校舎として設置され、1958年に独立した。" },
+            { id: 58, title: "嵯峨島小学校", lat: 32.726054, lng: 128.5981626, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市の嵯峨島にある公立小学校。嵯峨島中学校との併設校だったが、令和6年度（2024年度）より休校となっている。" },
+            { id: 59, title: "椛島小学校", lat: 32.7571399, lng: 128.9886891, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市伊福貴町（椛島）にある公立小学校。現在は休校中（福江小学校椛島分校）。" },
+            { id: 61, title: "福江小学校", lat: 32.6932196, lng: 128.8427737, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "福江地区の中心にある大きな小学校です。まわりにはお店や歴史ある建物がたくさんあります。" },
+            { id: 140, title: "岐宿小学校", lat: 32.7303095, lng: 128.7444452, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある公立小学校。2017年に岐宿地区の小学校が統合され、岐宿町楠原に新校舎が設置された。" },
+            { id: 69, title: "久賀小中学校", lat: 32.7920096, lng: 128.8696583, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市の久賀島にある公立の小中学校。小中一貫教育を行っている。" },
+            { id: 70, title: "玉之浦小中学校", lat: 32.6296239, lng: 128.6691869, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある公立の小中併設校。2019年に玉之浦小学校、平成小学校、玉之浦中学校が統合して開校した。" },
+            { id: 71, title: "奈留小中学校", lat: 32.8310661, lng: 128.9312862, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市奈留町にある公立の小中併設校。長崎県立奈留高等学校との連携型小中高一貫教育などを行っている。" },
+
+            // 2. 五島市 中学校
+            { id: 240, title: "奥浦中学校", lat: 32.73875, lng: 128.826167, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "小学校のすぐ近くにある中学校です。小学校のグラウンドと広さをくらべてみよう。" },
+            { id: 62, title: "椛島中学校", lat: 32.757306, lng: 128.9895546, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市の椛島にある公立中学校（現在は休校中）。" },
+            { id: 63, title: "富江中学校", lat: 32.6139346, lng: 128.7627798, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある公立中学校。" },
+            { id: 64, title: "三井楽中学校", lat: 32.743923, lng: 128.688036, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "遣唐使の歴史が残る三井楽地区にある中学校です。近くには白砂の美しい海岸もあります。" },
+            { id: 65, title: "嵯峨島中学校", lat: 32.7259705, lng: 128.5981398, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市の嵯峨島に位置する公立中学校。地域の教育拠点として設置された教育施設。" },
+            { id: 66, title: "福江中学校", lat: 32.7009646, lng: 128.8402096, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "福江地区にある中学校です。部活動もさかんで、毎日生徒たちの元気な声が響いています。" },
+            { id: 67, title: "岐宿中学校", lat: 32.7307247, lng: 128.7446253, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市岐宿町にある公立中学校。1977年に町内の3中学校が統合して開校した。" },
+            { id: 68, title: "翁頭中学校", lat: 32.6720599, lng: 128.8168904, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある公立中学校。1949年に本山中学校と大浜中学校が統合して開校した。" },
+
+            // 3. 五島市 高校
+            { id: 241, title: "五島高等学校", lat: 32.6934703, lng: 128.8464754, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "お城の跡（福江城跡）の中にある、全国でもめずらしい高校です。お堀を渡って学校に行きます！" },
+
+            // 4. 上五島町 小学校
+            { id: 211, title: "若松中央小学校", lat: 32.881774, lng: 129.005027, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町間伏郷にある公立小学校。" },
+            { id: 212, title: "若松東小学校", lat: 32.895023, lng: 129.061667, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町にある公立小学校。" },
+            { id: 213, title: "青方小学校", lat: 32.986501, lng: 129.073292, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町青方郷にある公立小学校。1874年創立。略称は「青小」。" },
+            { id: 214, title: "上郷小学校", lat: 33.019457, lng: 129.068627, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町奈摩郷にある公立小学校。" },
+            { id: 215, title: "魚目小学校", lat: 32.999169, lng: 129.089889, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町（魚目地区）にある公立小学校。1874年創立。" },
+            { id: 216, title: "北魚目小学校", lat: 33.057358, lng: 129.099583, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町小串郷にある公立小学校。略称は「北小」。" },
+            { id: 217, title: "有川小学校", lat: 32.978466, lng: 129.119511, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県新上五島町有川郷にある公立小学校。" },
+            { id: 218, title: "東浦小学校", lat: 32.966021, lng: 129.10112, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県新上五島町阿瀬津郷にある公立小学校。" },
+            { id: 219, title: "奈良尾小学校", lat: 32.864458, lng: 129.066224, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町奈良尾郷にある公立小学校。" },
+
+            // 5. 上五島町 中学校
+            { id: 220, title: "若松中学校", lat: 32.8866381, lng: 129.0271371, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町若松郷にある公立中学校。" },
+            { id: 221, title: "上五島中学校", lat: 32.9926922, lng: 129.0662241, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町青方郷にある公立中学校。" },
+            { id: 222, title: "魚目中学校", lat: 33.003517, lng: 129.0888405, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町丸尾郷にある公立中学校。" },
+            { id: 223, title: "有川中学校", lat: 32.9835446, lng: 129.1184306, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県南松浦郡新上五島町有川郷にある公立中学校。" },
+
+
+
+            // 7. 給食センター
+ 
+            { id: 74, title: "福江学校給食センター", lat: 32.6820434, lng: 128.8647799, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある学校給食施設。五島市内の小中学校などを対象に給食の調理や配送業務を行っている。" },
+            { id: 75, title: "三井楽学校給食センター", lat: 32.7442581, lng: 128.6874423, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市三井楽町にある学校給食センター。周辺の小中学校へ給食を提供している。" },
+            { id: 76, title: "富江学校給食センター", lat: 32.6129992, lng: 128.7666622, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市にある学校給食センター。富江地区の小中学校などに向けた給食の調理・提供を行っている施設。" },
+            { id: 77, title: "奈留給食センター", lat: 32.8312615, lng: 128.931331, category: "がっこう", categoryColor: "#f59e0b", categoryIcon: "ph-graduation-cap", description: "長崎県五島市の奈留島（奈留町）にある学校給食施設。小中学校などの児童・生徒向けに給食の調理や供給を行っている。" }
+        ];
+
+        const FAMOUS_SPOT_DATA = [
+    // --- 1. 福江中心部（福江港～城下町～市街地周辺） ---
+    { id: 260, title: "福江港ターミナル", lat: 32.6962224, lng: 128.8499104, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-boat", description: "長崎や福岡、ほかの島へ行く大きな船が出発する海の玄関口。お土産屋さんもたくさんあります！" },
+    { id: 1, title: "福江文化会館", lat: 32.693984, lng: 128.845953, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "お城のすぐ横にある大きな会館です。劇や音楽のコンサートなど、色々なイベントが開かれます。" },
+    { id: 201, title: "五島観光歴史資料館", lat: 32.69405, lng: 128.8469100, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市、福江城（石田城）二の丸跡に立つ資料館。五島列島の歴史やキリシタン信仰、民俗行事などに関する資料を展示している。" },
+    { id: 164, title: "石田城跡", lat: 32.6932939, lng: 128.8464098, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある江戸時代最後に築城された福江城（石田城）の跡地。城郭の三方を海に囲まれた海城として知られる県指定史跡。" },
+    { id: 153, title: "石田城五島氏庭園", lat: 32.6934555, lng: 128.8447915, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "石田城（福江城）の二の丸跡にある大名庭園。鬼岳の溶岩や亜熱帯植物を配した回遊式庭園で、国の名勝に指定されている。" },
+    { id: 5, title: "福江武家屋敷通りふるさと館", lat: 32.6904071, lng: 128.8463461, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "市指定史跡「福江武家屋敷跡」の遺構を活かして建てられた、展示や喫茶、体験講座などが楽しめる観光拠点施設。" },
+    { id: 183, title: "武家屋敷 松園邸", lat: 32.69006, lng: 128.8462000, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "江戸時代（1863年）に建てられた武家屋敷を改修した建物で、アニメーション美術監督の山本二三の背景画やオリジナルの絵画を展示する美術館。" },
+    { id: 133, title: "山本二三美術館（松園邸）", lat: 32.6900049, lng: 128.8461613, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市出身のアニメーション美術監督・山本二三氏の作品や五島を描いた絵画を展示する美術館。1863年に建てられた武家屋敷「松園邸」を改修して使用している。" },
+    { id: 210, title: "山本二三美術館", lat: 32.6899801, lng: 128.8436025, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "五島市出身のアニメーション美術監督・山本二三の作品や五島の風景画を展示する美術館。1863年建築の武家屋敷「松園邸」を改修して使用されている。" },
+    { id: 196, title: "武家屋敷通り", lat: 32.690407, lng: 128.846346, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "福江城跡の近くにあり、古い石垣（こぼれ石）が続く通りです。遠い昔の武士たちが歩いた歴史を感じられる場所です。" },
+    { id: 195, title: "嘯月園", lat: 32.6909919, lng: 128.8205303, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある市指定史跡。福江藩第30代藩主の五島盛成が茶亭として造った庭園で、詰めの城としての役割も果たした。" },
+    { id: 147, title: "五島市立図書館", lat: 32.69403, lng: 128.8381000, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある市立図書館。2023年に木場町に移転・開館し、読書や学習、地域交流の拠点として利用されている。" },
+    { id: 162, title: "六角井", lat: 32.6972442, lng: 128.8432951, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある県指定史跡の井戸。16世紀に明の商人・王直らが来航した際に造られたと伝えられ、倭寇や唐船貿易の歴史を伝える遺構。" },
+    { id: 197, title: "坂部貞兵衛の墓", lat: 32.6973335, lng: 128.8415575, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "伊能忠敬の測量隊の副隊長を務め、五島列島の測量中に病没した坂部貞兵衛の墓。宗念寺の境内にある史跡。" },
+    { id: 190, title: "明人堂", lat: 32.69848, lng: 128.8425400, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "1540年に明の貿易商・王直らが航海の安全を祈願して建てたとされる廟堂跡。中国の石材や職人により再建された建物が残る。" },
+    { id: 184, title: "五社神社の筥崎鳥居", lat: 32.6808609, lng: 128.8486590, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある五社神社の鳥居。寛永15年（1638年）に奉納されたとされる、筥崎鳥居（八幡鳥居）の形式を持つ鳥居。市指定有形文化財。" },
+    { id: 182, title: "天満神社宝物", lat: 32.6885367, lng: 128.8533047, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある神社。菅原道真公を祀り、学業成就などのご利益で知られる。" },
+    { id: 161, title: "明星院本堂", lat: 32.682345, lng: 128.8219528, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある真言宗の本山で、五島家代々の祈願所。安永7年（1778年）に再建された本堂は五島最古の木造建築であり、県の有形文化財に指定されている。" },
+    { id: 160, title: "明星院の木造阿弥陀如来立像", lat: 32.682354, lng: 128.8212890, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の明星院にある、県指定有形文化財の阿弥陀如来立像。平安後期から鎌倉時代に制作されたとみられる三尺阿弥陀像。" },
+    { id: 152, title: "銅造如来立像", lat: 32.68274, lng: 128.8221400, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "五島市吉田町の明星院に伝わる飛鳥時代の金銅仏（銅造如来立像）。国の重要文化財に指定されている。" },
+    { id: 9, title: "福江武道館", lat: 32.6936389, lng: 128.8427388, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある武道施設。1階に柔道場、2階に剣道場を備え、冷暖房やシャワー室を完備している。" },
+    { id: 21, title: "五島市中央公園市民体育館メインアリーナ", lat: 32.6865305, lng: 128.8348219, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の中央公園内にある市民体育館のメインアリーナ。バレーボールやバスケットボール、バドミントンなどの球技のほか、剣道や卓球など多目的に利用されるスポーツ施設。" },
+    { id: 23, title: "五島市中央公園市民体育館サブアリーナ", lat: 32.6864402, lng: 128.8355086, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の五島市中央公園内にある屋内スポーツ施設。各種球技や武道、レクリエーションなどに利用されている市民体育館のサブアリーナ。" },
+    { id: 18, title: "五島市中央公園", lat: 32.6864944, lng: 128.8359136, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある総合公園。陸上競技場や市民体育館、野球場などのスポーツ施設や、遊具を備えた広場が整備されている。" },
+    { id: 13, title: "五島市中央公園陸上競技場", lat: 32.6864447, lng: 128.8370214, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある全天候型陸上競技場。400メートル8レーンのトラックや1周700メートルのランニングコースを備え、サッカーや陸上競技大会等に利用されるスポーツ施設。" },
+    { id: 17, title: "長手スポーツセンター", lat: 32.6755675, lng: 128.8723434, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある体育館・スポーツ施設。市民のスポーツ活動や地域行事などに利用されている。" },
+    { id: 117, title: "大日山公園展望所", lat: 32.7062474, lng: 128.8419012, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市松山町にある展望所。標高約80mの大日山頂上付近にあり、五島を取り囲む海や市街地、桜並木などを一望できる景勝地。" },
+    { id: 114, title: "市民憩いの森", lat: 32.71235, lng: 128.8097800, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある公園施設。市民の憩いやリフレッシュの場として利用されている緑豊かな施設。" },
+    { id: 8, title: "市民福江プール跡", lat: 32.6954522, lng: 128.8321953, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある市民プール施設。25メートルプールや幼児用プールなどを備え、夏季に市民の水泳やレジャー利用に親しまれていたが老朽化により非運営。" },
+    { id: 257, title: "福江ダム", lat: 32.6819578, lng: 128.8184551, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "五島の水を支える大きなダムです。周りには自然がいっぱいで、お散歩にもぴったりです。" },
+
+    // --- 2. 鬼岳・崎山・空港周辺 ---
+    { id: 45, title: "五島食肉センター", lat: 32.6990043, lng: 128.8194296, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市にある食肉処理施設。HACCPを導入し、衛生管理のもと五島牛や五島豚などの食肉生産を行っている。" },
+    { id: 259, title: "五島つばき空港", lat: 32.666873, lng: 128.8336420, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-airplane-in-flight", description: "五島列島の空の玄関口！毎日、長崎や福岡とをつなぐ飛行機が飛び立っています。" },
+    { id: 7, title: "五島市鬼岳天文台", lat: 32.662759, lng: 128.8517892, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の鬼岳中腹にある公開天文台。九州有数の口径60cmニュートン式反射望遠鏡を備え、星空観察や天体観測体験を楽しめる観光施設。" },
+    { id: 27, title: "鬼岳インフォメーションセンター", lat: 32.662407, lng: 128.8505653, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の鬼岳の麓に位置する観光案内施設。敷地内にはWi-Fiやトイレ、自動販売機などが備えられている。" },
+    { id: 251, title: "鬼岳", lat: 32.655757, lng: 128.848773, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "五島のシンボル！緑におおわれた丸い形の火山です。芝生(しばふ)の広場になっていて、草スキーや凧揚げ(たこあげ)が楽しめます。" },
+    { id: 118, title: "鬼岳芝生広場屋外ステージ", lat: 32.66451, lng: 128.8538700, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の下大津町、鬼岳の芝生広場にある屋外ステージ。イベントやライブパフォーマンスなどに利用される野外施設。" },
+    { id: 169, title: "鬼岳火山涙産地", lat: 32.6576174, lng: 128.8469591, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "鬼岳の火口付近にある長崎県指定の天然記念物。粘性の低いマグマが噴火の際に飛散して固結した「ペレーの涙」と呼ばれる珍しい火山涙が産出する地。" },
+    { id: 177, title: "福江の大ツバキ", lat: 32.6500097, lng: 128.8390850, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "五島市野々切町の大窄地区にあるツバキの巨木。長崎県指定の天然記念物。" },
+    { id: 112, title: "五島市椿園施設", lat: 32.6564497, lng: 128.8546765, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある公園施設。約260品種・約2,800本の椿が植えられており、国際優秀椿園に認定されている。" },
+    { id: 6, title: "鐙瀬ビジターセンター", lat: 32.641897, lng: 128.847802, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "鬼岳から流れ出た溶岩でできた海岸の近くにあります。五島の自然や歴史を楽しく学べる施設です。" },
+    { id: 25, title: "鐙瀬展望台休憩所", lat: 32.6409916, lng: 128.8482819, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある展望台施設。鬼岳の火山噴火で生じたゴツゴツとした鎧瀬溶岩海岸や東シナ海、太平洋に浮かぶ島々を望むことができる景勝地。" },
+    { id: 29, title: "下大津観光展望所", lat: 32.678735, lng: 128.8588403, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市下大津町にある観光展望所。鬼岳や福江市街地、美しい海岸線などを一望できる景勝地。" },
+    { id: 34, title: "向町観光展望所", lat: 32.6450002, lng: 128.8840696, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市向町にある観光展望所。崎山沖の太平洋や豊かな自然を一望できる景勝地。" },
+    { id: 166, title: "白浜貝塚", lat: 32.6576532, lng: 128.8838041, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある県指定史跡の複合遺跡。向町海岸の砂丘に位置し、縄文時代後期から弥生時代前期にかけての貝塚や人骨、遺物が発見されている。" },
+    { id: 204, title: "五島カントリークラブ", lat: 32.6649886, lng: 128.8571450, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある18ホールのゴルフ場。ほとんどのホールから海や鬼岳を見渡せるロケーションが特徴の本格的な丘陵コース。" },
+
+    // --- 3. 富江・黄島・赤島・黒島 ---
+    { id: 131, title: "富江中央公園", lat: 32.6186643, lng: 128.7691725, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市富江町にある公園。緑地や遊具が整備されており、地域の憩いの場や散策スポットとして利用されている。" },
+    { id: 10, title: "富江町武道館", lat: 32.6145253, lng: 128.7653285, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある武道施設。柔道や剣道などの武道やスポーツの練習・大会などに利用されている。" },
+    { id: 37, title: "富江町温泉センター", lat: 32.61802, lng: 128.76201, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-thermometer", description: "長崎県五島市にある日帰り温泉施設。「たっしゃかランド」の愛称で親しまれ、大浴場や露天風呂、温水プールなどを備える。" },
+    { id: 198, title: "富江小学校アコウの木", lat: 32.6140858, lng: 128.7664403, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市の富江小学校の敷地内（グラウンド脇）にある、市指定天然記念物であるアコウの巨木。丸く茂った可愛らしいフォルムが特徴。" },
+    { id: 192, title: "富江藩主の墓", lat: 32.6165025, lng: 128.7572274, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市富江町にある富江五島家の菩提寺「瑞雲寺」の裏手にある史跡。富江五島家初代盛清をはじめとする歴代当主やその奥方の墓が残されている。" },
+    { id: 173, title: "富江溶岩トンネル「井坑」", lat: 32.5931923, lng: 128.7747450, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市富江町にある溶岩トンネル。富江溶岩台地に存在する最大級の溶岩洞窟で、県の天然記念物に指定されている。" },
+    { id: 165, title: "富江町・山崎の石塁", lat: 32.5892263, lng: 128.7904674, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市富江町にある県指定史跡の砦状遺構。人頭大の火山礫で作られた石塁で、「勘次ヶ城」とも呼ばれる。" },
+    { id: 43, title: "富江キャンプ村研修・宿泊施設", lat: 32.6099596, lng: 128.7830810, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tent", description: "長崎県五島市にあるキャンプ施設。「さんさん富江キャンプ村」内に位置し、研修や合宿、各種イベントの宿泊に利用できる。" },
+    { id: 28, title: "富江さんさんキャンプ村", lat: 32.6118822, lng: 128.7801905, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tent", description: "長崎県五島市にあるキャンプ場施設。富江湾に面し、バンガローやテニスコート、BBQ設備などが整ったアウトドア施設。" },
+    { id: 41, title: "多郎島海水浴場桟敷厨房施設", lat: 32.6106599, lng: 128.7822880, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市富江町の多郎島海水浴場に併設された施設。休憩スペースや厨房施設が備わっており、海水浴客や利用者に活用されている。" },
+    { id: 148, title: "多郎島海水浴場管理棟", lat: 32.61308, lng: 128.7790300, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市にある多郎島海水浴場の敷地内に位置する施設。更衣室やシャワー室、休憩・売店などを備え、海水浴客の利便を図る管理拠点。" },
+    { id: 81, title: "黄島診療所", lat: 32.569762, lng: 128.9045970, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市の黄島にある医療施設。島民の診療や地域医療を支えている診療所。" },
+    { id: 176, title: "黄島溶岩トンネル", lat: 32.5612876, lng: 128.9028648, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の黄島にある溶岩トンネル。奥行き132m、最大高さ7.2mと立ち入り可能な溶岩トンネルとしては五島列島最大で、長崎県の天然記念物に指定されている。" },
+    { id: 262, title: "黄島灯台", lat: 32.5663542, lng: 128.9044165, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の黄島にある灯台。五島列島南東部の航路標識として設置され、周辺海域の航行の安全を支えている。" },
+    { id: 263, title: "黄島神社", lat: 32.5716078, lng: 128.9035764, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の黄島にある神社。1422年創立とされる古社で、すぐそばに海が広がる自然豊かな境内に堂々とした鳥居が立つ。" },
+    { id: 264, title: "赤島神社", lat: 32.5976717, lng: 128.9235684, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の赤島にある神社。木々に囲まれた参道の奥に小さな御社殿が佇む、静寂に満ちた神社。" },
+    { id: 265, title: "鴨神社", lat: 32.6038487, lng: 128.8327312, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の黒島（富江町）にある神社。祭神として別雷命を祀り、かつては無人となった島内で島民が集う場所や休憩所として親しまれていた。" },
+
+    // --- 4. 玉之浦（南西部の海岸・教会） ---
+    { id: 35, title: "玉之浦カントリーパーク", lat: 32.6194507, lng: 128.6137926, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市にある総合公園。広いグラウンドやテニスコート、グラススキー、アスレチックなどの設備を備えたレジャー施設。" },
+    { id: 14, title: "玉之浦体育館", lat: 32.6338981, lng: 128.619923, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある屋内体育施設。バスケットボールやバドミントンなどの各種スポーツや各種イベント等に使用される施設。" },
+    { id: 88, title: "玉之浦診療所", lat: 32.6162149, lng: 128.6142845, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市にある公立の診療所。内科や外科などの診療を行い、玉之浦地区の地域医療を担っている。" },
+    { id: 83, title: "玉之浦診療所（中須出張診療所）", lat: 32.616225, lng: 128.6142858, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市にある医療施設。国民健康保険玉之浦診療所の出張診療所として、地域住民への診療を行っている。" },
+    { id: 168, title: "五島玉之浦のアコウ", lat: 32.642351, lng: 128.6145968, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市玉之浦町にある大山祇神社の境内にある県指定天然記念物のアコウの巨樹。幾筋もの支柱根が複雑に絡み合う独特の樹形が特徴。" },
+    { id: 82, title: "玉之浦診療所（幾久山出張診療所）", lat: 32.6450138, lng: 128.7055597, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市にある公立の診療所。玉之浦診療所の出張診療所として、地域住民へのプライマリケアや医療サービスを提供している。" },
+    { id: 46, title: "小浦漁船保全施設", lat: 32.63988, lng: 128.6153690, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市にある漁港施設。小浦地区の漁船の保全や漁業活動の拠点として利用されている。" },
+    { id: 245, title: "井持浦教会", lat: 32.6192083, lng: 128.6122600, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "日本で最初の「ルルドの泉」がある教会です。レンガ造りの静かなたたずまいが心を落ち着かせてくれます。" },
+    { id: 157, title: "大宝寺の梵鐘", lat: 32.60116, lng: 128.6546300, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の大宝寺に伝わる梵鐘。鎌倉時代の弘安10年（1287年）の銘があり、国の重要文化財に指定されている。" },
+    { id: 189, title: "大宝寺奥の院五重の層塔", lat: 32.60141, lng: 128.6545400, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の大宝寺奥の院にある、鎌倉時代末期（1369年銘）に作られたとされる石造の層塔（市指定文化財）。" },
+    { id: 84, title: "玉之浦診療所（大宝出張診療所）", lat: 32.6051566, lng: 128.6522619, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市玉之浦町大宝にある診療所。地域医療を支える医療施設。" },
+    { id: 252, title: "大瀬崎灯台", lat: 32.6128566, lng: 128.6000546, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "断崖絶壁(だんがいぜっぺき)に建つ白い灯台です。ここから見る夕日は日本一とも言われるほどの絶景(ぜっけい)です！" },
+    { id: 170, title: "荒川のハマジンチョウ", lat: 32.6729531, lng: 128.6759083, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市玉之浦町荒川にある県指定天然記念物のハマジンチョウ群生地。12月下旬から3月下旬頃に薄紫色の可憐な花を咲かせる。" },
+    { id: 180, title: "白鳥神社社叢", lat: 32.6298359, lng: 128.6198891, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "白鳥神社の裏手に広がる自然林。スダジイを主木とする暖地性植物が良く保存されており、長崎県の天然記念物に指定されている。" },
+
+    // --- 5. 三井楽（北西部の海・遣唐使の歴史） ---
+    { id: 155, title: "ヘゴ自生北限地帯", lat: 32.6721126, lng: 128.6796405, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市にある国の天然記念物。熱帯性の木生シダ植物であるヘゴの自生北限地として価値が高い自然保護区域。" },
+    { id: 124, title: "高浜園地休憩施設", lat: 32.7077661, lng: 128.6618397, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市三井楽町にある高浜海水浴場に隣接する公園内の休憩施設。景勝地として知られる高浜の海岸美を一望でき、売店や厨房施設、トイレなどを備えている。" },
+    { id: 144, title: "高浜園地休憩所", lat: 32.7077661, lng: 128.6618397, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の高浜海水浴場（高浜園地）に設置されている休憩所およびトイレ施設。" },
+    { id: 253, title: "高浜海水浴場", lat: 32.7093907, lng: 128.6595004, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "「日本一美しい海」ともよばれるビーチです。エメラルドグリーンの海と真っ白な砂浜がどこまでも続いています。" },
+    { id: 145, title: "頓泊園地休憩所", lat: 32.70275, lng: 128.6572700, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の頓泊海水浴場近くにある休憩施設。日差しを避けながら美しい海や砂浜を眺めて休憩できるスポット。" },
+    { id: 106, title: "頓泊海水浴場売店", lat: 32.7022257, lng: 128.6562054, category: "おかいもの", categoryColor: "#f43f5e", categoryIcon: "ph-shopping-cart", description: "長崎県五島市にある頓泊海水浴場の敷地内・周辺に設置される施設。海水浴シーズン中に更衣室や休憩所、飲食・物販などのサービスを提供する売店。" },
+    { id: 171, title: "頓泊のカラタチ群落", lat: 32.700482, lng: 128.6562271, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市玉之浦町頓泊にあるカラタチの自生地。日本最南端のカラタチ自生地として国の天然記念物に指定されている。" },
+    { id: 191, title: "嶽家牢屋敷跡", lat: 32.7713295, lng: 128.6692626, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市三井楽町にある潜伏キリシタンの牢屋敷跡。「五島崩れ」の際に捕らえられた信徒が投獄された場所で、五島市の指定史跡となっている。" },
+    { id: 174, title: "漣痕", lat: 32.7375132, lng: 128.6987827, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市三井楽町にある国指定天然記念物の地質痕跡。浅い水底で波によって形成された波型の模様（さざなみ跡）が化石化したもの。" },
+    { id: 19, title: "市民三井楽プール", lat: 32.7506883, lng: 128.6850963, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市三井楽町にある温水プール施設。25メートルプールや小プールを備え、市民の運動や水遊びに利用されている。" },
+    { id: 20, title: "三井楽テニスコート管理棟", lat: 32.75071, lng: 128.6856800, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市三井楽町にあるテニスコートの管理施設。" },
+    { id: 11, title: "三井楽多目的研修集会施設", lat: 32.7510911, lng: 128.6832886, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市三井楽町にある研修・集会施設。地域住民の研修や交流、集会などに幅広く利用されている多目的施設。" },
+    { id: 85, title: "三井楽診療所", lat: 32.7467945, lng: 128.6916917, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市にある医療施設（公立診療所）。地域住民への内科や外科などの診療を行い、島の地域医療を支えている。" },
+    { id: 39, title: "遣唐使ふるさと館", lat: 32.7383589, lng: 128.6902282, category: "おかいもの", categoryColor: "#f43f5e", categoryIcon: "ph-shopping-cart", description: "長崎県五島市にある道の駅。特産品の販売所やレストランのほか、遣唐使や万葉集に関する資料展示コーナー、万葉シアターなどを備える施設。" },
+    { id: 202, title: "道の駅 遣唐使ふるさと館", lat: 32.7383589, lng: 128.6902282, category: "おかいもの", categoryColor: "#f43f5e", categoryIcon: "ph-shopping-cart", description: "長崎県五島市にある道の駅。特産品の販売所やレストランのほか、遣唐使や万葉集に関する資料展示コーナー、万葉シアターなどを備える施設。" },
+    { id: 136, title: "三井楽中柔剣道場", lat: 32.744111, lng: 128.6884250, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市三井楽町にある武道施設。柔道や剣道などの練習・競技に使用される。" },
+    { id: 154, title: "三井楽（みみらくのしま）", lat: 32.7790204, lng: 128.6811031, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "福江島北西部に位置する名勝および日本遺産の構成文化財。遣唐使の最終寄港地であり、古典文学にも登場する景勝地。" },
+    { id: 175, title: "嵯峨島火山海食崖", lat: 32.7220087, lng: 128.5911805, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の嵯峨島にある県指定の天然記念物。火山の噴出物や溶岩が東シナ海の荒波によって削り取られてできた珍しい海食崖。" },
+    { id: 86, title: "三井楽診療所嵯峨島出張診療所", lat: 32.7261358, lng: 128.5988716, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市三井楽町嵯峨島にある医療施設。地域住民の診療やオンライン診療の拠点として利用されている。" },
+    { id: 123, title: "嵯峨島漁港公園", lat: 32.728968, lng: 128.5997400, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-boat", description: "長崎県五島市の嵯峨島にある漁港公園。嵯峨島漁港の近くに位置し、美しい海や自然の景観を楽しめる憩いの場。" },
+
+    // --- 6. 岐宿（城岳・キリシタンの歴史） ---
+    { id: 244, title: "水ノ浦教会", lat: 32.7486814, lng: 128.7469667, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "水鏡に映る姿が美しい、白亜のロマネスク様式の教会です。" },
+    { id: 127, title: "浜田海水浴場", lat: 32.7579309, lng: 128.750681, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市の岐宿町にある海水浴場。魚津ヶ崎公園に隣接し、溶岩海岸に囲まれた白い砂浜と澄んだ海が特徴。シャワーや更衣室などの設備が整い、波が穏やかで家族連れにも人気がある。" },
+    { id: 40, title: "魚津ヶ崎公園", lat: 32.75607, lng: 128.746692, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tent", description: "むかし遣唐使(けんとうし)の船が立ち寄った場所です。秋には曼珠沙華(まんじゅしゃげ)やつわぶきの花がいっぱいに咲いて、とても綺麗です。" },
+    { id: 12, title: "Ｂ＆Ｇ海洋センター", lat: 32.7468449, lng: 128.7620016, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市にあるスポーツ施設。体育館やプールなどを備え、地域住民のスポーツ・レクリエーション活動の拠点として利用されている。" },
+    { id: 179, title: "巌立神社社叢", lat: 32.7585914, lng: 128.7596319, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市岐宿町の巌立神社境内にある暖地性樹種の植物群落。シイノキやオガタマノキなどの大木が生育しており、県の天然記念物に指定されている。" },
+    { id: 163, title: "寄神貝塚", lat: 32.763566, lng: 128.7587677, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市岐宿町にある縄文時代後期から晩期にかけての貝塚。土器や石器などが発掘された史跡。" },
+    { id: 193, title: "宇久五島家八代覚公墓", lat: 32.7548303, lng: 128.7577434, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市岐宿町にある五島家（宇久氏）第8代当主・宇久覚公の墓所。歴史的な史跡・文化財。" },
+    { id: 24, title: "岐宿運動場施設", lat: 32.731282, lng: 128.7440200, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市にある屋外スポーツ施設。野球やソフトボール、各種競技などに利用されているグラウンド。" },
+    { id: 128, title: "荒神岳展望施設", lat: 32.74342, lng: 128.7489100, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市岐宿町にある展望施設。花崗斑岩からなる荒神岳に位置し、山内盆地や周辺の豊かな自然を一望できるスポット。" },
+    { id: 129, title: "城岳公園施設", lat: 32.74342, lng: 128.7489100, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市岐宿町の城岳山頂付近に位置する公園施設。周囲の島々や東シナ海を一望できる展望台などが整備されている。" },
+    { id: 49, title: "岐宿農産加工センター", lat: 32.7340834, lng: 128.7315334, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市岐宿町にある農産物加工施設。地域の農産物を活用した加工品の製造や開発が行われている。" },
+    { id: 194, title: "楠原牢屋跡", lat: 32.7355101, lng: 128.7493519, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "明治初期の五島崩れ（キリシタン弾圧）の際に捕らえられた潜伏キリシタンが投獄・拷問された牢屋の跡地。復原された民家や信仰の自由百年祭記念碑「祈りの像」がある五島市指定史跡。" },
+    { id: 249, title: "楠原教会", lat: 32.7333833, lng: 128.7464102, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "赤いレンガ造りの美しい教会です。堂崎天主堂に次いで五島で2番目に古い歴史を持っています。" },
+    { id: 89, title: "歯科診療所山内出張所", lat: 32.6867832, lng: 128.7353383, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市岐宿町中嶽にある国民健康保険の歯科診療所。地域の歯科医療を提供する施設。" },
+    { id: 38, title: "京嶽公園施設", lat: 32.7453713, lng: 128.7620830, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市岐宿町にある公園施設。遊具や人工草ソリゲレンデ、広場などがあり、春には桜の名所として親しまれている。" },
+
+    // --- 7. 奥浦・戸岐（北部・堂崎天主堂周辺） ---
+    { id: 42, title: "六方海水浴場脱衣所", lat: 32.7142417, lng: 128.8391543, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市平蔵町にある六方海水浴場に設置された脱衣所施設。海水浴場の利用者向けに脱衣スペースなどの設備を提供する施設。" },
+    { id: 261, title: "旧浦頭教会跡", lat: 32.7321944, lng: 128.8321223, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市奥浦町にあるキリシタン史跡。かつて存在した教会の跡地で、初代教会堂の歴史やキリシタン弾圧の歴史を伝えている。" },
+    { id: 243, title: "浦頭教会", lat: 32.7347531, lng: 128.8312788, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "小高い丘(おか)の上に建つ、真っ白な教会です。ここから見える海の景色(けしき)は最高です。" },
+    { id: 250, title: "前田川河川公園（かっぱ公園）", lat: 32.7365143, lng: 128.8279077, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "おくうら小学校の南、前田川沿いにある公園です。初夏にはたくさんのホタルが飛んでいて、とても幻想的(げんそうてき)です！" },
+    { id: 242, title: "栄林寺", lat: 32.7397921, lng: 128.8250736, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "おくうら小学校の近くにあるお寺です。赤いニット帽(ぼう)をかぶった可愛いお地蔵(じぞう)さまがいます。" },
+    { id: 167, title: "五島樫の浦のアコウ", lat: 32.7472351, lng: 128.8441958, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市平蔵町にある九州最大級のアコウの巨樹。長崎県の天然記念物に指定されている。" },
+    { id: 178, title: "福江椎木山の漣痕", lat: 32.7495188, lng: 128.8503454, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市平蔵町の椎木山にある地質名所。砂岩の表面に波頭状の凹凸模様が美しく残る、保存状態の良好な波によるさざ波の化石。長崎県の天然記念物に指定されている。" },
+    { id: 158, title: "堂崎天主堂", lat: 32.755875, lng: 128.8373545, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にあるカトリック教会。明治時代に建てられたレンガ造りの聖堂で、現在は五島キリシタンの歴史を伝える資料館として公開されている。" },
+    { id: 159, title: "浦頭教会聖教木版画", lat: 32.7558921, lng: 128.8372606, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の堂崎教会内にある、明治時代初期にフランス人宣教師ド・ロ神父によって持ち込まれた布教用の木版画（県指定有形文化財）。" },
+    { id: 255, title: "戸岐大橋", lat: 32.7570118, lng: 128.8261385, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-boat", description: "奥浦と戸岐(とき)をつなぐ、大きな赤いアーチの橋です。海の上を走っているみたいで気持ちいいよ！" },
+    { id: 2, title: "五島観光歴史資料館戸岐資料収蔵庫", lat: 32.7579569, lng: 128.8219870, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市戸岐町にある五島観光歴史資料館の収蔵庫。五島市指定有形文化財（歴史資料）などの文化財や歴史資料を保管・収納している施設。" },
+    { id: 36, title: "南河原観光展望所", lat: 32.7341168, lng: 128.8423303, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市平蔵町にある展望所。久賀島や多々良島などの島々や美しい海が一望できる景勝地。" },
+
+    // --- 8. 久賀島・椛島 ---
+    { id: 207, title: "久賀島観光交流拠点センター", lat: 32.7977923, lng: 128.8717322, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市の久賀島にある観光交流・案内施設。築130年以上の古民家を改修したもので、世界遺産や重要文化的景観に関する展示、休憩スペースなどを備える。" },
+    { id: 134, title: "旧五輪教会堂", lat: 32.8022602, lng: 128.9037332, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の久賀島にある歴史的建造物（教会堂）。明治14年に建てられた旧浜脇教会堂を昭和6年に移築したもので、国の重要文化財および世界文化遺産の構成資産に指定されている。" },
+    { id: 87, title: "久賀診療所", lat: 32.7927133, lng: 128.8704128, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市の久賀島にある診療所（医療機関）。島民の地域医療や健康維持を支える施設。" },
+    { id: 90, title: "伊福貴診療所", lat: 32.7533887, lng: 128.9699459, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-first-aid", description: "長崎県五島市（椛島）にある医療機関。地域住民の健康維持や初期診療を担う公立診療所。" },
+
+    // --- 9. 奈留島 ---
+    { id: 209, title: "奈留島世界遺産ガイダンスセンター", lat: 32.83052, lng: 128.9343200, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-building", description: "長崎県五島市にある展示施設。世界文化遺産「長崎と天草地方の潜伏キリシタン関連遺産」の構成資産である「奈留島の江上集落」や五島キリシタン史、江上天主堂に関するパネル・資料を展示し解説している。" },
+    { id: 4, title: "奈留芸能館", lat: 32.82951, lng: 128.9300300, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市奈留町にある多目的ホール施設。伝統芸能の披露や文化活動、コミュニティ交流の場として利用されている施設。" },
+    { id: 15, title: "奈留総合体育館", lat: 32.8364825, lng: 128.9321199, category: "その他", categoryColor: "#eab308", categoryIcon: "ph-activity", description: "長崎県五島市の奈留島（奈留町浦）にある体育館施設。屋内スポーツや地域行事などに利用されている。" },
+    { id: 206, title: "江上天主堂", lat: 32.8552106, lng: 128.9040613, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市の奈留島にあるカトリック教会堂。1918年に鉄川与助の設計施工により建てられた木造建築で、世界文化遺産の構成資産および国指定重要文化財に登録されている。" },
+    { id: 172, title: "船廻神社社叢", lat: 32.8472991, lng: 128.9419554, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市奈留町にある神社（船廻八幡神社）の境内周辺に広がる鎮守の森。ホルトノキやナタオレノキなどの暖地性樹木が茂り、県の天然記念物に指定されている。" },
+    { id: 130, title: "城岳緑地公園展望所", lat: 32.8312, lng: 128.9402500, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県五島市にある城岳の山頂付近に整備された公園施設。展望台やトイレが設置されており、豊かな自然や島々の絶景を望むことができるスポット。" },
+    { id: 26, title: "宮の森総合公園", lat: 32.845362, lng: 128.9438369, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市の奈留島にある総合公園。バンガローやキャンプ場のほか、テニスコートやグラウンド、アスレチックなどを備えたレジャー施設。" },
+    { id: 3, title: "笠松宏有記念館", lat: 32.8480447, lng: 128.9427752, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "奈留島の旧船廻小学校を改修し、同島出身の洋画家・笠松宏有の作品を展示している美術館。芸術交流の拠点としても活用されている。" },
+    { id: 32, title: "海水浴場施設（泊）", lat: 32.8116388, lng: 128.9471334, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市の奈留島（泊地区）にある海水浴場施設。シャワーやトイレなどを備え、夏季の海水浴客に利用される。" },
+    { id: 30, title: "海水浴場施設（船廻）", lat: 32.8486059, lng: 128.9412924, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市の奈留島にある宮の浜海水浴場に設置された施設。シャワー室やトイレ、東屋などを備え、海水浴客に利用される。" },
+    { id: 31, title: "海水浴場施設（前島）", lat: 32.800533, lng: 128.9291470, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市の前島地区にある海水浴場施設。海水浴客や利用者のための設備が整えられた施設。" },
+    { id: 181, title: "奈留島皴の浦のハマジンチョウ群落", lat: 32.854512, lng: 128.8904387, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-tree", description: "長崎県五島市の奈留島（大串地区・皺の浦）にある海跡湖の湖岸に自生するハマジンチョウの群落。県の天然記念物に指定されている。" },
+    { id: 199, title: "池塚のビーチロック", lat: 32.8544069, lng: 128.8912778, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "長崎県五島市の奈留島にある天然記念物。砂や礫が炭酸石灰質物などでセメント化されてできた地質構造。" },
+
+    // --- 10. 上五島（若松島・中通島） ---
+    { id: 224, title: "潮の香薫る公園", lat: 32.88632, lng: 129.0287000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町にある公園。若松大橋近くの小高い丘に位置し、若松瀬戸を一望できる景勝地で、敷地内には花時計などが整備されている。" },
+    { id: 225, title: "上中島公園", lat: 32.88773, lng: 129.0393000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "若松大橋の若松島側に整備された公園で、若松瀬戸や橋の景観を一望できるスポット。" },
+    { id: 228, title: "龍観山展望所", lat: 32.8958881, lng: 129.0290506, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町にある展望所。西海国立公園の若松瀬戸や若松大橋、周辺の島々を一望できる景勝地。" },
+    { id: 234, title: "米山公園", lat: 32.84479, lng: 129.0518000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県南松浦郡新上五島町奈良尾郷にある公園。標高234mに位置する展望台からは若松瀬戸や若松大橋などを一望できる。" },
+    { id: 235, title: "ふるさと観音公園", lat: 32.84255, lng: 129.0615000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県南松浦郡新上五島町奈良尾郷にある公園。奈良尾港を見下ろす高台に位置し、心字池を中心とした日本庭園風の園内には北村西望作の黄金色の観音像が祀られている。" },
+    { id: 256, title: "若松大橋", lat: 32.8883288, lng: 129.0353683, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-boat", description: "中通島(なかどおりじま)と若松島をつなぐ、真っ白な大きな橋です。海の色と橋の白のコントラストがとても綺麗です。" },
+    { id: 248, title: "中ノ浦教会", lat: 32.9031887, lng: 129.0667309, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "海辺に建ち、満潮時には海面に教会の姿がくっきりと映ることから「水鏡の教会」ともよばれています。" },
+    { id: 229, title: "遣唐使公園", lat: 32.96007, lng: 129.0479000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県南松浦郡新上五島町今里郷にある公園。かつて遣唐使船の風待ち港・寄港地であった歴史に由来する景勝地。" },
+    { id: 231, title: "マリンピア展望公園", lat: 32.96315, lng: 129.0870000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町の矢倉岳（標高384m）頂上に位置する展望公園。有川や鯛ノ浦の町並みや五島列島の島々を一望できる360度の大パノラマの絶景スポット。" },
+    { id: 238, title: "メル・カピィあおかた", lat: 32.9817058, lng: 129.0664155, category: "おかいもの", categoryColor: "#f43f5e", categoryIcon: "ph-shopping-cart", description: "長崎県南松浦郡新上五島町青方郷にある産地直売所。地元の新鮮な野菜や海産物、五島うどん、かんころ餅などの特産品、手づくりお弁当などを販売している。" },
+    { id: 233, title: "鯨見山展望所", lat: 32.9871, lng: 129.1166000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町にある展望所。江戸時代に鯨の群れを見張る「山見小屋」が置かれていた場所にあり、有川湾や街並みを一望できる景勝地。" },
+    { id: 236, title: "新上五島町鯨賓館ミュージアム", lat: 32.98681, lng: 129.1128000, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県新上五島町の有川港多目的ターミナル内にある博物館。捕鯨の歴史や資料、教会建築家・鉄川与助に関する展示などを行っている。" },
+    { id: 237, title: "新上五島町観光物産センター", lat: 32.98578, lng: 129.1152000, category: "おかいもの", categoryColor: "#f43f5e", categoryIcon: "ph-shopping-cart", description: "長崎県新上五島町有川郷の「五島うどんの里」内にある物産館。五島手延うどんや水産加工品、椿油製品など、町内の特産品や土産物を豊富に取り揃えている。" },
+    { id: 258, title: "有川港ターミナル", lat: 32.9866652, lng: 129.1127870, category: "のりもの", categoryColor: "#0ea5e9", categoryIcon: "ph-boat", description: "上五島の海の玄関口(げんかんぐち)のひとつです。「鯨賓館(げいひんかん)」という名前の、くじらの形をした特徴的な建物です。" },
+    { id: 230, title: "城山展望所", lat: 32.9944435, lng: 129.0860812, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県新上五島町の榎津郷（城山）にある展望施設。中世の山城跡に建てられた城の天守閣を思わせる展望台があり、360度の大パノラマで周囲の島々や海を一望できる。" },
+    { id: 239, title: "船崎饂飩伝承館", lat: 32.9951984, lng: 129.0504021, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県新上五島町（船崎地区）にある五島手延うどんの伝承・体験施設。うどん作りの工程や器具の展示のほか、手延べうどん作り体験などが楽しめる。" },
+    { id: 227, title: "観音岳公園", lat: 32.98483, lng: 129.0580000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町にある公園。標高約160mの観音岳山腹に位置し、世界初の洋上石油備蓄基地や東シナ海に沈む夕日を一望できる絶景スポット。近くには岩家観音堂がある。" },
+    { id: 254, title: "蛤浜海水浴場", lat: 32.97962, lng: 129.0887100, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-waves", description: "遠浅(とおあさ)でエメラルドグリーンの海と白い砂浜がうつくしい、上五島を代表する海水浴場です。" },
+    { id: 226, title: "矢堅目公園", lat: 33.04326, lng: 129.0663000, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県新上五島町にある公園施設。円錐形の奇岩や東シナ海を一望できる絶景スポットで、美しい夕日の名所として知られる。" },
+    { id: 247, title: "青砂ヶ浦天主堂", lat: 33.0276538, lng: 129.0874157, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "レンガ造りのうつくしい教会で、国の重要文化財(じゅうようぶんかざい)に指定されています。" },
+    { id: 246, title: "頭ヶ島天主堂", lat: 33.0124414, lng: 129.1828373, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "世界遺産(せかいいさん)のひとつです！めずらしい石造りの教会で、海辺にポツンと建っている姿はとてもうつくしいです。" },
+    { id: 232, title: "龍馬ゆかりの広場", lat: 32.99164, lng: 129.1775000, category: "れきし・ぶんか", categoryColor: "#ef4444", categoryIcon: "ph-bank", description: "長崎県新上五島町にある広場。坂本龍馬が購入したワイル・ウエフ号の遭難事故を受け、亡くなった同志を悼んで合掌する「五島祈りの龍馬像」が設置されている。" },
+
+    // --- 11. その他遠方 ---
+    { id: 156, title: "男女群島", lat: 32.0268347, lng: 128.3711075, category: "しぜん", categoryColor: "#10b981", categoryIcon: "ph-mountains", description: "長崎県五島市にある東シナ海に浮かぶ無人の島嶼群。群島全体が国の天然記念物に指定されており、貴重な動植物や豊かな釣り場として知られる。" }
+];
+
+        let mySpotsState = safeStorageGet('explore_my_spots', []); 
+        let currentBaseSchool = null;
+
+        /* =========================================================================
+           3. 地図とレイヤー制御
+        ========================================================================= */
+        const map = L.map('map', { zoomControl: false, tap: false });
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        const photoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', { maxZoom: 18 });
+        
+        let isPhotoLayer = false;
+        document.getElementById('btn-toggle-layer').addEventListener('click', (e) => {
+            isPhotoLayer = !isPhotoLayer;
+            const btn = e.currentTarget; const icon = document.getElementById('icon-layer');
+            if (isPhotoLayer) {
+                map.removeLayer(osmLayer); map.addLayer(photoLayer);
+                btn.classList.replace('bg-white/20', 'bg-white'); btn.classList.replace('text-white', 'text-green-600');
+                icon.classList.replace('ph-images', 'ph-map-trifold');
+            } else {
+                map.removeLayer(photoLayer); map.addLayer(osmLayer);
+                btn.classList.replace('bg-white', 'bg-white/20'); btn.classList.replace('text-green-600', 'text-white');
+                icon.classList.replace('ph-map-trifold', 'ph-images');
+            }
+        });
+
+        const schoolLayerGroup = L.layerGroup().addTo(map);
+        const famousLayerGroup = L.layerGroup().addTo(map);
+        const mySpotLayerGroup = L.layerGroup().addTo(map);
+        const areaLayers = L.layerGroup().addTo(map);
+
+        document.getElementById('toggle-famous').addEventListener('change', (e) => {
+            if(e.target.checked) map.addLayer(famousLayerGroup); else map.removeLayer(famousLayerGroup);
+        });
+        document.getElementById('toggle-my').addEventListener('change', (e) => {
+            if(e.target.checked) map.addLayer(mySpotLayerGroup); else map.removeLayer(mySpotLayerGroup);
+        });
+        document.getElementById('toggle-school').addEventListener('change', (e) => {
+            if(e.target.checked) map.addLayer(schoolLayerGroup); else map.removeLayer(schoolLayerGroup);
+        });
+
+        /* =========================================================================
+           4. 初期化と拠点モーダル
+        ========================================================================= */
+        function initApp() {
+            const savedSchoolId = safeStorageGet('explore_base_school_id', null);
+            if (!savedSchoolId) showSchoolSelectionModal(false);
+            else {
+                const school = SCHOOL_DATA.find(s => s.id === savedSchoolId);
+                if (school) {
+                    currentBaseSchool = school;
+                    map.setView([school.lat, school.lng], 15);
+                    renderAllSpots();
+                } else showSchoolSelectionModal(false);
+            }
+        }
+
+        function showSchoolSelectionModal(isCancelable) {
+            const modal = document.getElementById('base-school-modal');
+            const list = document.getElementById('school-selection-list');
+            list.innerHTML = '';
+            
+            if (isCancelable) {
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<i class="ph-bold ph-x text-xl"></i> やめる';
+                closeBtn.className = "w-full text-center p-3 mb-2 bg-gray-200 text-gray-700 font-bold rounded-xl active:scale-95";
+                closeBtn.onclick = () => {
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => { modal.style.display = 'none'; }, 300);
+                };
+                list.appendChild(closeBtn);
+            }
+            
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => modal.classList.remove('opacity-0'));
+            
+            SCHOOL_DATA.forEach(school => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 mb-3 bg-white border-2 border-green-200 rounded-xl hover:border-green-500 hover:bg-green-50 active:scale-[0.98] transition-all flex items-center gap-4 shadow-sm";
+                btn.innerHTML = `<div class="w-12 h-12 rounded-full bg-orange-400 text-white flex items-center justify-center flex-shrink-0"><i class="ph-bold ${school.categoryIcon} text-2xl"></i></div>
+                                 <div><div class="font-bold text-gray-800 text-lg">${school.title}</div></div>`;
+                btn.onclick = () => {
+                    safeStorageSet('explore_base_school_id', school.id);
+                    currentBaseSchool = school;
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => { modal.style.display = 'none'; }, 300);
+                    map.setView([school.lat, school.lng], 15);
+                    renderAllSpots();
+                };
+                list.appendChild(btn);
+            });
+        }
+
+        window.resetMap = function() {
+            clearArea();
+            if(currentBaseSchool) map.setView([currentBaseSchool.lat, currentBaseSchool.lng], 15, { animate: true });
+        };
+
+        function createIcon(color, iconName, isMySpot = false) {
+            const borderStyle = isMySpot ? 'border-4 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : 'border-3 border-gray-800 shadow-md';
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="marker-pin ${borderStyle}" style="border-color: ${color}"><div class="marker-icon" style="color: ${color}"><i class="ph-fill ${iconName}"></i></div></div>`,
+                iconSize: [36, 36], iconAnchor: [18, 36]
+            });
+        }
+
+        /* =========================================================================
+           5. スポット描画エンジン (Hybrid Rendering)
+        ========================================================================= */
+        function renderAllSpots() {
+            schoolLayerGroup.clearLayers();
+            famousLayerGroup.clearLayers();
+            mySpotLayerGroup.clearLayers();
+            document.getElementById('spot-list-school').innerHTML = '';
+            document.getElementById('spot-list-famous').innerHTML = '';
+            document.getElementById('my-spots-container').innerHTML = '';
+
+            SCHOOL_DATA.forEach(school => {
+                const marker = L.marker([school.lat, school.lng], { icon: createIcon(school.categoryColor, school.categoryIcon), zIndexOffset: (currentBaseSchool && currentBaseSchool.id === school.id) ? 1000 : 0 }).addTo(schoolLayerGroup);
+                marker.on('click', () => openModal(school, false));
+                createListItem(school, 'spot-list-school', false);
+            });
+
+            FAMOUS_SPOT_DATA.forEach(spot => {
+                const marker = L.marker([spot.lat, spot.lng], { icon: createIcon(spot.categoryColor, spot.categoryIcon) }).addTo(famousLayerGroup);
+                marker.on('click', () => openModal(spot, false));
+                createListItem(spot, 'spot-list-famous', false);
+            });
+
+            const myEmptyMsg = document.getElementById('my-spots-empty');
+            if (mySpotsState.length === 0) myEmptyMsg.classList.remove('hidden');
+            else {
+                myEmptyMsg.classList.add('hidden');
+                mySpotsState.forEach(mySpot => {
+                    if (mySpot.type === 'reference') {
+                        const originalSpot = [...SCHOOL_DATA, ...FAMOUS_SPOT_DATA].find(s => s.id === mySpot.originalId);
+                        if (originalSpot) {
+                            const mergedSpot = { ...originalSpot, customDescription: mySpot.customDescription, mySpotId: mySpot.id };
+                            const marker = L.marker([mergedSpot.lat, mergedSpot.lng], { icon: createIcon(mergedSpot.categoryColor, mergedSpot.categoryIcon, true) }).addTo(mySpotLayerGroup);
+                            marker.on('click', () => openModal(mergedSpot, true));
+                            createListItem(mergedSpot, 'my-spots-container', true, mySpot.id);
+                        }
+                    } else if (mySpot.type === 'custom') {
+                        const customSpot = { 
+                            ...mySpot, 
+                            category: mySpot.category || "オリジナル", 
+                            categoryColor: mySpot.categoryColor || "#eab308", 
+                            categoryIcon: mySpot.categoryIcon || "ph-star" 
+                        };
+                        const marker = L.marker([customSpot.lat, customSpot.lng], { icon: createIcon(customSpot.categoryColor, customSpot.categoryIcon, true) }).addTo(mySpotLayerGroup);
+                        marker.on('click', () => openModal(customSpot, true));
+                        createListItem(customSpot, 'my-spots-container', true, mySpot.id);
+                    }
+                });
+            }
+        }
+
+        function createListItem(spot, containerId, isMySpot, mySpotId = null) {
+            const container = document.getElementById(containerId);
+            const item = document.createElement('div');
+            item.className = "p-3 mb-2 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-green-50 active:bg-green-100 transition-colors relative overflow-hidden";
+            
+            let deleteBtnHTML = '';
+            if (isMySpot) {
+                deleteBtnHTML = `<button onclick="event.stopPropagation(); requestRemoveMySpot('${mySpotId}')" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><i class="ph-bold ph-trash"></i></button>`;
+            }
+
+            item.innerHTML = `
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0" style="background-color: ${spot.categoryColor}">
+                    <i class="ph-bold ${spot.categoryIcon} text-xl"></i>
+                </div>
+                <div class="pr-8">
+                    <h3 class="font-bold text-sm text-gray-800 line-clamp-1">${spot.title}</h3>
+                    <p class="text-[11px] text-gray-500 font-bold mt-0.5" style="color: ${spot.categoryColor}">${spot.category}</p>
+                </div>
+                ${deleteBtnHTML}
+            `;
+            item.addEventListener('click', () => {
+                closeDrawer();
+                map.setView([spot.lat, spot.lng], 16, { animate: true });
+                setTimeout(() => openModal(spot, isMySpot), 350); 
+            });
+            container.appendChild(item);
+        }
+
+        function switchTab(tabId) {
+            const tabs = { school: 'tab-school', famous: 'tab-famous', my: 'tab-my' };
+            const lists = { school: 'spot-list-school', famous: 'spot-list-famous', my: 'spot-list-my' };
+            Object.keys(tabs).forEach(key => {
+                const t = document.getElementById(tabs[key]); const l = document.getElementById(lists[key]);
+                if (key === tabId) {
+                    t.className = "flex-1 py-2 text-sm font-bold bg-white text-green-700 rounded-t-lg border-t border-l border-r border-green-200 shadow-[0_-2px_5px_rgba(0,0,0,0.05)] transition-colors flex items-center justify-center gap-1";
+                    l.classList.remove('hidden');
+                } else {
+                    t.className = "flex-1 py-2 text-sm font-bold bg-green-100 text-green-600 rounded-t-lg border-b border-green-200 hover:bg-green-50 transition-colors flex items-center justify-center gap-1";
+                    l.classList.add('hidden');
+                }
+            });
+        }
+
+        /* =========================================================================
+           6. モーダル・詳細機能 (メモリ解放・写真変更・編集)
+        ========================================================================= */
+        const drawer = document.getElementById('list-drawer');
+        const modal = document.getElementById('detail-modal');
+        const modalContent = document.getElementById('modal-content');
+        let currentActiveSpot = null;
+        let activeObjectURL = null; // メモリリーク防止用
+
+        document.getElementById('btn-show-list').addEventListener('click', () => drawer.classList.remove('translate-x-full'));
+        document.getElementById('btn-close-list').addEventListener('click', () => drawer.classList.add('translate-x-full'));
+        function closeDrawer() { drawer.classList.add('translate-x-full'); }
+        
+        function generatePlaceholderImage(title, bgColor) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="${bgColor}20" /><text x="50%" y="45%" font-family="sans-serif" font-size="50" fill="${bgColor}" text-anchor="middle" font-weight="bold">📷 NO IMAGE</text><text x="50%" y="60%" font-family="sans-serif" font-size="20" fill="#333" text-anchor="middle">「${title}」の写真を</text><text x="50%" y="70%" font-family="sans-serif" font-size="20" fill="#333" text-anchor="middle">とりにいこう！</text></svg>`;
+            return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        }
+
+        async function openModal(spot, openedFromMySpot) {
+            currentActiveSpot = spot;
+            document.getElementById('modal-title').textContent = spot.title;
+            document.getElementById('modal-category-badge').innerHTML = `<i class="ph-fill ${spot.categoryIcon}" style="color:${spot.categoryColor}"></i> ${spot.category}`;
+            
+            const img = document.getElementById('modal-image');
+            img.src = ""; 
+            if (activeObjectURL) { URL.revokeObjectURL(activeObjectURL); activeObjectURL = null; }
+
+            // 既存スポット(参照型)の場合、すでに写真が登録されているかチェック
+            let spotImageId = null;
+            if (spot.type === 'custom') {
+                spotImageId = spot.imageId;
+            } else {
+                const targetMySpot = mySpotsState.find(my => my.type === 'reference' && my.originalId === (spot.originalId || spot.id));
+                if (targetMySpot && targetMySpot.imageId) {
+                    spotImageId = targetMySpot.imageId;
+                    currentActiveSpot.imageId = spotImageId;
+                    currentActiveSpot.mySpotId = targetMySpot.id;
+                }
+            }
+
+            if (spotImageId) {
+                try {
+                    const blob = await getImageFromDB(spotImageId);
+                    if (blob) { activeObjectURL = URL.createObjectURL(blob); img.src = activeObjectURL; }
+                    else img.src = spot.imageUrl ? spot.imageUrl : generatePlaceholderImage(spot.title, spot.categoryColor);
+                } catch(e) { img.src = spot.imageUrl ? spot.imageUrl : generatePlaceholderImage(spot.title, spot.categoryColor); }
+            } else {
+                img.src = spot.imageUrl ? spot.imageUrl : generatePlaceholderImage(spot.title, spot.categoryColor);
+            }
+
+            const descEl = document.getElementById('modal-description');
+            const editBtn = document.getElementById('btn-edit-desc');
+            const saveBtn = document.getElementById('btn-save-desc');
+            const editArea = document.getElementById('modal-description-edit');
+            
+            descEl.classList.remove('hidden'); editArea.classList.add('hidden'); saveBtn.classList.add('hidden');
+            descEl.textContent = spot.customDescription || spot.description || "説明がありません。";
+            
+            const toggleBtn = document.getElementById('btn-toggle-myspot');
+            const btnText = document.getElementById('myspot-btn-text');
+            const icon = toggleBtn.querySelector('i');
+            
+            const editImgBtns = document.getElementById('edit-image-buttons');
+            editImgBtns.classList.remove('hidden'); // 全てのスポットで常にカメラボタンを表示
+
+            if (spot.type === 'custom') {
+                editBtn.classList.remove('hidden');
+                editBtn.onclick = () => startEditDescription(spot.customDescription || spot.description);
+                
+                toggleBtn.className = "w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2 active:scale-[0.98]";
+                icon.className = "ph-bold ph-trash text-lg"; btnText.textContent = "このスポットを消す";
+                toggleBtn.onclick = () => { requestRemoveMySpot(spot.id); closeModal(); };
+            } else {
+                const targetMySpot = mySpotsState.find(my => my.type === 'reference' && my.originalId === (spot.originalId || spot.id));
+                
+                if (targetMySpot || openedFromMySpot) {
+                    editBtn.classList.remove('hidden');
+                    editBtn.onclick = () => startEditDescription(spot.customDescription || spot.description);
+                    toggleBtn.className = "w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2 active:scale-[0.98]";
+                    icon.className = "ph-bold ph-trash text-lg"; btnText.textContent = "マイスポットから外す";
+                    toggleBtn.onclick = () => { requestRemoveMySpot(targetMySpot ? targetMySpot.id : spot.mySpotId); closeModal(); };
+                } else {
+                    editBtn.classList.add('hidden');
+                    toggleBtn.className = "w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 rounded-xl transition-colors shadow-md flex justify-center items-center gap-2 active:scale-[0.98]";
+                    icon.className = "ph-bold ph-star text-lg"; btnText.textContent = "マイスポットに追加";
+                    toggleBtn.onclick = () => { addReferenceToMySpot(spot.id); closeModal(); };
+                }
+            }
+
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            });
+        }
+
+        // 写真の撮り直し・追加 (全スポット共通・自動登録対応)
+        window.handleEditImage = function(e) {
+            const file = e.target.files[0];
+            if (!file || !currentActiveSpot) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = async function() {
+                    const MAX_SIZE = 800;
+                    let w = img.width, h = img.height;
+                    if (w > h && w > MAX_SIZE) { h = Math.round(h * MAX_SIZE / w); w = MAX_SIZE; }
+                    else if (h > MAX_SIZE) { w = Math.round(w * MAX_SIZE / h); h = MAX_SIZE; }
+
+                    const canvas = document.getElementById('compress-canvas');
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    canvas.toBlob(async (blob) => {
+                        const btns = document.getElementById('edit-image-buttons');
+                        btns.style.opacity = '0.5'; btns.style.pointerEvents = 'none';
+
+                        try {
+                            let imageId = currentActiveSpot.imageId;
+                            let targetSpotIndex = -1;
+                            let isNewReference = false;
+
+                            if (currentActiveSpot.type === 'custom') {
+                                targetSpotIndex = mySpotsState.findIndex(s => s.id === currentActiveSpot.id);
+                            } else {
+                                // 学校や有名スポット(参照型)の場合
+                                const originalId = currentActiveSpot.originalId || currentActiveSpot.id;
+                                targetSpotIndex = mySpotsState.findIndex(s => s.type === 'reference' && s.originalId === originalId);
+                                
+                                if (targetSpotIndex === -1) {
+                                    // 未登録の場合は自動的にマイスポットに追加
+                                    const newId = 'my_ref_' + Date.now();
+                                    mySpotsState.push({ id: newId, type: 'reference', originalId: originalId, createdAt: Date.now() });
+                                    targetSpotIndex = mySpotsState.length - 1;
+                                    isNewReference = true;
+                                    currentActiveSpot.mySpotId = newId;
+                                }
+                            }
+
+                            if (!imageId) {
+                                const mySpotId = currentActiveSpot.type === 'custom' ? currentActiveSpot.id : (currentActiveSpot.mySpotId || mySpotsState[targetSpotIndex].id);
+                                imageId = 'img_' + mySpotId;
+                                currentActiveSpot.imageId = imageId;
+                            }
+                            
+                            mySpotsState[targetSpotIndex].imageId = imageId;
+                            await saveImageToDB(imageId, blob);
+                            
+                            if (activeObjectURL) URL.revokeObjectURL(activeObjectURL);
+                            activeObjectURL = URL.createObjectURL(blob);
+                            document.getElementById('modal-image').src = activeObjectURL;
+                            
+                            safeStorageSet('explore_my_spots', mySpotsState);
+                            
+                            if (isNewReference) {
+                                showToast("📸 写真を登録し、マイスポットに追加しました！");
+                                renderAllSpots();
+                                openModal(currentActiveSpot, true); // ボタン状態を更新するためリロード
+                            } else {
+                                showToast("📸 写真を変更しました！");
+                                renderAllSpots(); 
+                            }
+                        } catch (err) { 
+                            showToast("❌ 写真の保存に失敗しました。");
+                        } finally { 
+                            btns.style.opacity = '1'; btns.style.pointerEvents = 'auto'; 
+                        }
+                    }, 'image/jpeg', 0.7);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = ''; // 連続で同じファイルを選べるようにリセット
+        };
+
+        function startEditDescription(currentText) {
+            const descEl = document.getElementById('modal-description');
+            const editArea = document.getElementById('modal-description-edit');
+            const editBtn = document.getElementById('btn-edit-desc');
+            const saveBtn = document.getElementById('btn-save-desc');
+
+            descEl.classList.add('hidden'); editBtn.classList.add('hidden');
+            editArea.classList.remove('hidden'); saveBtn.classList.remove('hidden');
+            editArea.value = currentText === "説明がありません。" ? "" : currentText;
+            editArea.focus();
+
+            saveBtn.onclick = () => {
+                const newText = editArea.value.trim();
+                descEl.textContent = newText || "説明がありません。";
+                
+                if (currentActiveSpot) {
+                    const mySpotId = currentActiveSpot.mySpotId || currentActiveSpot.id;
+                    const spotIndex = mySpotsState.findIndex(s => s.id === mySpotId);
+                    if (spotIndex !== -1) {
+                        mySpotsState[spotIndex].customDescription = newText;
+                        safeStorageSet('explore_my_spots', mySpotsState);
+                        renderAllSpots();
+                    }
+                }
+                editArea.classList.add('hidden'); saveBtn.classList.add('hidden');
+                descEl.classList.remove('hidden'); editBtn.classList.remove('hidden');
+            };
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0'); modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (activeObjectURL) { URL.revokeObjectURL(activeObjectURL); activeObjectURL = null; }
+            }, 300);
+        }
+
+        function addReferenceToMySpot(originalId) {
+            const newId = 'my_ref_' + Date.now();
+            mySpotsState.push({ id: newId, type: 'reference', originalId: originalId, createdAt: Date.now() });
+            safeStorageSet('explore_my_spots', mySpotsState);
+            showToast("🌟 マイスポットに追加しました！"); renderAllSpots();
+        }
+
+        async function requestRemoveMySpot(mySpotId) {
+            const spotToRemove = mySpotsState.find(my => my.id === mySpotId);
+            if (!spotToRemove) return;
+            if (spotToRemove.type === 'custom' && spotToRemove.imageId) await deleteImageFromDB(spotToRemove.imageId);
+            mySpotsState = mySpotsState.filter(my => my.id !== mySpotId);
+            safeStorageSet('explore_my_spots', mySpotsState);
+            showToast("🗑️ スポットを削除しました。"); renderAllSpots();
+        }
+
+        /* =========================================================================
+           7. オリジナルスポット作成 (スナイパーモード入力監視付き)
+        ========================================================================= */
+        let activeCreateBlob = null;
+        let createLocation = null;
+
+        function enterTargetMode() {
+            closeDrawer();
+            document.getElementById('target-ui').classList.remove('hidden');
+            document.getElementById('btn-target-mode').classList.add('hidden');
+        }
+
+        function cancelTargetMode() {
+            document.getElementById('target-ui').classList.add('hidden');
+            document.getElementById('btn-target-mode').classList.remove('hidden');
+        }
+
+        function confirmTargetLocation() {
+            createLocation = map.getCenter();
+            cancelTargetMode(); openCreateModal();
+        }
+
+        function checkCreateFormValidity() {
+            const title = document.getElementById('create-title').value.trim();
+            const desc = document.getElementById('create-desc').value.trim();
+            const btn = document.getElementById('btn-save-create');
+            if (activeCreateBlob || title || desc) btn.disabled = false; else btn.disabled = true;
+        }
+
+        document.getElementById('create-title').addEventListener('input', checkCreateFormValidity);
+        document.getElementById('create-desc').addEventListener('input', checkCreateFormValidity);
+
+        function openCreateModal() {
+            document.getElementById('create-title').value = '';
+            document.getElementById('create-desc').value = '';
+            document.getElementById('create-preview').src = '';
+            document.getElementById('create-preview').classList.add('hidden');
+            document.getElementById('create-placeholder').classList.remove('hidden');
+            
+            // ★修正ポイント4: ボタンの状態とテキストをリセット
+            const btn = document.getElementById('btn-save-create');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i> マイスポットにほぞん';
+            
+            if (activeCreateBlob) activeCreateBlob = null;
+            
+            const createModal = document.getElementById('create-modal');
+            createModal.classList.remove('hidden');
+            requestAnimationFrame(() => createModal.classList.remove('opacity-0'));
+        }
+
+        function closeCreateModal() {
+            const createModal = document.getElementById('create-modal');
+            createModal.classList.add('opacity-0');
+            setTimeout(() => createModal.classList.add('hidden'), 300);
+        }
+
+        window.handleCreateImage = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const MAX_SIZE = 800;
+                    let w = img.width, h = img.height;
+                    if (w > h && w > MAX_SIZE) { h = Math.round(h * MAX_SIZE / w); w = MAX_SIZE; }
+                    else if (h > MAX_SIZE) { w = Math.round(w * MAX_SIZE / h); h = MAX_SIZE; }
+
+                    const canvas = document.getElementById('compress-canvas');
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    canvas.toBlob((blob) => {
+                        activeCreateBlob = blob;
+                        const url = URL.createObjectURL(blob);
+                        document.getElementById('create-preview').src = url;
+                        document.getElementById('create-preview').classList.remove('hidden');
+                        document.getElementById('create-placeholder').classList.add('hidden');
+                        checkCreateFormValidity(); 
+                    }, 'image/jpeg', 0.7);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        };
+
+        async function saveOriginalSpot() {
+            const title = document.getElementById('create-title').value.trim() || "なまえのないスポット";
+            const desc = document.getElementById('create-desc').value.trim();
+            const btn = document.getElementById('btn-save-create');
+            
+            const catVal = document.querySelector('input[name="spot-category"]:checked').value;
+            const [catName, catColor, catIcon] = catVal.split('|');
+
+            btn.disabled = true; btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> ほぞん中...';
+
+            const newId = 'my_custom_' + Date.now();
+            let imageId = null;
+
+            try {
+                if (activeCreateBlob) { imageId = 'img_' + newId; await saveImageToDB(imageId, activeCreateBlob); }
+                mySpotsState.push({
+                    id: newId, type: 'custom', lat: createLocation.lat, lng: createLocation.lng,
+                    title: title, description: desc, imageId: imageId, createdAt: Date.now(),
+                    category: catName, categoryColor: catColor, categoryIcon: catIcon
+                });
+                safeStorageSet('explore_my_spots', mySpotsState);
+                
+                showToast("🎉 オリジナルスポットをつくりました！");
+                renderAllSpots(); closeCreateModal();
+            } catch(e) {
+                showToast("❌ ほぞんにしっぱいしました。");
+                btn.disabled = false; btn.innerHTML = '<i class="ph-bold ph-check-circle text-xl"></i> マイスポットにほぞん';
+            }
+        }
+
+        /* =========================================================================
+           8. 面積枠とメルカトル図法ハック
+        ========================================================================= */
+        function getPixelsForMeters(centerLatLng, metersWidth, metersHeight) {
+            const latMetersPerDeg = 111320;
+            const lngMetersPerDeg = 111320 * Math.cos(centerLatLng.lat * Math.PI / 180) || 1; 
+            const halfW_deg = (metersWidth / 2) / lngMetersPerDeg;
+            const halfH_deg = (metersHeight / 2) / latMetersPerDeg;
+            const northEast = L.latLng(centerLatLng.lat + halfH_deg, centerLatLng.lng + halfW_deg);
+            const southWest = L.latLng(centerLatLng.lat - halfH_deg, centerLatLng.lng - halfW_deg);
+            const pNE = map.latLngToLayerPoint(northEast);
+            const pSW = map.latLngToLayerPoint(southWest);
+            return { pxW: Math.abs(pNE.x - pSW.x), pxH: Math.abs(pSW.y - pNE.y) };
+        }
+
+        let currentAreaMarker = null;
+
+        window.drawArea = function(type) {
+            clearArea(); 
+            const center = map.getCenter();
+            let wMeters, hMeters, cssClass, innerHTML, zoomLevel;
+            let borderColor = 'rgba(239, 68, 68, 0.8)', bgColor = 'rgba(239,68,68,0.3)';
+
+            switch(type) {
+                case '1a': wMeters = hMeters = 10; cssClass = "area-shape-rect"; innerHTML = "1a"; zoomLevel = 18; break;
+                case '1ha': wMeters = hMeters = 100; cssClass = "area-shape-rect"; innerHTML = "1ha"; zoomLevel = 16; borderColor='rgba(249, 115, 22, 0.8)'; bgColor='rgba(249,115,22,0.3)'; break;
+                case '1km2': wMeters = hMeters = 1000; cssClass = "area-shape-rect"; innerHTML = "1km²"; zoomLevel = 14; borderColor='rgba(234, 179, 8, 0.8)'; bgColor='rgba(234,179,8,0.3)'; break;
+                case '100km2': wMeters = hMeters = 10000; cssClass = "area-shape-rect"; innerHTML = "100km²"; zoomLevel = 11; borderColor='rgba(168, 85, 247, 0.8)'; bgColor='rgba(168,85,247,0.3)'; break;
+                case 'japan': wMeters = hMeters = 614800; cssClass = "area-shape-rect"; innerHTML = "日本（広さ）"; zoomLevel = 4; borderColor='rgba(225, 29, 72, 0.8)'; bgColor='rgba(225,29,72,0.3)'; break;
+                case 'pool': wMeters = 25; hMeters = 15; cssClass = "area-shape-rect"; innerHTML = "プール"; zoomLevel = 18; borderColor='rgba(6, 182, 212, 0.8)'; bgColor='rgba(6,182,212,0.3)'; break;
+                case 'tokyo_dome': wMeters = hMeters = 244; cssClass = "area-shape-circle"; innerHTML = "ドーム"; zoomLevel = 15; borderColor='rgba(236, 72, 153, 0.8)'; bgColor='rgba(236,72,153,0.3)'; break;
+            }
+
+            const rotCtrl = document.getElementById('rotation-control');
+            rotCtrl.classList.remove('hidden');
+            document.getElementById('rotation-slider').value = 0;
+            document.getElementById('rotation-value').textContent = '0°';
+
+            const icon = L.divIcon({
+                className: 'custom-area-marker',
+                html: `<div id="dynamic-shape" class="area-shape-inner ${cssClass}" style="border-color: ${borderColor}; background: ${bgColor};">${innerHTML}</div>`,
+                iconSize: [0, 0] 
+            });
+
+            currentAreaMarker = L.marker(center, { icon: icon, draggable: true, zIndexOffset: 1000 }).addTo(map);
+            currentAreaMarker.areaData = { width: wMeters, height: hMeters, rotation: 0 };
+            areaLayers.addLayer(currentAreaMarker);
+
+            map.flyTo(center, zoomLevel, { animate: true, duration: 1.5 });
+            currentAreaMarker.on('drag', updateAreaMarkerSize);
+        };
+
+        function updateAreaMarkerSize() {
+            if (!currentAreaMarker) return;
+            const data = currentAreaMarker.areaData;
+            const px = getPixelsForMeters(currentAreaMarker.getLatLng(), data.width, data.height);
+            const el = currentAreaMarker.getElement();
+            if (el) {
+                el.style.width = px.pxW + 'px'; el.style.height = px.pxH + 'px';
+                el.style.marginLeft = -(px.pxW / 2) + 'px'; el.style.marginTop = -(px.pxH / 2) + 'px';
+                const inner = el.querySelector('#dynamic-shape');
+                if (inner) inner.style.transform = `rotate(${data.rotation}deg)`;
+            }
+        }
+
+        map.on('zoom', updateAreaMarkerSize); map.on('zoomend', updateAreaMarkerSize);
+        document.getElementById('rotation-slider').addEventListener('input', (e) => {
+            if (currentAreaMarker) {
+                const deg = e.target.value;
+                currentAreaMarker.areaData.rotation = deg;
+                document.getElementById('rotation-value').textContent = deg + '°';
+                updateAreaMarkerSize();
+            }
+        });
+
+        window.clearArea = function() {
+            areaLayers.clearLayers(); currentAreaMarker = null;
+            document.getElementById('rotation-control').classList.add('hidden');
+        };
+
+        /* =========================================================================
+           9. ★Phase 5: データ管理 (JSON / CSV) & 印刷Hack
+        ========================================================================= */
+        const dataModal = document.getElementById('data-modal');
+        function openDataModal() { closeDrawer(); dataModal.classList.remove('hidden'); requestAnimationFrame(() => dataModal.classList.remove('opacity-0')); }
+        function closeDataModal() { dataModal.classList.add('opacity-0'); setTimeout(() => dataModal.classList.add('hidden'), 300); }
+
+        function openInfoModal() { closeDrawer(); document.getElementById('info-modal').classList.remove('hidden'); requestAnimationFrame(() => document.getElementById('info-modal').classList.remove('opacity-0')); }
+        function closeInfoModal() { document.getElementById('info-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('info-modal').classList.add('hidden'), 300); }
+
+        function blobToBase64(blob) {
+
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+        function base64ToBlob(base64Str) {
+            return fetch(base64Str).then(res => res.blob());
+        }
+
+        // --- JSON 処理 (完全バックアップ) ---
+        async function exportJSON(mode = 'download') {
+            const btn = document.getElementById('btn-export-json');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> 準備中...'; btn.disabled = true;
+
+            try {
+                const exportData = [];
+                for (const spot of mySpotsState) {
+                    let spotData = { ...spot };
+                    if (spot.type === 'custom' && spot.imageId) {
+                        try {
+                            const blob = await getImageFromDB(spot.imageId);
+                            if (blob) spotData.imageData = await blobToBase64(blob);
+                        } catch(e) {}
+                    }
+                    exportData.push(spotData);
+                }
+
+                const jsonStr = JSON.stringify(exportData);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const file = new File([blob], 'explore_map_backup.json', { type: 'application/json' });
+
+                if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ title: 'はっけんマップ バックアップ', files: [file] });
+                        showToast("📦 バックアップを共有しました");
+                    } catch (e) {
+                        if (e.name !== 'AbortError') {
+                            triggerDownload(blob, 'explore_map_backup.json');
+                            // ★修正: 共有失敗時のフォールバック通知を追加
+                            showToast("この端末は共有非対応のため保存しました");
+                        }
+                    }
+                } else {
+                    triggerDownload(blob, 'explore_map_backup.json');
+                    if (mode === 'share') showToast("この端末は共有非対応のため保存しました");
+                    else showToast("📦 バックアップを保存しました");
+                }
+            } catch(e) {
+                showToast("❌ 出力に失敗しました");
+            } finally {
+                btn.innerHTML = originalHTML; btn.disabled = false;
+            }
+        }
+
+        async function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let importedCount = 0;
+                    for (const spot of data) {
+                        if (spot.imageData && spot.imageId) {
+                            const blob = await base64ToBlob(spot.imageData);
+                            await saveImageToDB(spot.imageId, blob);
+                            delete spot.imageData; 
+                        }
+                        if (!mySpotsState.find(s => s.id === spot.id)) {
+                            mySpotsState.push(spot);
+                            importedCount++;
+                        }
+                    }
+                    safeStorageSet('explore_my_spots', mySpotsState);
+                    renderAllSpots(); closeDataModal();
+                    showToast(`🔄 ${importedCount}件のスポットを復元しました！`);
+                } catch(err) { showToast("❌ ファイルの読み込みに失敗しました"); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // --- CSV 処理 (Excel用テキスト) ---
+        function exportCSV(mode = 'download') {
+            let csv = '\uFEFF';
+            csv += "種類,なまえ,はっけんメモ,緯度(Lat),経度(Lng)\n";
+            
+            mySpotsState.forEach(spot => {
+                let title = "", desc = "", lat = spot.lat || "", lng = spot.lng || "";
+                let typeStr = spot.type === 'reference' ? "ゆうめい(参照)" : "オリジナル";
+
+                if (spot.type === 'reference') {
+                    const ref = [...SCHOOL_DATA, ...FAMOUS_SPOT_DATA].find(s => s.id === spot.originalId);
+                    if(ref) { title = ref.title; lat = ref.lat; lng = ref.lng; }
+                } else { title = spot.title; }
+
+                desc = spot.customDescription || spot.description || "";
+                title = `"${title.replace(/"/g, '""')}"`;
+                desc = `"${desc.replace(/"/g, '""')}"`;
+
+                csv += `${typeStr},${title},${desc},${lat},${lng}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const file = new File([blob], 'explore_map_list.csv', { type: 'text/csv' });
+            
+            if (mode === 'share' && navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({ title: 'はっけんマップ リスト(CSV)', files: [file] })
+                    .then(() => showToast("📊 CSVリストを共有しました"))
+                    .catch((e) => { 
+                        if (e.name !== 'AbortError') triggerDownload(blob, 'explore_map_list.csv'); 
+                    });
+            } else {
+                triggerDownload(blob, 'explore_map_list.csv');
+                // ★修正ポイント3: プレビュー環境での制限を分かりやすく通知
+                if (mode === 'share') showToast("プレビュー環境のため保存(ダウンロード)しました");
+                else showToast("📊 CSVリストを保存しました");
+            }
+        }
+
+        async function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const lines = e.target.result.split('\n');
+                    let importedCount = 0;
+                    for(let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if(!line) continue;
+                        
+                        const regex = /(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^,]+))/g;
+                        let matches = []; let match;
+                        while (match = regex.exec(line)) {
+                            matches.push(match[1] ? match[1].replace(/\"\"/g, '\"') : match[2]);
+                        }
+                        if(matches.length >= 5) {
+                            const newId = 'my_csv_' + Date.now() + '_' + i;
+                            mySpotsState.push({
+                                id: newId, type: 'custom',
+                                title: matches[1] || "無題",
+                                customDescription: matches[2] || "",
+                                lat: parseFloat(matches[3]), lng: parseFloat(matches[4]),
+                                imageId: null, createdAt: Date.now()
+                            });
+                            importedCount++;
+                        }
+                    }
+                    safeStorageSet('explore_my_spots', mySpotsState);
+                    renderAllSpots(); closeDataModal();
+                    showToast(`📊 ${importedCount}件のデータを読み込みました！`);
+                } catch(err) { showToast("❌ CSVの読み込みに失敗しました"); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- 印刷 Hack ---
+        window.addEventListener('beforeprint', () => {
+            if (map) { map.invalidateSize(); }
+        });
+
+        window.executePrint = function() {
+            // プレビュー制限を完全に撤廃
+            const container = document.getElementById('print-list-container');
+            container.innerHTML = '';
+            
+            if(mySpotsState.length === 0) {
+                container.innerHTML = '<p style="color:#666;">まだマイスポットがありません。</p>';
+            } else {
+                mySpotsState.forEach(spot => {
+                    let title = "", desc = spot.customDescription || spot.description || "説明なし";
+                    if (spot.type === 'reference') {
+                        const ref = [...SCHOOL_DATA, ...FAMOUS_SPOT_DATA].find(s => s.id === spot.originalId);
+                        if(ref) title = ref.title;
+                    } else { title = spot.title; }
+
+                    container.innerHTML += `
+                        <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 12px; page-break-inside: avoid;">
+                            <h3 style="margin:0 0 4px 0; font-size:16px; color:#1f2937;">${title}</h3>
+                            <p style="margin:0; font-size:12px; color:#4b5563;">${desc}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // タイルの読み込みとリサイズを促すため余裕を持たせる
+            map.invalidateSize();
+            showToast("🖨️ 印刷の準備をしています...");
+            setTimeout(() => { window.print(); }, 800);
+        };
+
+        // --- 地名検索機能 (OpenStreetMap Nominatim API) ---
+        const searchModal = document.getElementById('search-modal');
+        const searchInput = document.getElementById('search-input');
+        const btnExecuteSearch = document.getElementById('btn-execute-search');
+        const searchOfflineWarning = document.getElementById('search-offline-warning');
+
+        function openSearchModal() { 
+            closeDrawer(); 
+            searchModal.classList.remove('hidden'); 
+            requestAnimationFrame(() => searchModal.classList.remove('opacity-0')); 
+            checkNetworkStatus(); // 開いた時にネットワーク確認
+            setTimeout(() => searchInput.focus(), 300);
+        }
+        function closeSearchModal() { 
+            searchModal.classList.add('opacity-0'); 
+            setTimeout(() => searchModal.classList.add('hidden'), 300); 
+        }
+
+        // オフライン状態の監視とUI制御
+        function checkNetworkStatus() {
+            if (navigator.onLine) {
+                searchOfflineWarning.classList.add('hidden');
+                searchInput.disabled = false;
+                btnExecuteSearch.disabled = false;
+            } else {
+                searchOfflineWarning.classList.remove('hidden');
+                searchInput.disabled = true;
+                btnExecuteSearch.disabled = true;
+            }
+        }
+        window.addEventListener('online', checkNetworkStatus);
+        window.addEventListener('offline', checkNetworkStatus);
+
+        async function executeSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            if (!navigator.onLine) {
+                showToast("❌ オフラインです");
+                return;
+            }
+
+            btnExecuteSearch.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-xl"></i>';
+            btnExecuteSearch.disabled = true;
+
+            try {
+                // Nominatim APIへのリクエスト (Rate Limitに配慮し、シンプルな検索に留める)
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+                    headers: { 'Accept-Language': 'ja' }
+                });
+                
+                if (!response.ok) throw new Error('API Error');
+                
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+                    
+                    closeSearchModal();
+                    
+                    // 地図を検索結果へアニメーション移動 (ズームレベルは街レベルまで汎用的に12を設定)
+                    map.flyTo([lat, lon], 12, { animate: true, duration: 2.0 });
+                    showToast(`✈️ 「${data[0].display_name.split(',')[0]}」へ移動しました！`);
+                } else {
+                    showToast("❌ 見つかりませんでした");
+                }
+            } catch (error) {
+                console.error("Search Error:", error);
+                showToast("❌ 検索中にエラーが発生しました");
+            } finally {
+                btnExecuteSearch.innerHTML = '<i class="ph-bold ph-magnifying-glass text-xl"></i>';
+                btnExecuteSearch.disabled = false;
+            }
+        }
+
+        initApp();
+    </script>
+
+</body>
+</html>
