@@ -24,7 +24,7 @@ messaging.onBackgroundMessage((payload) => {
 // sw.js (Adom's Lab 統合版 v12: FontAwesome JS対応ハイブリッド版)
 // ローカルファイル(JS)とCDN(CSS/Webfonts)、どちらを使っていてもキャッシュするように設定しています
 
-const CACHE_NAME = 'adom-lab-v12-hybrid-fa'; // ★更新のためバージョン名を変更
+const CACHE_NAME = 'adom-lab-v13-hybrid-fa'; // ★更新のためバージョン名を変更
 const INITIAL_ASSETS = [
     // ---------------------------
     // 1. アプリ本体 (HTML)
