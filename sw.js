@@ -33,6 +33,7 @@ const INITIAL_ASSETS = [
     './teachers.html',
     './gotostarview.html',
     './mission.html',
+    './gotostudymap.html',
 
     // ---------------------------
     // 2. マニフェストとアイコン
