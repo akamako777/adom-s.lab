@@ -188,6 +188,8 @@
                 bgWarning: "録画中は、このウィンドウを最小化しないでください（録画が停止します）",
                 aboutComp: "重要なお知らせ",
                 aboutCompDesc: "【アンバンドル仕様】最高画質と安定性を保証するため、画面・カメラ・音声はすべて「別ファイル」として保存されます。編集ソフトで自由に組み合わせてください。",
+                aboutTime: "推奨録画時間",
+                aboutTimeDesc: "ブラウザのメモリ制限のため、安全な保存目安は「画面録画：約1時間」「音声のみ：数時間」となります。",
                 mobileTitle: "PC専用アプリです",
                 mobileDesc: "このアプリは画面録画機能を使用するため、パソコン（Windows/Mac）のブラウザからご利用ください。スマホでは動作しません。"
             },
@@ -248,10 +250,13 @@
                 bgWarning: "Do not minimize window",
                 aboutComp: "Important Notice",
                 aboutCompDesc: "[Unbundled Logic] To ensure stability and quality, screen, camera, and audio are saved as SEPARATE files. Please combine them in your editor.",
+                aboutTime: "Rec Time Limit",
+                aboutTimeDesc: "Due to memory limits, recommended safe duration is ~1 hr for screen, and a few hours for audio only.",
                 mobileTitle: "Desktop Only Application",
                 mobileDesc: "Please use a desktop browser (Chrome/Edge/Safari) to record your screen. Mobile devices are not supported."
             }
         };
+
 
         class RecorderEngine {
             constructor() {
@@ -408,7 +413,7 @@
                         
                         const options = { mimeType: screenMime };
                         if (isAudioOnly) options.audioBitsPerSecond = 128000;
-                        else options.videoBitsPerSecond = 8000000;
+                        else options.videoBitsPerSecond = 4000000;
 
                         this.screenRecorder = new MediaRecorder(sysStreamForRec, options);
                         this.screenRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.recordedScreenChunks.push(e.data); };
@@ -753,6 +758,10 @@
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
+                                    <button onClick={() => showToast(t.aboutTimeDesc, 'info')} className="p-2.5 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-300 flex items-center gap-2" title={t.aboutTime}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        <span className="hidden md:inline text-xs font-bold">{t.aboutTime}</span>
+                                    </button>
                                     <button onClick={() => showToast(t.aboutCompDesc, 'info')} className="p-2.5 rounded-full bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm text-slate-700 dark:text-slate-300 flex items-center gap-2" title={t.aboutComp}>
                                         <Icons.Info />
                                         <span className="hidden md:inline text-xs font-bold">{t.aboutComp}</span>
@@ -765,6 +774,8 @@
                                         <option value="en">English</option>
                                     </select>
                                 </div>
+
+
                             </header>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
