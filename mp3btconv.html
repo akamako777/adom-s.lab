@@ -10,14 +10,13 @@
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     
     <!-- Babel (Runtime Compiler) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
     
     <!-- Tailwind CSS (Play CDN for Browser Runtime) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- LAME.js (MP3 Encoder) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-
     <!-- JSZip (ZIP Archiver) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
@@ -25,7 +24,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
-
     <!-- Tailwind Config -->
     <script>
         tailwind.config = {
@@ -60,7 +58,7 @@
     </script>
     <style>
         body { margin: 0; overflow: hidden; transition: background-color 0.3s; font-family: 'M PLUS Rounded 1c', sans-serif; touch-action: manipulation; }
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 3px; }
         
@@ -86,8 +84,8 @@
         
         /* EQ Slider Specifics */
         .eq-slider-container input[type=range] {
-            width: 150px; 
-            height: 30px; 
+            width: 140px; 
+            height: 28px; 
             transform-origin: center;
             background: transparent;
         }
@@ -95,12 +93,10 @@
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
         // --- Canvas Environment Constants ---
-        const apiKey = ""; // Canvas自動認証利用のため空文字
+        const API_KEY = ""; // Canvas自動認証利用のため空文字
         const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
-
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
         // --- Translations ---
@@ -163,9 +159,20 @@
                 close: "閉じる",
                 tabTrim: "トリム・基本",
                 tabEq: "イコライザ",
+                tabNr: "ノイズ除去",
                 tabExport: "設定・出力",
                 warnLarge: "ファイルサイズ大",
-                loadFail: "読込失敗: ファイル破損または未対応"
+                loadFail: "読込失敗: ファイル破損または未対応",
+                nrTitle: "ノイズ除去・音声補正",
+                nrPresetOff: "OFF",
+                nrPresetAir: "空調・風音カット",
+                nrPresetVoice: "声クリア(推奨)",
+                nrPresetStrong: "強力ノイズ除去",
+                nrHighpass: "低音・空調カット (Low Cut)",
+                nrLowpass: "高音・サー音カット (High Cut)",
+                nrGate: "無音時の雑音除去 (Gate)",
+                nrVoiceBoost: "声を明瞭化・音量均一化 (Voice Clarity)",
+                nrAppliedToast: "ノイズ除去プリセットを適用しました"
             },
             en: {
                 langName: "English",
@@ -225,14 +232,25 @@
                 close: "Close",
                 tabTrim: "Trim/Basic",
                 tabEq: "Equalizer",
+                tabNr: "Denoise",
                 tabExport: "Export",
                 warnLarge: "File Large",
-                loadFail: "Load Failed"
+                loadFail: "Load Failed",
+                nrTitle: "Noise Reduction & Clarity",
+                nrPresetOff: "OFF",
+                nrPresetAir: "Wind/AC Cut",
+                nrPresetVoice: "Clear Voice",
+                nrPresetStrong: "Strong NR",
+                nrHighpass: "Low Cut (Rumble/AC)",
+                nrLowpass: "High Cut (Hiss)",
+                nrGate: "Noise Gate (Silence)",
+                nrVoiceBoost: "Voice Enhancer & Compressor",
+                nrAppliedToast: "Noise reduction preset applied"
             },
-            es: { langName: "Español", tabBatch: "Lotes", tabEdit: "Editor", dropMain: "Suelte archivos", dropEdit: "Suelte 1 archivo", dropEditSub: "Soporta Video", play: "Reproducir", pause: "Pausa", stop: "Detener", export: "Exportar", speed: "Velocidad", eq: "Ecualizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Calidad", settings: "Opciones", queue: "Cola", clear: "Borrar", dlZip: "Descargar ZIP", remove: "Quitar", download: "Guardar", reset: "Cerrar", saveEq: "Guardar", loadEq: "Cargar", resetEq: "Restablecer", controls: "Controlar", resetParams: "Restablecer", formatsBtn: "Formatos", formatsTitle: "Formatos Soportados", formatsVideo: "Video: MP4, MOV, AVI...", formatsAudio: "Audio: MP3, WAV, AAC...", close: "Cerrar", tabTrim: "Recortar", tabEq: "Ecualizador", tabExport: "Exportar", warnLarge: "Archivo Grande", loadFail: "Fallo de carga." },
-            pt: { langName: "Português", tabBatch: "Lote", tabEdit: "Editor", dropMain: "Solte arquivos", dropEdit: "Solte 1 arquivo", dropEditSub: "Suporta Vídeo", play: "Tocar", pause: "Pausa", stop: "Parar", export: "Exportar", speed: "Velocidade", eq: "Equalizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Qualidade", settings: "Opções", queue: "Fila", clear: "Limpar", dlZip: "Baixar ZIP", remove: "Remover", download: "Salvar", reset: "Fechar", saveEq: "Salvar", loadEq: "Carregar", resetEq: "Redefinir", controls: "Controle", resetParams: "Redefinir", formatsBtn: "Formatos", formatsTitle: "Formatos Suportados", formatsVideo: "Vídeo: MP4, MOV, AVI...", formatsAudio: "Áudio: MP3, WAV, AAC...", close: "Fechar", tabTrim: "Cortar", tabEq: "Equalizador", tabExport: "Exportar", warnLarge: "Arquivo Grande", loadFail: "Falha no carregamento." },
-            hi: { langName: "हिन्दी", tabBatch: "बैच", tabEdit: "संपादक", dropMain: "फ़ाइलें छोड़ें", dropEdit: "1 फ़ाइल छोड़ें", dropEditSub: "वीडियो समर्थित", play: "चलाएं", pause: "विराम", stop: "रुकें", export: "निर्यात", speed: "गति", eq: "इक्वलाइज़र", volume: "वॉल्यूम", fadeSec: "फीका", quality: "गुणवत्ता", settings: "विकल्प", queue: "कतार", clear: "साफ़ करें", dlZip: "ZIP डाउनलोड", remove: "हटाएं", download: "सहेजें", reset: "बंद करें", saveEq: "सहेजें", loadEq: "लोड करें", resetEq: "रीसेट", controls: "नियंत्रण", resetParams: "रीसेट", formatsBtn: "प्रारूप", formatsTitle: "समर्थित प्रारूप", formatsVideo: "वीडियो: MP4, MOV, AVI...", formatsAudio: "ऑडियो: MP3, WAV, AAC...", close: "बंद करें", tabTrim: "ट्रिम", tabEq: "इक्वलाइज़र", tabExport: "निर्यात", warnLarge: "बड़ी फ़ाइल", loadFail: "लोड करने में विफल।" },
-            tw: { langName: "繁體中文", tabBatch: "批量轉檔", tabEdit: "單曲編輯", dropMain: "拖放檔案", dropEdit: "拖放1個檔案", dropEditSub: "支援影片", play: "播放", pause: "暫停", stop: "停止", export: "匯出MP3", speed: "速度", eq: "等化器", volume: "音量", fadeSec: "淡入淡出", quality: "音質", settings: "選項", queue: "列表", clear: "清除", dlZip: "下載ZIP", remove: "移除", download: "保存", reset: "關閉", saveEq: "儲存設定", loadEq: "讀取設定", resetEq: "重置", controls: "控制", resetParams: "重置", formatsBtn: "支援格式", formatsTitle: "支援檔案格式", formatsVideo: "影片: MP4, MOV, AVI, WMV...", formatsAudio: "音訊: MP3, WAV, AAC, FLAC...", close: "關閉", tabTrim: "剪輯", tabEq: "等化器", tabExport: "匯出", warnLarge: "檔案過大", loadFail: "讀取失敗。" }
+            es: { langName: "Español", tabBatch: "Lotes", tabEdit: "Editor", dropMain: "Suelte archivos", dropEdit: "Suelte 1 archivo", dropEditSub: "Soporta Video", play: "Reproducir", pause: "Pausa", stop: "Detener", export: "Exportar", speed: "Velocidad", eq: "Ecualizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Calidad", settings: "Opciones", queue: "Cola", clear: "Borrar", dlZip: "Descargar ZIP", remove: "Quitar", download: "Guardar", reset: "Cerrar", saveEq: "Guardar", loadEq: "Cargar", resetEq: "Restablecer", controls: "Controlar", resetParams: "Restablecer", formatsBtn: "Formatos", formatsTitle: "Formatos Soportados", formatsVideo: "Video: MP4, MOV, AVI...", formatsAudio: "Audio: MP3, WAV, AAC...", close: "Cerrar", tabTrim: "Recortar", tabEq: "Ecualizador", tabNr: "Ruido", tabExport: "Exportar", warnLarge: "Archivo Grande", loadFail: "Fallo de carga.", nrTitle: "Reducción de Ruido", nrPresetOff: "OFF", nrPresetAir: "Corte Aire", nrPresetVoice: "Voz Clara", nrPresetStrong: "Fuerte", nrHighpass: "Corte Bajo", nrLowpass: "Corte Alto", nrGate: "Puerta de Ruido", nrVoiceBoost: "Mejorar Voz" },
+            pt: { langName: "Português", tabBatch: "Lote", tabEdit: "Editor", dropMain: "Solte arquivos", dropEdit: "Solte 1 arquivo", dropEditSub: "Suporta Vídeo", play: "Tocar", pause: "Pausa", stop: "Parar", export: "Exportar", speed: "Velocidade", eq: "Equalizador", volume: "Volumen", fadeSec: "Desvanecer", quality: "Qualidade", settings: "Opções", queue: "Fila", clear: "Limpar", dlZip: "Baixar ZIP", remove: "Remover", download: "Salvar", reset: "Fechar", saveEq: "Salvar", loadEq: "Carregar", resetEq: "Redefinir", controls: "Controle", resetParams: "Redefinir", formatsBtn: "Formatos", formatsTitle: "Formatos Suportados", formatsVideo: "Vídeo: MP4, MOV, AVI...", formatsAudio: "Áudio: MP3, WAV, AAC...", close: "Fechar", tabTrim: "Cortar", tabEq: "Equalizador", tabNr: "Ruído", tabExport: "Exportar", warnLarge: "Arquivo Grande", loadFail: "Falha no carregamento.", nrTitle: "Redução de Ruído", nrPresetOff: "OFF", nrPresetAir: "Corte Vento", nrPresetVoice: "Voz Clara", nrPresetStrong: "Forte", nrHighpass: "Corte Grave", nrLowpass: "Corte Agudo", nrGate: "Noise Gate", nrVoiceBoost: "Realçar Voz" },
+            hi: { langName: "हिन्दी", tabBatch: "बैच", tabEdit: "संपादक", dropMain: "फ़ाइलें छोड़ें", dropEdit: "1 फ़ाइल छोड़ें", dropEditSub: "वीडियो समर्थित", play: "चलाएं", pause: "विराम", stop: "रुकें", export: "निर्यात", speed: "गति", eq: "इक्वलाइज़र", volume: "वॉल्यूम", fadeSec: "फीका", quality: "गुणवत्ता", settings: "विकल्प", queue: "कतार", clear: "साफ़ करें", dlZip: "ZIP डाउनलोड", remove: "हटाएं", download: "सहेजें", reset: "बंद करें", saveEq: "सहेजें", loadEq: "लोड करें", resetEq: "रीसेट", controls: "नियंत्रण", resetParams: "रीसेट", formatsBtn: "प्रारूप", formatsTitle: "समर्थित प्रारूप", formatsVideo: "वीडियो: MP4, MOV, AVI...", formatsAudio: "ऑडियो: MP3, WAV, AAC...", close: "बंद करें", tabTrim: "ट्रिम", tabEq: "इक्वलाइज़र", tabNr: "शोर कम", tabExport: "निर्यात", warnLarge: "बड़ी फ़ाइल", loadFail: "लोड करने में विफल।", nrTitle: "शोर में कमी", nrPresetOff: "बंद", nrPresetAir: "हवा कट", nrPresetVoice: "साफ़ आवाज़", nrPresetStrong: "मज़बूत", nrHighpass: "लो कट", nrLowpass: "हाई कट", nrGate: "नॉइज़ गेट", nrVoiceBoost: "आवाज़ स्पष्टता" },
+            tw: { langName: "繁體中文", tabBatch: "批量轉檔", tabEdit: "單曲編輯", dropMain: "拖放檔案", dropEdit: "拖放1個檔案", dropEditSub: "支援影片", play: "播放", pause: "暫停", stop: "停止", export: "匯出MP3", speed: "速度", eq: "等化器", volume: "音量", fadeSec: "淡入淡出", quality: "音質", settings: "選項", queue: "列表", clear: "清除", dlZip: "下載ZIP", remove: "移除", download: "保存", reset: "關閉", saveEq: "儲存設定", loadEq: "讀取設定", resetEq: "重置", controls: "控制", resetParams: "重置", formatsBtn: "支援格式", formatsTitle: "支援檔案格式", formatsVideo: "影片: MP4, MOV, AVI, WMV...", formatsAudio: "音訊: MP3, WAV, AAC, FLAC...", close: "關閉", tabTrim: "剪輯", tabEq: "等化器", tabNr: "降噪", tabExport: "匯出", warnLarge: "檔案過大", loadFail: "讀取失敗。", nrTitle: "降噪與人聲增強", nrPresetOff: "關閉", nrPresetAir: "風聲/空調消除", nrPresetVoice: "清晰人聲", nrPresetStrong: "強力降噪", nrHighpass: "低頻切濾 (Low Cut)", nrLowpass: "高頻切濾 (High Cut)", nrGate: "靜音閘門 (Gate)", nrVoiceBoost: "人聲清晰與音量平衡" }
         };
 
         // --- Icons (Inline SVG for maximum reliability) ---
@@ -259,113 +277,169 @@
         const AudioWave = (props) => <IconBase {...props}><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v4"/></IconBase>;
         const RotateCcw = (props) => <IconBase {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconBase>;
         const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
-        const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></IconBase>;
-        const Plus = (props) => <IconBase {...props}><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></IconBase>;
-        const ListMusic = (props) => <IconBase {...props}><path d="M21 15V6"/><path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path d="M12 12H3"/><path d="M16 6H3"/><path d="M12 18H3"/></IconBase>;
+        const Sparkles = (props) => <IconBase {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></IconBase>;
 
-        // --- Waveform Visualizer ---
-        const Waveform = ({ audioBuffer, currentTime, theme, onSeek, trimStart, trimEnd }) => {
-            const canvasRef = useRef(null);
-            
-            // Draw logic
-            const draw = useCallback(() => {
-                const canvas = canvasRef.current;
-                if (!canvas || !audioBuffer || !canvas.parentElement) return;
+        // --- Soft Noise Gate PCM Processor ---
+        // Applies smooth envelope attenuation to silence background hiss between words
+        const applyNoiseGateToPCM = (audioBuffer, thresholdDb, sampleRate) => {
+            if (thresholdDb <= -60) return;
+            const threshold = Math.pow(10, thresholdDb / 20);
+            const attackSamples = Math.max(1, Math.floor(0.005 * sampleRate)); // 5ms attack
+            const releaseSamples = Math.max(1, Math.floor(0.08 * sampleRate)); // 80ms release
+            const windowSize = Math.max(1, Math.floor(0.01 * sampleRate)); // 10ms RMS window
 
-                const pWidth = canvas.parentElement.clientWidth;
-                const pHeight = canvas.parentElement.clientHeight;
+            for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                const data = audioBuffer.getChannelData(c);
+                const len = data.length;
+                let gain = 1.0;
+                let sumSq = 0;
 
-                // ★IMPORTANT FIX: Only update size if changed to prevent clearing during playback
-                if (canvas.width !== pWidth || canvas.height !== pHeight) {
-                    canvas.width = pWidth;
-                    canvas.height = pHeight;
+                // Pre-fill initial window
+                const initWin = Math.min(windowSize, len);
+                for (let i = 0; i < initWin; i++) {
+                    sumSq += data[i] * data[i];
                 }
 
-                const ctx = canvas.getContext('2d');
-                const width = canvas.width;
-                const height = canvas.height;
-                const duration = audioBuffer.duration;
-                
-                // If dimensions are invalid
-                if (width === 0 || height === 0) return;
+                for (let i = 0; i < len; i++) {
+                    // Update sliding window RMS
+                    if (i + windowSize < len) {
+                        sumSq += data[i + windowSize] * data[i + windowSize];
+                    }
+                    if (i - windowSize >= 0) {
+                        sumSq -= data[i - windowSize] * data[i - windowSize];
+                    }
+                    const currentWindow = Math.min(i + windowSize, len) - Math.max(0, i - windowSize);
+                    const rms = Math.sqrt(Math.max(0, sumSq) / Math.max(1, currentWindow));
+
+                    // Soft-knee target gain
+                    const targetGain = rms >= threshold ? 1.0 : Math.pow(rms / (threshold + 1e-7), 2);
+
+                    if (targetGain > gain) {
+                        gain += (targetGain - gain) / attackSamples;
+                    } else {
+                        gain += (targetGain - gain) / releaseSamples;
+                    }
+
+                    data[i] *= Math.max(0, Math.min(1, gain));
+                }
+            }
+        };
+
+       // --- Waveform Visualizer (Offscreen Cached & Flicker-Free) ---
+        const Waveform = ({ audioBuffer, currentTime, theme, onSeek, trimStart, trimEnd }) => {
+            const canvasRef = useRef(null);
+            const waveCacheRef = useRef(null);
+            const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+            // 1. 親要素のリサイズ監視（マウント時のみ登録し、再生中にCanvasがリセットされるのを防ぐ）
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !canvas.parentElement) return;
+
+                const updateDimensions = () => {
+                    if (!canvas.parentElement) return;
+                    const pWidth = canvas.parentElement.clientWidth;
+                    const pHeight = canvas.parentElement.clientHeight;
+                    if (pWidth > 0 && pHeight > 0) {
+                        if (canvas.width !== pWidth || canvas.height !== pHeight) {
+                            canvas.width = pWidth;
+                            canvas.height = pHeight;
+                        }
+                        setCanvasSize(prev => (prev.width === pWidth && prev.height === pHeight) ? prev : { width: pWidth, height: pHeight });
+                    }
+                };
+
+                updateDimensions();
+                const resizeObserver = new ResizeObserver(updateDimensions);
+                resizeObserver.observe(canvas.parentElement);
+
+                return () => resizeObserver.disconnect();
+            }, []);
+
+            // 2. 緑色の波形データの事前計算とオフスクリーン・キャッシュ化
+            // （ファイル読込時・ノイズゲート変更時・テーマ変更時・画面リサイズ時のみ実行）
+            useEffect(() => {
+                const { width, height } = canvasSize;
+                if (!audioBuffer || width === 0 || height === 0) {
+                    waveCacheRef.current = null;
+                    return;
+                }
+
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = width;
+                offCanvas.height = height;
+                const offCtx = offCanvas.getContext('2d');
 
                 const data = audioBuffer.getChannelData(0);
                 const step = Math.ceil(data.length / width);
                 const amp = height / 2;
 
-                ctx.clearRect(0, 0, width, height);
-
-                const startX = (trimStart / duration) * width;
-                const endX = (trimEnd / duration) * width;
-
-                // Dimmed background
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.fillRect(0, 0, startX, height);
-                ctx.fillRect(endX, 0, width - endX, height);
-
-                ctx.beginPath();
-                ctx.strokeStyle = theme === 'dark' ? 'rgba(52, 211, 153, 0.8)' : 'rgba(16, 185, 129, 0.8)';
-                ctx.lineWidth = 1;
+                offCtx.clearRect(0, 0, width, height);
+                offCtx.beginPath();
+                offCtx.strokeStyle = theme === 'dark' ? 'rgba(52, 211, 153, 0.85)' : 'rgba(16, 185, 129, 0.85)';
+                offCtx.lineWidth = 1;
 
                 for (let i = 0; i < width; i++) {
-                    let min = 1.0; let max = -1.0;
+                    let min = 1.0;
+                    let max = -1.0;
+                    const startIdx = i * step;
                     for (let j = 0; j < step; j++) {
-                        const datum = data[(i * step) + j];
+                        const idx = startIdx + j;
+                        if (idx >= data.length) break;
+                        const datum = data[idx];
                         if (datum < min) min = datum;
                         if (datum > max) max = datum;
                     }
-                    ctx.moveTo(i, (1 + min) * amp);
-                    ctx.lineTo(i, (1 + max) * amp);
+                    if (min > max) { min = 0; max = 0; }
+                    offCtx.moveTo(i, (1 + min) * amp);
+                    offCtx.lineTo(i, (1 + max) * amp);
                 }
-                ctx.stroke();
+                offCtx.stroke();
 
-                // Trim lines
+                waveCacheRef.current = offCanvas;
+            }, [audioBuffer, theme, canvasSize]);
+
+            // 3. 毎フレームの描画（キャッシュされた波形画像を転写し、トリム範囲と再生バーのみを重ねる）
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const { width, height } = canvasSize;
+                if (!canvas || !audioBuffer || width === 0 || height === 0) return;
+
+                const ctx = canvas.getContext('2d');
+                const duration = audioBuffer.duration || 1;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // キャッシュされた緑色の波形を高速転写
+                if (waveCacheRef.current) {
+                    ctx.drawImage(waveCacheRef.current, 0, 0);
+                }
+
+                const startX = Math.max(0, Math.min(width, (trimStart / duration) * width));
+                const endX = Math.max(0, Math.min(width, (trimEnd / duration) * width));
+
+                // トリム範囲外の暗転マスク
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                if (startX > 0) ctx.fillRect(0, 0, startX, height);
+                if (endX < width) ctx.fillRect(endX, 0, width - endX, height);
+
+                // トリム開始・終了ライン
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = '#f59e0b';
                 ctx.beginPath(); ctx.moveTo(startX, 0); ctx.lineTo(startX, height); ctx.stroke();
                 ctx.strokeStyle = '#ef4444';
                 ctx.beginPath(); ctx.moveTo(endX, 0); ctx.lineTo(endX, height); ctx.stroke();
 
-                // Playhead
-                const progress = currentTime / duration;
+                // 再生ヘッド（白い縦線）
+                const progress = Math.max(0, Math.min(1, currentTime / duration));
                 const x = progress * width;
-                ctx.beginPath(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
-                ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-            }, [audioBuffer, currentTime, theme, trimStart, trimEnd]);
-
-            // 1. Initial Setup & Resize Listener (One-time)
-            useEffect(() => {
-                const canvas = canvasRef.current;
-                if (!canvas || !canvas.parentElement) return;
-
-                const resizeObserver = new ResizeObserver(() => {
-                    // Update size on actual resize event
-                    // The next draw loop will pick up the new size or we can force it here if paused
-                    // But draw() handles the sizing check, so we just trigger it.
-                    // Since draw dependency changes might not be reflected inside this closure if not careful,
-                    // we rely on the main loop or simple forced update.
-                    // For simplicity in this app structure:
-                    const pWidth = canvas.parentElement.clientWidth;
-                    const pHeight = canvas.parentElement.clientHeight;
-                    canvas.width = pWidth;
-                    canvas.height = pHeight;
-                    requestAnimationFrame(draw);
-                });
-                
-                resizeObserver.observe(canvas.parentElement);
-                
-                // Initial sizing and draw
-                canvas.width = canvas.parentElement.clientWidth;
-                canvas.height = canvas.parentElement.clientHeight;
-                requestAnimationFrame(draw);
-
-                return () => resizeObserver.disconnect();
-            }, []);
-
-            // 2. Render Loop (Syncs with React updates/playback)
-            useEffect(() => {
-                requestAnimationFrame(draw);
-            }, [draw]);
+                ctx.beginPath();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }, [audioBuffer, currentTime, trimStart, trimEnd, theme, canvasSize]);
 
             const handleCanvasClick = (e) => {
                 if (!audioBuffer) return;
@@ -376,7 +450,7 @@
                 if (onSeek) onSeek(newTime);
             };
 
-            return <canvas ref={canvasRef} className="w-full h-full cursor-pointer touch-none" onClick={handleCanvasClick} />;
+            return <canvas ref={canvasRef} className="w-full h-full cursor-pointer touch-none block" onClick={handleCanvasClick} />;
         };
 
         const formatTime = (time) => {
@@ -384,13 +458,13 @@
             const m = Math.floor(time / 60);
             const s = Math.floor(time % 60).toString().padStart(2, '0');
             const ms = Math.floor((time % 1) * 10);
-            return `${m}:${s}.${ms}`;
+            return `m:{s}.${ms}`;
         };
 
         // --- App Component ---
         function App() {
             const [mode, setMode] = useState('batch'); 
-            const [theme, setTheme] = useState('light'); // CHANGED: Default to LIGHT
+            const [theme, setTheme] = useState('light');
             const [lang, setLang] = useState('ja');
             const [showLangMenu, setShowLangMenu] = useState(false);
             const [showFormats, setShowFormats] = useState(false);
@@ -406,11 +480,11 @@
             const [isConfirmingClear, setIsConfirmingClear] = useState(false);
             const [fadeEffect, setFadeEffect] = useState(false);
             const [renamePrefix, setRenamePrefix] = useState('');
-            const [batchTab, setBatchTab] = useState('add');
             
             // Editor State
             const [editFile, setEditFile] = useState(null);
-            const [editBuffer, setEditBuffer] = useState(null);
+            const [rawEditBuffer, setRawEditBuffer] = useState(null); // Original untouched decoded buffer
+            const [editBuffer, setEditBuffer] = useState(null); // Gate-processed buffer used for playback & waveform
             const [isPlaying, setIsPlaying] = useState(false);
             const [isLooping, setIsLooping] = useState(false);
             const [currentTime, setCurrentTime] = useState(0); 
@@ -424,6 +498,13 @@
             const [customEq, setCustomEq] = useState(null);
             const [editorTab, setEditorTab] = useState('eq'); 
 
+            // Noise Reduction State
+            const [nrHighpass, setNrHighpass] = useState(0); // 0 to 300 Hz
+            const [nrLowpass, setNrLowpass] = useState(20000); // 4000 to 20000 Hz
+            const [nrGate, setNrGate] = useState(-60); // -60 (OFF) to -20 dB
+            const [nrVoiceBoost, setNrVoiceBoost] = useState(false);
+            const [nrPreset, setNrPreset] = useState('off');
+
             const fileInputRef = useRef(null);
             const editorInputRef = useRef(null);
             const audioContextRef = useRef(null);
@@ -431,6 +512,11 @@
             const gainNodeRef = useRef(null); 
             const fadeGainNodeRef = useRef(null);
             const filtersRef = useRef([]); 
+            const hpFilterRef = useRef(null);
+            const lpFilterRef = useRef(null);
+            const voiceFilterRef = useRef(null);
+            const compressorRef = useRef(null);
+
             const startTimeRef = useRef(0);
             const pausedTimeRef = useRef(0);
             const animationFrameRef = useRef(null);
@@ -446,8 +532,8 @@
                 if (theme === 'dark') document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
             }, [theme]);
-
             const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
             const styles = useMemo(() => {
                 const isDark = theme === 'dark';
                 return {
@@ -483,10 +569,31 @@
             useEffect(() => { trimStartRef.current = trimStart; }, [trimStart]);
             useEffect(() => { trimEndRef.current = trimEnd; }, [trimEnd]);
 
+            // Rebuild playback buffer when rawEditBuffer or nrGate changes
+            useEffect(() => {
+                if (!rawEditBuffer || !audioContextRef.current) return;
+                const wasPlaying = isPlayingRef.current;
+                if (wasPlaying) pausePlayback();
+
+                const ctx = audioContextRef.current;
+                const cloned = ctx.createBuffer(
+                    rawEditBuffer.numberOfChannels,
+                    rawEditBuffer.length,
+                    rawEditBuffer.sampleRate
+                );
+                for (let c = 0; c < rawEditBuffer.numberOfChannels; c++) {
+                    cloned.getChannelData(c).set(rawEditBuffer.getChannelData(c));
+                }
+                if (nrGate > -60) {
+                    applyNoiseGateToPCM(cloned, nrGate, cloned.sampleRate);
+                }
+                setEditBuffer(cloned);
+            }, [rawEditBuffer, nrGate]);
+
             const showToast = (msg) => {
                 setMessageToast(msg);
                 setTimeout(() => setMessageToast(null), 3000);
-            }
+            };
 
             const isDownloadAllEnabled = queue.length > 0 && queue.every(i => i.status === 'complete');
             
@@ -561,13 +668,14 @@
                     showToast(t.warnLarge); 
                 }
                 
-                setEditFile(file); setEditorStatus('loading'); setEditBuffer(null);
+                setEditFile(file); setEditorStatus('loading'); setRawEditBuffer(null); setEditBuffer(null);
                 stopPlayback(); pausedTimeRef.current = 0; setCurrentTime(0);
                 try {
                     const arrayBuffer = await file.arrayBuffer();
                     const AC = window.AudioContext || window.webkitAudioContext;
                     if (!audioContextRef.current) audioContextRef.current = new AC();
                     const buffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                    setRawEditBuffer(buffer);
                     setEditBuffer(buffer); 
                     setTrimStart(0); setTrimEnd(buffer.duration);
                     setEditorStatus('idle');
@@ -579,35 +687,89 @@
                 }
             };
 
-            const togglePlayback = () => { isPlaying ? pausePlayback() : startPlayback(); };
+            // Connect Noise Reduction + EQ + Dynamics Chain
+            const buildAudioChain = (ctx, sourceNode) => {
+                // 1. Highpass Filter (Low Cut for AC/Wind Rumble)
+                const hpFilter = ctx.createBiquadFilter();
+                hpFilter.type = 'highpass';
+                hpFilter.frequency.value = nrHighpass > 0 ? nrHighpass : 10;
+                hpFilter.Q.value = 0.707;
 
+                // 2. Lowpass Filter (High Cut for Hiss)
+                const lpFilter = ctx.createBiquadFilter();
+                lpFilter.type = 'lowpass';
+                lpFilter.frequency.value = nrLowpass;
+                lpFilter.Q.value = 0.707;
+
+                // 3. Voice Presence Filter (2.5kHz boost for speech intelligibility)
+                const voiceFilter = ctx.createBiquadFilter();
+                voiceFilter.type = 'peaking';
+                voiceFilter.frequency.value = 2500;
+                voiceFilter.Q.value = 1.0;
+                voiceFilter.gain.value = nrVoiceBoost ? 4.5 : 0;
+
+                // 4. Dynamics Compressor (Evens out voice volume)
+                const compressor = ctx.createDynamicsCompressor();
+                compressor.threshold.value = nrVoiceBoost ? -26 : 0;
+                compressor.knee.value = nrVoiceBoost ? 20 : 0;
+                compressor.ratio.value = nrVoiceBoost ? 4 : 1;
+                compressor.attack.value = 0.005;
+                compressor.release.value = 0.15;
+
+                // 5. 7-Band Equalizer
+                const freqs = [60, 150, 400, 1000, 2400, 6000, 15000];
+                const eqFilters = freqs.map((f, i) => {
+                    const filter = ctx.createBiquadFilter();
+                    if (i === 0) filter.type = 'lowshelf';
+                    else if (i === freqs.length - 1) filter.type = 'highshelf';
+                    else filter.type = 'peaking';
+                    filter.frequency.value = f;
+                    filter.Q.value = 1.0;
+                    filter.gain.value = eqGains[i];
+                    return filter;
+                });
+
+                // Wire Chain
+                let node = sourceNode;
+                node.connect(hpFilter); node = hpFilter;
+                node.connect(lpFilter); node = lpFilter;
+                node.connect(voiceFilter); node = voiceFilter;
+                node.connect(compressor); node = compressor;
+                eqFilters.forEach(f => { node.connect(f); node = f; });
+
+                return { lastNode: node, hpFilter, lpFilter, voiceFilter, compressor, eqFilters };
+            };
+
+            const togglePlayback = () => { isPlaying ? pausePlayback() : startPlayback(); };
             const startPlayback = () => {
                 if (!editBuffer || !audioContextRef.current) return;
                 const ctx = audioContextRef.current;
                 if (sourceNodeRef.current) sourceNodeRef.current.disconnect();
-
                 const source = ctx.createBufferSource();
                 source.buffer = editBuffer;
                 source.playbackRate.value = playbackSpeed;
 
-                const freqs = [60, 150, 400, 1000, 2400, 6000, 15000];
-                const filters = freqs.map((f, i) => {
-                    const filter = ctx.createBiquadFilter();
-                    if (i === 0) filter.type = 'lowshelf'; else if (i === freqs.length - 1) filter.type = 'highshelf'; else filter.type = 'peaking';
-                    filter.frequency.value = f; filter.Q.value = 1.0; filter.gain.value = eqGains[i];
-                    return filter;
-                });
+                const { lastNode, hpFilter, lpFilter, voiceFilter, compressor, eqFilters } = buildAudioChain(ctx, source);
 
-                let node = source;
-                filters.forEach(f => { node.connect(f); node = f; });
-                const fadeGain = ctx.createGain(); node.connect(fadeGain);
-                const masterGain = ctx.createGain(); masterGain.gain.value = editorVolume; fadeGain.connect(masterGain);
+                const fadeGain = ctx.createGain();
+                lastNode.connect(fadeGain);
+
+                const masterGain = ctx.createGain();
+                // Add slight makeup gain when Voice Boost compressor is active
+                masterGain.gain.value = editorVolume * (nrVoiceBoost ? 1.25 : 1.0);
+                fadeGain.connect(masterGain);
                 masterGain.connect(ctx.destination);
 
-                sourceNodeRef.current = source; filtersRef.current = filters; fadeGainNodeRef.current = fadeGain; gainNodeRef.current = masterGain;
+                sourceNodeRef.current = source;
+                filtersRef.current = eqFilters;
+                hpFilterRef.current = hpFilter;
+                lpFilterRef.current = lpFilter;
+                voiceFilterRef.current = voiceFilter;
+                compressorRef.current = compressor;
+                fadeGainNodeRef.current = fadeGain;
+                gainNodeRef.current = masterGain;
 
                 if (ctx.state === 'suspended') ctx.resume();
-
                 let offset = pausedTimeRef.current;
                 if (offset < trimStart || offset >= trimEnd) offset = trimStart;
                 
@@ -633,7 +795,6 @@
                         return;
                     }
                     setCurrentTime(playedSecs); 
-
                     const fadeSec = fadeDurationRef.current;
                     if (fadeSec > 0 && fadeGainNodeRef.current) {
                         const relPos = playedSecs - tStart;
@@ -678,14 +839,60 @@
                 pausedTimeRef.current = time; setCurrentTime(time);
             };
 
-            useEffect(() => { if (gainNodeRef.current) gainNodeRef.current.gain.value = editorVolume; }, [editorVolume]);
+            // Live Reactive Audio Node Updates
+            useEffect(() => {
+                if (gainNodeRef.current) {
+                    gainNodeRef.current.gain.value = editorVolume * (nrVoiceBoost ? 1.25 : 1.0);
+                }
+            }, [editorVolume, nrVoiceBoost]);
             useEffect(() => { if (sourceNodeRef.current) sourceNodeRef.current.playbackRate.value = playbackSpeed; }, [playbackSpeed]);
             useEffect(() => { filtersRef.current.forEach((f, i) => { if(f) f.gain.value = eqGains[i]; }); }, [eqGains]);
+            useEffect(() => { if (hpFilterRef.current) hpFilterRef.current.frequency.value = nrHighpass > 0 ? nrHighpass : 10; }, [nrHighpass]);
+            useEffect(() => { if (lpFilterRef.current) lpFilterRef.current.frequency.value = nrLowpass; }, [nrLowpass]);
+            useEffect(() => {
+                if (voiceFilterRef.current) voiceFilterRef.current.gain.value = nrVoiceBoost ? 4.5 : 0;
+                if (compressorRef.current) {
+                    compressorRef.current.threshold.value = nrVoiceBoost ? -26 : 0;
+                    compressorRef.current.knee.value = nrVoiceBoost ? 20 : 0;
+                    compressorRef.current.ratio.value = nrVoiceBoost ? 4 : 1;
+                }
+            }, [nrVoiceBoost]);
 
+            const applyNrPreset = (presetKey) => {
+                setNrPreset(presetKey);
+                if (presetKey === 'off') {
+                    setNrHighpass(0);
+                    setNrLowpass(20000);
+                    setNrGate(-60);
+                    setNrVoiceBoost(false);
+                } else if (presetKey === 'air') {
+                    // Cut AC rumble and slight high hiss
+                    setNrHighpass(140);
+                    setNrLowpass(12000);
+                    setNrGate(-50);
+                    setNrVoiceBoost(false);
+                    showToast(t.nrAppliedToast);
+                } else if (presetKey === 'voice') {
+                    // Optimal for smartphone voice memos
+                    setNrHighpass(120);
+                    setNrLowpass(9500);
+                    setNrGate(-45);
+                    setNrVoiceBoost(true);
+                    showToast(t.nrAppliedToast);
+                } else if (presetKey === 'strong') {
+                    // Aggressive noise removal for noisy environments
+                    setNrHighpass(200);
+                    setNrLowpass(7000);
+                    setNrGate(-36);
+                    setNrVoiceBoost(true);
+                    showToast(t.nrAppliedToast);
+                }
+            };
+
+            const resetNr = () => applyNrPreset('off');
             const saveCustomEq = () => setCustomEq([...eqGains]);
             const loadCustomEq = () => { if(customEq) setEqGains([...customEq]); };
             const resetEq = () => setEqGains([0,0,0,0,0,0,0]);
-
             const resetParams = () => {
                 setPlaybackSpeed(1.0);
                 setEditorVolume(1.0);
@@ -699,31 +906,33 @@
                     const OfflineAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
                     const trimDuration = trimEnd - trimStart;
                     const finalDuration = trimDuration / playbackSpeed;
-                    const offlineCtx = new OfflineAC(editBuffer.numberOfChannels, finalDuration * editBuffer.sampleRate, editBuffer.sampleRate);
+                    const offlineCtx = new OfflineAC(editBuffer.numberOfChannels, Math.ceil(finalDuration * editBuffer.sampleRate), editBuffer.sampleRate);
                     
                     const source = offlineCtx.createBufferSource();
-                    source.buffer = editBuffer; source.playbackRate.value = playbackSpeed;
+                    source.buffer = editBuffer; // editBuffer already has Noise Gate applied
+                    source.playbackRate.value = playbackSpeed;
                     
-                    const freqs = [60, 150, 400, 1000, 2400, 6000, 15000];
-                    const filters = freqs.map((f, i) => {
-                        const filter = offlineCtx.createBiquadFilter();
-                        if (i === 0) filter.type = 'lowshelf'; else if (i === freqs.length - 1) filter.type = 'highshelf'; else filter.type = 'peaking';
-                        filter.frequency.value = f; filter.Q.value = 1.0; filter.gain.value = eqGains[i];
-                        return filter;
-                    });
-                    const masterGain = offlineCtx.createGain(); masterGain.gain.value = editorVolume;
+                    const { lastNode } = buildAudioChain(offlineCtx, source);
+
+                    const masterGain = offlineCtx.createGain();
+                    masterGain.gain.value = editorVolume * (nrVoiceBoost ? 1.25 : 1.0);
                     
-                    let node = source; filters.forEach(f => { node.connect(f); node = f; });
-                    node.connect(masterGain); masterGain.connect(offlineCtx.destination);
+                    lastNode.connect(masterGain);
+                    masterGain.connect(offlineCtx.destination);
                     source.start(0, trimStart, trimDuration);
                     
                     const rendered = await offlineCtx.startRendering();
-                    if(editorFade > 0) applyFade(rendered, editorFade);
+                    if (editorFade > 0) applyFade(rendered, editorFade);
                     
                     const blob = await exportToBlob(rendered);
                     const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a'); link.href = url; link.download = `edited_${editFile.name.replace(/\.[^/.]+$/, "")}.mp3`;
-                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `edited_${editFile.name.replace(/\.[^/.]+$/, "")}.mp3`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
                     setEditorStatus('idle');
                 } catch(err) { console.error(err); setEditorStatus('error'); }
             };
@@ -759,29 +968,31 @@
                 if(!item.blob) return; const url = URL.createObjectURL(item.blob); const link = document.createElement('a');
                 let name = item.file.name.replace(/\.[^/.]+$/, ""); if (renamePrefix) { const idx = queue.findIndex(i => i.id === item.id); name = `${renamePrefix}_${String(idx + 1).padStart(2,'0')}`; }
                 link.href = url; link.download = `${name}.mp3`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             };
             const downloadAllZip = async () => {
                 if(!window.JSZip) return; setIsZipping(true); const zip = new window.JSZip();
-                queue.forEach((item, i) => { if(item.status === 'complete' && item.blob) { let name = item.file.name.replace(/\.[^/.]+$/, ""); if(renamePrefix) name = `${renamePrefix}_${String(i + 1).padStart(2,'0')}`; zip.file(`${name}.mp3`, item.blob); } });
+                queue.forEach((item, i) => { if(item.status === 'complete' && item.blob) { let name = item.file.name.replace(/\.[^/.]+/,"");if(renamePrefix)name=`{renamePrefix}_String(i+1).padStart(2,'0')`;zip.file(`{name}.mp3`, item.blob); } });
                 const content = await zip.generateAsync({type:"blob"}); const url = URL.createObjectURL(content);
                 const link = document.createElement('a'); link.href = url; link.download = "batch_converted.zip";
                 document.body.appendChild(link); link.click(); document.body.removeChild(link); setIsZipping(false);
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             };
             const getFileSizeMB = (size) => (size / (1024 * 1024)).toFixed(1);
+
+            const isNrActive = nrHighpass > 0 || nrLowpass < 20000 || nrGate > -60 || nrVoiceBoost;
 
             return (
                 <div className={`relative h-screen ${styles.bg} ${styles.text} font-sans p-2 md:p-4 flex flex-col items-center overflow-hidden transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-500`}>
                     
-                    {styles.aurora && <div className="fixed inset-0 pointer-events-none"><div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-600/10 rounded-full blur-[100px] animate-aurora-1"></div><div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-teal-600/10 rounded-full blur-[100px] animate-aurora-2"></div><div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div></div>}
+                    {styles.aurora && <div className="fixed inset-0 pointer-events-none"><div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-600/10 rounded-full blur-[100px] animate-aurora-1"></div><div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-teal-600/10 rounded-full blur-[100px] animate-aurora-2"></div></div>}
                     {!styles.aurora && <div className="fixed inset-0 pointer-events-none bg-gradient-to-br from-slate-50 to-slate-100"></div>}
-
                     {messageToast && (
                         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] px-4 py-2 rounded-full bg-black/80 text-white backdrop-blur text-sm font-bold shadow-2xl animate-fade-in-up border border-white/10 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-400" />
+                            <Sparkles className="w-4 h-4 text-emerald-400" />
                             {messageToast}
                         </div>
                     )}
-
                     <div className="w-full max-w-7xl relative z-10 flex flex-col h-full">
                         {/* Header */}
                         <div className="flex flex-col md:flex-row items-center justify-between mb-2 shrink-0 gap-4 pt-2 px-2">
@@ -814,13 +1025,9 @@
                                     )}
                                 </div>
                                 <button onClick={toggleTheme} className={`p-1.5 rounded-lg border transition-all ${theme === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10 text-yellow-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'}`}>{theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}</button>
-
-                                {/* MOVED FORMATS BUTTON HERE (VISIBLE ON MOBILE NOW) */}
                                 <button onClick={() => setShowFormats(true)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${theme === 'dark' ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-300' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'}`}>
                                     <Info className="w-3.5 h-3.5" />
-                                    {/* Text label: Keep it short or icon only if needed. "Formats" or "形式" */}
                                     <span className="hidden md:inline">{t.formatsBtn}</span> 
-                                    {/* Show Icon only on mobile to save space, text on desktop */}
                                     <span className="md:hidden">Info</span>
                                 </button>
                             </div>
@@ -848,12 +1055,12 @@
                         <div className="flex-1 min-h-0 relative">
                             {mode === 'batch' && (
                                 <div className="absolute inset-0 flex flex-col md:grid md:grid-cols-12 gap-2 pb-2 px-2 animate-fade-in-up overflow-y-auto md:overflow-hidden">
-                                    {/* Batch: Left Column (Drop & Settings) - Mobile: Top Half Split View */}
+                                    {/* Batch: Left Column (Drop & Settings) */}
                                     <div className={`md:col-span-4 flex flex-col gap-2 shrink-0 md:h-full overflow-y-auto flex border-b md:border-b-0 pb-2 md:pb-0`}>
                                         <div className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-3 ${isDragging ? styles.dropZoneActive : styles.dropZoneIdle} ${isDragging ? 'scale-[1.01]' : ''} shrink-0 min-h-[120px]`} onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }} onDrop={handleBatchDrop} onClick={() => fileInputRef.current?.click()}><input type="file" ref={fileInputRef} className="hidden" multiple accept="audio/*,video/*" onChange={(e) => addFiles(e.target.files)} /><div className="flex flex-col items-center gap-1 pointer-events-none text-center"><div className={`p-2 rounded-xl shadow-lg transition-colors ${theme === 'dark' ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-100 text-emerald-600'} ${isDragging ? 'animate-bounce' : ''}`}><Upload className="w-5 h-5" /></div><div><p className={`font-bold text-base ${styles.text}`}>{t.dropMain}</p><p className={`text-xs ${styles.textMuted} mt-0.5`}>{t.dropSub}</p></div></div></div>
                                         <div className={`${styles.cardBg} backdrop-blur-md rounded-xl p-3 flex flex-col justify-center shrink-0`}><label className={`text-xs font-bold ${styles.textMuted} uppercase tracking-wider mb-1 block`}>{t.quality}</label><div className="space-y-0.5 mb-2">{[128, 192, 320].map((rate) => (<div key={rate} onClick={() => setBitrate(rate)} className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer group transition-colors select-none ${styles.cardHover}`}><div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${bitrate === rate ? 'border-emerald-500' : 'border-slate-500'}`}>{bitrate === rate && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" />}</div><span className={`text-sm font-mono transition-colors ${bitrate === rate ? `${styles.accent} font-bold` : `${styles.textMuted}`}`}>{rate} kbps</span></div>))}</div><label className={`text-xs font-bold ${styles.textMuted} uppercase tracking-wider mb-1 block border-t ${theme === 'dark' ? 'border-white/10' : 'border-slate-200'} pt-2`}>{t.settings}</label><div onClick={() => setFadeEffect(!fadeEffect)} className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer group transition-colors select-none mb-1 ${styles.cardHover}`}><div className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${fadeEffect ? 'border-emerald-500 bg-emerald-500' : 'border-slate-500'}`}>{fadeEffect && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}</div><div className="flex items-center gap-1.5"><Mic2 className={`w-3.5 h-3.5 ${styles.textMuted}`} /><span className={`text-sm ${fadeEffect ? styles.text : styles.textMuted}`}>{t.fade}</span></div></div><div className="space-y-1 mt-1"><div className="flex items-center gap-2 px-1"><Edit3 className={`w-3.5 h-3.5 ${styles.textMuted}`} /><span className={`text-sm ${styles.textMuted}`}>{t.rename}</span></div><input type="text" value={renamePrefix} onChange={(e) => setRenamePrefix(e.target.value)} placeholder={t.renamePlaceholder} className={`w-full px-2 py-1.5 rounded text-sm outline-none transition-all border-2 ${styles.inputBg} focus:border-emerald-500 border-slate-500`} /></div></div>
                                     </div>
-                                    {/* Batch: Right Column (List) - Mobile: Bottom Half Split View (55%) */}
+                                    {/* Batch: Right Column (List) */}
                                     <div className={`md:col-span-8 flex flex-col rounded-2xl border overflow-hidden ${styles.listContainer} backdrop-blur-sm shrink-0 min-h-[400px] md:h-full flex`}>
                                         <div className={`p-4 border-b ${theme === 'dark' ? 'border-white/5 bg-white/5' : 'border-slate-200 bg-slate-50/80'} flex items-center justify-between shrink-0`}>
                                             <div className="flex items-center gap-3"><div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-slate-800 text-slate-400' : 'bg-white text-slate-500 border border-slate-200'}`}><Music className="w-5 h-5" /></div><span className={`text-xs font-bold ${styles.textMuted} uppercase tracking-widest`}>{t.queue} ({queue.filter(i => i.status === 'complete').length} / {queue.length})</span></div><div className="flex gap-2">{queue.length > 0 && (<><button onClick={clearAll} className={`text-[10px] flex items-center gap-1.5 transition-all px-3 py-2 rounded-lg font-medium ${isConfirmingClear ? 'bg-red-500/20 text-red-500 border border-red-500/30' : `${styles.textMuted} hover:text-red-500 hover:bg-red-500/10 bg-transparent border border-transparent hover:border-red-500/20`}`}><Trash2 className="w-4 h-4" /> {isConfirmingClear ? t.sure : t.clear}</button><button onClick={downloadAllZip} disabled={!isDownloadAllEnabled} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-lg ${isDownloadAllEnabled ? 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-105 shadow-emerald-500/30 cursor-pointer' : `${theme === 'dark' ? 'bg-slate-800 text-slate-500 border border-white/5' : 'bg-slate-200 text-slate-400'} cursor-not-allowed opacity-70`}`}>{isZipping ? <Loader2 className="w-4 h-4 animate-spin"/> : <Archive className="w-4 h-4"/>}{isZipping ? t.zipping : t.dlZip}</button></>)}</div>
@@ -868,7 +1075,7 @@
                             {/* EDITOR MODE */}
                             {mode === 'editor' && (
                                 <div className="absolute inset-0 flex flex-col gap-2 p-2 animate-fade-in-up overflow-y-auto">
-                                    <div className={`shrink-0 h-[20vh] min-h-[160px] rounded-2xl border p-2 flex flex-col items-center justify-center relative overflow-hidden ${styles.cardBg}`}>
+                                    <div className={`shrink-0 h-[22vh] min-h-[165px] rounded-2xl border p-2 flex flex-col items-center justify-center relative overflow-hidden ${styles.cardBg}`}>
                                         {!editBuffer ? (
                                             <div 
                                                 className={`absolute inset-4 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${isDragging ? styles.dropZoneActive : styles.dropZoneIdle}`}
@@ -886,10 +1093,17 @@
                                         ) : (
                                             <div className="w-full h-full flex flex-col gap-1">
                                                 <div className="flex justify-between items-center px-1 shrink-0">
-                                                    <h3 className={`font-bold truncate max-w-[50%] text-sm ${styles.text}`}>{editFile.name}</h3>
+                                                    <div className="flex items-center gap-2 max-w-[60%]">
+                                                        <h3 className={`font-bold truncate text-sm ${styles.text}`}>{editFile.name}</h3>
+                                                        {isNrActive && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shrink-0">
+                                                                <Sparkles className="w-2.5 h-2.5" /> NR ON
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="flex gap-2 items-center">
                                                         <span className={`font-mono text-xs ${styles.textMuted}`}>{formatTime(currentTime)} / {formatTime(editBuffer.duration)}</span>
-                                                        <button onClick={() => { setEditBuffer(null); stopPlayback(); }} className="text-xs text-red-400 hover:underline">{t.reset}</button>
+                                                        <button onClick={() => { setRawEditBuffer(null); setEditBuffer(null); stopPlayback(); }} className="text-xs text-red-400 hover:underline">{t.reset}</button>
                                                     </div>
                                                 </div>
                                                 {/* Waveform */}
@@ -904,16 +1118,13 @@
                                                     />
                                                 </div>
                                                 
-                                                {/* Play Controls (Unified & Compact) */}
+                                                {/* Play Controls */}
                                                 <div className="flex flex-col md:flex-row md:justify-center items-center gap-2 md:gap-4 py-1 shrink-0 relative">
-                                                    {/* Row 1 on Mobile: Tools */}
                                                     <div className="flex md:absolute md:left-0 md:bottom-1/2 md:translate-y-1/2 items-center gap-1 justify-center w-full md:w-auto">
                                                         <button onClick={() => setTrimStart(currentTime)} className="px-2 py-1 text-[10px] bg-amber-500/20 text-amber-500 rounded border border-amber-500/50 hover:bg-amber-500/40 font-bold tracking-tight">[{t.setStart}</button>
                                                         <button onClick={() => setTrimEnd(currentTime)} className="px-2 py-1 text-[10px] bg-red-500/20 text-red-500 rounded border border-red-500/50 hover:bg-red-500/40 font-bold tracking-tight">{t.setEnd}]</button>
                                                         <button onClick={() => { setTrimStart(0); setTrimEnd(editBuffer.duration); }} className="px-2 py-1 text-[10px] text-slate-400 hover:text-white"><RotateCcw className="w-3 h-3"/></button>
                                                     </div>
-
-                                                    {/* Row 2 on Mobile: Play/Stop (Centered) */}
                                                     <div className="flex items-center gap-4 justify-center w-full md:w-auto">
                                                          <button onClick={() => stopPlayback()} className={`p-2 rounded-full border transition-all ${styles.buttonSecondary} border-transparent hover:bg-red-500/20 hover:text-red-400`} title={t.stop}><Square className="w-4 h-4 fill-current" /></button>
                                                          <button onClick={togglePlayback} className="p-3 rounded-full bg-emerald-500 text-white shadow-lg hover:scale-105 transition-transform"><span className="sr-only">Play/Pause</span>{isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}</button>
@@ -924,33 +1135,33 @@
                                         )}
                                     </div>
 
-                                    {/* CONTROLS AREA - Grid on Desktop, Tabs on Mobile */}
+                                    {/* CONTROLS AREA - 3 Columns on Desktop, 3 Tabs on Mobile */}
                                     {editBuffer && (
                                         <>
-                                            {/* Mobile Tab Ruler - Only 2 Tabs Now */}
+                                            {/* Mobile Tab Bar (3 Tabs: EQ / Noise Reduction / Export) */}
                                             <div className="flex md:hidden rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
                                                 <button onClick={()=>setEditorTab('eq')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1 ${editorTab==='eq' ? 'bg-emerald-600 text-white' : `${styles.bg} ${styles.text}`}`}><Sliders className="w-3 h-3"/> {t.tabEq}</button>
+                                                <button onClick={()=>setEditorTab('nr')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1 border-l border-slate-200 dark:border-white/10 ${editorTab==='nr' ? 'bg-emerald-600 text-white' : `${styles.bg} ${styles.text}`}`}><Sparkles className="w-3 h-3"/> {t.tabNr}</button>
                                                 <button onClick={()=>setEditorTab('export')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1 border-l border-slate-200 dark:border-white/10 ${editorTab==='export' ? 'bg-emerald-600 text-white' : `${styles.bg} ${styles.text}`}`}><Download className="w-3 h-3"/> {t.tabExport}</button>
                                             </div>
 
-                                            {/* Tab Content Container */}
-                                            <div className={`flex-1 min-h-[35%] md:h-60 grid grid-cols-1 md:grid-cols-12 gap-3 shrink-0`}>
+                                            {/* Panels Container */}
+                                            <div className={`flex-1 min-h-[260px] grid grid-cols-1 md:grid-cols-12 gap-3 shrink-0 pb-4`}>
                                                 
-                                                {/* EQ PANEL (Mobile Tab: 'eq', Desktop: Col 8) */}
-                                                <div className={`md:col-span-8 ${editorTab === 'eq' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-4 flex-col ${styles.cardBg} overflow-x-auto`}>
+                                                {/* 1. EQ PANEL (Desktop: Col 5) */}
+                                                <div className={`md:col-span-5 ${editorTab === 'eq' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-3.5 flex-col ${styles.cardBg} overflow-x-auto`}>
                                                     <div className="flex justify-between items-center mb-2 shrink-0 sticky left-0">
-                                                        <div className="flex items-center gap-2"><Sliders className="w-4 h-4 text-emerald-500" /><span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.eq}</span></div>
-                                                        <div className="flex gap-2">
+                                                        <div className="flex items-center gap-1.5"><Sliders className="w-4 h-4 text-emerald-500" /><span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.eq}</span></div>
+                                                        <div className="flex gap-1.5">
                                                             <button onClick={saveCustomEq} className={`text-[10px] px-2 py-1 rounded border ${theme === 'dark' ? 'border-white/10 hover:bg-white/10' : 'border-slate-300 hover:bg-white'}`}>{t.saveEq}</button>
                                                             <button onClick={loadCustomEq} disabled={!customEq} className={`text-[10px] px-2 py-1 rounded border ${customEq ? (theme === 'dark' ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10' : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50') : 'border-transparent opacity-50 cursor-not-allowed'}`}>{t.loadEq}</button>
-                                                            <button onClick={resetEq} className="text-[10px] px-2 py-1 text-slate-400 hover:text-white"><RotateCcw className="w-3 h-3"/></button>
+                                                            <button onClick={resetEq} className="text-[10px] px-1.5 py-1 text-slate-400 hover:text-emerald-400" title={t.resetEq}><RotateCcw className="w-3.5 h-3.5"/></button>
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* EQ Visuals Container */}
-                                                    <div className="flex-1 relative px-2 min-h-[180px] flex items-end min-w-[300px]">
-                                                        {/* Grid Lines */}
-                                                        <div className="absolute inset-x-2 top-0 bottom-6 pointer-events-none">
+                                                    {/* EQ Sliders */}
+                                                    <div className="flex-1 relative px-1 min-h-[170px] flex items-end min-w-[260px]">
+                                                        <div className="absolute inset-x-1 top-0 bottom-6 pointer-events-none">
                                                             <div className="h-full w-full relative opacity-70">
                                                                 <div className="absolute top-1/2 w-full border-t-2 border-slate-400/80 dark:border-white/80"></div>
                                                                 <div className="absolute top-[35%] w-full border-t border-slate-400/40 dark:border-white/30"></div> 
@@ -961,9 +1172,9 @@
                                                                 <div className="absolute top-[95%] w-full border-t border-slate-400/40 dark:border-white/30"></div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex justify-between items-end h-full w-full relative z-10 gap-2">
+                                                        <div className="flex justify-between items-end h-full w-full relative z-10 gap-1">
                                                             {[60, 150, 400, 1000, 2400, 6000, 15000].map((freq, i) => (
-                                                                <div key={freq} className="flex flex-col items-center gap-1 h-full justify-end group eq-slider-container w-full min-w-[40px]">
+                                                                <div key={freq} className="flex flex-col items-center gap-1 h-full justify-end group eq-slider-container w-full min-w-[34px]">
                                                                     <div className="relative flex-1 w-full flex items-center justify-center">
                                                                         <input type="range" min="-15" max="15" step="1" value={eqGains[i]} onChange={(e) => { const newGains = [...eqGains]; newGains[i] = Number(e.target.value); setEqGains(newGains); }} className="absolute -rotate-90 origin-center cursor-pointer" />
                                                                     </div>
@@ -977,14 +1188,95 @@
                                                     </div>
                                                 </div>
 
-                                                {/* EXPORT PANEL (Mobile Tab: 'export', Desktop: Col 4) */}
-                                                <div className={`md:col-span-4 ${editorTab === 'export' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-4 flex-col justify-between ${styles.cardBg}`}>
+                                                {/* 2. NOISE REDUCTION PANEL (Desktop: Col 4, Mobile Tab: 'nr') */}
+                                                <div className={`md:col-span-4 ${editorTab === 'nr' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-3.5 flex-col justify-between ${styles.cardBg}`}>
+                                                    <div>
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Sparkles className="w-4 h-4 text-emerald-500" />
+                                                                <span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.nrTitle}</span>
+                                                            </div>
+                                                            <button onClick={resetNr} className="text-[10px] px-1.5 py-1 text-slate-400 hover:text-emerald-400" title={t.resetParams}><RotateCcw className="w-3.5 h-3.5"/></button>
+                                                        </div>
+
+                                                        {/* One-Tap Presets */}
+                                                        <div className="grid grid-cols-4 gap-1 mb-3">
+                                                            {[
+                                                                { id: 'off', label: t.nrPresetOff },
+                                                                { id: 'air', label: t.nrPresetAir },
+                                                                { id: 'voice', label: t.nrPresetVoice },
+                                                                { id: 'strong', label: t.nrPresetStrong }
+                                                            ].map(p => (
+                                                                <button
+                                                                    key={p.id}
+                                                                    onClick={() => applyNrPreset(p.id)}
+                                                                    className={`py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all border truncate ${
+                                                                        nrPreset === p.id
+                                                                            ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                                                                            : `${theme === 'dark' ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'}`
+                                                                    }`}
+                                                                    title={p.label}
+                                                                >
+                                                                    {p.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+
+                                                        {/* Sliders */}
+                                                        <div className="space-y-2.5">
+                                                            <div className="space-y-0.5">
+                                                                <div className="flex justify-between text-[11px] font-bold">
+                                                                    <span className={nrHighpass > 0 ? 'text-emerald-500' : styles.textMuted}>{t.nrHighpass}</span>
+                                                                    <span className="font-mono text-emerald-500">{nrHighpass === 0 ? 'OFF' : `${nrHighpass} Hz`}</span>
+                                                                </div>
+                                                                <input type="range" min="0" max="300" step="10" value={nrHighpass} onChange={(e) => { setNrHighpass(Number(e.target.value)); setNrPreset('custom'); }} className="w-full h-1.5 rounded-lg appearance-none" />
+                                                            </div>
+
+                                                            <div className="space-y-0.5">
+                                                                <div className="flex justify-between text-[11px] font-bold">
+                                                                    <span className={nrLowpass < 20000 ? 'text-emerald-500' : styles.textMuted}>{t.nrLowpass}</span>
+                                                                    <span className="font-mono text-emerald-500">{nrLowpass >= 20000 ? 'OFF' : `${(nrLowpass/1000).toFixed(1)} kHz`}</span>
+                                                                </div>
+                                                                <input type="range" min="4000" max="20000" step="500" value={nrLowpass} onChange={(e) => { setNrLowpass(Number(e.target.value)); setNrPreset('custom'); }} className="w-full h-1.5 rounded-lg appearance-none" />
+                                                            </div>
+
+                                                            <div className="space-y-0.5">
+                                                                <div className="flex justify-between text-[11px] font-bold">
+                                                                    <span className={nrGate > -60 ? 'text-emerald-500' : styles.textMuted}>{t.nrGate}</span>
+                                                                    <span className="font-mono text-emerald-500">{nrGate <= -60 ? 'OFF' : `${nrGate} dB`}</span>
+                                                                </div>
+                                                                <input type="range" min="-60" max="-20" step="2" value={nrGate} onChange={(e) => { setNrGate(Number(e.target.value)); setNrPreset('custom'); }} className="w-full h-1.5 rounded-lg appearance-none" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Voice Enhancer Toggle */}
+                                                    <div 
+                                                        onClick={() => { setNrVoiceBoost(!nrVoiceBoost); setNrPreset('custom'); }}
+                                                        className={`mt-3 p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-between select-none ${
+                                                            nrVoiceBoost 
+                                                                ? (theme === 'dark' ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-emerald-50 border-emerald-300 text-emerald-700')
+                                                                : (theme === 'dark' ? 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200')
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <Mic2 className={`w-4 h-4 ${nrVoiceBoost ? 'text-emerald-500' : 'opacity-60'}`} />
+                                                            <span className="text-xs font-bold">{t.nrVoiceBoost}</span>
+                                                        </div>
+                                                        <div className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${nrVoiceBoost ? 'border-emerald-500 bg-emerald-500' : 'border-slate-400'}`}>
+                                                            {nrVoiceBoost && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* 3. EXPORT PANEL (Desktop: Col 3, Mobile Tab: 'export') */}
+                                                <div className={`md:col-span-3 ${editorTab === 'export' ? 'flex' : 'hidden md:flex'} rounded-2xl border p-3.5 flex-col justify-between ${styles.cardBg}`}>
                                                     <div className="flex justify-between items-center mb-1">
                                                          <span className={`text-xs font-bold uppercase ${styles.textMuted}`}>{t.controls}</span>
-                                                         <button onClick={resetParams} className="text-[10px] px-2 py-1 text-slate-400 hover:text-white" title={t.resetParams}><RotateCcw className="w-3 h-3"/></button>
+                                                         <button onClick={resetParams} className="text-[10px] px-1.5 py-1 text-slate-400 hover:text-emerald-400" title={t.resetParams}><RotateCcw className="w-3.5 h-3.5"/></button>
                                                     </div>
                                                     
-                                                    <div className="space-y-4">
+                                                    <div className="space-y-3">
                                                         <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.speed}</span><span className="font-mono">x{playbackSpeed.toFixed(1)}</span></div><input type="range" min="0.5" max="2.0" step="0.1" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
                                                         <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.volume}</span><span className="font-mono">{Math.round(editorVolume * 100)}%</span></div><input type="range" min="0" max="3" step="0.1" value={editorVolume} onChange={(e) => setEditorVolume(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
                                                         <div className="space-y-1"><div className="flex justify-between text-xs font-bold text-emerald-500"><span>{t.fadeSec}</span><span className="font-mono">{editorFade}{t.sec}</span></div><input type="range" min="0" max="10" step="0.5" value={editorFade} onChange={(e) => setEditorFade(Number(e.target.value))} className={`w-full h-1.5 rounded-lg appearance-none ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-300'}`} /></div>
@@ -1001,9 +1293,9 @@
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
 </html>
+
