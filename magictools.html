@@ -144,7 +144,7 @@
         .loader-text { margin-top: 1rem; font-family: 'Cinzel'; color: #94a3b8; letter-spacing: 0.2em; font-size: 0.8rem; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+<body class="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden">
 
     <!-- Loading Screen -->
     <div id="loader">
@@ -269,6 +269,10 @@
                             <option value="sun">太陽 (Sun)</option>
                             <option value="moon">月 (Moon)</option>
                             <option value="snow">六花 (Snow)</option>
+                            <option value="astral">閃光 (Astral)</option>
+                            <option value="sacred">生命の種子 (Sacred)</option>
+                            <option value="gear">時の歯車 (Gear)</option>
+                            <option value="chain">封印の鎖 (Chain)</option>
                         </select>
                         
                         <div class="flex items-center gap-1">
@@ -338,7 +342,7 @@
                 <div class="control-group m-0">
                     <div class="flex justify-between items-center mb-2">
                         <label class="label-text m-0 flex items-center gap-1">
-                            <span>🎥 動画記録 (WebM)</span>
+                            <span>🎥 動画記録 (MP4 / WebM)</span>
                         </label>
                         <div class="text-[0.6rem] text-red-500 font-bold hidden" id="recStatusText">記録中...</div>
                     </div>
@@ -395,6 +399,7 @@
         const AppConfig = {
             apiKey: "",
             model: "gemini-2.5-flash",
+            models: ["gemini-3-flash-preview", "gemini-2.5-flash"],
             pixelRatioLimit: 3, 
             apiBase: "https://generativelanguage.googleapis.com/v1beta/models/"
         };
@@ -538,6 +543,7 @@
             setupCameraControls(container);
 
             window.addEventListener('resize', () => {
+                if (State.isRecording) return;
                 const cw = container.clientWidth;
                 const ch = container.clientHeight;
                 camera.aspect = cw / ch;
@@ -1098,7 +1104,7 @@
             const cx = size/2; const cy = size/2; const r = size/2 * 0.95;
 
             const col = new THREE.Color(colorHex);
-            const styleColor = `rgb(${col.r*255},${col.g*255},${col.b*255})`;
+            const styleColor = `rgb(col.r*255,{col.g*255},${col.b*255})`;
 
             ctx.fillStyle = styleColor;
             ctx.beginPath();
@@ -1140,14 +1146,22 @@
                 magicGroup = new THREE.Group();
                 scene.add(magicGroup);
             } else {
+                const disposeMaterial = (mat) => {
+                    if (!mat) return;
+                    if (mat.map) mat.map.dispose();
+                    mat.dispose();
+                };
                 while(magicGroup.children.length > 0){ 
                     const obj = magicGroup.children[0];
+                    obj.traverse((child) => {
+                        if (child.geometry) child.geometry.dispose();
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(disposeMaterial);
+                        } else if (child.material) {
+                            disposeMaterial(child.material);
+                        }
+                    });
                     magicGroup.remove(obj);
-                    if(obj.geometry) obj.geometry.dispose();
-                    if(obj.material) {
-                        if (obj.material.map) obj.material.map.dispose();
-                        obj.material.dispose();
-                    }
                 }
                 activeShaderUniforms = [];
             }
@@ -1159,7 +1173,7 @@
             const subEl = document.getElementById('magicSubDisplay');
             nameEl.innerText = `${attrData.name.toUpperCase()} CIRCLE`;
             nameEl.style.color = State.bgMode === 'white' ? '#333' : '#' + new THREE.Color(attrData.glow).getHexString();
-            subEl.innerText = `${State.system.toUpperCase()} System / Lv.${State.level}`;
+            subEl.innerText = `State.system.toUpperCase()System/Lv.{State.level}`;
             document.getElementById('levelVal').innerText = `Lv.${State.level}`;
             document.getElementById('speedVal').innerText = State.speed;
 
@@ -1265,11 +1279,24 @@
                 let ring;
                 if (currentSys === 'seimei') {
                     ring = createDashedRing(radius, lineMat);
+                } else if (currentSys === 'runic') {
+                    ring = new THREE.Group();
+                    ring.add(createBoldPoly(radius, 8, 0.07, lineMat));
+                    ring.add(createBoldPoly(radius * 0.95, 8, 0.025, lineMat));
                 } else {
                     const rGeo = new THREE.RingGeometry(radius - 0.04, radius + 0.04, 128);
                     ring = new THREE.Mesh(rGeo, lineMat);
                 }
                 layerGroup.add(ring);
+
+                if (currentSys === 'alchemy') {
+                    layerGroup.add(createAlchemyTicks(radius, lineMat));
+                } else if (currentSys === 'solomonic' && i % 2 !== 0) {
+                    const innerFrame = new THREE.Mesh(new THREE.RingGeometry(radius * 0.69 - 0.025, radius * 0.69 + 0.025, 128), lineMat);
+                    const outerFrame = new THREE.Mesh(new THREE.RingGeometry(radius * 1.04 - 0.02, radius * 1.04 + 0.02, 128), lineMat);
+                    layerGroup.add(innerFrame);
+                    layerGroup.add(outerFrame);
+                }
 
                 if (i === 2 || i === 4) {
                     const mandala = createGeometricMandala(radius, glowColor, attrData.mandala, i, lineMat, currentSys, State.attribute);
@@ -1313,6 +1340,7 @@
                         star2.rotation.z = Math.PI;
                         layerGroup.add(star);
                         layerGroup.add(star2);
+                        layerGroup.add(createSolomonicSeals(radius, lineMat));
 
                     } else if (currentSys === 'seimei') {
                         const pentagram = createBoldStar(radius, 5, baseThickness, lineMat);
@@ -1320,8 +1348,8 @@
 
                     } else if (currentSys === 'runic') {
                         const shape = createBoldPoly(radius, attrData.sides || 4, baseThickness, lineMat);
-                        // Add Runic specific runes if feasible, otherwise poly is fine
                         layerGroup.add(shape);
+                        layerGroup.add(createRunicCompass(radius * 0.85, baseThickness * 0.8, lineMat));
                     } else { 
                         // Fallback generic
                         const shape = createBoldPoly(radius, attrData.sides || 6, baseThickness, lineMat);
@@ -1390,6 +1418,16 @@
                 const tri = createBoldPoly(0.8, 3, 0.06, lineMat);
                 const sq = createBoldPoly(0.6, 4, 0.06, lineMat);
                 coreGroup.add(tri); coreGroup.add(sq);
+
+            } else if (coreSys === 'enochian') {
+                const outerSq = createBoldPoly(0.95, 4, 0.06, lineMat);
+                outerSq.rotation.z = Math.PI / 4;
+                const innerSq = createBoldPoly(0.55, 4, 0.045, lineMat);
+                innerSq.rotation.z = Math.PI / 4;
+                coreGroup.add(outerSq);
+                coreGroup.add(innerSq);
+                coreGroup.add(createThickLine(new THREE.Vector3(-0.67, 0, 0), new THREE.Vector3(0.67, 0, 0), 0.045, lineMat));
+                coreGroup.add(createThickLine(new THREE.Vector3(0, -0.67, 0), new THREE.Vector3(0, 0.67, 0), 0.045, lineMat));
 
             } else {
                 const coreMesh = createBoldPoly(0.8, attrData.sides, 0.06, lineMat);
@@ -1512,6 +1550,7 @@
                 // Text Rings
                 let t1Text = "VERITAS VOS LIBERABIT";
                 let t2Text = "AS ABOVE SO BELOW";
+                let textRenderSys = systemName;
                 
                 if (systemName === 'seimei') {
                      t1Text = "臨兵闘者皆陣列在前"; // 九字
@@ -1523,12 +1562,22 @@
                          const attr = AttributePresets[State.attribute];
                          if(attr && attr.kanji) t2Text = attr.kanji + "招来";
                      }
+                } else if (systemName === 'ofuda_jp' || systemName === 'ofuda_tao') {
+                     textRenderSys = 'seimei';
+                     t1Text = systemName === 'ofuda_tao' ? "太上老君急急如律令" : "臨兵闘者皆陣列在前";
+                     t2Text = "急急如律令";
+                     if (State.customAttr && State.customAttr.kanji_idiom) {
+                         t2Text = State.customAttr.kanji_idiom;
+                     } else {
+                         const attr = AttributePresets[State.attribute];
+                         if (attr && attr.kanji) t2Text = attr.kanji;
+                     }
                 }
 
-                const t1 = createTextRing(radius * 0.4, t1Text, color, systemName);
+                const t1 = createTextRing(radius * 0.4, t1Text, color, textRenderSys);
                 group.add(t1);
                 
-                const t2 = createTextRing(radius * 0.7, t2Text, color, systemName);
+                const t2 = createTextRing(radius * 0.7, t2Text, color, textRenderSys);
                 t2.rotation.z = Math.PI / 4; 
                 group.add(t2);
 
@@ -1626,9 +1675,140 @@
                 // Thickness 0.01 -> 0.06
                 const hex2 = createBoldPoly(radius * 0.75, 6, 0.06, mandalaMat);
                 group.add(hex2);
+
+            } else if (type === 'astral') {
+                // Astral Crown: Central Sparkle + 8 Orbiting Sparkles
+                const mainSparkle = createSparkleShape(radius * 0.48, 0.05, mandalaMat);
+                group.add(mainSparkle);
+                const subSparkle = createSparkleShape(radius * 0.28, 0.04, mandalaMat);
+                subSparkle.rotation.z = Math.PI / 4;
+                group.add(subSparkle);
+
+                // Crisp central cross flare
+                group.add(createThickLine(new THREE.Vector3(-radius * 0.55, 0, 0), new THREE.Vector3(radius * 0.55, 0, 0), 0.035, mandalaMat));
+                group.add(createThickLine(new THREE.Vector3(0, -radius * 0.55, 0), new THREE.Vector3(0, radius * 0.55, 0), 0.035, mandalaMat));
+
+                // Outer crown ring + 8 satellite sparkles
+                const rCrown = radius * 0.8;
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rCrown - 0.02, rCrown + 0.02, 96), mandalaMat));
+                const satCount = 8;
+                for (let i = 0; i < satCount; i++) {
+                    const a = (i / satCount) * Math.PI * 2;
+                    const sx = Math.cos(a) * rCrown;
+                    const sy = Math.sin(a) * rCrown;
+                    const sat = createSparkleShape(radius * 0.14, 0.03, mandalaMat);
+                    sat.position.set(sx, sy, 0);
+                    sat.rotation.z = a;
+                    group.add(sat);
+
+                    const pIn = new THREE.Vector3(Math.cos(a) * radius * 0.45, Math.sin(a) * radius * 0.45, 0);
+                    const pOut = new THREE.Vector3(Math.cos(a) * (rCrown - radius * 0.14), Math.sin(a) * (rCrown - radius * 0.14), 0);
+                    group.add(createThickLine(pIn, pOut, 0.02, mandalaMat));
+                }
+
+            } else if (type === 'sacred') {
+                // Seed of Life (Sacred Geometry)
+                const rSeed = radius * 0.32;
+                const thick = 0.03;
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rSeed - thick, rSeed + thick, 64), mandalaMat));
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2;
+                    const ring = new THREE.Mesh(new THREE.RingGeometry(rSeed - thick, rSeed + thick, 64), mandalaMat);
+                    ring.position.set(Math.cos(a) * rSeed, Math.sin(a) * rSeed, 0);
+                    group.add(ring);
+                }
+                // Outer framing double circles
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rSeed * 2.0 - 0.03, rSeed * 2.0 + 0.03, 96), mandalaMat));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rSeed * 2.15 - 0.02, rSeed * 2.15 + 0.02, 96), mandalaMat));
+
+            } else if (type === 'gear') {
+                // Chronos Gear & Astronomical Clock
+                const rRimOut = radius * 0.86;
+                const rRimIn = radius * 0.72;
+                const rHub = radius * 0.44;
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rRimOut - 0.03, rRimOut + 0.03, 96), mandalaMat));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rRimIn - 0.025, rRimIn + 0.025, 96), mandalaMat));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rHub - 0.025, rHub + 0.025, 64), mandalaMat));
+
+                // 24 gear teeth
+                const teeth = 24;
+                for (let i = 0; i < teeth; i++) {
+                    const a = (i / teeth) * Math.PI * 2;
+                    const p1 = new THREE.Vector3(Math.cos(a) * rRimOut, Math.sin(a) * rRimOut, 0);
+                    const p2 = new THREE.Vector3(Math.cos(a) * (radius * 0.98), Math.sin(a) * (radius * 0.98), 0);
+                    group.add(createThickLine(p1, p2, 0.14, mandalaMat));
+                }
+
+                // 8 mechanical spokes
+                const spokes = 8;
+                for (let i = 0; i < spokes; i++) {
+                    const a = (i / spokes) * Math.PI * 2;
+                    const p1 = new THREE.Vector3(Math.cos(a) * radius * 0.14, Math.sin(a) * radius * 0.14, 0);
+                    const p2 = new THREE.Vector3(Math.cos(a) * rRimIn, Math.sin(a) * rRimIn, 0);
+                    group.add(createThickLine(p1, p2, 0.04, mandalaMat));
+                }
+
+                // Roman numeral dial
+                group.add(createClockNumeralsRing(radius * 0.62, color));
+
+            } else if (type === 'chain') {
+                // Sealing Chain Ring
+                const rChain = radius * 0.82;
+                const linkCount = 24;
+                const linkRadius = radius * 0.1;
+                for (let i = 0; i < linkCount; i++) {
+                    const a = (i / linkCount) * Math.PI * 2;
+                    const link = createBoldPoly(linkRadius, 4, 0.045, mandalaMat);
+                    link.position.set(Math.cos(a) * rChain, Math.sin(a) * rChain, 0);
+                    link.rotation.z = a + Math.PI / 2;
+                    link.scale.set(1.3, 0.65, 1);
+                    group.add(link);
+                }
+                // Guide rails & 4 cardinal seal anchors
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rChain - linkRadius * 0.85, rChain - linkRadius * 0.78, 96), mandalaMat));
+                group.add(new THREE.Mesh(new THREE.RingGeometry(rChain + linkRadius * 0.78, rChain + linkRadius * 0.85, 96), mandalaMat));
+                for (let k = 0; k < 4; k++) {
+                    const a = (k / 4) * Math.PI * 2;
+                    const anchor = createBoldPoly(radius * 0.14, 4, 0.055, mandalaMat);
+                    anchor.position.set(Math.cos(a) * rChain, Math.sin(a) * rChain, 0);
+                    anchor.rotation.z = a;
+                    group.add(anchor);
+                }
             }
 
             return group;
+        }
+
+        function createClockNumeralsRing(radius, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'bold 54px "Cinzel", serif';
+            ctx.fillStyle = '#' + new THREE.Color(color).getHexString();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.translate(512, 512);
+
+            const numerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+            for (let i = 0; i < numerals.length; i++) {
+                ctx.save();
+                ctx.rotate((i / 12) * Math.PI * 2);
+                ctx.translate(0, -400);
+                ctx.fillText(numerals[i], 0, 0);
+                ctx.restore();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex,
+                transparent: true,
+                side: THREE.DoubleSide,
+                color: color,
+                blending: State.bgMode === 'white' ? THREE.NormalBlending : THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            return new THREE.Mesh(new THREE.PlaneGeometry(radius * 2.2, radius * 2.2), mat);
         }
 
         function createThickLine(p1, p2, thickness, material) {
@@ -1771,6 +1951,83 @@
             group.add(createThickLine(tr, br, thickness, material));
             group.add(createThickLine(br, bl, thickness, material));
             group.add(createThickLine(bl, tl, thickness, material));
+
+            // Corner double-circle Watchtower seals
+            const corners = [tl, tr, br, bl];
+            for (let c = 0; c < corners.length; c++) {
+                const sealOut = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.21, 24), material);
+                sealOut.position.copy(corners[c]);
+                group.add(sealOut);
+                const sealIn = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.09, 16), material);
+                sealIn.position.copy(corners[c]);
+                group.add(sealIn);
+            }
+            return group;
+        }
+
+        function createAlchemyTicks(radius, material) {
+            const group = new THREE.Group();
+            const count = 36;
+            for (let i = 0; i < count; i++) {
+                const a = (i / count) * Math.PI * 2;
+                const isMajor = (i % 3 === 0);
+                const rIn = isMajor ? radius * 0.93 : radius * 0.96;
+                const rOut = isMajor ? radius * 1.03 : radius * 1.01;
+                const p1 = new THREE.Vector3(Math.cos(a) * rIn, Math.sin(a) * rIn, 0);
+                const p2 = new THREE.Vector3(Math.cos(a) * rOut, Math.sin(a) * rOut, 0);
+                group.add(createThickLine(p1, p2, isMajor ? 0.035 : 0.02, material));
+            }
+            return group;
+        }
+
+        function createSolomonicSeals(radius, material) {
+            const group = new THREE.Group();
+            for (let k = 0; k < 6; k++) {
+                const a = (k / 6) * Math.PI * 2 - Math.PI / 2;
+                const x = Math.cos(a) * radius;
+                const y = Math.sin(a) * radius;
+                const outerSeal = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.23, 24), material);
+                outerSeal.position.set(x, y, 0);
+                group.add(outerSeal);
+                const innerSeal = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.09, 16), material);
+                innerSeal.position.set(x, y, 0);
+                group.add(innerSeal);
+            }
+            return group;
+        }
+
+        function createRunicCompass(radius, thickness, material) {
+            const group = new THREE.Group();
+            const arms = 8;
+            group.add(new THREE.Mesh(new THREE.RingGeometry(radius * 0.12, radius * 0.16, 32), material));
+            for (let i = 0; i < arms; i++) {
+                const a = (i / arms) * Math.PI * 2;
+                const armGroup = new THREE.Group();
+                armGroup.rotation.z = a;
+
+                // Main stave
+                armGroup.add(createThickLine(new THREE.Vector3(radius * 0.16, 0, 0), new THREE.Vector3(radius * 0.94, 0, 0), thickness, material));
+
+                if (i % 2 === 0) {
+                    // Major cardinal stave: chevron branches + fork tip
+                    const b1 = radius * 0.56;
+                    const len = radius * 0.16;
+                    armGroup.add(createThickLine(new THREE.Vector3(b1, 0, 0), new THREE.Vector3(b1 + len * 0.7, len * 0.7, 0), thickness * 0.85, material));
+                    armGroup.add(createThickLine(new THREE.Vector3(b1, 0, 0), new THREE.Vector3(b1 + len * 0.7, -len * 0.7, 0), thickness * 0.85, material));
+                    const tip = radius * 0.78;
+                    armGroup.add(createThickLine(new THREE.Vector3(tip, 0, 0), new THREE.Vector3(radius * 0.96, len * 0.6, 0), thickness * 0.85, material));
+                    armGroup.add(createThickLine(new THREE.Vector3(tip, 0, 0), new THREE.Vector3(radius * 0.96, -len * 0.6, 0), thickness * 0.85, material));
+                } else {
+                    // Minor diagonal stave: double crossbars
+                    const c1 = radius * 0.52;
+                    const c2 = radius * 0.72;
+                    const barH = radius * 0.12;
+                    armGroup.add(createThickLine(new THREE.Vector3(c1, -barH, 0), new THREE.Vector3(c1, barH, 0), thickness * 0.8, material));
+                    armGroup.add(createThickLine(new THREE.Vector3(c2, -barH * 0.75, 0), new THREE.Vector3(c2, barH * 0.75, 0), thickness * 0.8, material));
+                }
+
+                group.add(armGroup);
+            }
             return group;
         }
 
@@ -1956,26 +2213,26 @@
                 group.add(createShapeRing(count, rBase, 0.25, 4));
                 group.add(new THREE.Mesh(new THREE.RingGeometry(rBase * 0.9, rBase * 0.93, 64), material));
             } else {
-                if (type === 'sharp') { 
+                if (type === 'sharp' || type === 'astral') { 
                     group.add(createShapeRing(count * 2, rBase, 0.3, 3));
                     group.add(new THREE.Mesh(new THREE.RingGeometry(rBase * 0.9, rBase * 0.92, 64), material));
-                } else if (type === 'petal') {
+                } else if (type === 'petal' || type === 'flower' || type === 'sacred') {
                     group.add(createCircleRing(count, rBase, 0.4));
                     group.add(createCircleRing(count, rBase * 0.8, 0.2));
-                } else if (type === 'square') {
+                } else if (type === 'square' || type === 'gear' || type === 'chain') {
                     group.add(createShapeRing(count, rBase, 0.3, 4));
                     group.add(createShapeRing(count, rBase * 0.7, 0.2, 4));
-                } else if (type === 'curve') {
+                } else if (type === 'curve' || type === 'moon' || type === 'circle') {
                     group.add(new THREE.Mesh(new THREE.RingGeometry(rBase, rBase + 0.03, 64), material));
                     group.add(createCircleRing(count, rBase * 0.95, 0.1));
-                } else if (type === 'leaf') {
+                } else if (type === 'leaf' || type === 'snow') {
                     group.add(createShapeRing(count, rBase, 0.3, 6));
                 } else if (type === 'zigzag') {
                     const g1 = createShapeRing(count, rBase, 0.25, 3);
                     const g2 = createShapeRing(count, rBase * 0.8, 0.25, 3);
                     g2.rotation.z = Math.PI / count;
                     group.add(g1); group.add(g2);
-                } else if (type === 'ray') {
+                } else if (type === 'ray' || type === 'sun') {
                     const lines = new THREE.Group();
                     for(let i=0; i<count*2; i++) {
                         const a = (i/(count*2)) * Math.PI * 2;
@@ -1984,7 +2241,7 @@
                         lines.add(createThickLine(p1, p2, 0.04, material));
                     }
                     group.add(lines);
-                } else if (type === 'web') {
+                } else if (type === 'web' || type === 'text') {
                     group.add(createBoldPoly(rBase, 5, 0.04, material));
                     group.add(createBoldPoly(rBase * 0.8, 5, 0.04, material));
                 } else {
@@ -2214,13 +2471,92 @@
             State.attribute = key;
             State.customAttr = null; // Clear active AI data
             // Note: State.lastAiAttr remains intact!
+
+            if (State.system === 'ai_custom') {
+                State.system = 'alchemy';
+                const magicTypeEl = document.getElementById('magicType');
+                if (magicTypeEl) magicTypeEl.value = 'alchemy';
+            }
             
             document.getElementById('customAttrBadge').classList.add('hidden');
             document.getElementById('presetAttrGrid').classList.remove('hidden');
             document.querySelectorAll('#presetAttrGrid .magic-btn').forEach(b => b.classList.remove('active', 'border-blue-400'));
-            const btn = document.getElementById(`btn-${key}`);
+            const btn = document.getElementById('btn-' + key);
             if(btn) btn.classList.add('active', 'border-blue-400');
             updateMagic();
+        }
+
+        function syncUIFromState() {
+            State.isRecording = false;
+            const validMandalas = ['none', 'circle', 'flower', 'text', 'sun', 'moon', 'snow', 'astral', 'sacred', 'gear', 'chain'];
+            if (validMandalas.indexOf(State.mandala) === -1) {
+                State.mandala = 'none';
+            }
+
+            const levelEl = document.getElementById('levelRange');
+            if (levelEl) levelEl.value = State.level;
+            const speedEl = document.getElementById('speedRange');
+            if (speedEl) speedEl.value = State.speed;
+            const speedValEl = document.getElementById('speedVal');
+            if (speedValEl) speedValEl.innerText = State.speed;
+            const mandalaEl = document.getElementById('mandalaType');
+            if (mandalaEl) mandalaEl.value = State.mandala;
+            const mandalaSizeEl = document.getElementById('mandalaSizeRange');
+            if (mandalaSizeEl) mandalaSizeEl.value = State.mandalaSize;
+
+            const planetEl = document.getElementById('planetToggle');
+            if (planetEl) planetEl.checked = !!State.showPlanets;
+            const particleEl = document.getElementById('particleToggle');
+            if (particleEl) particleEl.checked = !!State.showParticles;
+            const transparentEl = document.getElementById('transparentToggle');
+            if (transparentEl) transparentEl.checked = !!State.transparentBg;
+
+            const bgBlackBtn = document.getElementById('bgBlackBtn');
+            const bgWhiteBtn = document.getElementById('bgWhiteBtn');
+            const activeClass = ['bg-white', 'shadow-sm', 'text-slate-800'];
+            const inactiveClass = ['hover:bg-white/50'];
+            if (bgBlackBtn && bgWhiteBtn) {
+                if (State.bgMode === 'white') {
+                    bgWhiteBtn.classList.add(...activeClass);
+                    bgWhiteBtn.classList.remove(...inactiveClass);
+                    bgBlackBtn.classList.remove(...activeClass);
+                    bgBlackBtn.classList.add(...inactiveClass);
+                } else {
+                    bgBlackBtn.classList.add(...activeClass);
+                    bgBlackBtn.classList.remove(...inactiveClass);
+                    bgWhiteBtn.classList.remove(...activeClass);
+                    bgWhiteBtn.classList.add(...inactiveClass);
+                }
+            }
+
+            const aiData = State.customAttr || State.lastAiAttr;
+            const aiOption = document.getElementById('aiCustomOption');
+            if (aiOption) {
+                if (aiData) {
+                    aiOption.disabled = false;
+                    aiOption.innerText = '【★】' + (aiData.name_jp || aiData.name) + ' (AI Generated)';
+                } else {
+                    aiOption.disabled = true;
+                    if (State.system === 'ai_custom') State.system = 'alchemy';
+                }
+            }
+
+            const magicTypeEl = document.getElementById('magicType');
+            if (magicTypeEl) magicTypeEl.value = State.system;
+
+            if (State.customAttr) {
+                document.getElementById('presetAttrGrid').classList.add('hidden');
+                document.getElementById('customAttrBadge').classList.remove('hidden');
+                document.getElementById('customAttrTitle').innerText = State.customAttr.name || 'VOID';
+                document.getElementById('customAttrDesc').innerText = State.customAttr.desc || '';
+                document.getElementById('aiResponseText').innerText = State.customAttr.desc || '';
+            } else {
+                document.getElementById('customAttrBadge').classList.add('hidden');
+                document.getElementById('presetAttrGrid').classList.remove('hidden');
+                document.querySelectorAll('#presetAttrGrid .magic-btn').forEach(b => b.classList.remove('active', 'border-blue-400'));
+                const btn = document.getElementById('btn-' + State.attribute);
+                if (btn) btn.classList.add('active', 'border-blue-400');
+            }
         }
 
         function setupEventListeners() {
@@ -2230,7 +2566,7 @@
             });
             document.getElementById('speedRange').addEventListener('input', (e) => {
                 State.speed = parseInt(e.target.value);
-                updateMagic(); 
+                document.getElementById('speedVal').innerText = State.speed;
             });
             document.getElementById('magicType').addEventListener('change', (e) => {
                 const val = e.target.value;
@@ -2307,7 +2643,7 @@
             document.getElementById('saveImgBtn').addEventListener('click', captureImage);
             document.getElementById('printBtn').addEventListener('click', printGrimoire);
             document.getElementById('resetCamBtn').addEventListener('click', () => {
-                camera.position.set(0,0,16);
+                camera.position.set(0,0,24);
                 camera.rotation.set(0,0,0);
                 if(magicGroup) magicGroup.rotation.set(0,0,0);
             });
@@ -2362,54 +2698,110 @@
             const respBox = document.getElementById('aiResponseText');
             
             btn.classList.add('ai-loading');
-            btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> 通信中...`;
+            btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> 通信中...';
 
-            // Updated System Prompt with Layer Systems
-            const systemPrompt = `
-                You are a high-level grimoire architect.
-                Generate a unique "Magic Circle Concept" based on user input.
-                Output MUST be a JSON object inside <<<JSON ... JSON>>>.
-                
-                JSON Keys:
-                - name: (String) English Name (e.g., "Chronos Gear")
-                - name_jp: (String) Japanese Name (e.g., "時空歯車")
-                - hex: (String) Color Hex (e.g., "#FFD700")
-                - glow: (String) Glow Color Hex
-                - layer_systems: (Array of Strings) An array of 5 strings. Each string represents the magic style for layers 1 to 5.
-                  Choose randomly from ["alchemy", "enochian", "runic", "solomonic", "seimei"] for each layer. (Do NOT use talisman styles like ofuda).
-                  Example: ["alchemy", "runic", "alchemy", "seimei", "solomonic"]
-                - sides: (Number) 3-12
-                - mandala: (String) One of ["sharp", "petal", "square", "curve", "leaf", "zigzag", "ray", "web", "sun", "moon", "snow", "circle", "text"]
-                - spell: (String) A mystical incantation. NO Hiragana/Katakana. Choose from Latin, Runic, Hebrew, Kanji-only (Hanzi), or Alchemical symbols.
-                - desc: (String) Lore description in Japanese (approx 100 chars).
-                - kanji_char: (String) A single Kanji character representing the core concept (e.g., "時", "龍"). Important for Seimei style.
-                - kanji_idiom: (String) Four-character Kanji idiom (e.g., "跳梁跋扈").
-            `;
+            // Updated System Prompt with Layer Systems and valid Mandala options
+            const systemPrompt = [
+                'You are a high-level grimoire architect.',
+                'Generate a unique "Magic Circle Concept" based on user input.',
+                'Output MUST be a JSON object inside <<<JSON ... JSON>>>.',
+                '',
+                'JSON Keys:',
+                '- name: (String) English Name (e.g., "Chronos Gear")',
+                '- name_jp: (String) Japanese Name (e.g., "時空歯車")',
+                '- hex: (String) Color Hex (e.g., "#FFD700")',
+                '- glow: (String) Glow Color Hex',
+                '- layer_systems: (Array of Strings) An array of 5 strings. Each string represents the magic style for layers 1 to 5.',
+                '  Choose randomly from ["alchemy", "enochian", "runic", "solomonic", "seimei"] for each layer. (Do NOT use talisman styles like ofuda).',
+                '  Example: ["alchemy", "runic", "alchemy", "seimei", "solomonic"]',
+                '- sides: (Number) 3-12',
+                '- mandala: (String) One of ["none", "circle", "flower", "text", "sun", "moon", "snow", "astral", "sacred", "gear", "chain"]',
+                '- spell: (String) A mystical incantation. NO Hiragana/Katakana. Choose from Latin, Runic, Hebrew, Kanji-only (Hanzi), or Alchemical symbols.',
+                '- desc: (String) Lore description in Japanese (approx 100 chars).',
+                '- kanji_char: (String) A single Kanji character representing the core concept (e.g., "時", "龍"). Important for Seimei style.',
+                '- kanji_idiom: (String) Four-character Kanji idiom (e.g., "跳梁跋扈").'
+            ].join('\n');
             const userQuery = promptInput || "Create a unique, cool magic concept.";
 
+            const modelList = (Array.isArray(AppConfig.models) && AppConfig.models.length > 0)
+                ? AppConfig.models
+                : [AppConfig.model];
+
             try {
-                const url = `${AppConfig.apiBase}${AppConfig.model}:generateContent?key=${AppConfig.apiKey}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: userQuery }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] }
-                    })
-                });
+                let data = null;
+                let lastError = null;
 
-                if (response.status === 400 || response.status === 403) throw new Error("AUTH_ERROR");
+                for (let i = 0; i < modelList.length; i++) {
+                    const modelName = modelList[i];
+                    const isLastModel = (i === modelList.length - 1);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-                const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    try {
+                        const url = AppConfig.apiBase + modelName + ':generateContent?key=' + encodeURIComponent(AppConfig.apiKey);
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: userQuery }] }],
+                                systemInstruction: { parts: [{ text: systemPrompt }] }
+                            }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (response.status === 400 || response.status === 403) {
+                            throw new Error("AUTH_ERROR");
+                        }
+                        if (!response.ok) {
+                            lastError = new Error("HTTP_" + response.status);
+                            if (!isLastModel && (response.status === 404 || response.status === 429 || response.status >= 500)) {
+                                continue;
+                            }
+                            throw lastError;
+                        }
+
+                        data = await response.json();
+                        break;
+                    } catch (reqErr) {
+                        clearTimeout(timeoutId);
+                        if (reqErr && reqErr.message === "AUTH_ERROR") {
+                            throw reqErr;
+                        }
+                        if (reqErr && reqErr.name === "AbortError") {
+                            lastError = new Error("TIMEOUT_ERROR");
+                            if (!isLastModel) continue;
+                            throw lastError;
+                        }
+                        lastError = reqErr;
+                        if (!isLastModel) continue;
+                        throw lastError;
+                    }
+                }
+
+                const text = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+                    ? data.candidates[0].content.parts[0].text
+                    : "";
                 
                 const jsonMatch = text.match(/<<<JSON([\s\S]*?)JSON>>>/);
                 if (jsonMatch && jsonMatch[1]) {
                     const attrData = JSON.parse(jsonMatch[1]);
                     
-                    // Parse colors
-                    attrData.hex = parseInt(attrData.hex.replace('#', '0x'), 16);
-                    attrData.glow = parseInt(attrData.glow.replace('#', '0x'), 16);
+                    // Safely parse colors with fallback
+                    const parseColorSafe = (val, fallback) => {
+                        if (typeof val === 'number' && !isNaN(val)) return val;
+                        if (typeof val === 'string') {
+                            const cleaned = val.trim().replace(/^#/, '');
+                            if (/^[0-9a-fA-F]{6}$/.test(cleaned)) {
+                                return parseInt(cleaned, 16);
+                            }
+                        }
+                        return fallback;
+                    };
+                    attrData.hex = parseColorSafe(attrData.hex, 0x6366f1);
+                    attrData.glow = parseColorSafe(attrData.glow, attrData.hex);
+                    const parsedSides = parseInt(attrData.sides, 10);
+                    attrData.sides = (!isNaN(parsedSides) && parsedSides >= 3 && parsedSides <= 12) ? parsedSides : 6;
                     
                     // Save to both Active and Last AI Storage
                     State.customAttr = attrData;
@@ -2418,7 +2810,7 @@
                     // Enable and Select AI Slot
                     const aiOption = document.getElementById('aiCustomOption');
                     aiOption.disabled = false;
-                    aiOption.innerText = `【★】${attrData.name_jp || attrData.name} (AI Generated)`;
+                    aiOption.innerText = '【★】' + (attrData.name_jp || attrData.name) + ' (AI Generated)';
                     document.getElementById('magicType').value = "ai_custom";
                     State.system = "ai_custom";
 
@@ -2429,14 +2821,28 @@
                     document.getElementById('customAttrBadge').classList.remove('hidden');
                     respBox.innerText = attrData.desc;
                     
-                    // Force Mandala Update if AI suggested one
-                    if(attrData.mandala) {
-                        State.mandala = attrData.mandala;
-                        document.getElementById('mandalaType').value = attrData.mandala;
+                    // Validate and apply Mandala if AI suggested one
+                    if (attrData.mandala) {
+                        const validMandalas = ['none', 'circle', 'flower', 'text', 'sun', 'moon', 'snow', 'astral', 'sacred', 'gear', 'chain'];
+                        const fallbackMap = {
+                            petal: 'flower',
+                            leaf: 'flower',
+                            ray: 'sun',
+                            sharp: 'astral',
+                            zigzag: 'astral',
+                            curve: 'moon',
+                            web: 'chain',
+                            square: 'gear'
+                        };
+                        const normalizedMandala = validMandalas.indexOf(attrData.mandala) !== -1
+                            ? attrData.mandala
+                            : (fallbackMap[attrData.mandala] || 'none');
+                        State.mandala = normalizedMandala;
+                        document.getElementById('mandalaType').value = normalizedMandala;
                     }
 
                     updateMagic();
-                    showToast(`顕現しました: ${attrData.name}`, "success");
+                    showToast("顕現しました: " + attrData.name, "success");
                 } else {
                     respBox.innerText = "アカシックレコードからの応答が不明瞭です。";
                 }
@@ -2444,6 +2850,9 @@
                 console.error(err);
                 if (err.message === "AUTH_ERROR") {
                     document.getElementById('apiKeyModal').classList.add('show');
+                } else if (err.message === "TIMEOUT_ERROR") {
+                    showToast("通信がタイムアウトしました（60秒）。", "error");
+                    respBox.innerText = "Error: 通信がタイムアウトしました。再度お試しください。";
                 } else {
                     showToast("エーテル接続に失敗しました。", "error");
                     respBox.innerText = "Error: " + err.message;
@@ -2455,37 +2864,54 @@
         }
 
         function captureImage() {
-            const oldSize = { w: renderer.domElement.width, h: renderer.domElement.height };
+            const container = document.getElementById('canvas-container');
+            const cssW = container.clientWidth;
+            const cssH = container.clientHeight;
             const oldPixelRatio = renderer.getPixelRatio();
-            const targetRatio = Math.min(window.devicePixelRatio, 1) * AppConfig.pixelRatioLimit;
+            const targetRatio = AppConfig.pixelRatioLimit;
 
-            renderer.setPixelRatio(targetRatio);
-            composer.setSize(oldSize.w, oldSize.h); 
-            
-            if (State.transparentBg) {
-                scene.background = null; 
-                renderer.setClearColor(0x000000, 0); 
-                renderer.clear();
-                renderer.render(scene, camera);
-            } else {
-                renderScene(); 
+            try {
+                renderer.setPixelRatio(targetRatio);
+                renderer.setSize(cssW, cssH, false);
+                if (typeof composer.setPixelRatio === 'function') {
+                    composer.setPixelRatio(targetRatio);
+                }
+                composer.setSize(cssW, cssH); 
+                
+                if (State.transparentBg) {
+                    scene.background = null; 
+                    renderer.setClearColor(0x000000, 0); 
+                    renderer.clear();
+                    renderer.render(scene, camera);
+                } else {
+                    renderScene(); 
+                }
+                
+                const dataUrl = renderer.domElement.toDataURL('image/png');
+                
+                const link = document.createElement('a');
+                const attrName = State.customAttr ? State.customAttr.name : AttributePresets[State.attribute].name;
+                link.download = 'Grimoire_' + attrName + '_' + Date.now() + '.png';
+                link.href = dataUrl;
+                link.click();
+                showToast("魔導書に画像を保存しました。", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("画像の保存に失敗しました。", "error");
+            } finally {
+                if (State.transparentBg) {
+                    renderer.setClearColor(0x000000, 1);
+                    if (State.bgMode === 'white') scene.background = new THREE.Color(0xf8fafc);
+                    else scene.background = new THREE.Color(0x050505);
+                }
+                renderer.setPixelRatio(oldPixelRatio);
+                renderer.setSize(cssW, cssH, false);
+                if (typeof composer.setPixelRatio === 'function') {
+                    composer.setPixelRatio(oldPixelRatio);
+                }
+                composer.setSize(cssW, cssH);
+                renderScene();
             }
-            
-            const dataUrl = renderer.domElement.toDataURL('image/png');
-            
-            const link = document.createElement('a');
-            const attrName = State.customAttr ? State.customAttr.name : AttributePresets[State.attribute].name;
-            link.download = `Grimoire_${attrName}_${Date.now()}.png`;
-            link.href = dataUrl;
-            link.click();
-
-            if (State.transparentBg) {
-                 if (State.bgMode === 'white') scene.background = new THREE.Color(0xf8fafc);
-                 else scene.background = new THREE.Color(0x050505);
-            }
-            renderer.setPixelRatio(oldPixelRatio);
-            renderScene();
-            showToast("魔導書に画像を保存しました。", "success");
         }
 
         function printGrimoire() {
@@ -2493,168 +2919,217 @@
             const dataImg = renderer.domElement.toDataURL('image/png');
             const attr = State.customAttr || AttributePresets[State.attribute];
             const dateStr = new Date().toLocaleDateString();
+            const circleBg = State.bgMode === 'white' ? '#f8fafc' : '#000';
             
             const win = window.open('', '_blank');
-            win.document.write(`
-                <html>
-                <head>
-                    <title>Grimoire Page: ${attr.name}</title>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Zen+Old+Mincho:wght@700&display=swap');
-                        body { 
-                            background: #fdfbf7; color: #2c1810; 
-                            font-family: 'Zen Old Mincho', serif; 
-                            padding: 40px; text-align: center; 
-                            border: 20px double #2c1810; 
-                            min-height: 90vh; 
-                            display: flex; flex-direction: column; align-items: center; justify-content: center;
-                        }
-                        h1 { 
-                            font-family: 'Cinzel', serif; font-size: 3em; 
-                            margin-bottom: 0.2em; border-bottom: 2px solid #2c1810; 
-                            display: inline-block; padding-bottom: 10px; letter-spacing: 0.1em;
-                        }
-                        .magic-circle { 
-                            width: 70%; max-width: 500px; margin: 20px auto; 
-                            border: 4px solid #2c1810; padding: 20px; border-radius: 50%; 
-                            box-shadow: 0 0 0 10px #fdfbf7, 0 0 0 12px #2c1810; 
-                            background: #000;
-                        }
-                        .spell { 
-                            font-family: 'Cinzel'; font-size: 1.2em; font-style: italic; 
-                            margin: 20px 0; color: #5a3a2a; 
-                        }
-                        .desc {
-                            max-width: 600px; margin: 20px auto; line-height: 1.8; font-size: 1rem;
-                            padding: 20px; background: rgba(255,255,255,0.5); border-radius: 8px;
-                        }
-                        .meta { 
-                            font-size: 0.8em; border-top: 1px solid #ccc; 
-                            padding-top: 20px; margin-top: 40px; width: 80%;
-                            display: flex; justify-content: space-around; 
-                            font-family: 'Cinzel';
-                        }
-                        @media print { body { border: none; } .magic-circle { box-shadow: none; } }
-                    </style>
-                </head>
-                <body>
-                    <h1>${attr.name.toUpperCase()}</h1>
-                    <div class="spell">"${attr.spell}"</div>
-                    <img src="${dataImg}" class="magic-circle" />
-                    <p class="desc">${attr.desc || "A powerful magic circle manifested from the void."}</p>
-                    <div class="meta">
-                        <span>System: ${State.system.toUpperCase()}</span>
-                        <span>Level: ${State.level}</span>
-                        <span>Mandala: ${State.mandala.toUpperCase()}</span>
-                        <span>Date: ${dateStr}</span>
-                    </div>
-                    <script>setTimeout(() => window.print(), 500);<\/script>
-                </body>
-                </html>
-            `);
+            if (!win) {
+                showToast("ポップアップがブロックされました。ブラウザ設定で許可してください。", "error");
+                return;
+            }
+            const printHtml =
+                '<html>' +
+                '<head>' +
+                    '<title>Grimoire Page: ' + attr.name + '</title>' +
+                    '<style>' +
+                        '@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Zen+Old+Mincho:wght@700&display=swap");' +
+                        'body { ' +
+                            'background: #fdfbf7; color: #2c1810; ' +
+                            'font-family: "Zen Old Mincho", serif; ' +
+                            'padding: 40px; text-align: center; ' +
+                            'border: 20px double #2c1810; ' +
+                            'min-height: 90vh; ' +
+                            'display: flex; flex-direction: column; align-items: center; justify-content: center;' +
+                        '}' +
+                        'h1 { ' +
+                            'font-family: "Cinzel", serif; font-size: 3em; ' +
+                            'margin-bottom: 0.2em; border-bottom: 2px solid #2c1810; ' +
+                            'display: inline-block; padding-bottom: 10px; letter-spacing: 0.1em;' +
+                        '}' +
+                        '.magic-circle { ' +
+                            'width: 70%; max-width: 500px; margin: 20px auto; ' +
+                            'border: 4px solid #2c1810; padding: 20px; border-radius: 50%; ' +
+                            'box-shadow: 0 0 0 10px #fdfbf7, 0 0 0 12px #2c1810; ' +
+                            'background: ' + circleBg + ';' +
+                        '}' +
+                        '.spell { ' +
+                            'font-family: "Cinzel"; font-size: 1.2em; font-style: italic; ' +
+                            'margin: 20px 0; color: #5a3a2a; ' +
+                        '}' +
+                        '.desc {' +
+                            'max-width: 600px; margin: 20px auto; line-height: 1.8; font-size: 1rem;' +
+                            'padding: 20px; background: rgba(255,255,255,0.5); border-radius: 8px;' +
+                        '}' +
+                        '.meta { ' +
+                            'font-size: 0.8em; border-top: 1px solid #ccc; ' +
+                            'padding-top: 20px; margin-top: 40px; width: 80%;' +
+                            'display: flex; justify-content: space-around; ' +
+                            'font-family: "Cinzel";' +
+                        '}' +
+                        '@media print { body { border: none; } .magic-circle { box-shadow: none; } }' +
+                    '</style>' +
+                '</head>' +
+                '<body>' +
+                    '<h1>' + attr.name.toUpperCase() + '</h1>' +
+                    '<div class="spell">"' + attr.spell + '"</div>' +
+                    '<img src="' + dataImg + '" class="magic-circle" />' +
+                    '<p class="desc">' + (attr.desc || "A powerful magic circle manifested from the void.") + '</p>' +
+                    '<div class="meta">' +
+                        '<span>System: ' + State.system.toUpperCase() + '</span>' +
+                        '<span>Level: ' + State.level + '</span>' +
+                        '<span>Mandala: ' + State.mandala.toUpperCase() + '</span>' +
+                        '<span>Date: ' + dateStr + '</span>' +
+                    '</div>' +
+                    '<script>setTimeout(function() { window.print(); }, 500);<\/script>' +
+                '</body>' +
+                '</html>';
+            win.document.write(printHtml);
             win.document.close();
         }
 
-function startRecording(durationSec) {
+async function startRecording(durationSec) {
             if (State.isRecording) return;
             State.isRecording = true;
 
-            // 1. 画質向上のための解像度強制変更 (一時保存)
-            const originalSize = { w: renderer.domElement.width, h: renderer.domElement.height };
+            const container = document.getElementById('canvas-container');
+            // 1. 画質向上のための解像度強制変更 (CSS実寸を一時保存)
+            const originalSize = { w: container.clientWidth, h: container.clientHeight };
             const originalStyle = { w: renderer.domElement.style.width, h: renderer.domElement.style.height };
             const originalAspect = camera.aspect;
             const originalRatio = renderer.getPixelRatio();
 
-            // 1920x1080 (FHD) に設定
-            const targetW = 1920;
-            const targetH = 1080;
-            
-            // レンダラーとコンポーザーをリサイズ
-            renderer.setSize(targetW, targetH, false); 
-            renderer.setPixelRatio(1); // 負荷対策：1倍固定
-            composer.setSize(targetW, targetH);
-            
-            // カメラアスペクト比調整
-            camera.aspect = targetW / targetH;
-            camera.updateProjectionMatrix();
-            renderScene();
-
-            // 2. ストリーム取得 & MP4対応チェック
-            const stream = renderer.domElement.captureStream(60); 
-            
-            // ★【ここが新機能】Twitterに最適なMP4(H.264)を探すロジック
-            const mimeCandidates = [
-                "video/mp4;codecs=avc1.4d002a", // H.264 (最も互換性が高いMP4)
-                "video/mp4",                    // 普通のMP4
-                "video/webm;codecs=vp9",        // 高画質WebM (フォールバック用)
-                "video/webm"                    // 普通のWebM
-            ];
-            
-            let selectedMime = "video/webm"; // 最悪の場合の初期値
-            for (const type of mimeCandidates) {
-                if (MediaRecorder.isTypeSupported(type)) {
-                    selectedMime = type;
-                    break;
+            let wakeLock = null;
+            let stopTimerId = null;
+            if (navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (wlErr) {
+                    console.warn("WakeLock unavailable:", wlErr);
                 }
             }
 
-            // 拡張子を決定 (.mp4 か .webm)
-            const fileExt = selectedMime.includes("mp4") ? "mp4" : "webm";
-
-            const options = {
-                mimeType: selectedMime,
-                videoBitsPerSecond: 5000000 // 5Mbps (高画質維持)
-            };
-
-            try {
-                mediaRecorder = new MediaRecorder(stream, options);
-            } catch (e) {
-                console.warn("Config failed, fallback to default.");
-                mediaRecorder = new MediaRecorder(stream);
-            }
-
-            recordedChunks = [];
-
-            mediaRecorder.ondataavailable = (e) => { 
-                if (e.data.size > 0) recordedChunks.push(e.data); 
-            };
-
-            mediaRecorder.onstop = () => {
-                // 3. 録画終了後、復元
-                renderer.setSize(originalSize.w, originalSize.h, false);
+            const restoreAfterRecording = () => {
+                if (stopTimerId) {
+                    clearTimeout(stopTimerId);
+                    stopTimerId = null;
+                }
+                const restoreW = container.clientWidth || originalSize.w;
+                const restoreH = container.clientHeight || originalSize.h;
                 renderer.setPixelRatio(originalRatio);
-                composer.setSize(originalSize.w, originalSize.h);
+                renderer.setSize(restoreW, restoreH, false);
+                if (typeof composer.setPixelRatio === 'function') {
+                    composer.setPixelRatio(originalRatio);
+                }
+                composer.setSize(restoreW, restoreH);
                 renderer.domElement.style.width = originalStyle.w;
                 renderer.domElement.style.height = originalStyle.h;
-                camera.aspect = originalAspect;
+                camera.aspect = (restoreW && restoreH) ? (restoreW / restoreH) : originalAspect;
                 camera.updateProjectionMatrix();
                 renderScene();
 
-                // ファイル保存処理 (動的な拡張子で保存)
-                const blob = new Blob(recordedChunks, { type: selectedMime });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `magic_motion_${Date.now()}.${fileExt}`; // ★拡張子が自動で変わる
-                a.click();
-                URL.revokeObjectURL(url);
-                
+                if (wakeLock) {
+                    wakeLock.release().catch(() => {});
+                    wakeLock = null;
+                }
+
                 State.isRecording = false;
                 document.getElementById('recStatusText').classList.add('hidden');
                 document.getElementById('rec-indicator').classList.remove('active');
-                
-                // どっちで保存されたか通知に出す
-                showToast(`${fileExt.toUpperCase()}動画を保存しました。`, "success");
             };
 
-            mediaRecorder.start();
-            document.getElementById('recStatusText').classList.remove('hidden');
-            document.getElementById('rec-indicator').classList.add('active');
-            showToast(`FHD記録開始 (${durationSec}秒)...`, "info");
+            try {
+                // 1920x1080 (FHD) に設定
+                const targetW = 1920;
+                const targetH = 1080;
+                
+                // レンダラーとコンポーザーをリサイズ
+                renderer.setPixelRatio(1); // 負荷対策：1倍固定
+                renderer.setSize(targetW, targetH, false); 
+                if (typeof composer.setPixelRatio === 'function') {
+                    composer.setPixelRatio(1);
+                }
+                composer.setSize(targetW, targetH);
+                
+                // カメラアスペクト比調整
+                camera.aspect = targetW / targetH;
+                camera.updateProjectionMatrix();
+                renderScene();
 
-            setTimeout(() => { 
-                if(mediaRecorder.state === 'recording') mediaRecorder.stop(); 
-            }, durationSec * 1000);
+                // 2. ストリーム取得 & MP4対応チェック
+                const stream = renderer.domElement.captureStream(60); 
+                
+                // ★【ここが新機能】Twitterに最適なMP4(H.264)を探すロジック
+                const mimeCandidates = [
+                    "video/mp4;codecs=avc1.4d002a", // H.264 (最も互換性が高いMP4)
+                    "video/mp4",                    // 普通のMP4
+                    "video/webm;codecs=vp9",        // 高画質WebM (フォールバック用)
+                    "video/webm"                    // 普通のWebM
+                ];
+                
+                let selectedMime = "video/webm"; // 最悪の場合の初期値
+                for (const type of mimeCandidates) {
+                    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) {
+                        selectedMime = type;
+                        break;
+                    }
+                }
+
+                const options = {
+                    mimeType: selectedMime,
+                    videoBitsPerSecond: 5000000 // 5Mbps (高画質維持)
+                };
+
+                try {
+                    mediaRecorder = new MediaRecorder(stream, options);
+                } catch (e) {
+                    console.warn("Config failed, fallback to default.");
+                    mediaRecorder = new MediaRecorder(stream);
+                }
+
+                // 実際に採用されたMIMEと拡張子を決定 (.mp4 か .webm)
+                const actualMime = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : selectedMime;
+                const fileExt = actualMime.includes("mp4") ? "mp4" : "webm";
+
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => { 
+                    if (e.data.size > 0) recordedChunks.push(e.data); 
+                };
+
+                mediaRecorder.onerror = () => {
+                    restoreAfterRecording();
+                    showToast("動画記録中にエラーが発生しました。", "error");
+                };
+
+                mediaRecorder.onstop = () => {
+                    // 3. 録画終了後、復元
+                    restoreAfterRecording();
+
+                    // ファイル保存処理 (動的な拡張子で保存)
+                    const blob = new Blob(recordedChunks, { type: actualMime });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'magic_motion_' + Date.now() + '.' + fileExt; // ★拡張子が自動で変わる
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    
+                    // どっちで保存されたか通知に出す
+                    showToast(fileExt.toUpperCase() + "動画を保存しました。", "success");
+                };
+
+                mediaRecorder.start();
+                document.getElementById('recStatusText').classList.remove('hidden');
+                document.getElementById('rec-indicator').classList.add('active');
+                showToast("FHD記録開始 (" + durationSec + "秒)...", "info");
+
+                stopTimerId = setTimeout(() => { 
+                    if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); 
+                }, durationSec * 1000);
+            } catch (err) {
+                console.error(err);
+                restoreAfterRecording();
+                showToast("動画記録を開始できませんでした。", "error");
+            }
         }
 
 
@@ -2671,13 +3146,15 @@ function startRecording(durationSec) {
         }
 
         function exportJSON() {
-            const data = { version: "Gimel_Canvas_v1", state: State, timestamp: Date.now() };
+            const safeState = Object.assign({}, State, { isRecording: false });
+            const data = { version: "Gimel_Canvas_v1", state: safeState, timestamp: Date.now() };
             const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'magic_data.json';
             a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             showToast("設定データを書き出しました。", "success");
         }
 
@@ -2690,28 +3167,14 @@ function startRecording(durationSec) {
                     const data = JSON.parse(evt.target.result);
                     if(data.version && data.state) {
                         Object.assign(State, data.state);
-                        document.getElementById('levelRange').value = State.level;
-                        document.getElementById('speedRange').value = State.speed;
-                        document.getElementById('magicType').value = State.system;
-                        // Restore Mandala State
-                        if(data.state.mandala) {
-                            State.mandala = data.state.mandala;
-                            document.getElementById('mandalaType').value = State.mandala;
-                        }
-                        
-                        if(State.customAttr) {
-                            document.getElementById('presetAttrGrid').classList.add('hidden');
-                            document.getElementById('customAttrBadge').classList.remove('hidden');
-                            document.getElementById('customAttrTitle').innerText = State.customAttr.name;
-                        } else {
-                            setAttribute(State.attribute);
-                        }
+                        syncUIFromState();
                         updateMagic();
                         showToast("設定データを読み込みました。", "success");
                     }
                 } catch(err) { showToast("無効な魔導書ファイルです。", "error"); }
             };
             reader.readAsText(file);
+            e.target.value = '';
         }
 
         function loadLocalStorage() {
@@ -2720,9 +3183,7 @@ function startRecording(durationSec) {
                 try {
                     const parsed = JSON.parse(saved);
                     Object.assign(State, parsed);
-                    document.getElementById('levelRange').value = State.level;
-                    // Restore Mandala State on reload
-                    if(State.mandala) document.getElementById('mandalaType').value = State.mandala;
+                    syncUIFromState();
                 } catch(e) {}
             }
             
@@ -2734,7 +3195,10 @@ function startRecording(durationSec) {
                 if(keyInput) keyInput.value = savedKey;
             }
 
-            setInterval(() => { localStorage.setItem('gimel_canvas_state', JSON.stringify(State)); }, 5000);
+            setInterval(() => {
+                const safeState = Object.assign({}, State, { isRecording: false });
+                localStorage.setItem('gimel_canvas_state', JSON.stringify(safeState));
+            }, 5000);
         }
 
         window.addEventListener('load', initApp);
@@ -2742,5 +3206,4 @@ function startRecording(durationSec) {
     </script>
 </body>
 </html>
-
 
