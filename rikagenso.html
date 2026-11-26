@@ -1,0 +1,4204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>元素のひみつ図鑑 | Periodic Table Explorer</title>
+  <style>
+    :root {
+      --bg-page: #f4f7fb;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --border-soft: #e2e8f0;
+      --accent-blue: #3b82f6;
+      --accent-blue-soft: #dbeafe;
+      --accent-blue-card: #d9ebff;
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.07);
+      --shadow-tile: 0 2px 6px rgba(15, 23, 42, 0.06);
+
+      /* Category Colors */
+      --cat-nonmetal: #f97316;
+      --cat-noble: #ec4899;
+      --cat-alkali: #eab308;
+      --cat-alkaline: #84cc16;
+      --cat-metalloid: #14b8a6;
+      --cat-halogen: #06b6d4;
+      --cat-transition: #6366f1;
+      --cat-post: #3b82f6;
+      --cat-lanthanide: #a855f7;
+      --cat-actinide: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+      background: radial-gradient(circle at top left, #eef6ff 0%, #f8fafc 45%, #f1f5f9 100%);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .app-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 14px 120px;
+    }
+
+    /* Main Glass Card inspired by modern Periodic UI */
+    .main-stage {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+    }
+
+    .brand-sub {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .pill-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      min-height: 44px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .pill-btn:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .pill-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    }
+
+    /* Filter Chips */
+    .filter-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      margin-bottom: 16px;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-right: 4px;
+    }
+
+    .chip-btn {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #dbe4ef;
+      background: #ffffff;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .chip-btn:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .chip-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.28);
+    }
+
+    .search-input {
+      margin-left: auto;
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 13px;
+      width: 190px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Periodic Table Grid */
+    .pt-scroll {
+      overflow-x: auto;
+      padding: 8px 4px 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .pt-grid {
+      display: grid;
+      grid-template-columns: repeat(18, minmax(46px, 1fr));
+      gap: 6px;
+      min-width: 880px;
+    }
+
+    .pt-grid.basic-mode {
+      grid-template-columns: repeat(8, minmax(64px, 1fr));
+      min-width: 560px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .pt-tile {
+      position: relative;
+      height: 52px;
+      border-radius: 14px;
+      border: 1px solid rgba(203, 213, 225, 0.7);
+      background: #f1f5f9;
+      color: #1e293b;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+      user-select: none;
+    }
+
+    .pt-grid.basic-mode .pt-tile {
+      height: 68px;
+      border-radius: 16px;
+    }
+
+    .pt-tile:hover {
+      transform: translateY(-2px) scale(1.04);
+      z-index: 5;
+      background: #ffffff;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+    }
+
+    .pt-tile .el-num {
+      font-size: 9px;
+      font-weight: 700;
+      opacity: 0.72;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+
+    .pt-tile .el-sym {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .pt-tile .el-jp {
+      font-size: 8px;
+      font-weight: 600;
+      opacity: 0.78;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .pt-grid.basic-mode .pt-tile .el-num { font-size: 11px; }
+    .pt-grid.basic-mode .pt-tile .el-sym { font-size: 20px; }
+    .pt-grid.basic-mode .pt-tile .el-jp { font-size: 10px; }
+
+    /* Highlighted & Selected Glow Effects (matching screenshot feel) */
+    .pt-tile.has-detail::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--tile-color, #3b82f6);
+      opacity: 0.85;
+    }
+
+    .pt-tile.is-lit {
+      background: var(--tile-color, #3b82f6);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 0 18px var(--tile-glow, rgba(59, 130, 246, 0.55));
+      transform: scale(1.04);
+      z-index: 4;
+    }
+
+    .pt-tile.is-lit::after {
+      background: #ffffff;
+    }
+
+    .pt-tile.is-selected {
+      background: var(--tile-color, #3b82f6);
+      color: #ffffff;
+      border: 2px solid #0f172a;
+      box-shadow: 0 0 22px var(--tile-glow, rgba(59, 130, 246, 0.65));
+      transform: scale(1.08);
+      z-index: 10;
+    }
+
+    .pt-tile.is-singing {
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 26px rgba(236, 72, 153, 0.8);
+      transform: scale(1.16);
+      z-index: 20;
+    }
+
+    .pt-tile.is-dimmed {
+      opacity: 0.24;
+      filter: grayscale(0.4);
+    }
+
+    .pt-placeholder {
+      height: 52px;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      color: #94a3b8;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Quick Preview Banner (Screenshot-inspired blue card) */
+    .quick-banner {
+      margin-top: 10px;
+      background: var(--accent-blue-card);
+      border-radius: 20px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border: 1px solid #bfdbfe;
+      transition: background 0.25s ease;
+    }
+
+    .quick-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .quick-badge {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .quick-badge .q-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      line-height: 1;
+    }
+
+    .quick-badge .q-sym {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+
+    .quick-meta h2 {
+      margin: 0 0 2px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-meta p {
+      margin: 0;
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .cat-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.85);
+      color: #1e293b;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .primary-pill {
+      min-height: 44px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .primary-pill:hover {
+      background: #0f172a;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* List View */
+    .list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 10px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .list-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .list-item:hover, .list-item.is-selected {
+      background: #eff6ff;
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+    }
+
+    .list-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      color: #ffffff;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Detail Inspector Section */
+    .detail-panel {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-soft);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .detail-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 18px;
+    }
+
+    .detail-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      min-height: 44px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #f8fafc;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .detail-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .info-box h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .everyday-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .everyday-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .everyday-icon {
+      font-size: 24px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .everyday-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .everyday-desc {
+      font-size: 13px;
+      color: #475569;
+      margin: 0;
+    }
+
+    /* Diagrams: Bohr & Lewis */
+    .diagram-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 290px;
+    }
+
+    .shell-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .shell-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .shell-pill.outer {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fcd34d;
+    }
+
+    /* Flame Simulator */
+    .flame-box {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flame-canvas {
+      width: 100%;
+      max-width: 340px;
+      height: 170px;
+      border-radius: 14px;
+      background: radial-gradient(circle at bottom, #1e293b 0%, #020617 85%);
+      display: block;
+    }
+
+    /* Song Player Panel */
+    .song-panel {
+      background: linear-gradient(135deg, #fff7ed 0%, #fdf2f8 100%);
+      border: 1px solid #fbcfe8;
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .song-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .select-pill {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .play-btn {
+      min-height: 44px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(236, 72, 153, 0.3);
+      transition: transform 0.15s ease;
+    }
+
+    .play-btn:hover { transform: translateY(-1px); }
+
+    .play-btn.secondary {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+    }
+
+    .play-btn.stop {
+      background: #475569;
+      box-shadow: none;
+    }
+
+    .karaoke-stage {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid #fce7f3;
+      text-align: center;
+    }
+
+    .karaoke-main {
+      font-size: 24px;
+      font-weight: 900;
+      color: #be185d;
+      min-height: 38px;
+      margin-bottom: 4px;
+    }
+
+    .karaoke-sub {
+      font-size: 13px;
+      color: #64748b;
+      min-height: 22px;
+    }
+
+    .lyric-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .lyric-chip {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .lyric-chip.active {
+      background: #ec4899;
+      color: #ffffff;
+      border-color: #ec4899;
+      transform: scale(1.08);
+    }
+
+    /* Quiz Panel */
+    .quiz-card {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-soft);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .quiz-opt-btn {
+      min-height: 54px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .quiz-opt-btn:hover:not(:disabled) {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+
+    .quiz-opt-btn.correct {
+      background: #dcfce7;
+      border-color: #22c55e;
+      color: #166534;
+    }
+
+    .quiz-opt-btn.wrong {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    /* AI Box */
+    .ai-box {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .ai-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .ai-answer {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 14px;
+      color: #1e293b;
+      white-space: pre-wrap;
+      min-height: 80px;
+    }
+
+    /* Common Guide */
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .guide-card {
+      background: #ffffff;
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    .guide-card h3 {
+      margin-top: 0;
+      font-size: 16px;
+      color: #1d4ed8;
+    }
+
+    /* Toast & Modal (No alert/confirm!) */
+    .toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 340px;
+    }
+
+    .toast {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .toast.warn { background: #b45309; }
+    .toast.ok { background: #15803d; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 20px;
+      max-width: 460px;
+      width: 100%;
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .legend-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .footer-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    @media (max-width: 640px) {
+      .main-stage, .detail-panel, .song-panel, .quiz-card {
+        padding: 14px;
+      }
+      .search-input {
+        width: 100%;
+        margin-left: 0;
+      }
+      .karaoke-main {
+        font-size: 19px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Main Periodic Table Card -->
+    <section class="main-stage">
+      <div class="top-bar">
+        <div class="brand-block">
+          <div class="brand-icon">Pt</div>
+          <div>
+            <h1 class="brand-title">元素のひみつ図鑑</h1>
+            <p class="brand-sub">触って・聴いて・実験してわかるインタラクティブ周期表 (Ver 1.0)</p>
+          </div>
+        </div>
+        <div class="pill-nav" id="mainModeNav">
+          <button class="pill-btn active" data-mode="full" type="button">全体表 (118)</button>
+          <button class="pill-btn" data-mode="basic" type="button">基本20元素</button>
+          <button class="pill-btn" data-mode="list" type="button">リスト表示</button>
+          <button class="pill-btn" data-mode="song" type="button">🎵 すいへーりーべー</button>
+          <button class="pill-btn" data-mode="quiz" type="button">🎯 4択クイズ</button>
+          <button class="pill-btn" data-mode="guide" type="button">📖 電子と発見のひみつ</button>
+        </div>
+      </div>
+
+      <!-- Song Player (Visible when song mode is active, keeps table visible underneath!) -->
+      <div id="songPanel" class="song-panel hidden">
+        <div class="song-controls">
+          <select id="songRangeSelect" class="select-pill" aria-label="再生範囲">
+            <option value="1-20">基本 1〜20番（水兵リーベ僕の船…）</option>
+            <option value="21-36">拡張 21〜36番（スコッチ暴露マン…）</option>
+            <option value="1-36">通し 1〜36番（全部チャレンジ）</option>
+          </select>
+          <select id="songGenderSelect" class="select-pill" aria-label="声のタイプ">
+            <option value="female">👩 女性ボイス</option>
+            <option value="male">👨 男性ボイス</option>
+          </select>
+          <select id="songSpeedSelect" class="select-pill" aria-label="テンポ">
+            <option value="slow">🐢 ゆっくり</option>
+            <option value="normal" selected>🎵 ふつう</option>
+            <option value="fast">⚡ はやめ</option>
+          </select>
+          <button id="btnPlayOfflineSong" class="play-btn" type="button">▶ リズム再生（オフライン）</button>
+          <button id="btnPlayAiSong" class="play-btn secondary" type="button">✨ AIボイスで歌う（先生用）</button>
+          <button id="btnStopSong" class="play-btn stop hidden" type="button">■ 停止</button>
+        </div>
+        <div class="karaoke-stage">
+          <div id="karaokeMain" class="karaoke-main">♪ 再生ボタンを押すと周期表が光ります</div>
+          <div id="karaokeSub" class="karaoke-sub">生徒端末はオフライン・リズム再生で即スタート。語呂合わせタップで途中からも聴けます。</div>
+          <div id="lyricChips" class="lyric-chips"></div>
+        </div>
+      </div>
+
+      <!-- Filter Strip (Shown in table/list/song modes) -->
+      <div id="filterStrip" class="filter-strip">
+        <span class="filter-label">逆引きライトアップ：</span>
+        <button class="chip-btn active" data-filter="all" type="button">すべて</button>
+        <button class="chip-btn" data-filter="gem" type="button">💎 宝石・鉱物</button>
+        <button class="chip-btn" data-filter="metal" type="button">📱 スマホ・金属</button>
+        <button class="chip-btn" data-filter="life" type="button">🧬 生き物・自然</button>
+        <button class="chip-btn" data-filter="flame" type="button">🎆 花火（炎色反応）</button>
+        <input id="searchInput" class="search-input" type="search" placeholder="元素名・記号で検索 (例: Au, 炭素)">
+      </div>
+
+      <!-- Periodic Table Area -->
+      <div id="tableViewWrap">
+        <div class="pt-scroll">
+          <div id="ptGrid" class="pt-grid"></div>
+        </div>
+        <div class="legend-bar" id="legendBar"></div>
+      </div>
+
+      <!-- List View Area -->
+      <div id="listViewWrap" class="hidden">
+        <div id="listGrid" class="list-grid"></div>
+      </div>
+
+      <!-- Quiz View Area -->
+      <div id="quizViewWrap" class="hidden">
+        <div class="quiz-card" style="box-shadow:none; border:none; padding:6px 0; margin:0;">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
+            <div>
+              <h2 style="margin:0; font-size:19px;">🎯 元素マスター4択クイズ</h2>
+              <p style="margin:2px 0 0; font-size:12px; color:#64748b;">出題範囲を選んで、元素記号・身近なもの・炎色反応の4択クイズに挑戦しよう！</p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+              <select id="quizRangeSelect" class="select-pill" aria-label="出題範囲">
+                <option value="20" selected>基本 1〜20番（定番）</option>
+                <option value="36">発展 1〜36番（すいへー全範囲）</option>
+                <option value="118">全118元素（博士レベル）</option>
+              </select>
+              <span id="quizScoreBadge" class="cat-tag" style="background:#eff6ff; color:#1d4ed8; font-size:13px;">スコア: 0 / 0</span>
+              <span id="quizBestBadge" class="cat-tag" style="background:#fef3c7; color:#b45309; font-size:13px;">最高記録: 0</span>
+              <button id="btnStartQuiz" class="pill-btn active" type="button">🔄 あたらしく挑戦</button>
+            </div>
+          </div>
+          <div id="quizStage"></div>
+        </div>
+      </div>
+
+      <!-- Common Science Guide View Area -->
+      <div id="guideViewWrap" class="hidden">
+        <div class="guide-grid">
+          <div class="guide-card">
+            <h3>🌀 なぜ電子は「2個・8個・18個…」と並ぶの？</h3>
+            <p style="font-size:13px; color:#334155;">
+              原子の真ん中にある原子核のまわりには、たまねぎの皮のように<strong>「電子殻（K殻・L殻・M殻…）」</strong>という部屋が重なっています。<br><br>
+              それぞれの部屋には「定員」があり、内側から数えて <strong>n番目の殻の定員は 2 × n² 個</strong>（K殻=2個、L殻=8個、M殻=18個、N殻=32個）と決まっています。<br><br>
+              さらに大事なルールが<strong>「いちばん外側の部屋（最外殻）が8個（K殻だけは2個）で満タンだと超安定する（オクテット則）」</strong>というもの。だから電子が1個余るナトリウム(Na)はあげたがり、1個足りない塩素(Cl)はほしがって、2つが合体して食塩(NaCl)になるのです！
+            </p>
+          </div>
+          <div class="guide-card">
+            <h3>🔍 昔の人は見えない元素をどうやって見つけた？</h3>
+            <p style="font-size:13px; color:#334155;">
+              原子は小さすぎて普通の顕微鏡でも見えません。それでも昔の科学者たちは、4つのスゴい方法で正体を突き止めました。<br><br>
+              <strong>① 燃やす・重さを量る：</strong> 物質を燃やしたり酸に溶かしたりして「これ以上分解できない一番単純なもの」を探しました。<br>
+              <strong>② 電気でバラバラにする（電気分解）：</strong> 19世紀初頭、電池の発明でNa・K・Caなどが一気に発見されました。<br>
+              <strong>③ 光の虹を見る（分光法）：</strong> 元素を燃やすと固有の色の光（炎色反応やスペクトル線）を出します。ヘリウム(He)は地球より先に<strong>太陽の光</strong>から見つかりました！<br>
+              <strong>④ 周期表の「空き部屋」予言：</strong> メンデレーエフが周期表を作ったとき「ここに入るはずの未知の元素がある！」と予言し、その通り次々と発見されました。
+            </p>
+          </div>
+          <div class="guide-card">
+            <h3>🎆 花火の色が元素で決まるヒミツ</h3>
+            <p style="font-size:13px; color:#334155;">
+              元素に炎のエネルギーを与えると、電子が一瞬だけ外側の軌道へジャンプします。そして元の安定した軌道へ戻るときに、余ったエネルギーを<strong>「光」</strong>として放出します。<br><br>
+              軌道の段差（エネルギーの差）は元素ごとにまったく違うため、飛び出す光の色も元素ごとの「指紋」のように決まっています。これが<strong>炎色反応</strong>です。<br><br>
+              赤はリチウムやストロンチウム、黄色はナトリウム、青緑は銅――花火師は元素の個性を組み合わせて夜空に絵を描いています。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Preview Banner (Screenshot style) -->
+      <div id="quickBanner" class="quick-banner">
+        <div class="quick-left">
+          <div class="quick-badge">
+            <span id="qNum" class="q-num">6</span>
+            <span id="qSym" class="q-sym">C</span>
+          </div>
+          <div class="quick-meta">
+            <h2>
+              <span id="qName">炭素</span>
+              <span id="qEn" style="font-size:14px; font-weight:600; color:#475569;">Carbon</span>
+              <span id="qCat" class="cat-tag">非金属</span>
+            </h2>
+            <p id="qTagline">ダイヤモンドも鉛筆の芯も、そして私たちの体もつくる「いのちの骨格」</p>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <button id="btnScrollDetail" class="primary-pill" type="button">くわしく見る ↓</button>
+          <button id="btnPrintCard" class="primary-pill" type="button">🖨️ カード印刷</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detailed Inspector Panel -->
+    <section id="detailPanel" class="detail-panel">
+      <div class="detail-header">
+        <div>
+          <span id="dMetaLine" style="font-size:12px; font-weight:700; color:#3b82f6;">原子番号 6 ・ 第2周期 14族 ・ 原子量 12.011</span>
+          <h2 id="dTitle" style="margin:2px 0 0; font-size:22px;">炭素 (C) のひみつラボ</h2>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button id="btnPrevEl" class="pill-btn" type="button">← 前の元素</button>
+          <button id="btnNextEl" class="pill-btn" type="button">次の元素 →</button>
+        </div>
+      </div>
+
+      <div class="detail-tabs" id="detailTabs">
+        <button class="tab-btn active" data-dtab="everyday" type="button">✨ 身近なもの・実験</button>
+        <button class="tab-btn" data-dtab="diagrams" type="button">⚛️ 電子配置図・電子式</button>
+        <button class="tab-btn" data-dtab="trivia" type="button">📜 発見の歴史・うんちく</button>
+        <button class="tab-btn" data-dtab="ai" type="button">🤖 AI博士に聞く（先生用）</button>
+      </div>
+
+      <!-- Tab 1: Everyday & Flame Experiment -->
+      <div id="dtab-everyday">
+        <div class="detail-grid-2">
+          <div class="info-box">
+            <h3>🌍 身近なところにある姿（宝石・金属・自然）</h3>
+            <div id="everydayContainer" class="everyday-list"></div>
+          </div>
+          <div id="flameSectionWrap" class="info-box">
+            <h3>🔥 炎色反応・特技チェック</h3>
+            <div id="flameInner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Bohr Model & Lewis Structure -->
+      <div id="dtab-diagrams" class="hidden">
+        <div class="detail-grid-2">
+          <div class="info-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 style="margin:0;">⚛️ 電子配置図（ボーア模型）</h3>
+              <button id="btnToggleOrbit" class="chip-btn" type="button">⏸ 回転を止める</button>
+            </div>
+            <div class="diagram-stage">
+              <canvas id="bohrCanvas" width="260" height="260" style="width:260px; height:260px; max-width:100%;"></canvas>
+              <div id="shellPills" class="shell-pills"></div>
+            </div>
+          </div>
+          <div class="info-box">
+            <h3>🧪 化学の図：電子式（ルイス構造式）</h3>
+            <div class="diagram-stage">
+              <div id="lewisSvgWrap" style="width:220px; height:220px; display:flex; align-items:center; justify-content:center;"></div>
+              <p id="lewisCaption" style="font-size:12px; color:#475569; text-align:center; margin:8px 0 0;"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: History & Electron Trivia -->
+      <div id="dtab-trivia" class="hidden">
+        <div class="detail-grid-2">
+          <div class="info-box">
+            <h3>🕰️ 昔の人はどうやって見つけた？（発見の歴史）</h3>
+            <p id="historyText" style="font-size:14px; color:#334155; margin:0; white-space:pre-line;"></p>
+          </div>
+          <div class="info-box">
+            <h3>💡 なぜこの電子配置？性質とのつながり</h3>
+            <p id="electronStoryText" style="font-size:14px; color:#334155; margin:0; white-space:pre-line;"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: AI Doctor (Gemini API) -->
+      <div id="dtab-ai" class="hidden">
+        <div class="ai-box">
+          <h3 style="margin:0 0 6px; font-size:16px; color:#1e3a8a;">🤖 AI元素博士にもっと詳しく聞く</h3>
+          <p style="margin:0; font-size:12px; color:#475569;">
+            ※Gemini Canvas環境（先生用）で動作します。生徒用のオフライン環境では内蔵解説をご利用ください。
+          </p>
+          <div class="ai-presets" id="aiPresets">
+            <button class="chip-btn" data-prompt="history" type="button">🔍 発見にまつわる面白い裏話は？</button>
+            <button class="chip-btn" data-prompt="electron" type="button">⚛️ この電子配置のせいで起きる不思議な性質は？</button>
+            <button class="chip-btn" data-prompt="vanish" type="button">🌍 もし地球からこの元素が消えたらどうなる？</button>
+            <button class="chip-btn" data-prompt="kids" type="button">🎒 小中学生にもわかるたとえ話で説明して！</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input id="aiCustomInput" type="text" placeholder="自由に質問を入力（例：ルビーが赤い理由を教えて）" style="flex:1; min-height:44px; padding:8px 14px; border-radius:12px; border:1px solid #cbd5e1; font-size:13px;">
+            <button id="btnAskAi" class="play-btn secondary" type="button">質問する</button>
+          </div>
+          <div id="aiAnswerBox" class="ai-answer">上のボタンを押すと、今選んでいる元素についてAI博士がやさしく答えてくれます。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Utility & Data Rescue Bar -->
+    <footer class="footer-tools">
+      <div>
+        <strong>収録状況：</strong>基本データ全118元素（電子配置・電子式は全対応） ／ 詳細ストーリー <span id="detailCountBadge">15</span> / 118 元素収録
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="btnCopyJson" class="chip-btn" type="button">📋 収録データJSONをコピー</button>
+        <button id="btnOpenKeyModal" class="chip-btn" type="button">🔑 先生用API設定</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Rescue API Key Modal (Shown on 400/403 or manual click) -->
+  <div id="apiKeyModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 style="margin-top:0;">🔑 Gemini API 救済設定（先生・開発者用）</h3>
+      <p style="font-size:13px; color:#475569;">
+        通常、Gemini Canvas内ではキー入力なしで自動認証されます。ローカルブラウザやAPIエラー（400/403）時のみ、一時的なAPIキーをここで設定できます（画面を閉じると消去されます）。
+      </p>
+      <input id="rescueApiKeyInput" type="password" placeholder="AIza..." style="width:100%; min-height:44px; padding:10px 12px; border-radius:12px; border:1px solid #cbd5e1; margin-bottom:14px; font-size:14px;">
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="btnCancelKeyModal" class="pill-btn" type="button">閉じる</button>
+        <button id="btnSaveKeyModal" class="pill-btn active" type="button">一時適用する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastStack" class="toast-stack"></div>
+
+  <script>
+    /* =====================================================================
+     * 1. Canvas API 認証＆フォールバック設定 (Strict Canvas Standard)
+     * ===================================================================== */
+    const API_KEY = "";
+    let runtimeApiKey = API_KEY;
+    const TEXT_MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash"];
+    const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+    const ttsBlobUrlCache = new Map();
+
+    /* =====================================================================
+     * 2. カテゴリ定義（色・発光グロー・日本語名）
+     * ===================================================================== */
+    const CATEGORIES = {
+      nonmetal:   { label: "非金属",         color: "#f97316", glow: "rgba(249, 115, 22, 0.55)" },
+      noble:      { label: "貴ガス（希ガス）", color: "#ec4899", glow: "rgba(236, 72, 153, 0.55)" },
+      alkali:     { label: "アルカリ金属",    color: "#eab308", glow: "rgba(234, 179, 8, 0.55)" },
+      alkaline:   { label: "アルカリ土類金属", color: "#84cc16", glow: "rgba(132, 204, 22, 0.55)" },
+      metalloid:  { label: "半金属",         color: "#14b8a6", glow: "rgba(20, 184, 166, 0.55)" },
+      halogen:    { label: "ハロゲン",       color: "#06b6d4", glow: "rgba(6, 182, 212, 0.55)" },
+      transition: { label: "遷移金属",       color: "#6366f1", glow: "rgba(99, 102, 241, 0.50)" },
+      post:       { label: "その他金属",     color: "#3b82f6", glow: "rgba(59, 130, 246, 0.55)" },
+      lanthanide: { label: "ランタノイド",    color: "#a855f7", glow: "rgba(168, 85, 247, 0.50)" },
+      actinide:   { label: "アクチノイド",    color: "#f43f5e", glow: "rgba(244, 63, 94, 0.50)" }
+    };
+
+    const SHELL_NAMES = ["K殻", "L殻", "M殻", "N殻", "O殻", "P殻", "Q殻"];
+
+    /* =====================================================================
+     * 3. 軽量コアデータ層（全118元素完全収録）
+     * [原子番号, 記号, 日本語名, 英名, 原子量, カテゴリ, 族(1-18), 周期行(1-10), 電子殻配列]
+     * ===================================================================== */
+    const RAW_ELEMENTS = [
+      [1,"H","水素","Hydrogen","1.008","nonmetal",1,1,[1]],
+      [2,"He","ヘリウム","Helium","4.0026","noble",18,1,[2]],
+      [3,"Li","リチウム","Lithium","6.94","alkali",1,2,[2,1]],
+      [4,"Be","ベリリウム","Beryllium","9.0122","alkaline",2,2,[2,2]],
+      [5,"B","ホウ素","Boron","10.81","metalloid",13,2,[2,3]],
+      [6,"C","炭素","Carbon","12.011","nonmetal",14,2,[2,4]],
+      [7,"N","窒素","Nitrogen","14.007","nonmetal",15,2,[2,5]],
+      [8,"O","酸素","Oxygen","15.999","nonmetal",16,2,[2,6]],
+      [9,"F","フッ素","Fluorine","18.998","halogen",17,2,[2,7]],
+      [10,"Ne","ネオン","Neon","20.180","noble",18,2,[2,8]],
+      [11,"Na","ナトリウム","Sodium","22.990","alkali",1,3,[2,8,1]],
+      [12,"Mg","マグネシウム","Magnesium","24.305","alkaline",2,3,[2,8,2]],
+      [13,"Al","アルミニウム","Aluminum","26.982","post",13,3,[2,8,3]],
+      [14,"Si","ケイ素","Silicon","28.085","metalloid",14,3,[2,8,4]],
+      [15,"P","リン","Phosphorus","30.974","nonmetal",15,3,[2,8,5]],
+      [16,"S","硫黄","Sulfur","32.06","nonmetal",16,3,[2,8,6]],
+      [17,"Cl","塩素","Chlorine","35.45","halogen",17,3,[2,8,7]],
+      [18,"Ar","アルゴン","Argon","39.948","noble",18,3,[2,8,8]],
+      [19,"K","カリウム","Potassium","39.098","alkali",1,4,[2,8,8,1]],
+      [20,"Ca","カルシウム","Calcium","40.078","alkaline",2,4,[2,8,8,2]],
+      [21,"Sc","スカンジウム","Scandium","44.956","transition",3,4,[2,8,9,2]],
+      [22,"Ti","チタン","Titanium","47.867","transition",4,4,[2,8,10,2]],
+      [23,"V","バナジウム","Vanadium","50.942","transition",5,4,[2,8,11,2]],
+      [24,"Cr","クロム","Chromium","51.996","transition",6,4,[2,8,13,1]],
+      [25,"Mn","マンガン","Manganese","54.938","transition",7,4,[2,8,13,2]],
+      [26,"Fe","鉄","Iron","55.845","transition",8,4,[2,8,14,2]],
+      [27,"Co","コバルト","Cobalt","58.933","transition",9,4,[2,8,15,2]],
+      [28,"Ni","ニッケル","Nickel","58.693","transition",10,4,[2,8,16,2]],
+      [29,"Cu","銅","Copper","63.546","transition",11,4,[2,8,18,1]],
+      [30,"Zn","亜鉛","Zinc","65.38","transition",12,4,[2,8,18,2]],
+      [31,"Ga","ガリウム","Gallium","69.723","post",13,4,[2,8,18,3]],
+      [32,"Ge","ゲルマニウム","Germanium","72.630","metalloid",14,4,[2,8,18,4]],
+      [33,"As","ヒ素","Arsenic","74.922","metalloid",15,4,[2,8,18,5]],
+      [34,"Se","セレン","Selenium","78.971","nonmetal",16,4,[2,8,18,6]],
+      [35,"Br","臭素","Bromine","79.904","halogen",17,4,[2,8,18,7]],
+      [36,"Kr","クリプトン","Krypton","83.798","noble",18,4,[2,8,18,8]],
+      [37,"Rb","ルビジウム","Rubidium","85.468","alkali",1,5,[2,8,18,8,1]],
+      [38,"Sr","ストロンチウム","Strontium","87.62","alkaline",2,5,[2,8,18,8,2]],
+      [39,"Y","イットリウム","Yttrium","88.906","transition",3,5,[2,8,18,9,2]],
+      [40,"Zr","ジルコニウム","Zirconium","91.224","transition",4,5,[2,8,18,10,2]],
+      [41,"Nb","ニオブ","Niobium","92.906","transition",5,5,[2,8,18,12,1]],
+      [42,"Mo","モリブデン","Molybdenum","95.95","transition",6,5,[2,8,18,13,1]],
+      [43,"Tc","テクネチウム","Technetium","(98)","transition",7,5,[2,8,18,13,2]],
+      [44,"Ru","ルテニウム","Ruthenium","101.07","transition",8,5,[2,8,18,15,1]],
+      [45,"Rh","ロジウム","Rhodium","102.91","transition",9,5,[2,8,18,16,1]],
+      [46,"Pd","パラジウム","Palladium","106.42","transition",10,5,[2,8,18,18]],
+      [47,"Ag","銀","Silver","107.87","transition",11,5,[2,8,18,18,1]],
+      [48,"Cd","カドミウム","Cadmium","112.41","transition",12,5,[2,8,18,18,2]],
+      [49,"In","インジウム","Indium","114.82","post",13,5,[2,8,18,18,3]],
+      [50,"Sn","スズ","Tin","118.71","post",14,5,[2,8,18,18,4]],
+      [51,"Sb","アンチモン","Antimony","121.76","metalloid",15,5,[2,8,18,18,5]],
+      [52,"Te","テルル","Tellurium","127.60","metalloid",16,5,[2,8,18,18,6]],
+      [53,"I","ヨウ素","Iodine","126.90","halogen",17,5,[2,8,18,18,7]],
+      [54,"Xe","キセノン","Xenon","131.29","noble",18,5,[2,8,18,18,8]],
+      [55,"Cs","セシウム","Cesium","132.91","alkali",1,6,[2,8,18,18,8,1]],
+      [56,"Ba","バリウム","Barium","137.33","alkaline",2,6,[2,8,18,18,8,2]],
+      [57,"La","ランタン","Lanthanum","138.91","lanthanide",4,9,[2,8,18,18,9,2]],
+      [58,"Ce","セリウム","Cerium","140.12","lanthanide",5,9,[2,8,18,19,9,2]],
+      [59,"Pr","プラセオジム","Praseodymium","140.91","lanthanide",6,9,[2,8,18,21,8,2]],
+      [60,"Nd","ネオジム","Neodymium","144.24","lanthanide",7,9,[2,8,18,22,8,2]],
+      [61,"Pm","プロメチウム","Promethium","(145)","lanthanide",8,9,[2,8,18,23,8,2]],
+      [62,"Sm","サマリウム","Samarium","150.36","lanthanide",9,9,[2,8,18,24,8,2]],
+      [63,"Eu","ユウロピウム","Europium","151.96","lanthanide",10,9,[2,8,18,25,8,2]],
+      [64,"Gd","ガドリニウム","Gadolinium","157.25","lanthanide",11,9,[2,8,18,25,9,2]],
+      [65,"Tb","テルビウム","Terbium","158.93","lanthanide",12,9,[2,8,18,27,8,2]],
+      [66,"Dy","ジスプロシウム","Dysprosium","162.50","lanthanide",13,9,[2,8,18,28,8,2]],
+      [67,"Ho","ホルミウム","Holmium","164.93","lanthanide",14,9,[2,8,18,29,8,2]],
+      [68,"Er","エルビウム","Erbium","167.26","lanthanide",15,9,[2,8,18,30,8,2]],
+      [69,"Tm","ツリウム","Thulium","168.93","lanthanide",16,9,[2,8,18,31,8,2]],
+      [70,"Yb","イッテルビウム","Ytterbium","173.05","lanthanide",17,9,[2,8,18,32,8,2]],
+      [71,"Lu","ルテチウム","Lutetium","174.97","lanthanide",18,9,[2,8,18,32,9,2]],
+      [72,"Hf","ハフニウム","Hafnium","178.49","transition",4,6,[2,8,18,32,10,2]],
+      [73,"Ta","タンタル","Tantalum","180.95","transition",5,6,[2,8,18,32,11,2]],
+      [74,"W","タングステン","Tungsten","183.84","transition",6,6,[2,8,18,32,12,2]],
+      [75,"Re","レニウム","Rhenium","186.21","transition",7,6,[2,8,18,32,13,2]],
+      [76,"Os","オスミウム","Osmium","190.23","transition",8,6,[2,8,18,32,14,2]],
+      [77,"Ir","イリジウム","Iridium","192.22","transition",9,6,[2,8,18,32,15,2]],
+      [78,"Pt","白金（プラチナ）","Platinum","195.08","transition",10,6,[2,8,18,32,17,1]],
+      [79,"Au","金","Gold","196.97","transition",11,6,[2,8,18,32,18,1]],
+      [80,"Hg","水銀","Mercury","200.59","transition",12,6,[2,8,18,32,18,2]],
+      [81,"Tl","タリウム","Thallium","204.38","post",13,6,[2,8,18,32,18,3]],
+      [82,"Pb","鉛","Lead","207.2","post",14,6,[2,8,18,32,18,4]],
+      [83,"Bi","ビスマス","Bismuth","208.98","post",15,6,[2,8,18,32,18,5]],
+      [84,"Po","ポロニウム","Polonium","(209)","post",16,6,[2,8,18,32,18,6]],
+      [85,"At","アスタチン","Astatine","(210)","halogen",17,6,[2,8,18,32,18,7]],
+      [86,"Rn","ラドン","Radon","(222)","noble",18,6,[2,8,18,32,18,8]],
+      [87,"Fr","フランシウム","Francium","(223)","alkali",1,7,[2,8,18,32,18,8,1]],
+      [88,"Ra","ラジウム","Radium","(226)","alkaline",2,7,[2,8,18,32,18,8,2]],
+      [89,"Ac","アクチニウム","Actinium","(227)","actinide",4,10,[2,8,18,32,18,9,2]],
+      [90,"Th","トリウム","Thorium","232.04","actinide",5,10,[2,8,18,32,18,10,2]],
+      [91,"Pa","プロトアクチニウム","Protactinium","231.04","actinide",6,10,[2,8,18,32,20,9,2]],
+      [92,"U","ウラン","Uranium","238.03","actinide",7,10,[2,8,18,32,21,9,2]],
+      [93,"Np","ネプツニウム","Neptunium","(237)","actinide",8,10,[2,8,18,32,22,9,2]],
+      [94,"Pu","プルトニウム","Plutonium","(244)","actinide",9,10,[2,8,18,32,24,8,2]],
+      [95,"Am","アメリシウム","Americium","(243)","actinide",10,10,[2,8,18,32,25,8,2]],
+      [96,"Cm","キュリウム","Curium","(247)","actinide",11,10,[2,8,18,32,25,9,2]],
+      [97,"Bk","バークリウム","Berkelium","(247)","actinide",12,10,[2,8,18,32,27,8,2]],
+      [98,"Cf","カリホルニウム","Californium","(251)","actinide",13,10,[2,8,18,32,28,8,2]],
+      [99,"Es","アインスタイニウム","Einsteinium","(252)","actinide",14,10,[2,8,18,32,29,8,2]],
+      [100,"Fm","フェルミウム","Fermium","(257)","actinide",15,10,[2,8,18,32,30,8,2]],
+      [101,"Md","メンデレビウム","Mendelevium","(258)","actinide",16,10,[2,8,18,32,31,8,2]],
+      [102,"No","ノーベリウム","Nobelium","(259)","actinide",17,10,[2,8,18,32,32,8,2]],
+      [103,"Lr","ローレンシウム","Lawrencium","(266)","actinide",18,10,[2,8,18,32,32,8,3]],
+      [104,"Rf","ラザホージウム","Rutherfordium","(267)","transition",4,7,[2,8,18,32,32,10,2]],
+      [105,"Db","ドブニウム","Dubnium","(268)","transition",5,7,[2,8,18,32,32,11,2]],
+      [106,"Sg","シーボーギウム","Seaborgium","(269)","transition",6,7,[2,8,18,32,32,12,2]],
+      [107,"Bh","ボーリウム","Bohrium","(270)","transition",7,7,[2,8,18,32,32,13,2]],
+      [108,"Hs","ハッシウム","Hassium","(277)","transition",8,7,[2,8,18,32,32,14,2]],
+      [109,"Mt","マイトネリウム","Meitnerium","(278)","transition",9,7,[2,8,18,32,32,15,2]],
+      [110,"Ds","ダームスタチウム","Darmstadtium","(281)","transition",10,7,[2,8,18,32,32,17,1]],
+      [111,"Rg","レントゲニウム","Roentgenium","(282)","transition",11,7,[2,8,18,32,32,18,1]],
+      [112,"Cn","コペルニシウム","Copernicium","(285)","transition",12,7,[2,8,18,32,32,18,2]],
+      [113,"Nh","ニホニウム","Nihonium","(286)","post",13,7,[2,8,18,32,32,18,3]],
+      [114,"Fl","フレロビウム","Flerovium","(289)","post",14,7,[2,8,18,32,32,18,4]],
+      [115,"Mc","モスコビウム","Moscovium","(290)","post",15,7,[2,8,18,32,32,18,5]],
+      [116,"Lv","リバモリウム","Livermorium","(293)","post",16,7,[2,8,18,32,32,18,6]],
+      [117,"Ts","テネシン","Tennessine","(294)","halogen",17,7,[2,8,18,32,32,18,7]],
+      [118,"Og","オガネソン","Oganesson","(294)","noble",18,7,[2,8,18,32,32,18,8]]
+    ];
+
+    const ELEMENTS = RAW_ELEMENTS.map(function(row) {
+      return {
+        num: row[0],
+        sym: row[1],
+        jp: row[2],
+        en: row[3],
+        mass: row[4],
+        cat: row[5],
+        col: row[6],
+        row: row[7],
+        shells: row[8]
+      };
+    });
+
+    const ELEMENT_MAP = {};
+    ELEMENTS.forEach(function(el) { ELEMENT_MAP[el.num] = el; });
+
+    /* =====================================================================
+     * 4. 詳細データ差し込みスロット (ELEMENT_DETAILS)
+     * ※後から全118元素のデータをここに追加するだけで、
+     *   図鑑・逆引きフィルター・炎色反応・4択クイズがすべて自動拡張されます！
+     * ===================================================================== */
+    const ELEMENT_DETAILS = {
+      1: {
+        tagline: "宇宙の約75%をつくる、いちばん軽くて最初の元素",
+        tags: ["life"],
+        everyday: [
+          { icon: "💧", title: "水（H₂O）の主役", desc: "酸素と結びついて水をつくります。海も雨も私たちの体の大部分も水素が支えています。" },
+          { icon: "☀️", title: "太陽や星を輝かせる燃料", desc: "太陽の中心では水素どうしが核融合してヘリウムになり、膨大な光と熱を生み出しています。" },
+          { icon: "🚗", title: "燃料電池車（水素自動車）", desc: "酸素と反応して電気をつくり、排出するのはクリーンな「水」だけです。" }
+        ],
+        history: "1766年、イギリスの科学者ヘンリー・キャヴェンディッシュが金属に酸をかけて発生する『よく燃える空気』として正体を突き止めました。その後ラボアジエが『水（Hydro）を生む（Gen）もの』という意味でハイドロジェン（Hydrogen）と名付けました。",
+        electronStory: "いちばん内側のK殻に電子がたった1個だけ。K殻は2個で満タンになるため、もう1個ほしくて他の元素とすごく結びつきやすい性格です。水素どうしで1個ずつ出し合ってH₂ガスになります。"
+      },
+      2: {
+        tagline: "太陽の光から先に見つかった、空へ浮かぶおだやかな気体",
+        tags: ["life"],
+        everyday: [
+          { icon: "🎈", title: "ぷかぷか浮かぶ風船", desc: "空気よりずっと軽く、しかも水素と違って絶対に燃えないので安全に風船を浮かべられます。" },
+          { icon: "🏥", title: "病院のMRI冷却", desc: "マイナス269℃という極低温の液体ヘリウムが、強力な超伝導磁石を冷やしています。" }
+        ],
+        history: "1868年、皆既日食のときに太陽の光をプリズムで分解（分光）したところ、地球上では見たことのない黄色い輝線が発見されました。ギリシャ神話の太陽神ヘリオスにちなんで『ヘリウム』と命名され、地球で見つかったのはなんと27年も後でした！",
+        electronStory: "K殻の定員「2個」がピッタリ満タン！これ以上電子をもらう必要もあげる必要もないため、他の元素とほとんど反応しない超マイペースな『貴ガス』の筆頭です。"
+      },
+      3: {
+        tagline: "スマホの電池を支える、いちばん軽い金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "📱", title: "リチウムイオン電池", desc: "スマホ・ノートPC・電気自動車まで、軽くて電気をたくさんためられる現代の必須バッテリーです。" },
+          { icon: "🎆", title: "深紅（しんく）色の花火", desc: "炎に入れると鮮やかな深い赤色に光るため、花火の発色剤としても活躍します。" }
+        ],
+        history: "1817年、スウェーデンのアルフェドソンが『ペタル石』という鉱物を分析中に発見しました。それまで植物の灰から見つかったNaやKと違い、岩石（ギリシャ語でリトス）から見つかったため『リチウム』と名付けられました。",
+        electronStory: "電子配置は [2, 1]。いちばん外側のL殻に電子がポツンと1個だけあります。この1個をすぐ手放して安定した [2] になろうとするため、電子の受け渡しがスムーズで電池に最適なのです。",
+        flame: { name: "深紅色（濃い赤）", color: "#ef4444", glow: "#ff2e63", desc: "鮮やかな赤い炎！花火の赤色にも使われる情熱の色です。" }
+      },
+      4: {
+        tagline: "エメラルドやアクアマリンを生み、宇宙望遠鏡の鏡にも使われる超軽量金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "💚", title: "エメラルドとアクアマリンの母体", desc: "どちらも『ベリル（緑柱石）』というベリリウムを含む鉱物が正体。混ざる微量元素の違いで緑や水色に変わります。" },
+          { icon: "🔭", title: "ジェイムズ・ウェッブ宇宙望遠鏡の鏡", desc: "アルミより軽くて鉄より硬く、宇宙の極低温でもゆがまないため、最新宇宙望遠鏡の黄金の鏡の土台に使われました。" }
+        ],
+        history: "1798年、フランスのヴォークランが宝石エメラルドとベリル（緑柱石）を分析していて同じ新元素を発見しました。化合物が甘い味だったため当初は『グルシニウム』と呼ばれましたが、後に鉱物ベリルにちなんでベリリウムと名付けられました（現在は毒性があるため絶対に舐めてはいけません）。",
+        electronStory: "電子配置は [2, 2]。外側のL殻に2個の電子を持ちますが、原子がとても小さいため原子核が電子をぎゅっと強く引きつけています。この強固な結びつきが、軽くて硬い性質を生み出しています。"
+      },
+      5: {
+        tagline: "熱に強い理科のビーカーから、緑の炎・磁石の強化まで支える名脇役",
+        tags: ["gem", "flame"],
+        everyday: [
+          { icon: "🧪", title: "耐熱ガラス（ビーカーやオーブン皿）", desc: "ガラスにホウ素を混ぜると急激な温度変化でも割れにくくなり、理科室のビーカーやキッチン用品に大活躍します。" },
+          { icon: "🧲", title: "世界最強のネオジム磁石", desc: "スマホのスピーカーやEVモーターに使われる超強力な磁石は、ネオジム・鉄・ホウ素の3つを組み合わせて作られます。" },
+          { icon: "💎", title: "トルマリン（電気石）などの宝石", desc: "カラフルな色が魅力の宝石トルマリンの結晶骨格には、たくさんのホウ素が含まれています。" }
+        ],
+        history: "古くからガラス作りや金細工に『ホウ砂（ボラックス）』が使われていました。1808年、フランスのゲイ＝リュサックとテナール、そしてイギリスのデービーが、それぞれ独立にホウ酸から単体のホウ素を取り出すことに成功しました。",
+        electronStory: "電子配置は [2, 3]。L殻の電子が3個で、金属と非金属の中間的な性格（半金属）を持ちます。他の原子と共有結合でガッチリ立体網目を作るため、単体の結晶はダイヤモンドに次ぐほど硬くなります。",
+        flame: { name: "鮮やかな黄緑色", color: "#4ade80", glow: "#22c55e", desc: "ホウ酸にアルコールを混ぜて火をつけると、幻想的な緑色の炎がゆらめきます！" }
+      },
+      6: {
+        tagline: "ダイヤモンドも鉛筆の芯も、私たちの体もつくる「いのちの骨格」",
+        tags: ["gem", "life"],
+        everyday: [
+          { icon: "💎", title: "ダイヤモンドと黒鉛（鉛筆の芯）", desc: "どちらも100%同じ炭素ですが、原子のつながり方が立体かシート状かの違いだけで、世界一硬い宝石にも柔らかい芯にもなります。" },
+          { icon: "🧬", title: "すべての生き物の材料", desc: "DNA・タンパク質・炭水化物など、有機物と呼ばれる生命のパーツはすべて炭素の鎖でできています。" },
+          { icon: "✈️", title: "カーボンファイバー", desc: "鉄より軽くて強い炭素繊維は、飛行機やスポーツカー、釣竿などに使われます。" }
+        ],
+        history: "炭（スミ）やダイヤモンドとして人類が先史時代から知っていた元素です。1772年、ラボアジエが虫眼鏡で太陽光を集めてダイヤモンドを燃やし、二酸化炭素しか出ないことを実験して『ダイヤと木炭は同じ元素だ！』と証明しました。",
+        electronStory: "電子配置は [2, 4]。外側のL殻は8個で満タンなので、ちょうど半分の4個を持っています。そのため『4本の手』で他の炭素や水素・酸素とがっちり手をつなぎ、鎖やリングなど無限の分子を組み立てられるのです。"
+      },
+      7: {
+        tagline: "地球の空気の約78%を占める、生命と食を守る静かな大気",
+        tags: ["life"],
+        everyday: [
+          { icon: "🌬️", title: "私たちが吸う空気の主成分", desc: "空気の約8割が窒素です。酸素をほどよく薄めて、地球上が燃えすぎないように守っています。" },
+          { icon: "🥔", title: "ポテトチップスの袋", desc: "お菓子が酸化して湿気るのを防ぐため、袋の中には反応しにくい窒素ガスが詰められています。" },
+          { icon: "🌱", title: "植物の肥料とタンパク質", desc: "私たちの筋肉やDNAを作るアミノ酸には、かならず窒素が含まれています。" }
+        ],
+        history: "1772年、スコットランドの医師ダニエル・ラザフォードが、密閉容器の中でネズミを呼吸させたりロウソクを燃やしたりして酸素を使い切った後に『火も消えて呼吸もできない気体』が残ることを発見しました。",
+        electronStory: "電子配置は [2, 5]。あと3個で満タン（8個）になるため、窒素原子どうしが3本の手（三重結合）で超強力に握手しています。この絆が固すぎるため、普段は他のものと反応しにくいのです。"
+      },
+      8: {
+        tagline: "呼吸と燃焼を支え、地球の岩や海にもたっぷり潜む元素",
+        tags: ["life", "gem"],
+        everyday: [
+          { icon: "🫁", title: "生き物の呼吸とエネルギー", desc: "空気の約21%を占め、食べた栄養を体内でエネルギーに変えるために欠かせません。" },
+          { icon: "🪨", title: "水晶・砂・宝石のパートナー", desc: "実は地球の地殻（地面の岩）の重さの約半分は、ケイ素やアルミと結びついた酸素でできています。" },
+          { icon: "🛡️", title: "地球を守るオゾン層（O₃）", desc: "酸素が3つくっついたオゾンが上空で太陽の有害な紫外線をブロックしています。" }
+        ],
+        history: "1774年、イギリスのプリーストリーがレンズで太陽光を集めて酸化水銀を加熱し、ロウソクがまぶしく燃える不思議な気体を発見。のちにラボアジエが『燃焼とは酸素と結びつくことだ』と解明し、化学革命が起きました。",
+        electronStory: "電子配置は [2, 6]。満タンの8個まであと2個足りないため、他の元素から電子を引っ張る力がとても強い性格です。鉄がサビるのも、物が燃えるのも、酸素が電子を奪いに行く反応です。"
+      },
+      9: {
+        tagline: "虫歯予防から焦げつかないフライパンまで！全元素No.1の電子ハンター",
+        tags: ["gem", "life"],
+        everyday: [
+          { icon: "🪥", title: "歯みがき粉のフッ素コーティング", desc: "歯の表面（エナメル質）を酸に強い『フルオロアパタイト』に変え、虫歯から守ってくれます。" },
+          { icon: "🍳", title: "焦げつかないフライパン（フッ素樹脂）", desc: "炭素とフッ素が超強力に結びついたテフロン加工は、油も水もはじいてツルツル滑ります。" },
+          { icon: "🔮", title: "光る鉱物『蛍石（フローライト）』", desc: "紫や緑の美しい結晶で、紫外線を当てると光る『蛍光（Fluorescence）』という言葉の語源になりました。" }
+        ],
+        history: "反応性が激しすぎてガラス容器まで溶かしてしまうため、単体を取り出す挑戦は『化学史上もっとも危険な戦い』と呼ばれました。1886年、フランスのモアッサンが白金容器と極低温の電気分解でついに単離に成功し、ノーベル化学賞を受賞しました。",
+        electronStory: "電子配置は [2, 7]。満タンまであと1個、しかも原子がとても小さくて原子核の引力が強烈なため、全118元素のなかでいちばん電子を奪う力（電気陰性度）が強い元素です。"
+      },
+      10: {
+        tagline: "夜の街を赤オレンジ色に彩る、まったく反応しない貴ガスのスター",
+        tags: ["life"],
+        everyday: [
+          { icon: "🌃", title: "赤く輝くネオンサイン", desc: "ガラス管にネオンガスを入れて電気を流すと、目を引く鮮やかな赤オレンジ色に発光します。" },
+          { icon: "❄️", title: "超低温の冷却ガス", desc: "液体ヘリウムほどではないものの、とても低い温度まで冷やせるため特殊な冷凍装置やレーザーに使われます。" }
+        ],
+        history: "1898年、イギリスのラムゼーとトラバースが、空気をマイナス200℃近くまで冷やして液体にし、少しずつ蒸発させて成分を分ける実験（分留）で発見。ガラス管で放電させた瞬間に燃えるような赤い光を見て、ギリシャ語の『新しい（ネオス）』から命名しました。",
+        electronStory: "電子配置は [2, 8]。K殻（2個）もL殻（8個）も完全に満タン！電子をやり取りする必要がゼロなので、他のどの元素とも化合物を作らない究極のマイペース元素です。"
+      },
+      11: {
+        tagline: "食塩の半分をつくる、水と出会うと激しく反応するやわらか金属",
+        tags: ["life", "metal", "flame"],
+        everyday: [
+          { icon: "🧂", title: "食塩（塩化ナトリウム NaCl）", desc: "単体ではナイフで切れる銀色の金属で水に入れると発火しますが、塩素と組むと命に欠かせない美味しい塩になります。" },
+          { icon: "🛣️", title: "トンネルのオレンジ色のランプ", desc: "高速道路のトンネルで使われてきた黄色っぽい光は、ナトリウムランプの光です。" }
+        ],
+        history: "1807年、イギリスのハンフリー・デービーが当時できたばかりの強力な電池を使い、溶かした水酸化ナトリウムに電気を流して（電気分解）初めて金属ナトリウムを取り出しました。",
+        electronStory: "電子配置は [2, 8, 1]。いちばん外側のM殻にポツンと1個だけ電子があります。この1個をどうしても手放して [2, 8] になりたがるため、水に入れるだけで激しく反応し、塩素(Cl)に電子を渡すとピタッと安定して食塩になります。",
+        flame: { name: "鮮やかな黄色", color: "#facc15", glow: "#fde047", desc: "味噌汁がガスコンロに吹きこぼれたときに炎が黄色くなるのもナトリウムの炎色反応です！" }
+      },
+      12: {
+        tagline: "植物の緑（葉緑素）の中心で光を受け止める、超軽量金属",
+        tags: ["life", "metal"],
+        everyday: [
+          { icon: "🌿", title: "葉っぱの緑（クロロフィル）", desc: "植物が光合成をする葉緑素のど真ん中には、マグネシウム原子が1個座っています。" },
+          { icon: "📷", title: "まぶしい白い光と軽量ボディ", desc: "燃やすと目がくらむほど白く輝くため花火の閃光に使われ、軽くて丈夫なので高級ノートPCやカメラの枠にも使われます。" },
+          { icon: "🍲", title: "豆腐を固める「にがり」", desc: "海水に含まれる塩化マグネシウムが、豆乳をぷるぷるの豆腐に変えます。" }
+        ],
+        history: "ギリシャの『マグネシア』地方で見つかった白い石が名前の由来です。1808年、ナトリウムと同じくハンフリー・デービーが電気分解によって金属マグネシウムを単離しました。",
+        electronStory: "電子配置は [2, 8, 2]。外側のM殻にある2個の電子を手放して、安定した [2, 8] のMg²⁺イオンになりやすい性質を持っています。"
+      },
+      13: {
+        tagline: "1円玉からルビー・サファイアまで変身する、軽くて強い金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "🪙", title: "1円玉・アルミ缶・飛行機", desc: "鉄の約3分の1の軽さでサビにくいため、1円玉や飲み物の缶、飛行機の翼まで大活躍します。" },
+          { icon: "💎", title: "ルビーとサファイアの正体！", desc: "実はルビーもサファイアも主成分は酸化アルミニウム（コランダム）という同じ結晶。そこにわずかな不純物が混ざると宝石になります。" }
+        ],
+        history: "地球の地面に最も多く含まれる金属なのに、酸素と強く結びつきすぎていて昔は取り出せませんでした。19世紀には金より高価で、ナポレオン3世はVIP客にアルミ製スプーン、普通の客に金のスプーンを出したという逸話があります。",
+        electronStory: "電子配置は [2, 8, 3]。外側の3個の電子を出してAl³⁺になります。空気中で表面に目に見えないほど薄い酸化アルミニウムの膜（不動態）を作るため、中までサビずに長持ちします。"
+      },
+      14: {
+        tagline: "砂浜・水晶からスマホの頭脳（半導体）まで！地球とITを支える元素",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "💻", title: "スマホ・PCの頭脳『シリコンチップ』", desc: "超高純度に磨いたケイ素の板（ウエハー）に極小の回路を焼き付けて、CPUやメモリを作ります。" },
+          { icon: "💎", title: "水晶・アメジスト・オパール・ガラス", desc: "砂浜の砂も、美しい水晶やオパール、窓ガラスも、主成分はケイ素と酸素が結びついた二酸化ケイ素（SiO₂）です。" },
+          { icon: "☀️", title: "太陽光発電パネル", desc: "太陽の光エネルギーを電気に変えるソーラーパネルの主役もケイ素の半導体です。" }
+        ],
+        history: "砂や水晶として太古から身近にありましたが、酸素との結びつきが強く単体にするのが困難でした。1824年、スウェーデンのベルセリウスが化学反応で初めて純粋なケイ素を取り出しました。英語名 Silicon はラテン語の『火打石（シレックス）』が由来です。",
+        electronStory: "電子配置は [2, 8, 4]。炭素と同じ14族で外側に『4本の手』を持っています。規則正しい結晶を作ると電気を通したり止めたりできる『半導体』になり、現代のデジタル社会を生み出しました。"
+      },
+      15: {
+        tagline: "暗闇でぼんやり光る『光の運び手』！DNAや骨・マッチの必須元素",
+        tags: ["life"],
+        everyday: [
+          { icon: "🧬", title: "DNAの骨格と体のエネルギー（ATP）", desc: "遺伝情報を記録するDNAの背骨や、私たちが動くためのエネルギー通貨『ATP』はリンなしでは作れません。" },
+          { icon: "🦴", title: "骨や歯をかたくするパートナー", desc: "カルシウムと手を組んでリン酸カルシウムとなり、丈夫な骨と歯を作ります。" },
+          { icon: "🔥", title: "安全マッチの側薬（茶色い部分）", desc: "マッチ箱の横にある茶色いヤスリ部分には安全な『赤リン』が塗られていて、こすると発火します。" }
+        ],
+        history: "1669年、ドイツの錬金術師ヘニッヒ・ブラントが『人間の尿から黄金を作ろう』と大量の尿を煮詰めて蒸留していたところ、偶然にも暗闇で青白く光るワックス状の物質（白リン）を発見！ギリシャ語の『光を運ぶもの（フォスフォロス）』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 5]。外側のM殻に5個の電子を持ち、あと3個で安定します。原子どうしの組み方によって、自然発火する危険な『白リン』や安全な『赤リン』など全く別の姿（同素体）に変身します。"
+      },
+      16: {
+        tagline: "温泉のゆで卵の香り、ゴムを強くし、美しい青石ラピスラズリも彩る元素",
+        tags: ["gem", "life"],
+        everyday: [
+          { icon: "♨️", title: "火山と温泉の黄色い結晶", desc: "火山の噴気孔のまわりに鮮やかな黄色い結晶として見つかり、温泉特有の香りのもと（硫化水素など）になります。" },
+          { icon: "🚗", title: "タイヤのゴムを丈夫にする（加硫）", desc: "生のゴムはベタベタで弱いですが、硫黄を混ぜて加熱するとゴム分子同士に橋がかかり、頑丈なタイヤになります。" },
+          { icon: "🔷", title: "古代の宝石『ラピスラズリ』", desc: "夜空のように深い瑠璃色（るりいろ）の宝石ラピスラズリの青さは、結晶の中に閉じ込められた硫黄のイオンが正体です。" }
+        ],
+        history: "火山の近くで黄色い石のまま見つかるため、人類が紀元前から知っていた元素です。火薬（黒色火薬）の材料や殺菌剤として歴史に深く関わり、1777年にラボアジエによって『化合物ではなく元素である』と確定されました。",
+        electronStory: "電子配置は [2, 8, 6]。酸素のすぐ下の16族で、あと2個電子をほしがります。硫黄原子どうしで手をつなぐのが得意で、8個の原子が王冠のようなリング（S₈）を作って黄色い結晶になります。"
+      },
+      17: {
+        tagline: "プールの水を守り、ナトリウムと組んで塩になる強烈なハロゲン",
+        tags: ["life"],
+        everyday: [
+          { icon: "🏊", title: "水道水やプールの消毒", desc: "強い殺菌力でばい菌を退治し、安全な飲み水や清潔なプールを守っています。" },
+          { icon: "🧂", title: "食塩と胃酸の材料", desc: "ナトリウムとくっつけば食塩（NaCl）、水素とくっつけば食べ物を消化する胃酸（塩酸 HCl）になります。" }
+        ],
+        history: "1774年、スウェーデンのシェーレが軟マンガン鉱と塩酸を反応させて黄緑色の気体を発見。1810年にデービーが新元素と認め、ギリシャ語の『黄緑色（クロロス）』からクロリン（Chlorine）と名付けました。",
+        electronStory: "電子配置は [2, 8, 7]。満タンの8個まで『あとたった1個！』なので、よそから電子を1個奪う力がすさまじい元素です。この強い電子ハンター気質が、殺菌力や塩づくりの源です。"
+      },
+      18: {
+        tagline: "実は空気の中に約1%もいる！電球や窓ガラスを守る『なまけもの』気体",
+        tags: ["life"],
+        everyday: [
+          { icon: "💡", title: "白熱電球や蛍光灯の中身", desc: "フィラメントが酸素で焼き切れないよう、反応しないアルゴンガスが封入されています。" },
+          { icon: "🪟", title: "断熱ペアガラスのすき間", desc: "空気より熱を伝えにくいため、省エネ住宅の二重窓の間に詰められて冬の寒さを防ぎます。" },
+          { icon: "🍷", title: "高級ワインの酸化防止", desc: "空気より重く反応しないため、開けたワイン瓶に吹き込むと液面を覆って味を守ります。" }
+        ],
+        history: "1894年、イギリスのレイリー卿とラムゼーが『空気から取り出した窒素は、化学反応で作った純粋な窒素よりなぜか0.5%重い』というわずかな誤差に気づき、徹底的に調べて未知の気体を発見！まったく反応しない性質からギリシャ語の『怠け者（アルゴス）』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 8]。M殻の定員は18個ですが、最外殻が8個になった時点でオクテット則により鉄壁の安定状態になります。そのため他の物質を酸化させたくない現場の守護神として使われます。"
+      },
+      19: {
+        tagline: "バナナや野菜にたっぷり！神経や筋肉を動かす生命のスイッチ",
+        tags: ["life", "flame"],
+        everyday: [
+          { icon: "🍌", title: "バナナや野菜に含まれる栄養素", desc: "ナトリウムとバランスを取りながら、体の水分量や血圧を保ち、神経の電気信号を伝えています。" },
+          { icon: "🌱", title: "植物の三大栄養素（N・P・K）", desc: "植物の根を元気に育てる肥料に欠かせない必須元素です。" }
+        ],
+        history: "1807年、デービーが電気分解で初めて取り出した金属元素です（ナトリウムより数日早く発見！）。英語名 Potassium は植物の灰を煮詰めた『ポット・アッシュ（鍋の灰）』が由来です。",
+        electronStory: "電子配置は [2, 8, 8, 1]。M殻は定員18個ですが、実は8個入ったところで一度区切りがつき、19個目の電子は4番目のN殻に入ります。外側に1個だけなので、リチウムやナトリウムとそっくりな兄弟の性質を持ちます。",
+        flame: { name: "赤紫色（淡い紫）", color: "#c084fc", glow: "#a855f7", desc: "上品な赤紫色！ナトリウムの黄色が強いときは、青いコバルトガラスを通して観察します。" }
+      },
+      20: {
+        tagline: "骨や歯、サンゴ礁や大理石までつくる「かたさ」の達人",
+        tags: ["life", "gem", "flame"],
+        everyday: [
+          { icon: "🦴", title: "骨と歯・牛乳", desc: "リン酸カルシウムとなって私たちの骨格を支えています。筋肉を縮めたり血を止めたりする合図役でもあります。" },
+          { icon: "🐚", title: "貝殻・サンゴ・大理石・チョーク", desc: "炭酸カルシウムは貝殻や鍾乳洞、美しい大理石の彫刻、学校のチョークの材料です。" }
+        ],
+        history: "ローマ時代から石灰（ラテン語でカルクス）として建築に使われてきましたが、金属単体を取り出したのは1808年のハンフリー・デービー。電気分解の大活躍が続いた時代でした。",
+        electronStory: "電子配置は [2, 8, 8, 2]。N殻に2個の電子を持ち、これを手放してCa²⁺イオンになります。マグネシウム(Mg)のすぐ下の仲間なので、似た化学反応を起こします。",
+        flame: { name: "橙赤色（オレンジがかった赤）", color: "#fb923c", glow: "#f97316", desc: "温かみのあるオレンジ色の炎！れんが色とも呼ばれます。" }
+      },
+      21: {
+        tagline: "メンデレーエフの予言どおりに見つかった、野球バットを強くするレアメタル",
+        tags: ["metal"],
+        everyday: [
+          { icon: "⚾", title: "超軽量・高反発な金属バットや自転車", desc: "アルミニウムにわずか0.1〜0.5%混ぜるだけで劇的に強度が上がり、高級な野球バットや自転車フレームに使われます。" },
+          { icon: "🏟️", title: "スタジアムのまぶしい照明", desc: "太陽の光に近い自然な白色光を放つメタルハライドランプの中に入っています。" }
+        ],
+        history: "1871年にメンデレーエフが周期表の空き部屋から『エカホウ素』の存在と重さを予言。その8年後の1879年、スウェーデンのニルソンが北欧の鉱物から予言ピタリの新元素を発見し、スカンジナビア半島にちなんでスカンジウムと名付けました。",
+        electronStory: "電子配置は [2, 8, 9, 2]。ここから『遷移金属』の始まり！N殻に2個入ったあと、21個目の電子はひとつ内側のM殻（3d軌道）に入り始めます。これが金属らしい多彩な性質のスタート地点です。"
+      },
+      22: {
+        tagline: "鉄より強くアルミ並みに軽い！体にも優しく白い絵の具やサファイアも生む金属",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "👓", title: "メガネフレーム・ロケット・人工骨", desc: "軽くてサビず金属アレルギーも起こしにくいため、メガネや腕時計、体の中に埋め込む人工関節まで大活躍します。" },
+          { icon: "🎨", title: "真っ白な絵の具・日焼け止め", desc: "酸化チタンは光をよく反射する安全な白い粉で、ホワイトチョコや白い壁、UVカットの日焼け止めに使われます。" },
+          { icon: "💙", title: "サファイアの青い輝き", desc: "透明な酸化アルミの結晶に鉄とチタンがほんの少し混ざると、神秘的な青い宝石『サファイア』になります。" }
+        ],
+        history: "1791年、イギリスの牧師でありアマチュア鉱物学者だったグレゴールが小川の黒い砂から発見。のちにクラプロートがギリシャ神話の力強い巨人族『タイタン（ティターン）』にちなんでチタンと名付けました。",
+        electronStory: "電子配置は [2, 8, 10, 2]。内側のM殻（d軌道）に2個の電子が増えました。酸素と結びつくと表面に超頑丈な酸化チタンのバリア膜を作るため、海水に何十年漬けてもほとんどサビません。"
+      },
+      23: {
+        tagline: "工具を折れにくく鍛え、海ではホヤが好んで集める『美の女神』の金属",
+        tags: ["metal", "life"],
+        everyday: [
+          { icon: "🔧", title: "頑丈なスパナや車のバネ（クロムバナジウム鋼）", desc: "鉄に少し混ぜるだけで粘り強さと耐久力が跳ね上がり、工具や自動車のサスペンションに欠かせません。" },
+          { icon: "🔋", title: "再生可能エネルギーを支える巨大電池", desc: "液体の中で電子の数を変えやすい性質を活かし、太陽光発電の電気をためる『レドックスフロー電池』に使われます。" }
+        ],
+        history: "1801年にメキシコのデル・リオが発見したものの『クロムの見間違いだ』と一度否定されてしまいました。約30年後の1830年にスウェーデンのセフストレームが再発見し、化合物が紫・青・緑・黄と美しいため北欧神話の美の女神『ヴァナディース』から命名しました。",
+        electronStory: "電子配置は [2, 8, 11, 2]。外側のN殻だけでなく内側のM殻（3d軌道）の電子もやり取りできるため、+2〜+5まで何段階ものイオンになり、溶液の色が七色に変化する面白い実験ができます。"
+      },
+      24: {
+        tagline: "ルビーを赤く、エメラルドを緑に染める「色の魔術師」",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "♦️", title: "ルビーとエメラルドの色の正体！", desc: "透明な酸化アルミの結晶にクロムがたった1%混ざると真っ赤な『ルビー』に、ベリルという石に混ざると深い緑の『エメラルド』になります。" },
+          { icon: "🍴", title: "サビないステンレス鋼", desc: "鉄にクロムを混ぜると、ピカピカでサビに強いステンレスの包丁やシンクができます。" }
+        ],
+        history: "1797年、フランスのヴォークランがシベリア産の真っ赤な鉱物（紅鉛鉱）から発見しました。化合物が赤・黄・緑・紫とカラフルな色を出すため、ギリシャ語の『色（クローマ）』から名付けられました。",
+        electronStory: "電子配置は [2, 8, 13, 1]。ここが化学の面白い例外！普通なら [2, 8, 12, 2] になりそうですが、3d軌道がちょうど半分（5個）埋まる方が安定するため、N殻から1個お引越しして [2, 8, 13, 1] になります。このd軌道の電子が光を吸収して宝石の美しい色を生みます。"
+      },
+      25: {
+        tagline: "乾電池と鉄づくりの立役者！紫色のアメジストにも潜むパワフル金属",
+        tags: ["metal", "gem", "life"],
+        everyday: [
+          { icon: "🔋", title: "マンガン乾電池・アルカリ電池", desc: "乾電池の中の黒い粉（二酸化マンガン）が化学反応を助け、リモコンや時計を動かしています。" },
+          { icon: "🚂", title: "線路や金庫を守るタフな鉄鋼", desc: "鉄にマンガンを混ぜると衝撃に強い『マンガン鋼』になり、電車の線路の分岐点やブルドーザーの爪に使われます。" },
+          { icon: "🌸", title: "ピンク色の宝石『インカローズ』", desc: "バラ色の鉱物ロードクロサイト（インカローズ）の美しいピンク色はマンガンによるものです。" }
+        ],
+        history: "古くからガラスの色を透明にしたり紫に染めたりするために『軟マンガン鉱』が使われていました。1774年、スウェーデンのシェーレが新元素の存在を見抜き、同僚のガーンが木炭と一緒に高温で熱して金属単体を取り出しました。",
+        electronStory: "電子配置は [2, 8, 13, 2]。3d軌道の5つの部屋に電子が1個ずつ均等に入り、さらにN殻にも2個入ったバランスのよい配置。そのため状況に応じて最大+7価（鮮やかな紫の過マンガン酸イオン）まで多彩な姿を見せます。"
+      },
+      26: {
+        tagline: "地球の中心から私たちの血液、ビルや電車まで支える人類最強の相棒",
+        tags: ["metal", "life", "gem"],
+        everyday: [
+          { icon: "🩸", title: "赤い血液（ヘモグロビン）", desc: "赤血球の中心にある鉄原子が酸素をキャッチして全身へ運びます。鉄と酸素が結びつくから血は赤いのです。" },
+          { icon: "🗼", title: "東京タワー・電車・自動車・磁石", desc: "人類が使う全金属の9割以上は鉄！丈夫で加工しやすく、強力な磁石にもなる文明の主役です。" },
+          { icon: "🌍", title: "地球のど真ん中（コア）と隕石", desc: "地球の中心は巨大な鉄の塊で、これが回転して磁場を生み、宇宙放射線から生命を守っています。" }
+        ],
+        history: "紀元前3000年ごろのエジプトでは、空から降ってきた『鉄隕石』を加工して王の短剣やビーズを作っていました（エジプト語で『天の金属』）。やがて高温で鉄鉱石を溶かす技術が生まれ、青銅器時代から鉄器時代へと文明が大きく進化しました。",
+        electronStory: "電子配置は [2, 8, 14, 2]。M殻（3d軌道）の電子どうしのスピン（小さな磁石の向き）がきれいに揃いやすいため、鉄は磁石にくっつく『強磁性』という特別なパワーを持っています。"
+      },
+      27: {
+        tagline: "深い『コバルトブルー』を生み、スマホ電池とジェット機も支える青い守護神",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🏺", title: "コバルトブルーのガラスや陶磁器", desc: "古くから有田焼の染付やステンドグラスの深い青色を生み出してきた絵の具の主役です。" },
+          { icon: "📱", title: "リチウムイオン電池の安定化材", desc: "スマホなどのバッテリーの正極材に使われ、安全にたくさんの電気を出し入れできるようにしています。" },
+          { icon: "💊", title: "ビタミンB12の中心原子", desc: "私たちが赤血球を作るのに欠かせないビタミンB12のど真ん中には、コバルトが1個だけ入っています。" }
+        ],
+        history: "中世ドイツの銀鉱山で、銀そっくりなのに溶かしても銀にならず有毒な煙を出す厄介な鉱石が見つかり、鉱夫たちは『いたずら妖精コボルト（Kobold）の仕業だ！』と呼びました。1735年、ブラントがその正体が新金属であることを突き止め、妖精の名がつきました。",
+        electronStory: "電子配置は [2, 8, 15, 2]。鉄やニッケルと並んだ『鉄族』の三兄弟で、やはり強い磁石になる性質を持ちます。d軌道の電子が赤い光を吸収するため、ガラスや陶磁器に溶かすと目が覚めるような青色になります。"
+      },
+      28: {
+        tagline: "50円・100円玉からステンレス・充電池まで！サビに強い銀色のガードマン",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🪙", title: "50円玉・100円玉（白銅）", desc: "銅75%にニッケル25%を混ぜた合金が50円・100円玉。ピカピカで摩耗しにくく長く使えます。" },
+          { icon: "🔋", title: "くり返し使えるニッケル水素電池", desc: "充電式乾電池（エネループなど）やハイブリッドカーのバッテリーの中核を担っています。" },
+          { icon: "🎸", title: "エレキギターの弦やステンレス", desc: "鉄・クロム・ニッケルを組み合わせると最高品質のステンレス鋼になり、磁石に反応するギター弦にも使われます。" }
+        ],
+        history: "コバルトと同じくドイツの鉱夫が、銅に似ているのに銅が取れない鉱石を『悪魔の銅（クプファーニッケル＝悪魔ニッケルの銅）』と呼んで嫌っていました。1751年、スウェーデンのクロンステットがそこから銀白色の新金属を取り出し『ニッケル』と命名しました。",
+        electronStory: "電子配置は [2, 8, 16, 2]。鉄・コバルトに続いて強磁性を持つ3つ目の元素です。空気中でも表面に緻密な酸化被膜を作るため、コインやメッキとして金属をサビから守ってくれます。"
+      },
+      29: {
+        tagline: "10円玉から電線・青緑の花火まで、電気を運ぶ赤金色の名脇役",
+        tags: ["metal", "gem", "flame"],
+        everyday: [
+          { icon: "🔌", title: "電線とスマホの内部配線", desc: "銀に次いで2番目に電気をよく通し、加工しやすいため、家中の電線やスマホの基板に欠かせません。" },
+          { icon: "🪙", title: "10円玉と自由の女神（緑青）", desc: "もともとは美しい赤茶色ですが、長い年月で空気と反応すると自由の女神や大仏のような青緑色（緑青）に変わります。" },
+          { icon: "💎", title: "ターコイズ（トルコ石）の青色", desc: "鮮やかな空色の宝石ターコイズやマラカイト（孔雀石）の美しさは、銅イオンの色によるものです。" }
+        ],
+        history: "人類が石器時代のすぐ後に使い始めた最古の金属のひとつ（紀元前9000年ごろ）。英語名 Copper や記号 Cu は、古代に良質な銅の産地だったキプロス島（Cyprus）に由来します。",
+        electronStory: "電子配置は [2, 8, 18, 1]。クロムと同じく、M殻を定員18個でピッタリ満タンにする方が安定するため、N殻から電子が1個移動した形です。外側の1個の電子が自由に動き回れるので、電気や熱を抜群によく伝えます。",
+        flame: { name: "青緑色（エメラルドグリーン）", color: "#10b981", glow: "#06b6d4", desc: "神秘的な青緑色の炎！打ち上げ花火の美しい青・緑色を生み出す主役です。" }
+      },
+      30: {
+        tagline: "トタン屋根をサビから守り、私たちの『味覚』も支える縁の下の力持ち",
+        tags: ["metal", "life"],
+        everyday: [
+          { icon: "🦪", title: "牡蠣（カキ）や赤身肉に豊富な必須栄養素", desc: "舌で味を感じる細胞や皮膚の生まれ変わり、免疫の働きを助ける大事なミネラルです。" },
+          { icon: "🎺", title: "トランペット（真鍮）と5円玉", desc: "銅に亜鉛を混ぜると黄金色に輝く『真鍮（黄銅）』になり、金管楽器や5円玉に使われます。" },
+          { icon: "🌉", title: "鉄をサビから守る『亜鉛めっき（トタン）』", desc: "鉄より先に亜鉛が身代わりになってサビる性質を活かし、ガードレールや橋、車のボディを守っています。" }
+        ],
+        history: "銅と混ぜた真鍮としては紀元前から作られていましたが、亜鉛は沸点が低く炉の中で蒸発してしまうため単体で集めるのが困難でした。13世紀ごろにインドで蒸留技術が確立され、1746年にドイツのマルクグラーフがヨーロッパで単離法を公表しました。",
+        electronStory: "電子配置は [2, 8, 18, 2]。内側のM殻が18個で完全に満タンになったため、外側のN殻の2個だけを素直に手放してZn²⁺イオンになります。鉄よりも電子を手放しやすいので、鉄の身代わり（犠牲防食）になれるのです。"
+      },
+      31: {
+        tagline: "手のひらにのせるだけでトロ〜リと溶ける！青色LEDを生んだ不思議な金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💡", title: "青色LED・白色LED照明（窒化ガリウム）", desc: "ノーベル物理学賞を生んだ青色LEDの心臓部！おかげで省エネLED照明やスマホ画面が実現しました。" },
+          { icon: "🥄", title: "手のひらで溶けるマジック金属", desc: "融点が29.8℃と体温より低いため、室温では銀色の固体なのに、手のひらにのせると液体に溶けてしまいます。" }
+        ],
+        history: "1871年にメンデレーエフが『エカアルミニウム』として重さも融点の低さもピタリと予言していた元素です。1875年、フランスのボアボードランが分光器で紫色の新しい輝線を発見して単離に成功。故郷フランスの古名『ガリア』にちなんで名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 3]。アルミニウムと同じ13族で外側に3個の電子を持ちます。窒素やヒ素（15族・外側5個）と組むと合計8個になって超高性能な半導体（LEDや5G通信チップ）に変身します。"
+      },
+      32: {
+        tagline: "世界初のトランジスタを生み、光ファイバーや赤外線カメラも支える半金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🌐", title: "高速インターネットの光ファイバー", desc: "光ファイバーの中心ガラスに少し混ぜることで光の屈折率を調整し、世界中のデータを光速で運んでいます。" },
+          { icon: "📷", title: "暗闇が見えるサーモグラフィーレンズ", desc: "普通のガラスは赤外線を通しませんが、ゲルマニウムの結晶は赤外線を通すため暗視カメラのレンズに使われます。" }
+        ],
+        history: "こちらもメンデレーエフが『エカケイ素』として予言していた大ヒット元素！1886年にドイツのウィンクラーが銀鉱石から発見し、祖国のラテン名『ゲルマニア』から命名。予言値と実測値があまりにも一致し、周期表の正しさが世界中に認められました。",
+        electronStory: "電子配置は [2, 8, 18, 4]。炭素・ケイ素と同じ14族の4本の手を持つ半金属です。1947年に人類初の『トランジスタ』が作られたとき、最初に使われた半導体はシリコンではなくゲルマニウムでした。"
+      },
+      33: {
+        tagline: "ミステリーでは毒の代名詞だが、超高速スマホ通信チップの裏主役でもある元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "📡", title: "スマホの高速通信・衛星通信チップ", desc: "ガリウムと組んだ『ガリウムヒ素（GaAs）』半導体はシリコンより電気信号が速く、スマホの電波増幅器や赤色レーザーに使われます。" },
+          { icon: "🎨", title: "昔の絵の具と歴史の教訓", desc: "かつては鮮やかな緑色の顔料や農薬に使われましたが、強い毒性があるため現在は厳重に管理され安全な素材に置き換わっています。" }
+        ],
+        history: "古代から『鶏冠石（けいかんせき）』などの鉱物として知られ、1250年ごろにドイツのアルベルトゥス・マグヌスが単離したと伝えられます。単体や化合物は有毒なため、昔は化学者が安全な分析法（マーシュ法）を発明するきっかけにもなりました。",
+        electronStory: "電子配置は [2, 8, 18, 5]。リンのすぐ下の15族で外側に5個の電子を持ちます。リンと電子配置が似ているため、体に入るとリンのふりをして細胞のエネルギー工場を止めてしまうのが毒性の理由です。"
+      },
+      34: {
+        tagline: "光を浴びると電気を通す『月の元素』！コピー機と体のサビ止めにも活躍",
+        tags: ["life", "metal"],
+        everyday: [
+          { icon: "🖨️", title: "コピー機や太陽電池の先駆け", desc: "暗い場所では電気を通さず、光を当てた瞬間だけ電気を通す『光導電性』を活かし、初期のコピー機ドラムを誕生させました。" },
+          { icon: "🐟", title: "マグロやカツオに含まれる微量栄養素", desc: "多すぎると有毒ですが、ごく微量であれば体の細胞を酸化（サビ）から守る酵素の材料として人間にも必須です。" },
+          { icon: "🚦", title: "ルビーレッドの信号ガラス", desc: "ガラスに混ぜると美しい赤色になるため、ステンドグラスや昔の赤い信号レンズに使われました。" }
+        ],
+        history: "1817年、スウェーデンのベルセリウスが硫酸工場の底にたまった赤い泥を調べて発見。すでに知られていた『テルル（ラテン語で地球）』と性質がそっくりだったため、ギリシャ神話の月の女神『セレーネ』にちなんでセレンと名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 6]。酸素や硫黄と同じ16族です。光のエネルギーを受けると外側の電子がポンと解放されて動き出す性質が、光センサーやコピー機の発明につながりました。"
+      },
+      35: {
+        tagline: "金属以外で唯一、常温で『液体』！海水に眠る赤茶色のハロゲン",
+        tags: ["life"],
+        everyday: [
+          { icon: "🔥", title: "家電やパソコンを燃えにくくする難燃剤", desc: "テレビやパソコンのプラスチック外装に臭素化合物を混ぜておくと、万が一の火災で炎が広がるのを防ぎます。" },
+          { icon: "🎞️", title: "写真フィルムの感光材（臭化銀）", desc: "デジタルカメラ以前は、光に反応する臭化銀が世界中の思い出を写真フィルムに焼き付けていました。" }
+        ],
+        history: "1826年、まだ23歳だったフランスの学生バラールが、塩田の海水を煮詰めた残り汁（にがり）に塩素を通したとき、ツンと鼻を突く赤褐色の液体を発見！ギリシャ語の『悪臭（ブロモス）』からブロミン（Bromine＝臭素）と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 7]。フッ素・塩素の妹にあたるハロゲンで、あと1個電子がほしくてたまりません。塩素より重くヨウ素より軽いため、ちょうど常温で『液体』になる絶妙な分子間力を持っています。"
+      },
+      36: {
+        tagline: "1メートルの長さを決めたこともある、まばゆい閃光の『隠れた』貴ガス",
+        tags: ["life"],
+        everyday: [
+          { icon: "📸", title: "カメラの高速フラッシュや空港の誘導灯", desc: "電気を流すと一瞬で太陽のように強烈な白い光を放つため、高速写真用ストロボや霧の中でも届く滑走路ライトに使われます。" },
+          { icon: "💡", title: "長寿命なミニクリプトン電球", desc: "アルゴンより原子が重くてフィラメントの蒸発を抑えられるため、小さくて明るく長持ちする電球になります。" }
+        ],
+        history: "1898年、ネオンを発見する直前にラムゼーとトラバースが液体空気の蒸発残りから発見。空気中にわずか100万分の1しか隠れていなかったため、ギリシャ語の『隠れたもの（クリプトス）』と名付けられました。1960〜1983年にはクリプトンが放つ光の波長で『1メートル』が定義されていました！",
+        electronStory: "電子配置は [2, 8, 18, 8]。最外殻のN殻が8個でバッチリ満タンの貴ガスです。ふだんは反応しませんが、極低温で最強ハンターのフッ素と強制的に反応させると、ごくまれに化合物（KrF₂）を作れることがわかっています。"
+      },
+      37: {
+        tagline: "GPSの超高精度な時計を刻む、ルビー色の光で発見されたやわらか金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "⏱️", title: "GPS衛星や通信基地局の原子時計", desc: "セシウムに次ぐ高精度でコンパクトな原子時計が作れるため、スマホの電波同期や人工衛星の時刻合わせに活躍します。" },
+          { icon: "🎆", title: "紫がかった赤色の花火", desc: "炎に入れると鮮やかな赤紫色に輝くため、特殊な花火の発色剤として使われることがあります。" }
+        ],
+        history: "1861年、ドイツのブンゼンとキルヒホッフが新しく発明した『分光器』で鉱物の光を観察していたところ、見たことのない濃い赤色の輝線を発見！ラテン語の『深い赤（ルビドゥス）』からルビジウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 8, 1]。いちばん外側のO殻に電子が1個だけあるアルカリ金属で、原子が大きいためその1個がすぐ飛び出します。そのため空気中でもすぐ酸化し、水に入れると激しく爆発するほど反応性が高いのです。",
+        flame: { name: "深い赤紫色", color: "#e11d48", glow: "#f43f5e", desc: "ルビーの名前の由来にもなった、深みのある鮮やかな赤紫色の炎です！" }
+      },
+      38: {
+        tagline: "打ち上げ花火の『真っ赤な大輪』と光る夜光時計を生むアルカリ土類金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "🎆", title: "打ち上げ花火の真っ赤な色＆発煙筒", desc: "夜空に咲くいちばん鮮やかな赤色花火や、道路の緊急用赤い発煙筒の主役はストロンチウムです。" },
+          { icon: "✨", title: "暗闇で光る蓄光（ちっこう）塗料", desc: "非常口サインや腕時計の文字盤が電気を消しても何時間もボワッと緑色に光るのは、アルミン酸ストロンチウムのおかげです。" }
+        ],
+        history: "1790年、スコットランドの『ストロンチアン村』の鉛鉱山で変わった鉱石が見つかり、研究者のクロフォードが未知の元素の存在を予測。1808年に電気分解の名人ハンフリー・デービーが金属単体を取り出しました。",
+        electronStory: "電子配置は [2, 8, 18, 8, 2]。カルシウムのすぐ下の兄弟分で、外側のO殻に2個の電子を持ちます。この2個を手放してSr²⁺イオンになりやすく、炎の中で電子がジャンプして戻る際に鮮やかな赤色の光を放ちます。",
+        flame: { name: "鮮やかな紅色（真っ赤）", color: "#dc2626", glow: "#ef4444", desc: "打ち上げ花火の『赤』といえばコレ！目が覚めるような真紅の炎です。" }
+      },
+      39: {
+        tagline: "白色LEDの光を生み、人工ダイヤや超伝導も支えるレアアースの開拓者",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "💡", title: "白色LED照明の蛍光体（YAG）", desc: "青色LEDの光をイットリウムを含む黄色い蛍光体に通すことで、部屋を照らす明るい白色光を作り出しています。" },
+          { icon: "💎", title: "人工ダイヤモンド風宝石『キュービックジルコニア』", desc: "酸化ジルコニウムにイットリウムを混ぜて安定させると、ダイヤモンドそっくりにキラキラ輝く宝石になります。" }
+        ],
+        history: "1794年、フィンランドのガドリンがスウェーデンの小さな村『イッテルビー』で見つかった黒い石から新元素の酸化物を発見。なんとこの村の名前からは、イットリウム・イッテルビウム・テルビウム・エルビウムの4つもの元素が名付けられました！",
+        electronStory: "電子配置は [2, 8, 18, 9, 2]。スカンジウムのすぐ下の仲間で、N殻（4d軌道）に1個、O殻に2個の電子を持ち、合計3個を出して安定したY³⁺イオンになります。ランタノイドと性質がそっくりなため、一緒に『希土類（レアアース）』と呼ばれます。"
+      },
+      40: {
+        tagline: "サビない白いセラミック包丁から人工ダイヤまで！熱と酸に超強い金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "🔪", title: "白いセラミック包丁と白い歯（ジルコニア）", desc: "酸化ジルコニウム（ジルコニア）は金属並みに頑丈で絶対にサビず、切れ味抜群の白い包丁や歯医者さんの丈夫な被せ物に使われます。" },
+          { icon: "💎", title: "地球最古の鉱物『ジルコン』", desc: "美しい宝石ジルコンは44億年前（地球誕生のすぐ後！）の結晶が見つかっており、地球の歴史を解き明かすタイムカプセルです。" }
+        ],
+        history: "宝石ジルコンは古代から知られていましたが、1789年にドイツのクラプロートがその中に未知の元素が含まれていることを発見。ペルシャ語で『金色』を意味する『ザルグン』が名前の由来です。",
+        electronStory: "電子配置は [2, 8, 18, 10, 2]。チタンのすぐ下に位置し、表面に超強力な酸化膜を作るため酸にもアルカリにもびくともしません。中性子をほとんど吸収しない特徴もあり、原子力発電所の燃料被覆管にも使われます。"
+      },
+      41: {
+        tagline: "リニアモーターカーを宙に浮かせ、病院のMRIも動かす超伝導の立役者",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🚄", title: "リニアモーターカー＆MRIの超伝導磁石", desc: "チタンやスズと混ぜたニオブ合金を極低温に冷やすと電気抵抗がゼロになり、重い列車を浮かす強力な磁場を生み出します。" },
+          { icon: "🌉", title: "巨大な橋や車のフレームを軽く強く", desc: "鉄にわずか0.05%混ぜるだけで強度が劇的にアップするため、軽くて頑丈な自動車や高層ビルを支えています。" }
+        ],
+        history: "1801年にイギリスのハチェットがアメリカの鉱石から発見し『コロンビウム』と命名しましたが、長らく性質がそっくりなタンタルと混同されていました。1844年に別元素と証明され、ギリシャ神話でタンタロスの娘である『ニオベ』の名が与えられました。",
+        electronStory: "電子配置は [2, 8, 18, 12, 1]。クロムのように電子のエネルギーの都合でO殻からN殻へ1個移動した珍しい配置を取ります。この電子の並びが、低温で電子どうしがペアを組んで抵抗ゼロで流れる『超伝導』を起こしやすくしています。"
+      },
+      42: {
+        tagline: "エンジンを滑らかにし、植物が栄養を作るのも助ける高融点のタフ金属",
+        tags: ["metal", "life"],
+        everyday: [
+          { icon: "⚙️", title: "極限まで滑る潤滑剤（二硫化モリブデン）", desc: "高温や重い圧力でも焼き付かない黒い粉で、自動車のエンジンオイル添加剤やロケットの可動部を守っています。" },
+          { icon: "🌱", title: "マメ科植物や人間の体を支える必須元素", desc: "空気中の窒素を植物の栄養に変える酵素の心臓部に使われており、人間の体内でも代謝を助けています。" }
+        ],
+        history: "見た目が鉛（ラテン語でモリブデナ）や黒鉛にそっくりだったため、昔は鉛筆の芯と間違えられていました。1778年にシェーレが全く別の新元素だと見抜き、1781年にイェルムが金属単体を取り出しました。",
+        electronStory: "電子配置は [2, 8, 18, 13, 1]。クロムのすぐ下にあり、やはり4d軌道がちょうど半分（5個）埋まる安定配置を好むためO殻は1個になります。原子どうしの結びつきが極めて強く、融点は2623℃という超高熱に耐えます。"
+      },
+      43: {
+        tagline: "自然界になくて『人類が初めて人工的に作った』医療で大活躍の元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "病院の精密画像診断（核医学検査）", desc: "微量のテクネチウム99mを体に入れてカメラで撮影すると、心臓の血流や骨の異常を切らずにくっきり調べられます。" },
+          { icon: "✨", title: "星の中で元素が作られている証拠", desc: "地球には自然に存在しませんが、1952年に遠くの赤色巨星の光から発見され『星の中で今も新しい元素が生まれている』という大証拠になりました。" }
+        ],
+        history: "周期表の43番は長年『空白の謎』でした。1937年、イタリアのペリエとセグレが加速器でモリブデンに粒子をぶつけて世界初の人工元素を合成！ギリシャ語の『人工の（テクネトス）』からテクネチウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 13, 2]。電子の並び自体はマンガンと同じくきれいなのですが、陽子43個という原子核の組み合わせがどうしても不安定で、すべての同位体が放射線を出しながら別の元素に変わってしまう不思議な立ち位置にあります。"
+      },
+      44: {
+        tagline: "万年筆のペン先やハードディスクを極限まで強化する白金族の隠し味",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🖋️", title: "何十年書いても減らない万年筆のペン先", desc: "とても硬くて摩耗しないため、高級万年筆のペン先の先端にわずかに使われています。" },
+          { icon: "💾", title: "大容量ハードディスク（HDD）の記録層", desc: "パソコンやデータセンターのHDDの中で、原子数個分の極薄ルテニウム層が磁気データを安定して閉じ込めています。" }
+        ],
+        history: "1844年、ロシアのカザン大学のクラウスがウラル山脈の白金鉱石の残りかすから発見し、祖国のラテン古名『ルテニア』にちなんで命名。2001年・2005年のノーベル化学賞を生んだ画期的な触媒反応にもルテニウムが大活躍しました。",
+        electronStory: "電子配置は [2, 8, 18, 15, 1]。白金（プラチナ）の仲間『白金族』の一員で、反応しにくくサビない一方、表面で他の分子の結合を鮮やかに組み替える『触媒』としての天才的な才能を持っています。"
+      },
+      45: {
+        tagline: "金よりも高価なことも！車の排気ガスをきれいにする最強の鏡面金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "🚗", title: "車の排気ガス浄化マフラー（三元触媒）", desc: "ガソリン車のマフラーの中で、有害な窒素酸化物（NOx）を無害な窒素と酸素に分解して空を守っています。" },
+          { icon: "💍", title: "ホワイトゴールドや銀アクセサリーの輝き", desc: "白銀色の光の反射率が非常に高く絶対に黒ずまないため、高級ジュエリーの表面仕上げ（ロジウムメッキ）に使われます。" }
+        ],
+        history: "1803年、イギリスのウォラストンが南米産の白金鉱石を王水に溶かして調べた際、美しいバラ色の塩を作る新元素を発見。ギリシャ語の『バラ（ロドン）』にちなんでロジウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 16, 1]。4d軌道の電子が反応の橋渡しをする力が抜群で、特に排気ガス中のNOxから酸素原子を引きはがす能力は全元素の中でもトップクラス。産出量が極端に少なく、世界屈指の高級貴金属です。"
+      },
+      46: {
+        tagline: "自分の体積の900倍もの水素をスポンジのように吸い込む不思議な貴金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "🚗", title: "自動車の排気ガス浄化＆水素精製膜", desc: "プラチナ・ロジウムと組んで車の排気ガスを浄化し、超高純度の水素ガスだけを通すフィルターにも使われます。" },
+          { icon: "🦷", title: "歯の銀歯・ホワイトゴールド", desc: "口の中でもサビにくく加工しやすいため、歯科用の金属や高級アクセサリーの合金として身近に存在します。" }
+        ],
+        history: "1803年、ロジウムと同じウォラストンが白金鉱石から発見。前年の1802年に発見されたばかりの小惑星『パラス』にちなんでパラジウムと命名しました。のちに2010年のノーベル化学賞（鈴木・根岸・ヘックカップリング）の主役触媒となりました。",
+        electronStory: "電子配置は [2, 8, 18, 18]！なんと全118元素の中で唯一『最外殻（O殻）の電子が0個』という超レアな例外です。N殻の4d軌道が10個ピッタリ満タンになる方が居心地がよいため、O殻の電子が2個とも内側へ引っ越してしまったのです。"
+      },
+      47: {
+        tagline: "全金属No.1の電気・熱の通りやすさ！鏡から太陽光パネルまで輝く銀",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "☀️", title: "太陽光パネルやスマホの超高速配線", desc: "すべての金属の中でいちばん電気も熱もよく通すため、ソーラーパネルの銀色の細い線や高級電子部品に不可欠です。" },
+          { icon: "🪞", title: "鏡の反射面と銀食器・アクセサリー", desc: "可視光を95%以上はね返す最高の鏡面を持ち、古代から食器やコイン、美しいジュエリーとして愛されてきました。" },
+          { icon: "🧴", title: "銀イオン（Ag⁺）の抗菌・消臭スプレー", desc: "微量の銀イオンが雑菌の繁殖を強力にブロックするため、制汗スプレーや洗濯機、衣類の防臭加工に大活躍します。" }
+        ],
+        history: "金や銅と並んで紀元前3000年ごろから人類が使い始めた金属です。元素記号 Ag はラテン語の『輝く白（アルゲントゥム）』が由来で、南米の『アルゼンチン』という国名も『銀の国』という意味から来ています。",
+        electronStory: "電子配置は [2, 8, 18, 18, 1]。銅と同じく内側の殻（4d軌道）が満タンで、いちばん外側のO殻に電子が1個だけ自由に飛び回っています。この自由電子が邪魔されずにスイスイ走れるため、電気伝導率世界一なのです。"
+      },
+      48: {
+        tagline: "鮮やかな黄色絵の具と量子ドットTVを生んだ金属（環境保護の教訓も）",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🎨", title: "ゴッホも使った鮮やかな黄色・赤色顔料", desc: "カドミウムイエローやカドミウムレッドは色あせにくい鮮やかな絵の具として、名画『ひまわり』などにも使われました。" },
+          { icon: "📺", title: "色鮮やかな量子ドットディスプレイ", desc: "ナノサイズのセレン化カドミウム結晶は、粒の大きさだけで赤・緑・青の純粋な光を出せます（現在は環境配慮でカドミウムフリー化も進行中）。" }
+        ],
+        history: "1817年、ドイツのシュトロマイヤーが薬局で売られていた亜鉛の薬が熱すると黄色くなる不純物に気づいて発見。かつては充電池（ニカド電池）に広く使われましたが、強い毒性（日本のイタイイタイ病の原因）の教訓から現在は厳重に規制・代替が進んでいます。",
+        electronStory: "電子配置は [2, 8, 18, 18, 2]。亜鉛のすぐ下の12族で、外側のO殻に2個の電子を持ちます。体内で亜鉛と性質が似ているため、誤って亜鉛の代わりに取り込まれて腎臓や骨にダメージを与えてしまうのが毒性の正体です。"
+      },
+      49: {
+        tagline: "スマホの画面を『透明なのに電気を通す』魔法に変える希少金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "📱", title: "スマホ・タブレットの透明タッチパネル（ITO）", desc: "酸化インジウムにスズを少し混ぜた『ITO膜』は、ガラスのように透明なのに電気を通す奇跡の素材！タッチ画面はこれなしでは動きません。" },
+          { icon: "🧊", title: "指で曲がるほど柔らかく『泣く』金属", desc: "とても柔らかく、棒を曲げると結晶どうしがこすれて『ピキピキ』と不思議な音を出します。" }
+        ],
+        history: "1863年、ドイツのライヒとリヒターが亜鉛鉱石を分光器で調べていたとき、鮮やかな藍色（インディゴブルー）の光の線を発見！その美しい青色の名前から『インジウム』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 3]。ガリウムのすぐ下の13族で外側に3個の電子を持ちます。スズ（外側4個）を少し混ぜると電子が1個余って自由に動き出せるため、透明な酸化物なのに電気を通すという魔法の性質が生まれます。",
+        flame: { name: "鮮やかな藍色（インディゴブルー）", color: "#4f46e5", glow: "#6366f1", desc: "ジーンズのような深く美しい藍色！名前の由来になった神秘的な青い炎です。" }
+      },
+      50: {
+        tagline: "青銅器時代を開き、今もスマホの電子基板をつなぐ『鳴く』金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔌", title: "電子回路をつなぐ『はんだ』", desc: "融点が232℃と低く溶かしやすいため、スマホやゲーム機の中の無数の電子部品を基板にピタッとくっつけています。" },
+          { icon: "🍶", title: "手で曲がる錫（スズ）の酒器＆ブリキ缶", desc: "サビにくく口に入れても安全なため高級な器や缶詰のブリキ（鉄にスズめっき）に大活躍。曲げると『スズ鳴き』という音がします。" },
+          { icon: "⚔️", title: "歴史を変えた『青銅（ブロンズ）』", desc: "柔らかい銅にスズを混ぜると一気に硬い青銅になり、古代文明の武器や銅鐸、大仏が作られました。" }
+        ],
+        history: "紀元前3500年ごろから銅と混ぜて青銅器として使われた人類最古級の金属。元素記号 Sn はラテン語の『スタンヌム（Stannum）』が由来です。ちなみに13.2℃以下（とくに氷点下で急速に進行）に長く置くとボロボロの灰色の粉になる『スズペスト』という現象が起きます。",
+        electronStory: "電子配置は [2, 8, 18, 18, 4]。炭素・ケイ素と同じ14族の4本の手を持ちます。常温では金属の『白色スズ』ですが、冷やすとダイヤモンドと同じ結晶構造の『灰色スズ』へ変身して体積が増え、崩れてしまうのです。"
+      },
+      51: {
+        tagline: "冷えると膨らむ珍しい性質で、活版印刷と火災予防を支えた半金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔥", title: "カーテンや家電を守る難燃助剤", desc: "臭素などと組み合わせることでプラスチックや布地が燃え広がるのを強力に防ぐ、現代の防災パートナーです。" },
+          { icon: "📖", title: "本の歴史を作った『活版印刷の活字』", desc: "普通の金属は冷えて固まると縮みますが、アンチモンは水（氷）のように少し膨らむため、細かい文字の鋳型に隅々までくっきり流し込めました。" }
+        ],
+        history: "古代エジプトではクレオパトラなどの王族が硫化アンチモン（輝安鉱）の黒い粉をアイシャドウ（コール）として使っていました。記号 Sb はラテン語の『スティビウム（目尻に塗る粉）』に由来します。",
+        electronStory: "電子配置は [2, 8, 18, 18, 5]。ヒ素の下にある15族の半金属です。結晶が層状に少し隙間をもって並ぶため、液体から固体になるときに体積が膨張するという金属には珍しい性質を示します。"
+      },
+      52: {
+        tagline: "書き換えできるDVDや太陽電池を支える、ラテン語で『地球』の元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💿", title: "書き換え型DVD・Blu-rayディスクの記録層", desc: "レーザー光の当て方で『結晶』と『非結晶』を瞬時に切り替え、光の反射の違いで0と1のデータを記録します。" },
+          { icon: "☀️", title: "薄膜太陽電池＆温度差発電（ペルチェ素子）", desc: "カドミウムと組んだ高効率ソーラーパネルや、ビスマスと組んで電気で冷やす小型冷蔵庫の心臓部に使われます。" }
+        ],
+        history: "1782年、オーストリアのミュラーが金鉱石の中から見慣れない光沢の金属を発見。のちにクラプロートが新元素と確認し、ローマ神話の大地の女神・地球を意味する『テルス（Tellus）』からテルルと名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 6]。セレンの下にある16族の半金属です。原子量（127.6）が次の53番ヨウ素（126.9）より少し重いという珍しい『逆転現象』が起きており、メンデレーエフは性質を信じて正しく52番に配置しました。"
+      },
+      53: {
+        tagline: "うがい薬・昆布・液晶テレビまで！実は日本が世界トップクラスの生産国",
+        tags: ["life"],
+        everyday: [
+          { icon: "🧪", title: "うがい薬と理科のヨウ素液", desc: "強力な殺菌作用で喉を守るうがい薬や、ジャガイモのデンプンを青紫色に染める理科実験の定番です。" },
+          { icon: "📺", title: "液晶テレビ・スマホの偏光板", desc: "ヨウ素の分子をフィルムの中に一方向へズラッと並べることで、液晶画面の光を整える偏光フィルムが作られます。" },
+          { icon: "🥣", title: "昆布やワカメ（甲状腺ホルモン）", desc: "海藻に豊富に含まれ、人間の成長や代謝をコントロールする甲状腺ホルモンの材料として欠かせません。" }
+        ],
+        history: "1811年、ナポレオン戦争の時代にフランスのクルトワが海藻の灰から火薬の原料を作っていたとき、硫酸をうっかり入れすぎて美しい紫色の蒸気が立ち上るのを発見！ギリシャ語の『スミレ色（イオエイドス）』から名付けられました。千葉県などの天然ガス地下かん水は日本が誇る世界有数のヨウ素産地です。",
+        electronStory: "電子配置は [2, 8, 18, 18, 7]。フッ素・塩素・臭素に続くハロゲンで、電子が重くて大きいため常温では黒紫色の『固体』になり、温めると液体にならず一気に紫の気体へ昇華します。"
+      },
+      54: {
+        tagline: "探査機『はやぶさ』を宇宙へ運んだ青い光！重くて明るい貴ガス",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🛰️", title: "小惑星探査機『はやぶさ』のイオンエンジン", desc: "キセノンガスを電気でイオンにして高速噴射することで、わずかな燃料で何億キロもの宇宙を旅する青い推進力を生み出しました。" },
+          { icon: "🚗", title: "車の明るいHIDヘッドライト＆映画館の映写機", desc: "太陽の光にそっくりな強烈で美しい白色光を放つため、夜道を照らすヘッドライトやIMAX映画館の光源に使われます。" }
+        ],
+        history: "1898年、クリプトン・ネオンに続いてラムゼーとトラバースが液体空気の最後の残りから発見。空気中にわずか1000万分の1しかいない珍しい『よそ者』という意味でギリシャ語の『クセノス（見知らぬ人）』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 8]。貴ガスなので本来は絶対に化合物を作らないと信じられていましたが、1962年にバートレットがフッ素化合物との反応に成功！原子が大きく外側の電子への引力が少しゆるいため『貴ガス不活性の神話』を打ち破った歴史的元素です。"
+      },
+      55: {
+        tagline: "世界共通の『1秒』を決める黄金色の超敏感アルカリ金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "⏰", title: "世界の時刻の基準『セシウム原子時計』", desc: "セシウム133原子が1秒間に正確に91億9263万1770回振動する性質を使って、今の『1秒』の長さが定義されています！" },
+          { icon: "🛰️", title: "スマホの地図（GPS）の正確さを支える", desc: "GPS衛星に積まれた原子時計のおかげで、地球上のどこにいても数メートルの誤差で自分の場所がわかります。" }
+        ],
+        history: "1860年、ブンゼンとキルヒホッフがドイツの鉱泉水を分光器で調べて発見した、人類史上『分光法だけで見つかった最初の元素』です。スペクトルに鮮やかな空色の線が見えたため、ラテン語の『青空（カエシウス）』から名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 8, 1]。安定元素の中でいちばん原子が大きく、いちばん外側のP殻の1個の電子が原子核から遠く離れてユルユルにつながっています。そのため光が当たっただけで電子が飛び出し、融点も28.5℃と手のひらで溶ける黄金色の金属になります。",
+        flame: { name: "鮮やかな青紫色", color: "#6366f1", glow: "#818cf8", desc: "名前の由来『空色』を感じさせる、澄んだ青紫色の炎色反応です！" }
+      },
+      56: {
+        tagline: "胃のレントゲン検査と、夜空を彩る『黄緑色の花火』の主役",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "🏥", title: "胃のX線検査で飲む白い液体（硫酸バリウム）", desc: "バリウムは重くてX線を通さないため、飲むと胃の形がレントゲン写真にくっきり写ります。硫酸バリウムは水に全く溶けないので体内に吸収されず安全です。" },
+          { icon: "🎆", title: "打ち上げ花火の鮮やかな黄緑色", desc: "夏の夜空にパーッと広がる明るい黄緑色や緑色の花火は、バリウム化合物の発色パワーによるものです。" }
+        ],
+        history: "17世紀のイタリアで『暗闇で光る不思議な重い石（ボローニャ石）』が話題になり、1774年にシェーレが新元素の存在を発見。1808年にデービーが電気分解で金属を取り出し、ギリシャ語の『重い（バリュス）』からバリウムと名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 8, 2]。カルシウムやストロンチウムのさらに下にいる重たい兄弟分。外側のP殻にある2個の電子を手放してBa²⁺イオンになり、炎の中では特徴的な黄緑色のスペクトル光を放ちます。",
+        flame: { name: "鮮やかな黄緑色", color: "#84cc16", glow: "#a3e635", desc: "夏の打ち上げ花火の定番！くっきり明るい黄緑色の炎です。" }
+      },
+      57: {
+        tagline: "一眼レフカメラの高級レンズを透き通らせる、ランタノイド15兄弟の長男",
+        tags: ["metal"],
+        everyday: [
+          { icon: "📷", title: "カメラやスマホの高性能レンズ", desc: "酸化ランタンをガラスに混ぜると光の屈折率が高くなり、薄くてゆがみの少ない美しい写真が撮れるレンズになります。" },
+          { icon: "🔋", title: "ハイブリッドカーのニッケル水素電池", desc: "水素をたっぷり吸蔵できる合金の主材料として、充電池やエコカーのバッテリーで活躍しています。" }
+        ],
+        history: "1839年、スウェーデンのモサンデルがセリウム鉱石の中に別の元素が隠れていることを見抜き、ギリシャ語の『隠れている（ランタネイン）』からランタンと名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 18, 9, 2]。ここから始まる15元素（ランタノイド）は、外側の殻の形がそっくりなまま内側のN殻（4f軌道）に電子が増えていくため、兄弟のように似た性質を持ちます。"
+      },
+      58: {
+        tagline: "ライターの火花を散らし、スマホ画面のガラスをピカピカに磨くレアアースの主役",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔥", title: "100円ライターの着火石（フリント）", desc: "鉄と混ぜた合金をヤスリでこするとパチッと強い火花が散り、ガスに火をつけてくれます。" },
+          { icon: "📱", title: "スマホやレンズの超精密ガラス研磨剤", desc: "酸化セリウムの粉はガラス表面と化学反応しながら鏡のようにツルツルに磨き上げるため、スマホ画面の製造に欠かせません。" }
+        ],
+        history: "1803年、ベルセリウスとヒージンゲル（および独立にクラプロート）が発見。2年前の1801年に発見されたばかりの準惑星『ケレス（Ceres）』にちなんでセリウムと命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 19, 9, 2]。ここからいよいよN殻の4f軌道に電子が入り始めます。セリウムは+3価と+4価を自在に行き来できるため、車の排気ガス浄化で酸素を出し入れする調整役にも大活躍します。"
+      },
+      59: {
+        tagline: "溶接工の目を守る特殊なガラスと、航空機エンジンを強くする緑の双子元素",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🥽", title: "ガラス細工・溶接用の保護メガネ", desc: "ネオジムと混ぜた『ジジムガラス』は、炎のまぶしい黄色い光（ナトリウム線）だけをピンポイントで遮り、職人の目を守ります。" },
+          { icon: "🎨", title: "鮮やかなレモンイエローの陶磁器", desc: "ジルコニアと組み合わせた『プラセオジムイエロー』は高温で焼いても色あせない美しい黄色顔料です。" }
+        ],
+        history: "1885年、オーストリアのウェルスバッハが、それまで1つの元素『ジジム（双子）』と思われていた物質を、緑色の塩を作る『プラセオジム（緑の双子）』と『ネオジム（新しい双子）』の2つに分離して発見しました。",
+        electronStory: "電子配置は [2, 8, 18, 21, 8, 2]。内側の4f軌道に3個の電子が入っています。この4f電子が特定の波長の光だけをシャープに吸収するおかげで、特殊な光学フィルターガラスが作れるのです。"
+      },
+      60: {
+        tagline: "世界最強の磁石を生み出し、スマホのスピーカーからEVモーターまで動かす王者",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🧲", title: "世界最強の永久磁石『ネオジム磁石』", desc: "1982年に日本の佐川眞人博士が発明！スマホのスピーカーや振動モーター、電気自動車、風力発電機まで現代社会を動かす心臓部です。" },
+          { icon: "🔦", title: "精密加工や医療に使うYAGレーザー", desc: "結晶にネオジムを少し混ぜると強力な赤外線レーザーを生み出し、金属加工や眼科治療に活躍します。" }
+        ],
+        history: "1885年、ウェルスバッハが『ジジム』からプラセオジムと同時に分離し、ギリシャ語の『新しい双子（ネオス＋ジディモス）』からネオジムと名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 22, 8, 2]。内側の4f軌道に同じ向きのスピンを持つ電子が4個そろっているため、鉄やホウ素と組むと信じられないほど強力な磁力を発揮します。"
+      },
+      61: {
+        tagline: "神から火を盗んだ英雄の名を持つ、ランタノイド唯一の放射性人工元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "⌚", title: "かつての超小型原子力電池・夜光塗料", desc: "ベータ線という紙1枚で止まる放射線を出すため、かつてペースメーカー用小型電池や宇宙船の計器照明に研究・利用されました。" },
+          { icon: "📏", title: "紙や金属箔の厚みを測るセンサー", desc: "透過するベータ線の量から、製品に触れずにミクロン単位の厚さを測る検査装置に使われることがあります。" }
+        ],
+        history: "ランタノイドの中で61番だけが自然界からどうしても見つかりませんでした。1945年、アメリカのマリンスキーらがウランの核分裂生成物からついに分離に成功し、人類に火をもたらしたギリシャ神話の『プロメテウス』にちなんで命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 23, 8, 2]。電子配置はごく普通のランタノイドですが、テクネチウム（43番）と同じく原子核が安定できる中性子数を持たないため、すべての同位体が放射性です。"
+      },
+      62: {
+        tagline: "高温でも磁力が落ちない強力磁石で、イヤホンや宇宙機器を支える金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🎧", title: "熱に強い『サマリウムコバルト磁石』", desc: "ネオジム磁石より少し磁力は弱いものの、300℃近い高温でもサビず磁力が弱まらないため、高性能イヤホンや航空・宇宙機器に大活躍します。" },
+          { icon: "🏥", title: "がんの骨の痛みを和らげる医療薬", desc: "放射性サマリウム153を使った治療薬が、医療現場で患者さんの痛み軽減に役立てられています。" }
+        ],
+        history: "1879年、ガリウムを発見したフランスのボアボードランが『サマルスキー石』という鉱物から発見。鉱物の名のもとになったロシアの鉱山技師サマルスキーにちなんで名付けられ、人名に由来する最初の元素となりました。",
+        electronStory: "電子配置は [2, 8, 18, 24, 8, 2]。4f軌道に6個の電子を持ちます。コバルトと組むと電子の磁力が結晶の向きにガッチリ固定されるため、熱で揺さぶられても磁力が保たれます。"
+      },
+      63: {
+        tagline: "紫外線を当てると真っ赤に光る！お札の偽造防止インクとLEDの光の魔術師",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💴", title: "紙幣の偽造防止・光るインク", desc: "日本のお札やユーロ紙幣にブラックライトを当てると赤く光るインクには、ユウロピウムの蛍光体が使われています。" },
+          { icon: "💡", title: "あたたかい色のLED照明＆テレビ画面", desc: "電子や紫外線のエネルギーを受けて純粋な赤色や青色の光を放つため、きれいな映像や自然な照明に欠かせません。" }
+        ],
+        history: "1901年、フランスのドマルセがサマリウム試料を何度も精製し、鮮やかなスペクトル線から新元素を分離。ヨーロッパ大陸にちなんで『ユウロピウム』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 25, 8, 2]。4f軌道に電子がちょうど半分（7個）入った特別に安定した形！そのため他のランタノイドが+3価中心なのに対し、ユウロピウムはP殻の2個だけを出した+2価にもなりやすく、独特の赤い発光を生み出します。"
+      },
+      64: {
+        tagline: "病院のMRI画像をくっきり映し出す、常温で磁石になる不思議なレアアース",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "MRI検査の造影剤", desc: "ガドリニウムの強い磁性が体内の水分子の信号を引き立て、脳や血管のMRI画像を驚くほど鮮明に映し出します。" },
+          { icon: "❄️", title: "フロンガスを使わない『磁気冷凍』研究", desc: "磁石を近づけると温まり、離すと冷える『磁気熱量効果』が特に大きく、次世代のエコ冷蔵庫の材料として注目されています。" }
+        ],
+        history: "1880年にスイスのマリニャックが発見し、1886年にボアボードランが確認。レアアース研究の先駆者であるフィンランドの化学者ヨハン・ガドリンに敬意を表して名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 25, 9, 2]。4f軌道にちょうど半分（7個）の電子が同じ向きに揃っているため、次の1個は4fに入らず5d軌道へ入ります。この7個の不対電子が生む強烈な磁気がMRI造影剤の秘密です。"
+      },
+      65: {
+        tagline: "鮮やかな『エメラルドグリーン』に発光し、音で動く特殊合金も生む元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💡", title: "白色LED・蛍光灯の鮮やかな緑色蛍光体", desc: "ユウロピウムの赤・青とテルビウムの緑を組み合わせることで、人間の目に自然で美しい光の三原色が完成します。" },
+          { icon: "🔊", title: "磁石を当てると伸び縮みする『超磁歪材料』", desc: "鉄と混ぜた合金（テルフェノールD）は磁場で形が大きく変わるため、テーブル自体をスピーカーに変える振動装置やソナーに使われます。" }
+        ],
+        history: "1843年、ランタンを発見したモサンデルがスウェーデンの『イッテルビー村』の鉱石から発見。イッテルビー（Ytterby）という村名の後半部分からテルビウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 27, 8, 2]。4f軌道に9個の電子が入り、励起された電子が元の軌道へ戻るときに、ちょうど人間の目が最も明るく感じる緑色（545ナノメートル）の光を放ちます。"
+      },
+      66: {
+        tagline: "EVのモーターを熱から守る！ネオジム磁石をパワーアップさせる希少な助っ人",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🚗", title: "電気自動車（EV）・ハイブリッド車のモーター", desc: "ネオジム磁石は高温になると磁力が弱くなりますが、ジスプロシウムを数%混ぜるだけで猛烈な熱に耐える最強モーター磁石に変身します。" },
+          { icon: "⚛️", title: "原子炉の安全を守る制御材", desc: "中性子をたっぷり吸収し、しかも長期間使っても形が崩れにくいため安全装置にも利用されます。" }
+        ],
+        history: "1886年、ボアボードランがホルミウムの酸化物からなんと30回以上も根気強く分離作業を繰り返して発見！あまりに分離が難しかったため、ギリシャ語の『近づきがたい（デュスプロシトス）』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 28, 8, 2]。4f軌道に10個の電子を持ち、全元素の中でトップクラスの磁気モーメント（磁石の強さのもと）を秘めています。"
+      },
+      67: {
+        tagline: "全元素の中で『いちばん強い磁力のもと』を持つ、医療レーザーの達人",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "尿路結石を砕く医療用レーザー", desc: "ホルミウムYAGレーザーは水分によく吸収され、周囲の組織を傷つけずに体内の結石をピンポイントで砕く手術で大活躍します。" },
+          { icon: "🧲", title: "超強力磁場を集中させるポールピース", desc: "原子1個あたりの磁気パワーが全元素No.1のため、強力な電磁石の先端に付けて磁力を一点に集める部品に使われます。" }
+        ],
+        history: "1878年にスイスのソレらが分光で発見し、翌1879年にスウェーデンのクレーヴェが独立して分離。クレーヴェの故郷ストックホルムのラテン名『ホルミア』から名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 29, 8, 2]。4f軌道にある11個の電子のスピンと軌道運動が絶妙に足し合わさることで、1原子あたり世界一の磁気モーメントを生み出しています。"
+      },
+      68: {
+        tagline: "世界中のインターネットを海底ケーブルでつなぐ、ピンク色の光の増幅器",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🌐", title: "海底光ファイバーケーブルの光増幅器", desc: "太平洋を横断する光ファイバーの途中にエルビウムを混ぜたガラスを入れると、弱くなった光信号を電気に戻さずそのまま一気にパワーアップできます！" },
+          { icon: "👓", title: "ほんのりピンクのサングラス＆歯科レーザー", desc: "ガラスに混ぜると上品なピンク色に染まり、また歯を削るときの痛みが少ないエルビウムレーザーにも使われます。" }
+        ],
+        history: "1843年、テルビウムと同時にモサンデルが『イッテルビー村』の鉱石から発見。同じ村名の一部からエルビウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 30, 8, 2]。4f軌道の電子がちょうど光ファイバーで最も減衰しにくい波長（1550ナノメートル）の赤外線を増幅する奇跡の段差を持っており、現代のグローバル通信の命綱です。"
+      },
+      69: {
+        tagline: "自然界で最も少ないランタノイド！ポータブルX線装置と偽造防止に活躍",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "電源がいらない小型ポータブルX線装置", desc: "原子炉で放射化したツリウム170を使うと、コンセントのない災害現場や歯科医療でも使える超小型X線撮影装置が作れます。" },
+          { icon: "💶", title: "お札の青い蛍光マーク＆外科レーザー", desc: "紫外線を当てると鮮やかな青色に光るためユーロ紙幣の偽造防止に使われ、出血を抑える医療レーザーでも活躍します。" }
+        ],
+        history: "1879年、ホルミウムと同時にクレーヴェが発見。古代ギリシャやローマで『世界の最北端の島』と信じられていた伝説の地『トゥーレ（Thule＝スカンジナビア）』にちなんで命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 31, 8, 2]。4f軌道（定員14個）に13個目の電子が入り、あと1個で満タンというところまで来ました。とても高価な希少金属ですが、レーザーの波長特性が医療に最適です。"
+      },
+      70: {
+        tagline: "300億年に1秒しか狂わない『光格子時計』と、鮮やかな緑の炎を生む金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "⏰", title: "セシウムを超える次世代時計『光格子時計』", desc: "レーザー光で作った光のカゴにイッテルビウム原子を閉じ込めると、宇宙誕生から今まで動かし続けても1秒も狂わない究極の時計が作れます！" },
+          { icon: "🔬", title: "金属のひずみを測る高感度センサー", desc: "強い圧力をかけると電気抵抗が大きく変わる性質があり、地震や爆発の圧力を測るセンサーにも応用されています。" }
+        ],
+        history: "1878年、スイスのマリニャックがエルビウムの酸化物から分離して発見。スウェーデンの『イッテルビー村』の名を冠した4つ目の元素となりました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 8, 2]。ついにN殻の定員32個（4f軌道14個）がここで完全に満タン！ユウロピウムと同じく閉じた殻の安定性のおかげで+2価にもなりやすく、炎に入れると鮮やかな緑色に輝きます。",
+        flame: { name: "鮮やかな緑色", color: "#22c55e", glow: "#4ade80", desc: "レアアースの中でも珍しい、くっきり美しい緑色の炎色反応です！" }
+      },
+      71: {
+        tagline: "ランタノイド15兄弟のアンカー！がん診断PET装置と隕石の年齢測定に活躍",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "がんを早期発見するPET検査の検出器", desc: "ルテチウムを含む透明な結晶（LSO）が体からの微弱なガンマ線を素早く光に変え、高精度なPET検査を支えています。" },
+          { icon: "☄️", title: "隕石や地球の年齢を測る宇宙時計", desc: "ごく微量含まれる放射性ルテチウム176がハフニウムに変わる割合から、46億年前の太陽系誕生の年代を調べられます。" }
+        ],
+        history: "1907年、フランスのユルバンら3組の科学者がイッテルビウムから分離して発見。パリの古代ローマ時代の呼び名『ルテティア』にちなんで名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 9, 2]。N殻が32個で満タンになったため、71個目の電子はO殻（5d軌道）に入ります。ランタノイド収縮の終着点であり、ランタノイドの中で最も小さくて硬く密度の高い金属です。"
+      },
+      72: {
+        tagline: "最新スマホやPCの極小CPUで『電気の漏れ』を食い止める守護神",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💻", title: "最新CPU・スマホ半導体の超極薄絶縁膜", desc: "ナノメートル単位まで小さくなったトランジスタの中で、酸化ハフニウムが電気の漏れをピタリと防ぎ、省エネ高性能チップを実現しています。" },
+          { icon: "⚛️", title: "原子炉のブレーキ役（制御棒）", desc: "すぐ上のジルコニウムとは正反対に中性子をどんどん吸収する性質があり、原子力潜水艦などの制御棒に使われます。" }
+        ],
+        history: "1923年、物理学者ニールス・ボーアが量子力学から『72番はランタノイドではなくジルコニウムに似た金属のはずだ！』と予言。コペンハーゲンでコスターとヘヴェシーがジルコン鉱石からX線分光で見事に発見し、コペンハーゲンのラテン名『ハフニア』から命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 10, 2]。57〜71番のランタノイドでN殻（4f軌道）に14個詰め込まれた直後なので、原子核の引力が強くなって原子がギュッと縮み（ランタノイド収縮）、上のジルコニウムとサイズも化学性質も双子のようにそっくりになりました。"
+      },
+      73: {
+        tagline: "強い酸にもびくともせず、スマホの超小型コンデンサを支える高耐久金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "📱", title: "スマホ・PCに詰まった超小型タンタルコンデンサ", desc: "ゴマ粒より小さな部品で大量の電気を一瞬でためたり出したりでき、スマホを薄く高性能にする裏方です。" },
+          { icon: "🩺", title: "人間の体になじむ外科用インプラント", desc: "体液とまったく反応せず拒絶反応が起きにくいため、骨をつなぐプレートや人工血管のステントなどに使われます。" }
+        ],
+        history: "1802年、スウェーデンのエーケベリが発見。強い酸の中に浸してもまったく溶けず『水の中に立っているのに一口も飲めない罰を受けたギリシャ神話の王タンタロス』のようだったことから、タンタルと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 11, 2]。空気中や酸の中で表面に極めて薄くて硬い酸化タンタルの鎧（不動態膜）を一瞬で作ります。この鎧が電気を蓄える最高の絶縁膜にもなるため、スマホ部品に引っ張りだこなのです。"
+      },
+      74: {
+        tagline: "全金属No.1の超耐熱『3422℃』！電球の糸からダーツの矢まで支える重量級",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💡", title: "白熱電球のフィラメント", desc: "2500℃以上に真っ白く加熱しても溶けないため、エジソン以降の100年以上、世界中の夜を明るく照らしてきました。" },
+          { icon: "🛠️", title: "コンクリートを削る超硬ドリル＆ダーツの矢", desc: "炭素と組んだ炭化タングステンはダイヤモンド並みに硬く、さらに金と同じくらいズッシリ重いのでプロ用ダーツの矢にも大人気です。" }
+        ],
+        history: "1783年、スペインのエルヤール兄弟が『鉄の精錬を邪魔してスズを食い尽くす厄介な鉱石＝オオカミの泡（ヴォルフラム）』から単離。元素記号 W はヴォルフラム、英語名 Tungsten はスウェーデン語の『重い石』が由来です。",
+        electronStory: "電子配置は [2, 8, 18, 32, 12, 2]。5d軌道と6s軌道の電子が隣り合う原子どうしで超強力な金属結合のスクラムを組むため、鉄の2倍以上・3422℃という全金属トップの融点を誇ります。"
+      },
+      75: {
+        tagline: "ジェットエンジンの灼熱に耐え抜く、天然元素で最後に発見された超レア金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "✈️", title: "旅客機ジェットエンジンのタービン翼", desc: "ニッケル合金にレニウムを数%混ぜると、1000℃を超える激しい燃焼ガスの中でも金属が伸びたり割れたりしなくなります。" },
+          { icon: "⛽", title: "クリーンなガソリンを作る化学触媒", desc: "白金と組んだ触媒として、車のエンジンがきれいに回る高オクタン価ガソリンの製造を支えています。" }
+        ],
+        history: "安定して地球に存在する元素の中で、なんと最も遅い1925年にドイツのノダック夫妻らによって発見されました！ドイツを流れる大河『ライン川（ラテン語でレヌス）』にちなんでレニウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 13, 2]。タングステンのすぐ右隣にあり、融点は3186℃で全金属中トップクラス（炭素・タングステンに次ぐ高さ）。高温でも結晶構造が崩れにくいタフな電子結合を持っています。"
+      },
+      76: {
+        tagline: "全118元素でいちばん『ぎっしり重い』超高密度の青白い貴金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🖋️", title: "最高級万年筆のペン先・精密軸受", desc: "イリジウムとの合金『オスミリジウム』は驚くほど硬くてすり減らないため、一生モノの万年筆のペン先や高級時計の軸に使われます。" },
+          { icon: "🔬", title: "電子顕微鏡の細胞染色", desc: "酸化オスミウムは細胞の脂質をくっきり黒く染めるため、ミクロの生命世界を観察する生物学研究に役立っています。" }
+        ],
+        history: "1803年、イギリスのテナントが白金鉱石を王水に溶かしたときの黒い残りかすから、イリジウムと同時に発見。酸化するとツンと鼻を突く独特のにおいを出したため、ギリシャ語の『におい（オスメー）』から名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 14, 2]。ランタノイド収縮で原子の体積がとても小さいのに原子核がとても重いため、密度は22.59 g/cm³と全元素No.1！同じ大きさの鉄の約3倍、牛乳パック1本分でなんと約22.6kgもの重さになります。"
+      },
+      77: {
+        tagline: "恐竜を絶滅させた巨大隕石の『決定的な証拠』！最強の耐食金属",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🦖", title: "恐竜絶滅・6600万年前の隕石の証拠", desc: "地球の表面には極端に少ないのに小惑星（隕石）には多く含まれるため、世界中の6600万年前の地層から高濃度のイリジウムが見つかったことが恐竜絶滅＝隕石衝突説の決め手になりました！" },
+          { icon: "🚗", title: "自動車のイリジウム点火プラグ", desc: "猛烈な電気火花と高温に何万キロも耐え抜くため、燃費のよいエンジンを支えています。" }
+        ],
+        history: "1803年にテナントがオスミウムと同時に発見。化合物が赤・青・緑・紫と虹のように鮮やかな色を見せたため、ギリシャ神話の虹の女神『イリス』にちなんでイリジウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 15, 2]。すべての金属の中でいちばん腐食に強く、金やプラチナを溶かす最強の酸『王水』に漬けてもびくともしません。密度もオスミウムにわずかに迫る世界第2位です。"
+      },
+      78: {
+        tagline: "永遠の輝きで宝石を支え、水素社会と医療も切り開く『貴金属の女王』",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "💍", title: "結婚指輪やダイヤモンドの台座", desc: "汗や温泉でも決して変色せず粘り強いため、高価なダイヤモンドを一生しっかり支えるジュエリーの王道です。" },
+          { icon: "🚗", title: "燃料電池車（水素）＆排気ガス触媒", desc: "水素と酸素から電気を生み出す燃料電池の電極には、反応を劇的に速める白金触媒が欠かせません。" },
+          { icon: "⚖️", title: "かつて世界の『1キログラム』を決めていた原器", desc: "2019年まで130年間、白金90%・イリジウム10%の分銅が世界中の重さの基準でした。" }
+        ],
+        history: "16世紀、南米のスペイン人探検家たちが金に混ざる溶けにくい白い金属を見つけ『小さな銀（プラティーナ）』と呼んで最初は価値を知らず捨てていました。のちに超高融点・不変の輝きが認められ、今や金と並ぶ至高の貴金属となりました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 17, 1]。5d軌道と6s軌道のエネルギー差が絶妙で、自身はめったに酸化されないのに、表面に水素や酸素分子をちょうどよい強さで吸着して反応させる『究極の触媒』になります。"
+      },
+      79: {
+        tagline: "何千年たってもサビず輝き続け、スマホの心臓部も守る王様金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "👑", title: "アクセサリー・金メダル・金箔", desc: "1グラムの金をたたき伸ばすと、なんと畳約半分ほどの極薄の金箔になるほど伸びやすい金属です。" },
+          { icon: "📱", title: "スマホ・パソコンの精密端子", desc: "絶対にサビず電気をよく通すため、スマホ1台にも微量ながら本物の金が使われています（都市鉱山）。" },
+          { icon: "🛰️", title: "宇宙船の熱シールド", desc: "宇宙の強烈な赤外線・放射線をはね返すため、人工衛星や宇宙飛行士のヘルメットバイザーに極薄の金が塗られています。" }
+        ],
+        history: "古代エジプトのツタンカーメンの時代から人類を魅了してきた金属。実は地球上の金は、大昔の宇宙で『中性子星どうしの大衝突』という超巨大な現象によって生まれたと考えられています。記号 Au はラテン語の『輝く夜明け（Aurum）』から。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 1]。陽子が79個もある超ヘビー級原子のため、内側の電子が光の速さに近いスピードで回っています。アインシュタインの『相対性理論』の効果で青い光を吸収するようになり、他の金属と違うまばゆい黄金色に見えるのです！"
+      },
+      80: {
+        tagline: "金属の中でただひとつ、常温でピカピカの『液体』になる不思議な銀色の雫",
+        tags: ["metal"],
+        everyday: [
+          { icon: "💡", title: "昔の体温計・血圧計・蛍光灯", desc: "温度で素直に膨らむ性質から体温計に、放電で紫外線を出す性質から蛍光灯に長く使われました（現在は安全のためLEDや電子式へ移行中）。" },
+          { icon: "🌍", title: "水俣条約と環境を守る学び", desc: "水銀化合物は神経に強い毒性があるため、日本の公害の教訓から生まれた国際ルール『水俣条約』で世界的に使用を減らしています。" }
+        ],
+        history: "古代中国やエジプトの墓からも見つかっており、奈良の大仏の金メッキにも金を溶かす『アマルガム法』で使われました。記号 Hg はギリシャ語の『液体の銀（ヒドラルギルム）』、英語名 Mercury は素早く動く水星・伝令神マーキュリーが由来です。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 2]。本来なら固体になるはずの重金属ですが、相対性理論の効果で最外殻の2個の電子が原子核にギュッと引き込まれてしまい、隣の原子と手をつなぎたがらないため、マイナス38.8℃という低温まで液体のままなのです！"
+      },
+      81: {
+        tagline: "鮮やかな『若葉色の光』で見つかった、赤外線レンズと医療検査に活きる重金属",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "🏥", title: "心臓の血流を調べる医療検査", desc: "タリウムイオンはカリウムに性質が似ていて心筋に集まるため、微量の放射性タリウム201を使って心臓の元気さを調べる検査に使われます。" },
+          { icon: "📷", title: "特殊な赤外線レンズ", desc: "臭化タリウムなどの結晶は赤外線をよく通すため、科学分析装置や特殊な光学窓に利用されます（※単体・化合物は強い毒性があり厳重管理されます）。" }
+        ],
+        history: "1861年、イギリスのクルックスが硫酸工場の残りかすを分光器で調べていたとき、春の若葉のように鮮やかな明るい緑色の輝線を発見！ギリシャ語の『緑の若枝（タロス）』にちなんでタリウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 3]。アルミニウムやインジウムの仲間（13族）ですが、相対性理論の影響で6s電子2個が離れにくくなる（不活性電子対効果）ため、3個ではなく1個だけ手放したTl⁺イオンになりやすく、カリウム(K⁺)に似た振る舞いをします。",
+        flame: { name: "鮮やかな若葉緑色", color: "#22c55e", glow: "#4ade80", desc: "春の若葉のようにくっきり明るい緑色！名前の由来になった美しい炎です。" }
+      },
+      82: {
+        tagline: "車のバッテリーとレントゲン室の防護エプロンを支える、重くて柔らかい金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🚗", title: "自動車のバッテリー（鉛蓄電池）", desc: "ガソリン車のエンジンをかける瞬間、大きな電気を安定して供給するバッテリーは鉛と希硫酸の化学反応で動いています。" },
+          { icon: "🏥", title: "病院のレントゲン防護エプロン", desc: "原子番号が大きく電子がぎっしり詰まっているため、X線やガンマ線をしっかりブロックして体を守ってくれます。" },
+          { icon: "🎨", title: "ステンドグラスの枠・釣りのおもり", desc: "手で曲げられるほど柔らかく加工しやすいため、教会のステンドグラスをつなぐ枠として中世から使われてきました。" }
+        ],
+        history: "古代ローマでは水道管や食器に広く使われていました。記号 Pb はラテン語の『鉛（プルンブム）』が由来で、英語の『配管工（Plumber）』の語源にもなっています。体内にたまると有害なため、現在は水道管やはんだの鉛フリー化が進んでいます。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 4]。陽子82個は原子核が特別に安定する『魔法数』のひとつ！そのためウランなどの重い放射性元素が何億年もかけて崩壊したとき、最後にたどり着く『終着駅』が鉛なのです。"
+      },
+      83: {
+        tagline: "金属なのに『虹色の階段』に結晶が育つ！安全で美しいアート系重金属",
+        tags: ["gem", "metal"],
+        everyday: [
+          { icon: "🌈", title: "幾何学的な『虹色のビスマス結晶』", desc: "フライパンで溶かして冷やすと、ピラミッドをひっくり返したような階段状の結晶になり、表面の極薄酸化膜が光を干渉して虹色に輝きます！" },
+          { icon: "💊", title: "鉛フリーはんだ＆欧米のピンク色の胃薬", desc: "鉛のすぐ隣なのに毒性が極めて低いため、環境にやさしいはんだや、アメリカで定番の胃腸薬・化粧品のパール光沢材に使われます。" }
+        ],
+        history: "15世紀ごろから知られていましたが、スズや鉛と混同されていました。1753年にフランスのジョフロワが独立した金属であることを証明。ドイツ語の『白い塊（ヴァイセ・マッセ）』が名前の由来といわれています。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 5]。水のように凍ると膨張する珍しい金属で、しかも磁石を強く反発する『反磁性』が全金属中トップ！実はごくわずかに放射性ですが、半減期が『宇宙の年齢の10億倍以上』と長すぎるため実質的に安定元素として扱われます。"
+      },
+      84: {
+        tagline: "マリー・キュリーが祖国ポーランドの名を刻んだ、強烈なエネルギーを持つ元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🛰️", title: "月面探査車の極寒ヒーター", desc: "アルファ線を出しながら強い熱を発生するため、かつてソ連の月面車『ルノホート』がマイナス150℃の月の夜を乗り切る熱源として使われました。" },
+          { icon: "🖌️", title: "工場の静電気除去装置", desc: "ごく微量のポロニウムが空気をイオン化して、写真フィルムや精密機器につく厄介な静電気を消すのに使われてきました。" }
+        ],
+        history: "1898年、マリー・キュリーと夫ピエールがウラン鉱石の放射能を調べていて、ウランよりずっと強い放射線を出す新元素を発見！当時地図から消されていたマリー・キュリーの祖国ポーランドへの愛を込めて『ポロニウム』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 6]。テルルの下の16族です。ポロニウム以降の元素は陽子どうしの反発が強すぎて安定した同位体がひとつもなく、すべて放射性元素となります。"
+      },
+      85: {
+        tagline: "地球全体で数十グラム未満!? がん治療の新しい希望を秘めた超希少ハロゲン",
+        tags: ["life"],
+        everyday: [
+          { icon: "🏥", title: "次世代のがん治療薬（アルファ線標的治療）", desc: "ヨウ素と同じハロゲン仲間なので甲状腺などのがん細胞に届けやすく、ごく短い距離だけ届くアルファ線で正常細胞を傷つけずにがんを攻撃する最新研究が日本でも進んでいます！" },
+          { icon: "🔍", title: "地球上でいちばん珍しい天然元素", desc: "自然界ではウランの崩壊途中で一瞬だけ生まれ、最も長い同位体でも半減期は約8時間。地球の地殻すべてを集めてもスプーン1杯にも満たないといわれます。" }
+        ],
+        history: "メンデレーエフが『エカヨウ素』と予言していた85番。あまりに短命で自然界から集められなかったため、1940年にアメリカのコーソンらが加速器でビスマスにアルファ粒子を当てて人工合成し、ギリシャ語の『不安定（アスタトス）』から名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 7]。ハロゲン（17族）のいちばん下（重たい弟）です。電子の数は7個ですが、重すぎて相対性理論の効果が強く働くため、ヨウ素よりも金属に近い性質を帯びていると考えられています。"
+      },
+      86: {
+        tagline: "ラジウム温泉の湯けむりにも含まれる、空気の7.5倍も重い放射性貴ガス",
+        tags: ["life"],
+        everyday: [
+          { icon: "♨️", title: "日本のラジウム温泉・ラドン温泉", desc: "鳥取県の三朝（みささ）温泉や山梨県の増富温泉など、花崗岩の地下から微量のラドンガスが溶け込んだ温泉が古くから親しまれています。" },
+          { icon: "🏠", title: "地下室の換気と健康管理", desc: "空気よりずっと重いため、欧米など岩盤の多い地域の密閉された地下室ではたまらないように換気や測定が行われます。" }
+        ],
+        history: "1900年、ドイツのドーンがラジウム化合物から放射性の気体がじわじわ湧き出していることに気づき『ラジウム・エマネーション（放射気体）』と命名。のちにラムゼーらが独立した貴ガス元素であることを確かめ『ラドン』と呼ばれました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 8]。P殻が8個で満タンの貴ガスなので化学反応はほとんどせず、岩石の中から気体となってスッと抜け出してきます。マイナス71℃以下まで冷やすと、自らの放射線で黄色〜赤オレンジ色に光る美しい固体になります。"
+      },
+      87: {
+        tagline: "半減期たった22分！自然界から見つかった『最後の元素』",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔬", title: "最先端の物理学・レーザー冷却実験", desc: "あまりに短命で一度に数万原子ほどしか作れないため実用品はありませんが、原子のわずかな対称性の破れを調べる超精密実験に活躍しています。" },
+          { icon: "⏳", title: "地球上にある総量はわずか約30グラム", desc: "ウランやトリウムの崩壊過程でごくまれに生まれますが、22分ごとに半分が消えてしまうため、目に見える塊を見た人類はまだいません。" }
+        ],
+        history: "1939年、マリー・キュリーの研究所で助手として働いていたフランスの女性科学者マルグリット・ペレーが、アクチニウムの崩壊生成物を丁寧に精製してついに発見！祖国フランスにちなんで『フランシウム』と名付けました。これが自然界から発見された最後の元素です。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 8, 1]。アルカリ金属のいちばん下（第7周期）で、外側のQ殻に電子が1個だけ。セシウムに匹敵する強烈な反応性を持つと予測されています。"
+      },
+      88: {
+        tagline: "キュリー夫妻が数トンの鉱石から取り出した、暗闇で青白く光る『光の元素』",
+        tags: ["metal", "flame"],
+        everyday: [
+          { icon: "🏥", title: "がん放射線治療の歴史を切り開いた", desc: "20世紀初頭に医療用放射線源として多くの命を救い、現在も前立腺がんの骨転移治療薬（塩化ラジウム223）として最新医療に活かされています。" },
+          { icon: "⌚", title: "かつての夜光時計と安全の学び", desc: "昔は暗い場所で光る時計の文字盤に使われましたが、放射線の危険性がわかってからは安全な蓄光塗料（ストロンチウムなど）に置き換わりました。" }
+        ],
+        history: "1898年、マリー＆ピエール・キュリー夫妻がポロニウムに続いて発見！なんと数トンものウラン鉱石の絞りかすを何年もかけて手作業で煮詰め、わずか0.1グラムの塩化ラジウムを取り出すことに成功しました。ラテン語の『光線（ラディウス）』が名前の由来です。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 8, 2]。カルシウムやバリウムの仲間のアルカリ土類金属で、外側のQ殻に2個の電子を持ちます。化学的な性質がカルシウムにそっくりなので、体に入ると骨（カルシウムの居場所）に集まりやすい特徴があります。",
+        flame: { name: "鮮やかな紅色（カーマインレッド）", color: "#e11d48", glow: "#fb7185", desc: "ストロンチウムにも似た、くっきり美しい紅色の炎色反応を示します！" }
+      },
+      89: {
+        tagline: "暗闇で青白く光る、アクチノイド15兄弟の先頭バッター",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏥", title: "次世代のがん標的アルファ線治療（アクチニウム225）", desc: "がん細胞だけを狙う抗体にアクチニウムをくっつけ、周囲を傷つけずに強力に治療する最新医療が世界中で注目されています。" },
+          { icon: "✨", title: "暗闇で青く輝く放射性金属", desc: "ラジウムの150倍もの強い放射能を持ち、周囲の空気を電離させて幻想的な青白い光を放ちます。" }
+        ],
+        history: "1899年、キュリー夫妻の共同研究者だったフランスのドビエルヌがウラン鉱石から発見。ギリシャ語の『光線（アクティス）』からアクチニウムと名付けられ、続く15元素『アクチノイド』の代表となりました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 9, 2]。ランタン（57番）のすぐ下に位置し、ここからO殻の5f軌道に電子が詰まっていくアクチノイド系列がスタートします。"
+      },
+      90: {
+        tagline: "北欧の雷神『トール』の名を持つ、キャンプのランタンや高級レンズを支えた金属",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🏮", title: "ガスランタンの白いマントル（発光網）", desc: "酸化トリウムは炎で熱すると太陽のようにまぶしい白い光を放つため、かつて世界中の街灯やキャンプ用ランタンで大活躍しました（現在は安全のためイットリウム等へ移行）。" },
+          { icon: "⚛️", title: "次世代の原子力エネルギー候補", desc: "地球の地殻にはウランの約3〜4倍ものトリウムが眠っており、より安全な『トリウム溶融塩炉』の研究が進められています。" }
+        ],
+        history: "1828年、スウェーデンのベルセリウスがノルウェーの黒い鉱物から発見し、北欧神話の力強い雷神『トール（Thor）』にちなんで名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 18, 10, 2]。アクチノイドですが5f軌道ではなく6d軌道に電子が2個入る珍しい配置を取り、融点は1750℃と高く、半減期は約140億年（宇宙の年齢と同じくらい！）もあります。"
+      },
+      91: {
+        tagline: "地球の海の昔の流れを読み解く、アクチニウムの『親』にあたる超希少金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🌊", title: "大昔の海流や気候変動を調べる地球時計", desc: "海底の泥に含まれるプロトアクチニウム231とトリウム230の比率を測ることで、氷河期に海流がどう流れていたかを解明できます。" },
+          { icon: "🔬", title: "自然界ではウラン鉱石1トンに数ミリグラム未満", desc: "ウランの崩壊途中で生まれる非常に珍しい放射性金属で、強い毒性と放射能のため専門施設でのみ研究されています。" }
+        ],
+        history: "1913年にファヤンスとゲーリングが短命な同位体を見つけ、1918年にオットー・ハーンとリーゼ・マイトナー（および独立にソディら）が長寿命の同位体を発見。崩壊するとアクチニウムになることから『アクチニウムの前（プロト）』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 20, 9, 2]。ここからいよいよO殻の5f軌道に電子が入り始めます。6d軌道と5f軌道のエネルギーがほぼ同じため、複雑な化学反応を見せる元素です。"
+      },
+      92: {
+        tagline: "ブラックライトで怪しく緑に光る『ウランガラス』と、巨大な核エネルギーの源",
+        tags: ["metal", "gem"],
+        everyday: [
+          { icon: "🍸", title: "緑色に光るアンティーク『ウランガラス』", desc: "19世紀〜20世紀初頭に人気を博した美しい黄緑色の工芸ガラス。紫外線を当てるとエメラルドのように鮮やかに光ります（微量のウランで安全に鑑賞できます）。" },
+          { icon: "⚡", title: "原子力発電の燃料＆地球内部の熱源", desc: "ウラン235は中性子を受けると核分裂して莫大なエネルギーを生み出します。また地球のマントルの中のウランが崩壊する熱が、大陸を動かす原動力のひとつです。" }
+        ],
+        history: "1789年、ドイツのクラプロートが閃ウラン鉱から発見し、8年前に発見されたばかりの惑星『天王星（ウラヌス）』にちなんで命名。1896年にベクレルがウラン鉱石から『放射線』を発見したことが、現代物理学の扉を開きました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 21, 9, 2]。自然界にまとまった量が存在する元素の中でいちばん重く、密度は19.1 g/cm³（金とほぼ同じ重さ！）。5fと6dの電子が多彩な結合を作り、鮮やかな黄色や緑色の化合物を生みます。"
+      },
+      93: {
+        tagline: "ウランの次＝海王星の名をもらった、人類初の『超ウラン元素』",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🛰️", title: "深宇宙探査機の電源（プルトニウム238）の材料", desc: "原子炉で生まれるネプツニウム237に中性子を当てると、ボイジャーや火星探査車を動かす熱源プルトニウム238を作れます。" },
+          { icon: "📡", title: "高エネルギー中性子の検出器", desc: "原子力研究の現場で、高速な中性子を正確に測るための精密な検出器に使われることがあります。" }
+        ],
+        history: "1940年、アメリカのバークレーでマクミランとアベルソンがウランに中性子を当てて合成に成功！天王星（ウラヌス）の外側の惑星『海王星（ネプチューン）』にちなんでネプツニウムと名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 22, 9, 2]。ウランより重い『超ウラン元素』の第1号です。水溶液の中では+3から+7まで5種類ものイオンになり、紫・緑・ピンクと色が変わる化学的に面白い性質を持ちます。"
+      },
+      94: {
+        tagline: "太陽の届かない深宇宙へ！探査機ボイジャーや火星探査車を動かし続ける熱源",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🚀", title: "火星探査車キュリオシティ＆ボイジャーの電池", desc: "太陽光パネルが使えない木星以遠の宇宙や砂嵐の火星で、プルトニウム238の崩壊熱を電気に変える『原子力電池』が何十年も探査機を動かし続けています。" },
+          { icon: "⚡", title: "原子力発電と平和利用・安全管理の課題", desc: "ウランと同様に莫大な核エネルギーを秘めており、発電利用と同時に核拡散防止や厳重な安全管理が世界中で続けられています。" }
+        ],
+        history: "1940年、アメリカのシーボーグらがウランに重陽子をぶつけて合成。海王星のさらに外側の天体『冥王星（プルート）』にちなんで名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 24, 8, 2]。金属プルトニウムは温度を上げるだけで結晶構造がなんと6回も変身し、ある温度帯では温めるほど縮むという、金属界トップクラスの不思議な物理的性質を持っています。"
+      },
+      95: {
+        tagline: "実は天井で見守っているかも？海外の家庭用『火災報知器』の小さな番人",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🚨", title: "イオン化式煙感知器（火災報知器）", desc: "ごくごく微量（100万分の1グラム以下）のアメリシウム241が空気をわずかにイオン化し、火事の煙が入って電流が変化した瞬間に警報を鳴らします。" },
+          { icon: "🏭", title: "ガラスや鉄板の厚み検査センサー", desc: "工場で板ガラスや金属シートを製造するとき、均一な厚さになっているかリアルタイムで測る装置にも使われます。" }
+        ],
+        history: "1944年、シーボーグらの研究チームが原子炉でプルトニウムに中性子を当てて合成。周期表のすぐ上にある『ユウロピウム（ヨーロッパ）』に対応させ、アメリカ大陸にちなんで『アメリシウム』と名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 25, 8, 2]。すぐ上のユウロピウム（63番）と同じく5f軌道にちょうど半分（7個）の電子が入ったきれいな配置で、化学的な振る舞いもユウロピウムに似ています。"
+      },
+      96: {
+        tagline: "火星の岩石の成分を解き明かした、キュリー夫妻の名を冠する元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔴", title: "火星探査車の岩石分析装置（APXS）", desc: "キュリオシティやマーズ・ローバーのロボットアーム先端に搭載され、キュリウム244のアルファ線を火星の石に当てて『昔、水があった証拠』を分析しました！" },
+          { icon: "🛰️", title: "さらに重い超重元素を生み出す出発点", desc: "キュリウムに他の原子核を高速でぶつけることで、116番リバモリウムなどの新しい超重元素が合成されました。" }
+        ],
+        history: "1944年、アメリシウムより実は少し先にシーボーグらがプルトニウムにアルファ粒子を当てて合成。放射能研究の偉大な開拓者、マリー＆ピエール・キュリー夫妻を称えて名付けられました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 25, 9, 2]。すぐ上のガドリニウム（64番）と同じく、5f軌道が7個（半分）で安定するため次の電子が6d軌道へ入るそっくりな構造をしています。"
+      },
+      97: {
+        tagline: "数多くの新元素を生んだ街の名を刻む、117番テネシン合成の母となった金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "⚛️", title: "超重元素『117番テネシン』の親", desc: "わずか22ミリグラムのバークリウム249を2年がかりで作ってカルシウムをぶつける国際実験により、117番元素テネシンが誕生しました！" },
+          { icon: "🔬", title: "純粋な基礎科学のための超希少金属", desc: "これまでに世界で合成された総量はわずか数グラムほどで、実用品ではなく原子核と化学の限界を調べる研究に使われます。" }
+        ],
+        history: "1949年、アメリカのトンプソン・ギオルソ・シーボーグらがアメリシウムにアルファ粒子を当てて発見。発見の地カリフォルニア大学『バークレー』にちなんで名付けられました（すぐ上のテルビウムが村の名だったことに合わせた命名です）。",
+        electronStory: "電子配置は [2, 8, 18, 32, 27, 8, 2]。すぐ上のテルビウムと同じ電子の並びで、+3価だけでなく+4価にもなれる柔軟な電子状態を持ちます。"
+      },
+      98: {
+        tagline: "ほんの1マイクログラムで毎分1億個の中性子を放つ！最強の中性子源",
+        tags: ["metal"],
+        everyday: [
+          { icon: "✈️", title: "飛行機の金属疲労を透視する中性子検査", desc: "X線では見えない金属内部の小さなひび割れや水分を、カリホルニウム252が放つ強力な中性子線で透視して空の安全を守っています。" },
+          { icon: "⚛️", title: "原子炉の起動スイッチ＆118番オガネソンの親", desc: "原子炉を最初に動かすときの火種（中性子源）になり、さらにカルシウムと衝突させて118番オガネソンを生み出しました！" }
+        ],
+        history: "1950年、バークリウム発見のわずか2か月後に同じバークレーのチームがキュリウムから合成し、カリフォルニア州とカリフォルニア大学にちなんで名付けました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 28, 8, 2]。電子は整然と並んでいますが、原子核がとても大きくて不安定なため、何も当てなくても自分で勝手に核分裂（自発核分裂）して大量の中性子を飛び出させる特別な性質を持ちます。"
+      },
+      99: {
+        tagline: "アインシュタインの名を冠し、南太平洋の実験の灰から偶然見つかった元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔬", title: "101番メンデレビウムを生んだ出発材料", desc: "1955年にごく微量の99番アインスタイニウムへアルファ粒子を照射することで、周期表の父の名がつく101番元素が誕生しました。" },
+          { icon: "✨", title: "暗闇で青く光りながら自ら熱くなる金属", desc: "半減期が短く強い放射線を出すため、金属の塊は自らの崩壊熱で温かくなり、結晶が自分の放射線で壊れていくほど激しい性質を持ちます。" }
+        ],
+        history: "1952年、南太平洋で行われた世界初の水爆実験のサンゴの破片を分析していた科学者たちが、ウランが瞬時に大量の中性子を吸い込んで生まれた未知の99番・100番元素を発見！偉大な物理学者アルベルト・アインシュタインにちなんで命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 29, 8, 2]。2021年になってようやく、わずか200ナノグラム未満の極微量サンプルを使って結合の長さなど詳しい化学的性質が初めて直接測定されました。"
+      },
+      100: {
+        tagline: "原子番号ついに3ケタ突入！原子炉で作れる『最後の重さ』の元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔬", title: "中性子を当てて作れる元素の限界点", desc: "原子炉の中で中性子を次々吸収させて重い元素を作る『中性子捕獲』でたどり着けるのは100番フェルミウムまで。これより先は加速器で原子核どうしを衝突させるしかありません！" },
+          { icon: "📚", title: "物理学の巨人エンリコ・フェルミの記念碑", desc: "実用品はなく、原子核物理学の理論と実験の両面で偉大な功績を残したノーベル賞学者フェルミの名を周期表に刻んでいます。" }
+        ],
+        history: "1952年、アインスタイニウムと同じ水爆実験の生成物からギオルソらによって発見。当時は軍事機密だったため、1955年になってから世界に公表されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 30, 8, 2]。一度に目に見える量を集めた人類はおらず、数百万個ほどの原子を1粒ずつ調べる超高感度な実験で電子の性質が確かめられています。"
+      },
+      101: {
+        tagline: "周期表を生んだ父『メンデレーエフ』に捧げられた、17個の原子から見つかった元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "📋", title: "周期表の父への感謝の証", desc: "未知の元素を次々と予言して現代化学の地図（周期表）を作ったロシアの科学者ドミトリ・メンデレーエフの名が、101番に永遠に刻まれています。" },
+          { icon: "🔬", title: "原子1個ずつ調べる『一原子化学』の始まり", desc: "この元素からは目に見える量を作れないため、たった数個〜十数個の原子から化学的性質を突き止める超絶テクニックが発達しました。" }
+        ],
+        history: "1955年、バークレーのギオルソやシーボーグらがアインスタイニウムにアルファ粒子を当て、なんとたった『17個の原子』を検出して発見！冷戦のさなか、アメリカのチームがロシアの偉大な科学者の名を提案した胸アツなエピソードが残っています。",
+        electronStory: "電子配置は [2, 8, 18, 32, 31, 8, 2]。5f軌道があと1個で満タンになるため、アクチノイド後半の特徴として+3価だけでなく+2価のイオンもかなり安定に作れることが確かめられています。"
+      },
+      102: {
+        tagline: "ノーベル賞の創設者『アルフレッド・ノーベル』の名を持つ元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏅", title: "ノーベル賞の創設者を称える元素", desc: "ダイナマイトを発明し、全財産を人類に貢献した科学者や平和活動家のための『ノーベル賞』に託したスウェーデンの発明家ノーベルにちなんでいます。" },
+          { icon: "🔬", title: "レーザーで電子の動きを精密測定", desc: "2016年、ドイツの研究チームがノーベリウム原子にレーザー光を当てて、100番を超える元素として初めて詳しい原子スペクトルを測定することに成功しました。" }
+        ],
+        history: "1957年にスウェーデンのノーベル物理学研究所が発見を報告して命名しましたが再現できず、のちにソ連のドゥブナ研究所（1966年）とアメリカのバークレー研究所の激しい研究競争を経て確実な合成が確認されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 8, 2]。ここでO殻の5f軌道が14個（合計32個）でついに満タン！そのため他のアクチノイドと違い、水溶液の中では+3価よりも+2価（5f満タンのまま）の方がずっと安定になります。"
+      },
+      103: {
+        tagline: "アクチノイド15兄弟のゴール！加速器を発明したローレンスの名を持つ元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🌀", title: "粒子加速器（サイクロトロン）の発明者を記念", desc: "超重元素を生み出すのに欠かせない粒子加速器サイクロトロンを発明したアメリカの物理学者アーネスト・ローレンスにちなんでいます。" },
+          { icon: "🇯🇵", title: "日本の研究チームがイオン化エネルギーを初測定！", desc: "2015年、日本の日本原子力研究開発機構（JAEA）を中心とした国際チームが、ローレンシウムから電子を1個はがすエネルギーを世界で初めて測定しました。" }
+        ],
+        history: "1961年、バークレーのギオルソらがカリホルニウムにホウ素イオンを衝突させて合成に成功（ソ連ドゥブナでも独立研究）。アクチノイド系列の最後を飾る元素です。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 8, 3]。ここが相対性理論の驚くべき見せ場！すぐ上のルテチウム（71番）なら [..., 9, 2]（d軌道）になるところ、超重い原子核のせいで7p軌道のエネルギーが下がり、最後の電子が最外殻のQ殻に入りやすいと予測・検証されています！"
+      },
+      104: {
+        tagline: "原子核の発見者ラザフォードの名を刻む、第7周期・超重元素のトップバッター",
+        tags: ["metal"],
+        everyday: [
+          { icon: "⚛️", title: "原子の真ん中に『原子核』があることを見つけた偉人", desc: "金箔にアルファ線を当てる有名な実験で原子核を発見した『原子核物理学の父』アーネスト・ラザフォードにちなんで名付けられました。" },
+          { icon: "🔬", title: "周期表のルールが104番でも通じるか検証", desc: "1個ずつ合成した原子を素早く化学実験にかけ、すぐ上のハフニウム（72番）と本当に同じ4族の仲間なのかを確かめる最先端研究が行われています。" }
+        ],
+        history: "1964年にソ連のドゥブナ研究所、1969年にアメリカのバークレー研究所がそれぞれ合成を報告。米ソ間で『クルチャトビウム』か『ラザホージウム』か激しい命名論争が30年近く続き、1997年に国際会議でラザホージウムに決着しました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 10, 2]。アクチノイドを抜けて再び周期表の本体（4族）へ戻ってきました。実験の結果、やはりハフニウムと同じように+4価の化合物を作ることが確かめられています。"
+      },
+      105: {
+        tagline: "多くの超重元素を生んだロシアの科学都市『ドゥブナ』の名を冠する元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏛️", title: "超重元素研究の聖地『ドゥブナ合同原子核研究所』", desc: "モスクワ郊外の科学都市ドゥブナにある研究所は、100番台の新元素を数多く生み出してきた世界屈指の拠点です。" },
+          { icon: "🧪", title: "5族（ニオブ・タンタル）の重たい弟", desc: "最も長い同位体は半減期が約28時間もあるため、超重元素の中では比較的じっくり化学的性質を調べることができます。" }
+        ],
+        history: "1968〜1970年にソ連のドゥブナ研究所とアメリカのバークレー研究所がほぼ同時期に合成を報告。長い議論の末、1997年にドゥブナ研究所の功績を称えて『ドブニウム』と命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 11, 2]。5族のタンタル（73番）の下にありますが、相対性理論の効果でタンタルよりもむしろ上のニオブ（41番）に近い性質を示す部分があることが実験でわかり、化学者を驚かせました。"
+      },
+      106: {
+        tagline: "存命中に初めて元素名になった『超ウラン元素の父』シーボーグの元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "👨‍🔬", title: "10個もの新元素発見に関わった伝説の化学者", desc: "プルトニウムをはじめ数々の元素を発見し、周期表の下にアクチノイドを並べる現在の形を提唱したグレン・シーボーグに捧げられました。" },
+          { icon: "🇯🇵", title: "日本（理研）が世界初の有機金属化合物を合成！", desc: "2014年、理化学研究所などの国際チームがシーボーギウムに一酸化炭素を6個くっつけた分子（Sg(CO)₆）の合成に成功し、世界を驚かせました。" }
+        ],
+        history: "1974年、バークレーのチームとドゥブナのチームがほぼ同時に合成。存命中の人物名を元素につけるのは異例でしたが、シーボーグ博士の偉大な功績を認めて1997年に正式決定し、博士も生前に自分の元素を見届けることができました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 12, 2]。タングステン（74番）のすぐ下にあり、実際にタングステンとそっくりな酸化物やカルボニル化合物を作ることが実験で証明されています。"
+      },
+      107: {
+        tagline: "このアプリの『電子配置図（ボーア模型）』を生んだ偉人ニールス・ボーアの元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "⚛️", title: "電子が軌道（殻）を回るモデルを提唱！", desc: "この図鑑でも描いている『K殻・L殻・M殻…』という電子配置の考え方の基礎を築いたデンマークの天才物理学者ニールス・ボーアにちなんでいます。" },
+          { icon: "🧪", title: "レニウムそっくりの揮発性化合物を確認", desc: "半減期約1分の同位体を使った実験で、すぐ上のレニウム（75番）と同じ7族の性質を持つことが確かめられました。" }
+        ],
+        history: "1981年、ドイツのダルムシュタットにある重イオン研究所（GSI）でビスマスにクロムイオンをぶつけて確実に合成され、1997年に『ボーリウム』と正式命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 13, 2]。マンガン・テクネチウム・レニウムと並ぶ7族の一員です。ボーアが切り開いた量子力学は、まさにこうした超重元素の電子の動きを予測する鍵になっています。"
+      },
+      108: {
+        tagline: "ドイツのヘッセン州にちなんで名付けられた、8族（鉄・オスミウム）の超重金属",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🗺️", title: "新元素発見の名門・ドイツGSI研究所の地元名", desc: "107番〜112番まで6つもの新元素を連続発見したGSI研究所があるドイツ『ヘッセン州』のラテン語名（ハッシア）から名付けられました。" },
+          { icon: "💨", title: "オスミウムそっくりの『気体になりやすい酸化物』", desc: "2001年の実験で、酸素と結びつくとすぐ上のオスミウムと同じように蒸発しやすい四酸化ハッシウム（HsO₄）になることが見事に確認されました！" }
+        ],
+        history: "1984年、ドイツGSIのミュンツェンベルクらのチームが鉛に鉄イオンを高速衝突させてわずか3個の原子を検出し、発見を成し遂げました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 14, 2]。もし目に見える塊が作れたら、オスミウム（密度22.6）をさらに上回る密度40 g/cm³前後――なんと鉄の5倍もの重さになると理論計算されています！"
+      },
+      109: {
+        tagline: "核分裂を解き明かした偉大な女性物理学者リーゼ・マイトナーの元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "👩‍🔬", title: "歴史に名を刻んだ女性科学者への敬意", desc: "ウランの『核分裂』の仕組みを理論的に解明しながらノーベル賞を逃したオーストリアの女性物理学者リーゼ・マイトナーの功績を永遠に称えています。" },
+          { icon: "⏱️", title: "寿命は数秒以下の超短命元素", desc: "最も長い同位体でも半減期は約4秒と極めて短く、まだ化学的性質の直接実験には至っていないフロンティア元素です。" }
+        ],
+        history: "1982年、ドイツGSIの研究チームがビスマスに鉄イオンを衝突させて、なんと『たった1個の原子』の崩壊連鎖を捉えて発見！1997年に全会一致でマイトネリウムと命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 15, 2]。9族のイリジウム（77番）のすぐ下にあるため、イリジウムと同じように極めてサビにくく硬い貴金属になるだろうと予測されています。"
+      },
+      110: {
+        tagline: "ドイツの科学の街『ダルムシュタット』が誇る、プラチナの重たい弟",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏙️", title: "新元素のふるさと・ダルムシュタット市", desc: "数々の超重元素を生み出したGSI研究所の所在地であるドイツの都市名にちなんでいます。市内の科学館もこの元素にちなんで『ダルムシュタチウム』と名付けられています！" },
+          { icon: "⏱️", title: "1秒未満〜約14秒で姿を変える超重原子", desc: "加速器の中でほんの一瞬だけ誕生し、アルファ崩壊を繰り返しながら軽い元素へと姿を変えていきます。" }
+        ],
+        history: "1994年、ドイツGSIのホフマンらのチームが鉛にニッケルイオンをぶつけて合成に成功。2003年に国際純正・応用化学連合（IUPAC）によって正式命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 17, 1]。10族の白金（プラチナ：78番）のすぐ下に位置し、同じような電子配置から超高密度の銀白色貴金属になると予測されています。"
+      },
+      111: {
+        tagline: "レントゲン（X線）の発見からちょうど100年目に生まれた『光の透視』の元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🩻", title: "第1回ノーベル物理学賞・レントゲン博士を記念", desc: "1895年にX線を発見して医学を激変させたヴィルヘルム・レントゲンにちなんで名付けられました。" },
+          { icon: "🥇", title: "銅・銀・金に続く11族の『4番目のコイン金属』", desc: "すぐ上が黄金色の『金（Au）』なので、レントゲニウムがどんな色に見えるか理論物理学者の間で熱い計算が行われています（銀白色と予想されています）。" }
+        ],
+        history: "1994年12月、ドイツGSIのホフマンらがビスマスにニッケルイオンを衝突させて3個の原子を合成。ちょうどX線発見100周年の前夜という劇的なタイミングでした！",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 1]。銅・銀・金の弟ですが、陽子が111個もある強烈な相対性理論効果によって、金以上に複雑な化学結合を作ると予測されています。"
+      },
+      112: {
+        tagline: "地動説を唱えたコペルニクスの名を冠する、常温で『気体』かもしれない金属!?",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🌍", title: "『地球が太陽の周りを回る』コペルニクスに捧ぐ", desc: "宇宙の見方を180度変えたポーランドの天文学者ニコラウス・コペルニクスの誕生日（2月19日）に合わせて2010年に正式命名されました。" },
+          { icon: "💨", title: "金属なのに気体かも？常識を覆す実験結果", desc: "すぐ上の水銀（80番）が常温で液体なのに対し、コペルニシウムはさらに揮発性が高く、常温で貴ガスのような『気体』に近い振る舞いをすることが金表面への吸着実験で示唆されました！" }
+        ],
+        history: "1996年、ドイツGSIのホフマンらが鉛に亜鉛イオンを衝突させて発見。当初の元素記号案『Cp』は他と紛らわしいため『Cn』に決定されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 2]。陽子112個の強力な引力で最外殻の7s電子2個が原子核へギュッと引きつけられ、隣の原子と結びつきたがらないため、金属族なのに貴ガスに近いほど反応しにくい不思議な性質になります。"
+      },
+      113: {
+        tagline: "日本の理化学研究所が発見！アジアで初めて周期表に刻まれた『ニホニウム』",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🇯🇵", title: "日本の名前『日本（Nihon）』が世界の教科書に！", desc: "欧米以外の国が新元素の発見権と命名権を獲得したのは人類史上初の快挙！世界中の子どもたちが『Nh＝ニホニウム』と学んでいます。" },
+          { icon: "🎯", title: "100兆回に1回の奇跡を9年かけて3回キャッチ！", desc: "ビスマスに亜鉛イオンを光速の約10%でぶつけ続け、2004・2005・2012年の計3回、確実な崩壊連鎖を捉えてついに発見が認められました。" }
+        ],
+        history: "日本の理化学研究所・森田浩介教授（当時）らの研究チームが2004年に最初の1個を合成し、2012年に3例目の決定的な証拠を観測。2015年末に発見が認定され、2016年11月に『ニホニウム（Nh）』と正式命名されました！",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 3]。13族（ホウ素・アルミ・タリウム）のいちばん下ですが、相対性理論の影響で最外殻の3個のうち1個だけを出す+1価が安定で、さらにハロゲン（17族）に少し似た性質も帯びると予測されています。"
+      },
+      114: {
+        tagline: "安定の島への入り口！ロシアの核物理学の父フレロフの名を持つ元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏝️", title: "伝説の『安定の島』のすぐそば", desc: "陽子114個は原子核が特別に長生きしやすい『魔法数』の候補と長年考えられており、寿命の長い超重元素を探す重要な手がかりになっています。" },
+          { icon: "🔬", title: "鉛の弟なのに貴ガスみたいに飛びやすい？", desc: "鉛（82番）のすぐ下の14族ですが、金の上にくっつきにくい実験結果も出ており、金属と貴ガスの中間のようなミステリアスな性質が研究されています。" }
+        ],
+        history: "1998〜1999年、ロシアのドゥブナ研究所とアメリカのローレンス・リバモア国立研究所の共同チームがプルトニウムにカルシウムを衝突させて合成。ドゥブナ研究所の創設者ゲオルギー・フレロフにちなんで2012年に命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 4]。重い原子核のせいで7p軌道が大きく2つに分裂し、その下側（7p1/2）が電子2個で満タンになるため、見かけ上『閉じた殻』のような超安定・低反応性を示すと考えられています。"
+      },
+      115: {
+        tagline: "モスクワ州の名を刻み、崩壊すると『ニホニウム』を生む超重元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏛️", title: "ロシアの首都を囲む『モスクワ州』が由来", desc: "ドゥブナ研究所が位置するモスクワ州の古代名『モスコビア』にちなんで名付けられました。" },
+          { icon: "🔗", title: "アルファ崩壊の1歩目で113番ニホニウムに変身", desc: "アメリシウムにカルシウムをぶつけて115番が生まれると、ほんの一瞬（約0.6秒）でアルファ粒子を放出して113番ニホニウムへ変わります。" }
+        ],
+        history: "2003年にロシア・ドゥブナ研究所とアメリカ・リバモア研究所の共同チームが初合成し、2013年にスウェーデンのルンド大学やドイツGSIでも存在が確認され、2016年にニホニウムと同時に正式命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 5]。15族（窒素・リン・ビスマス）のいちばん下ですが、114番フレロビウムの安定した殻の外に電子が1個だけ飛び出した形になるため、意外にもアルカリ金属に少し似た+1価イオンを作りやすいと予測されています。"
+      },
+      116: {
+        tagline: "カリフォルニアの研究所の街『リバモア』の名を冠する16族の超重元素",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🔬", title: "米露の国際協力が生んだ成果", desc: "ロシアのドゥブナ研究所とタッグを組んで114〜118番の合成に挑み続けた、アメリカ・カリフォルニア州の『ローレンス・リバモア国立研究所』にちなんでいます。" },
+          { icon: "⚡", title: "寿命はわずか100分の数秒の世界", desc: "キュリウムにカルシウムをぶつけて誕生したあと、まばたきするよりずっと短い0.06秒ほどで114番フレロビウムへ崩壊します。" }
+        ],
+        history: "2000年にロシア・ドゥブナとアメリカ・リバモアの共同研究チームが合成に成功。2012年にフレロビウムと同時に『リバモリウム（Lv）』として周期表へ正式登録されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 6]。酸素・硫黄・ポロニウムと同じ16族ですが、非金属の酸素とは正反対に金属的な性質が強く、+2価が最も安定になると理論計算されています。"
+      },
+      117: {
+        tagline: "周期表で『いちばん最後に』発見された、ハロゲン族の超ヘビー級ファイター",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🎸", title: "アメリカ・テネシー州の研究機関への感謝", desc: "合成の材料となる超希少な『バークリウム249』を製造したテネシー州のオークリッジ国立研究所やバンダービルト大学などの功績を称えて命名されました。" },
+          { icon: "🏁", title: "周期表の第7周期を埋めたラストピース！", desc: "118番オガネソンより実は発見が後（2010年）だったため、テネシンの誕生によって第7周期の空き部屋がついにすべて埋まりました！" }
+        ],
+        history: "2010年、ロシアのドゥブナ研究所とアメリカの共同チームが、テネシー州で作られたバークリウムにカルシウムを150日間ぶつけ続けて6個の原子を検出！2016年にニホニウム・モスコビウム・オガネソンとともに正式命名されました。",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 7]。フッ素・塩素と同じ17族（ハロゲン）ですが、超重い原子核の相対性理論効果により電子を奪う力が弱まり、ハロゲンなのに『金属または半金属』のような性質を持つと予測されています。"
+      },
+      118: {
+        tagline: "現在の周期表の最終ゴール！貴ガスなのに『常温で固体』かもしれない118番",
+        tags: ["metal"],
+        everyday: [
+          { icon: "🏆", title: "周期表のゴールを飾る『存命科学者2人目』の名", desc: "超重元素合成の第一人者であるロシアの物理学者ユーリイ・オガネシアン教授（1933年生まれ）の偉業を称え、シーボーグに続き史上2人目の存命中の命名となりました！" },
+          { icon: "🧊", title: "貴ガス族なのに『気体じゃない』かも!?", desc: "ヘリウムやネオンと同じ18族（貴ガス）のいちばん下ですが、原子が巨大で電子雲がぼわっと広がり分子どうしが引き合うため、もし集められたら『常温で固体』になると予測されています！" }
+        ],
+        history: "2002〜2006年、ロシアのドゥブナ研究所とアメリカのローレンス・リバモア国立研究所がカリホルニウムにカルシウムを衝突させて合成に成功。2016年11月に正式命名され、人類の周期表はついに118番まで完全に埋まりました。現在はさらにその先の『第8周期（119番・120番）』を目指す挑戦が日本（理研）や世界で続いています！",
+        electronStory: "電子配置は [2, 8, 18, 32, 32, 18, 8]。最外殻のQ殻に8個の電子がそろっていますが、陽子118個という極限の世界では電子の殻の境界さえあいまいになり（電子の『フェルミ気体』化）、貴ガスでありながら他の元素と反応するかもしれない究極のフロンティア元素です！"
+      }
+    };
+
+    /* =====================================================================
+     * 5. すいへーりーべー 語呂合わせデータ (1〜36番)
+     * ===================================================================== */
+    const SONG_PHRASES = {
+      "1-20": [
+        { text: "すいへー", speech: "すいへー", nums: [1, 2], hint: "H(水素)・He(ヘリウム)", notes: [261.6, 293.7] },
+        { text: "りーべー", speech: "りーべー", nums: [3, 4], hint: "Li(リチウム)・Be(ベリリウム)", notes: [329.6, 349.2] },
+        { text: "ぼくのふね", speech: "ぼくのふね", nums: [5, 6, 7, 8, 9, 10], hint: "B・C・N・O・F・Ne", notes: [392.0, 392.0, 440.0, 392.0, 349.2, 329.6] },
+        { text: "ななまがり", speech: "ななまがり", nums: [11, 12, 13], hint: "Na(ナトリウム)・Mg(マグネシウム)・Al(アルミニウム)", notes: [261.6, 293.7, 329.6] },
+        { text: "しっぷす", speech: "しっぷす", nums: [14, 15, 16], hint: "Si(ケイ素)・P(リン)・S(硫黄)", notes: [349.2, 392.0, 440.0] },
+        { text: "くらーくか！", speech: "くらーくか", nums: [17, 18, 19, 20], hint: "Cl(塩素)・Ar(アルゴン)・K(カリウム)・Ca(カルシウム)", notes: [329.6, 349.2, 392.0, 523.3] }
+      ],
+      "21-36": [
+        { text: "スコッチ", speech: "すこっち", nums: [21, 22], hint: "Sc(スカンジウム)・Ti(チタン)", notes: [261.6, 293.7] },
+        { text: "ばくろマン", speech: "ばくろまん", nums: [23, 24, 25], hint: "V(バナジウム)・Cr(クロム)・Mn(マンガン)", notes: [329.6, 349.2, 392.0] },
+        { text: "てつこに", speech: "てつこに", nums: [26, 27, 28], hint: "Fe(鉄)・Co(コバルト)・Ni(ニッケル)", notes: [440.0, 392.0, 329.6] },
+        { text: "どうあえん", speech: "どうあえん", nums: [29, 30], hint: "Cu(銅)・Zn(亜鉛)", notes: [293.7, 329.6] },
+        { text: "がーげるあ", speech: "がーげるあ", nums: [31, 32, 33], hint: "Ga(ガリウム)・Ge(ゲルマニウム)・As(ヒ素)", notes: [349.2, 392.0, 440.0] },
+        { text: "せぶくる！", speech: "せぶくる", nums: [34, 35, 36], hint: "Se(セレン)・Br(臭素)・Kr(クリプトン)", notes: [392.0, 440.0, 523.3] }
+      ]
+    };
+
+    /* =====================================================================
+     * 6. アプリケーション状態管理
+     * ===================================================================== */
+    const state = {
+      mode: "full",          // full | basic | list | song | quiz | guide
+      filter: "all",         // all | detailed | gem | metal | life | flame
+      search: "",
+      selectedNum: 6,        // 初期選択: 炭素 (Carbon)
+      detailTab: "everyday", // everyday | diagrams | trivia | ai
+      orbitRunning: true,
+      orbitAngle: 0,
+      bohrRafId: null,
+      singingNums: [],
+      isSinging: false,
+      songRunId: 0,
+      aiSongAbortController: null,
+      aiRequestId: 0,
+      aiAbortController: null,
+      songTimerIds: [],
+      activeAudioEl: null,
+      flameRunning: false,
+      flameParticles: [],
+      quiz: {
+        range: "20",
+        questions: [],
+        index: 0,
+        score: 0,
+        answered: false,
+        best: 0
+      }
+    };
+
+    try {
+      const savedBest = localStorage.getItem("pt_explorer_quiz_best");
+      if (savedBest) state.quiz.best = parseInt(savedBest, 10) || 0;
+    } catch (e) {}
+
+    /* =====================================================================
+     * 7. ユーティリティ（トースト通知・ヘルパー）
+     * ===================================================================== */
+    function showToast(msg, type) {
+      const stack = document.getElementById("toastStack");
+      const el = document.createElement("div");
+      el.className = "toast" + (type ? " " + type : "");
+      el.textContent = msg;
+      stack.appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = "0";
+        el.style.transition = "opacity 0.3s ease";
+        setTimeout(function() {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, 320);
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function getPhrasesForRange(rangeKey) {
+      if (rangeKey === "1-36") {
+        return SONG_PHRASES["1-20"].concat(SONG_PHRASES["21-36"]);
+      }
+      return SONG_PHRASES[rangeKey] || SONG_PHRASES["1-20"];
+    }
+
+    function matchesFilter(el) {
+      const d = ELEMENT_DETAILS[el.num];
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        const hit = el.jp.toLowerCase().indexOf(q) !== -1 ||
+                    el.en.toLowerCase().indexOf(q) !== -1 ||
+                    el.sym.toLowerCase().indexOf(q) !== -1 ||
+                    String(el.num) === q;
+        if (!hit) return false;
+      }
+      if (state.filter === "all") return true;
+      if (state.filter === "detailed") return !!d;
+      return !!(d && d.tags && d.tags.indexOf(state.filter) !== -1);
+    }
+
+    /* =====================================================================
+     * 8. 周期表・リスト・凡例レンダリング
+     * ===================================================================== */
+    function renderLegend() {
+      const bar = document.getElementById("legendBar");
+      let html = "";
+      Object.keys(CATEGORIES).forEach(function(key) {
+        const c = CATEGORIES[key];
+        html += '<span class="legend-item"><span class="legend-dot" style="background:' + c.color + ';"></span>' + c.label + '</span>';
+      });
+      html += '<span class="legend-item" style="margin-left:auto;">✨ 全118元素・解説＆電子図収録済み</span>';
+      bar.innerHTML = html;
+    }
+
+    function renderPeriodicTable() {
+      const grid = document.getElementById("ptGrid");
+      const isBasic = state.mode === "basic";
+      grid.className = isBasic ? "pt-grid basic-mode" : "pt-grid";
+      grid.innerHTML = "";
+
+      const listToShow = isBasic ? ELEMENTS.slice(0, 20) : ELEMENTS;
+      const hasActiveFilter = (state.mode !== "song") && ((state.filter !== "all") || (state.search !== ""));
+
+      if (!isBasic) {
+        // ランタノイド・アクチノイド案内プレースホルダー
+        const ph1 = document.createElement("div");
+        ph1.className = "pt-placeholder";
+        ph1.style.gridColumn = "3";
+        ph1.style.gridRow = "6";
+        ph1.textContent = "57-71";
+        grid.appendChild(ph1);
+
+        const ph2 = document.createElement("div");
+        ph2.className = "pt-placeholder";
+        ph2.style.gridColumn = "3";
+        ph2.style.gridRow = "7";
+        ph2.textContent = "89-103";
+        grid.appendChild(ph2);
+      }
+
+      listToShow.forEach(function(el) {
+        const catInfo = CATEGORIES[el.cat] || CATEGORIES.nonmetal;
+        const matched = matchesFilter(el);
+        const isSelected = el.num === state.selectedNum;
+        const isSinging = state.singingNums.indexOf(el.num) !== -1;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        let cls = "pt-tile";
+        if (isSinging) {
+          cls += " is-singing";
+        } else if (isSelected) {
+          cls += " is-selected";
+        } else if (hasActiveFilter && matched) {
+          cls += " is-lit";
+        } else if (!hasActiveFilter && (el.num === 1 || el.num === 6 || el.num === 10 || el.num === 18 || el.num === 19)) {
+          // 初期状態で画像のような華やかなアクセント光
+          cls += " is-lit";
+        } else if (hasActiveFilter && !matched) {
+          cls += " is-dimmed";
+        }
+
+        btn.className = cls;
+        btn.style.setProperty("--tile-color", catInfo.color);
+        btn.style.setProperty("--tile-glow", catInfo.glow);
+
+        if (isBasic) {
+          // 1〜20番を8列（1,2,13-18族）に美しく配置
+          const basicCol = el.col <= 2 ? el.col : (el.col - 10);
+          btn.style.gridColumn = String(basicCol);
+          btn.style.gridRow = String(el.row);
+        } else {
+          btn.style.gridColumn = String(el.col);
+          btn.style.gridRow = String(el.row);
+        }
+
+        btn.setAttribute("aria-label", el.num + "番 " + el.jp);
+        btn.innerHTML =
+          '<span class="el-num">' + el.num + '</span>' +
+          '<span class="el-sym">' + el.sym + '</span>' +
+          '<span class="el-jp">' + el.jp + '</span>';
+
+        btn.addEventListener("click", function() {
+          selectElement(el.num);
+        });
+
+        grid.appendChild(btn);
+      });
+
+      if (state.mode === "song" && state.singingNums.length > 0) {
+        const activeTile = grid.querySelector(".pt-tile.is-singing");
+        if (activeTile && activeTile.scrollIntoView) {
+          activeTile.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        }
+      }
+    }
+
+    function renderListView() {
+      const container = document.getElementById("listGrid");
+      container.innerHTML = "";
+      const filtered = ELEMENTS.filter(matchesFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; padding:16px;">該当する元素が見つかりませんでした。</p>';
+        return;
+      }
+
+      filtered.forEach(function(el) {
+        const catInfo = CATEGORIES[el.cat] || CATEGORIES.nonmetal;
+        const card = document.createElement("div");
+        card.className = "list-item" + (el.num === state.selectedNum ? " is-selected" : "");
+        card.innerHTML =
+          '<div class="list-badge" style="background:' + catInfo.color + ';">' +
+            '<span style="font-size:9px; opacity:0.85;">' + el.num + '</span>' +
+            '<span style="font-size:15px;">' + el.sym + '</span>' +
+          '</div>' +
+          '<div style="min-width:0;">' +
+            '<div style="font-weight:800; font-size:14px;">' + escapeHtml(el.jp) + '</div>' +
+            '<div style="font-size:11px; color:#64748b;">' + escapeHtml(el.en) + ' ・ ' + catInfo.label + '</div>' +
+          '</div>';
+        card.addEventListener("click", function() {
+          selectElement(el.num);
+        });
+        container.appendChild(card);
+      });
+    }
+
+    /* =====================================================================
+     * 9. 元素選択＆詳細パネル更新
+     * ===================================================================== */
+    function selectElement(num) {
+      if (!ELEMENT_MAP[num]) return;
+      state.selectedNum = num;
+      state.aiRequestId++;
+      if (state.aiAbortController) {
+        state.aiAbortController.abort();
+        state.aiAbortController = null;
+      }
+      stopFlameAnim();
+
+      const el = ELEMENT_MAP[num];
+      const d = ELEMENT_DETAILS[num];
+      const catInfo = CATEGORIES[el.cat] || CATEGORIES.nonmetal;
+
+      // クイックバナー更新
+      document.getElementById("qNum").textContent = el.num;
+      document.getElementById("qSym").textContent = el.sym;
+      document.getElementById("qName").textContent = el.jp;
+      document.getElementById("qEn").textContent = el.en;
+      document.getElementById("qCat").textContent = catInfo.label;
+      document.getElementById("qTagline").textContent = d
+        ? d.tagline
+        : "電子殻 " + el.shells.join("-") + " を持つ" + catInfo.label + "元素（詳細ストーリー追加予定）";
+
+      // 詳細ヘッダー更新
+      const periodText = el.row <= 7 ? ("第" + el.row + "周期 " + el.col + "族") : (el.row === 9 ? "第6周期 3族（ランタノイド）" : "第7周期 3族（アクチノイド）");
+      document.getElementById("dMetaLine").textContent =
+        "原子番号 " + el.num + " ・ " + periodText + " ・ 原子量 " + el.mass + " ・ " + catInfo.label;
+      document.getElementById("dTitle").textContent = el.jp + " (" + el.sym + ") のひみつラボ";
+
+      // タブ1: 身近なもの
+      const evBox = document.getElementById("everydayContainer");
+      if (d && d.everyday && d.everyday.length > 0) {
+        let evHtml = "";
+        d.everyday.forEach(function(item) {
+          evHtml +=
+            '<div class="everyday-card">' +
+              '<div class="everyday-icon">' + item.icon + '</div>' +
+              '<div>' +
+                '<div class="everyday-title">' + escapeHtml(item.title) + '</div>' +
+                '<p class="everyday-desc">' + escapeHtml(item.desc) + '</p>' +
+              '</div>' +
+            '</div>';
+        });
+        evBox.innerHTML = evHtml;
+      } else {
+        evBox.innerHTML =
+          '<div class="everyday-card">' +
+            '<div class="everyday-icon">📦</div>' +
+            '<div>' +
+              '<div class="everyday-title">詳細データ準備中</div>' +
+              '<p class="everyday-desc">この元素の基本データ（電子配置図・電子式）を表示中です。先生環境なら「AI博士に聞く」タブで今すぐ調べることもできます。</p>' +
+            '</div>' +
+          '</div>';
+      }
+
+      // タブ1右側: 炎色反応シミュレーター
+      const flameInner = document.getElementById("flameInner");
+      if (d && d.flame) {
+        flameInner.innerHTML =
+          '<div class="flame-box">' +
+            '<div style="font-size:13px; font-weight:800; color:' + d.flame.color + ';">✨ 炎色反応あり：' + escapeHtml(d.flame.name) + '</div>' +
+            '<canvas id="flameCanvas" class="flame-canvas" width="340" height="170"></canvas>' +
+            '<p style="margin:0; font-size:12px; color:#cbd5e1; text-align:center;">' + escapeHtml(d.flame.desc) + '</p>' +
+            '<button id="btnIgniteFlame" class="play-btn" type="button" style="background:' + d.flame.color + ';">🔥 炎に入れてみる！</button>' +
+          '</div>';
+        document.getElementById("btnIgniteFlame").addEventListener("click", function() {
+          startFlameAnim(d.flame.color, d.flame.glow);
+        });
+        drawIdleBurner();
+      } else {
+        const valenceText = el.num === 46
+          ? "0個（O殻が空でN殻4d軌道が満タンになる全元素唯一の例外）"
+          : (el.shells[el.shells.length - 1] + "個");
+        flameInner.innerHTML =
+          '<div class="everyday-card">' +
+            '<div class="everyday-icon">⚛️</div>' +
+            '<div>' +
+              '<div class="everyday-title">基本スペック・電子メモ</div>' +
+              '<p class="everyday-desc">電子の総数：' + el.num + '個<br>電子殻の並び：' + el.shells.join(" - ") + '<br>いちばん外側の電子：' + valenceText + '<br><br>※この元素には定番の炎色反応デモは設定されていません。上部の「🎆 花火（炎色反応）」フィルターから、炎色反応が見られる14元素（Li・B・Na・K・Ca・Cu・Sr・Baなど）をまとめて探せます！</p>' +
+            '</div>' +
+          '</div>';
+      }
+
+      // タブ2: ボーア模型 & ルイス構造式
+      renderShellPills(el);
+      renderLewisStructure(el);
+      if (state.detailTab === "diagrams") {
+        renderBohrOnce();
+      }
+
+      // タブ3: 歴史＆電子配置うんちく
+      const histEl = document.getElementById("historyText");
+      const elecEl = document.getElementById("electronStoryText");
+      if (d) {
+        histEl.textContent = d.history;
+        elecEl.textContent = d.electronStory;
+      } else {
+        histEl.textContent =
+          el.jp + " (" + el.sym + ") の詳細な発見ストーリーは今後のデータ追加でここに表示されます。\n\nヒント：上部の「📖 電子と発見のひみつ」タブでは、昔の科学者たちが目に見えない元素をどうやって突き止めたか（電気分解・分光法・周期表の予言など）の全体ストーリーを読めます。";
+        elecEl.textContent = buildAutoElectronGuide(el);
+      }
+
+      // タブ4: AI回答エリアをリセット
+      document.getElementById("aiAnswerBox").textContent =
+        el.jp + " (" + el.sym + ") について知りたいボタンを押すか、下の入力欄から質問してください。";
+
+      // 再描画
+      if (state.mode === "list") {
+        renderListView();
+      } else if (state.mode === "full" || state.mode === "basic" || state.mode === "song") {
+        renderPeriodicTable();
+      }
+    }
+
+    function buildAutoElectronGuide(el) {
+      const parts = el.shells.map(function(cnt, idx) {
+        return SHELL_NAMES[idx] + "に" + cnt + "個";
+      });
+      const outer = el.shells[el.shells.length - 1];
+      let note = "いちばん外側の殻（" + SHELL_NAMES[el.shells.length - 1] + "）には電子が" + outer + "個入っています。";
+      if (el.cat === "noble") {
+        note += "\n最外殻が安定した満タン状態のため、ほかの元素とほとんど反応しないおだやかな貴ガスです。";
+      } else if (outer === 1) {
+        note += "\n外側の電子が1個だけなので、これを手放して陽イオンになりやすい元気な性質を持ちます。";
+      } else if (outer === 7) {
+        note += "\nあと1個で8個（満タン）になるため、他から電子を1個受け取りやすい性質があります。";
+      } else {
+        note += "\nこの外側の電子の数が、ほかの元素とのくっつき方（化学反応）を決めています。";
+      }
+      return el.jp + "は原子番号" + el.num + "番なので、電子を合計" + el.num + "個持っています。\n内側から " + parts.join("、") + " と並んでいます。\n\n" + note;
+    }
+
+    /* =====================================================================
+     * 10. プロシージャル図解（ボーア模型アニメーション & ルイス電子式SVG）
+     * ===================================================================== */
+    function renderShellPills(el) {
+      const wrap = document.getElementById("shellPills");
+      let html = "";
+      el.shells.forEach(function(cnt, idx) {
+        const isOuter = idx === el.shells.length - 1;
+        html += '<span class="shell-pill' + (isOuter ? ' outer' : '') + '">' + SHELL_NAMES[idx] + ': ' + cnt + (isOuter ? ' (最外殻)' : '') + '</span>';
+      });
+      wrap.innerHTML = html;
+    }
+
+    function renderBohrOnce() {
+      const canvas = document.getElementById("bohrCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const el = ELEMENT_MAP[state.selectedNum];
+      const catInfo = CATEGORIES[el.cat] || CATEGORIES.nonmetal;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const shellCount = el.shells.length;
+      const maxR = 112;
+      const minR = 32;
+      const step = shellCount > 1 ? (maxR - minR) / (shellCount - 1) : 0;
+
+      // 軌道と電子
+      el.shells.forEach(function(eCount, sIdx) {
+        const r = shellCount === 1 ? 66 : (minR + step * sIdx);
+        const isOuter = sIdx === shellCount - 1;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = isOuter ? "rgba(245, 158, 11, 0.55)" : "rgba(148, 163, 184, 0.45)";
+        ctx.lineWidth = isOuter ? 2 : 1.2;
+        ctx.stroke();
+
+        const dir = (sIdx % 2 === 0) ? 1 : -1;
+        const speed = 0.014 / (sIdx * 0.45 + 1);
+        const baseAngle = state.orbitAngle * speed * dir * 60;
+
+        for (let i = 0; i < eCount; i++) {
+          const theta = baseAngle + (Math.PI * 2 * i) / eCount - Math.PI / 2;
+          const ex = cx + Math.cos(theta) * r;
+          const ey = cy + Math.sin(theta) * r;
+
+          ctx.beginPath();
+          ctx.arc(ex, ey, isOuter ? 4.8 : 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = isOuter ? "#f59e0b" : "#3b82f6";
+          ctx.fill();
+
+          if (isOuter) {
+            ctx.beginPath();
+            ctx.arc(ex, ey, 8, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(245, 158, 11, 0.22)";
+            ctx.fill();
+          }
+        }
+      });
+
+      // 原子核
+      ctx.beginPath();
+      ctx.arc(cx, cy, 19, 0, Math.PI * 2);
+      ctx.fillStyle = catInfo.color;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(el.sym, cx, cy - 3);
+      ctx.font = "bold 8px sans-serif";
+      ctx.fillText("+" + el.num, cx, cy + 9);
+    }
+
+    function stopBohrLoop() {
+      if (state.bohrRafId) {
+        cancelAnimationFrame(state.bohrRafId);
+        state.bohrRafId = null;
+      }
+    }
+
+    function startBohrLoop() {
+      stopBohrLoop();
+      if (state.detailTab !== "diagrams" || !state.orbitRunning) return;
+      function stepFrame() {
+        if (state.detailTab !== "diagrams" || !state.orbitRunning) {
+          state.bohrRafId = null;
+          return;
+        }
+        renderBohrOnce();
+        state.orbitAngle += 0.016;
+        state.bohrRafId = requestAnimationFrame(stepFrame);
+      }
+      state.bohrRafId = requestAnimationFrame(stepFrame);
+    }
+
+    function renderLewisStructure(el) {
+      const wrap = document.getElementById("lewisSvgWrap");
+      const cap = document.getElementById("lewisCaption");
+      const isPdException = el.num === 46;
+      const outer = isPdException ? 0 : Math.min(8, el.shells[el.shells.length - 1]);
+      const isTransition = el.cat === "transition" || el.cat === "lanthanide" || el.cat === "actinide";
+
+      // 4方向（上・右・下・左）に配置するドット数（Heは上にペア2個、PdはO殻0個のため点なし）
+      const sides = [0, 0, 0, 0]; // top, right, bottom, left
+      if (el.num === 2) {
+        sides[0] = 2;
+      } else if (!isPdException) {
+        for (let i = 0; i < outer; i++) {
+          sides[i % 4] += 1;
+        }
+      }
+
+      const coords = [];
+      // top
+      if (sides[0] === 1) coords.push([100, 42]);
+      if (sides[0] === 2) { coords.push([88, 42]); coords.push([112, 42]); }
+      // right
+      if (sides[1] === 1) coords.push([158, 100]);
+      if (sides[1] === 2) { coords.push([158, 88]); coords.push([158, 112]); }
+      // bottom
+      if (sides[2] === 1) coords.push([100, 158]);
+      if (sides[2] === 2) { coords.push([88, 158]); coords.push([112, 158]); }
+      // left
+      if (sides[3] === 1) coords.push([42, 100]);
+      if (sides[3] === 2) { coords.push([42, 88]); coords.push([42, 112]); }
+
+      let dotsSvg = "";
+      coords.forEach(function(pt) {
+        dotsSvg += '<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="8" fill="#f59e0b" stroke="#ffffff" stroke-width="2" />';
+      });
+
+      // ペア（非共有電子対）と不対電子のカウント
+      let pairs = 0;
+      let singles = 0;
+      sides.forEach(function(c) {
+        if (c === 2) pairs++;
+        if (c === 1) singles++;
+      });
+
+      wrap.innerHTML =
+        '<svg viewBox="0 0 200 200" width="200" height="200" aria-label="電子式">' +
+          '<rect x="18" y="18" width="164" height="164" rx="28" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>' +
+          '<text x="100" y="114" text-anchor="middle" font-size="48" font-weight="900" fill="#0f172a" font-family="sans-serif">' + el.sym + '</text>' +
+          dotsSvg +
+        '</svg>';
+
+      if (isPdException) {
+        cap.textContent = "パラジウムは全118元素で唯一、最外殻（O殻・5s軌道）の電子が0個（N殻の4d軌道が満タン）という特別な例外配置のため、外側の点を表示していません。";
+      } else if (isTransition) {
+        cap.textContent = "遷移元素のため最外殻（s軌道など）の電子 " + outer + "個 を模式表示しています。実際には内側のd電子も結合に関わります。";
+      } else {
+        cap.textContent = "最外殻電子 " + outer + "個（電子対: " + pairs + "組 ／ 他の原子と手をつなげる不対電子: " + singles + "個）";
+      }
+    }
+
+    /* =====================================================================
+     * 11. 炎色反応パーティクルシミュレーター (Procedural Canvas)
+     * ===================================================================== */
+    let flameRafId = null;
+
+    function stopFlameAnim() {
+      state.flameRunning = false;
+      state.flameParticles = [];
+      if (flameRafId) {
+        cancelAnimationFrame(flameRafId);
+        flameRafId = null;
+      }
+    }
+
+    function drawIdleBurner() {
+      const c = document.getElementById("flameCanvas");
+      if (!c) return;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0, 0, c.width, c.height);
+      // ガスバーナー筒
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(154, 138, 32, 32);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(150, 134, 40, 6);
+      // 青い種火
+      const grad = ctx.createRadialGradient(170, 124, 2, 170, 124, 24);
+      grad.addColorStop(0, "rgba(147, 197, 253, 0.95)");
+      grad.addColorStop(1, "rgba(59, 130, 246, 0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(170, 124, 24, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function startFlameAnim(colorHex, glowHex) {
+      stopFlameAnim();
+      state.flameRunning = true;
+      let frames = 0;
+
+      function tick() {
+        const c = document.getElementById("flameCanvas");
+        if (!c || !state.flameRunning) return;
+        const ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // 炎パーティクル生成（約4秒間勢いよく燃やす）
+        if (frames < 220) {
+          for (let i = 0; i < 6; i++) {
+            state.flameParticles.push({
+              x: 170 + (Math.random() - 0.5) * 20,
+              y: 132,
+              vx: (Math.random() - 0.5) * 1.4,
+              vy: -1.8 - Math.random() * 2.8,
+              r: 6 + Math.random() * 12,
+              life: 1.0,
+              decay: 0.018 + Math.random() * 0.02,
+              spark: Math.random() > 0.72
+            });
+          }
+        }
+
+        // バーナー描画
+        ctx.fillStyle = "#475569";
+        ctx.fillRect(154, 138, 32, 32);
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillRect(150, 134, 40, 6);
+
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = state.flameParticles.length - 1; i >= 0; i--) {
+          const p = state.flameParticles[i];
+          p.x += p.vx + Math.sin(frames * 0.1 + i) * 0.35;
+          p.y += p.vy;
+          p.life -= p.decay;
+          if (p.life <= 0) {
+            state.flameParticles.splice(i, 1);
+            continue;
+          }
+          ctx.beginPath();
+          const rad = p.spark ? Math.max(1.5, p.r * 0.25) : p.r * p.life;
+          ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+          ctx.fillStyle = p.spark ? "#ffffff" : (p.life > 0.5 ? colorHex : glowHex);
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+
+        frames++;
+        if (frames < 280 || state.flameParticles.length > 0) {
+          flameRafId = requestAnimationFrame(tick);
+        } else {
+          state.flameRunning = false;
+          drawIdleBurner();
+        }
+      }
+
+      tick();
+    }
+
+    /* =====================================================================
+     * 12. ハイブリッド「すいへーりーべー」音声システム
+     *     (A) オフライン完結：Web Audio伴奏 ＋ Web Speech読み上げ
+     *     (B) 先生用AIボイス：Gemini TTS API (PCM→WAV + 無音パディング + Blobキャッシュ)
+     * ===================================================================== */
+    let audioCtx = null;
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playChimeNote(freq, durSec) {
+      const ctx = ensureAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.14, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + durSec);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + durSec + 0.02);
+    }
+
+    function pickJapaneseVoice(gender) {
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      const jaVoices = voices.filter(function(v) {
+        return v.lang && v.lang.toLowerCase().indexOf("ja") === 0;
+      });
+      if (jaVoices.length === 0) return null;
+
+      const maleHints = ["ichiro", "keita", "otoya", "male", "hattori", "kenji"];
+      const femaleHints = ["haruka", "ayumi", "nanami", "kyoko", "o-ren", "female", "sayaka", "google 日本語"];
+
+      const hints = gender === "male" ? maleHints : femaleHints;
+      for (let i = 0; i < jaVoices.length; i++) {
+        const nameLow = jaVoices[i].name.toLowerCase();
+        for (let j = 0; j < hints.length; j++) {
+          if (nameLow.indexOf(hints[j]) !== -1) return jaVoices[i];
+        }
+      }
+      return jaVoices[0];
+    }
+
+    function renderLyricChips() {
+      const rangeKey = document.getElementById("songRangeSelect").value;
+      const phrases = getPhrasesForRange(rangeKey);
+      const wrap = document.getElementById("lyricChips");
+      wrap.innerHTML = "";
+      phrases.forEach(function(p, idx) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "lyric-chip";
+        chip.id = "lyric-chip-" + idx;
+        chip.textContent = p.text;
+        chip.addEventListener("click", function() {
+          startOfflineSong(idx);
+        });
+        wrap.appendChild(chip);
+      });
+    }
+
+    function stopAllSong() {
+      state.songRunId++;
+      state.isSinging = false;
+      state.singingNums = [];
+      if (state.aiSongAbortController) {
+        state.aiSongAbortController.abort();
+        state.aiSongAbortController = null;
+      }
+      state.songTimerIds.forEach(function(id) { clearTimeout(id); });
+      state.songTimerIds = [];
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (state.activeAudioEl) {
+        state.activeAudioEl.pause();
+        state.activeAudioEl.currentTime = 0;
+        state.activeAudioEl = null;
+      }
+      document.getElementById("btnStopSong").classList.add("hidden");
+      document.querySelectorAll(".lyric-chip.active").forEach(function(el) {
+        el.classList.remove("active");
+      });
+      renderPeriodicTable();
+    }
+
+    function startOfflineSong(startIndex) {
+      stopAllSong();
+      const runId = state.songRunId;
+      ensureAudioCtx();
+      const rangeKey = document.getElementById("songRangeSelect").value;
+      const gender = document.getElementById("songGenderSelect").value;
+      const speed = document.getElementById("songSpeedSelect").value;
+      const phrases = getPhrasesForRange(rangeKey);
+
+      const rateMap = { slow: 0.78, normal: 1.0, fast: 1.25 };
+      const stepMsMap = { slow: 2150, normal: 1650, fast: 1250 };
+      const speechRate = rateMap[speed] || 1.0;
+      const baseStepMs = stepMsMap[speed] || 1650;
+
+      state.isSinging = true;
+      document.getElementById("btnStopSong").classList.remove("hidden");
+
+      let idx = typeof startIndex === "number" ? startIndex : 0;
+
+      function playNextPhrase() {
+        if (!state.isSinging || runId !== state.songRunId) return;
+        if (idx >= phrases.length) {
+          document.getElementById("karaokeMain").textContent = "🎉 フィニッシュ！おぼえられたかな？";
+          document.getElementById("karaokeSub").textContent = "気になる元素をタップしてくわしく見てみよう！";
+          stopAllSong();
+          return;
+        }
+
+        const p = phrases[idx];
+        document.getElementById("karaokeMain").textContent = "♪ " + p.text;
+        document.getElementById("karaokeSub").textContent = p.hint;
+
+        document.querySelectorAll(".lyric-chip").forEach(function(c, cIdx) {
+          if (cIdx === idx) c.classList.add("active");
+          else c.classList.remove("active");
+        });
+
+        // 周期表タイルを1つずつ順番に光らせつつ伴奏音を鳴らす
+        const noteGap = Math.floor(baseStepMs / Math.max(2, p.nums.length));
+        p.nums.forEach(function(elNum, nIdx) {
+          const tid = setTimeout(function() {
+            if (!state.isSinging || runId !== state.songRunId) return;
+            state.singingNums = [elNum];
+            playChimeNote(p.notes[nIdx] || 392, 0.35);
+            renderPeriodicTable();
+          }, nIdx * noteGap);
+          state.songTimerIds.push(tid);
+        });
+
+        // Web Speech API 読み上げ（iPad Safari等でのcancel直後発声抜け対策として40ms待機）
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          const speakTid = setTimeout(function() {
+            if (!state.isSinging || runId !== state.songRunId) return;
+            const u = new SpeechSynthesisUtterance(p.speech);
+            u.lang = "ja-JP";
+            u.rate = speechRate;
+            u.pitch = gender === "male" ? 0.72 : 1.22;
+            const v = pickJapaneseVoice(gender);
+            if (v) u.voice = v;
+            window.speechSynthesis.speak(u);
+          }, 40);
+          state.songTimerIds.push(speakTid);
+        }
+
+        idx++;
+        const nextTid = setTimeout(playNextPhrase, baseStepMs + 120);
+        state.songTimerIds.push(nextTid);
+      }
+
+      playNextPhrase();
+    }
+
+    /* PCM (Linear16 24kHz) -> WAV Blob (with silence padding for audio sync) */
+    function pcmBase64ToWavBlob(base64Pcm, sampleRate) {
+      const binaryStr = atob(base64Pcm);
+      const len = binaryStr.length;
+      const pcmBytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        pcmBytes[i] = binaryStr.charCodeAt(i);
+      }
+
+      // 末尾に0.35秒の無音パディング（0）を追加して途切れ防止
+      const padSamples = Math.floor(sampleRate * 0.35);
+      const padBytes = padSamples * 2;
+      const totalDataLen = pcmBytes.length + padBytes;
+
+      const buffer = new ArrayBuffer(44 + totalDataLen);
+      const view = new DataView(buffer);
+
+      function writeStr(offset, str) {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      }
+
+      writeStr(0, "RIFF");
+      view.setUint32(4, 36 + totalDataLen, true);
+      writeStr(8, "WAVE");
+      writeStr(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, "data");
+      view.setUint32(40, totalDataLen, true);
+
+      const outBytes = new Uint8Array(buffer, 44);
+      outBytes.set(pcmBytes, 0);
+
+      return new Blob([buffer], { type: "audio/wav" });
+    }
+
+    async function playAiSong() {
+      stopAllSong();
+      const runId = state.songRunId;
+      const rangeKey = document.getElementById("songRangeSelect").value;
+      const gender = document.getElementById("songGenderSelect").value;
+      const phrases = getPhrasesForRange(rangeKey);
+      const cacheKey = rangeKey + "_" + gender;
+
+      document.getElementById("btnStopSong").classList.remove("hidden");
+      state.isSinging = true;
+
+      let blobUrl = ttsBlobUrlCache.get(cacheKey);
+      if (!blobUrl) {
+        document.getElementById("karaokeMain").textContent = "✨ AIボイスを生成中…";
+        document.getElementById("karaokeSub").textContent = "初回のみ数秒かかります（2回目以降はキャッシュで即再生！）";
+
+        const fullLyric = phrases.map(function(p) { return p.speech; }).join("、 ");
+        const promptText = "Say in a tone of a cheerful, rhythmic Japanese teacher singing a fun mnemonic chant with lively melody: " + fullLyric;
+        const voiceName = gender === "male" ? "Puck" : "Kore";
+
+        const controller = new AbortController();
+        state.aiSongAbortController = controller;
+        const timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+
+        try {
+          const url = "https://generativelanguage.googleapis.com/v1beta/models/" + TTS_MODEL + ":generateContent?key=" + encodeURIComponent(runtimeApiKey);
+          const resp = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: voiceName }
+                  }
+                }
+              }
+            })
+          });
+
+          if (resp.status === 400 || resp.status === 403) {
+            if (runId === state.songRunId) openApiKeyModal();
+            throw new Error("API認証が必要です（生徒用環境ではオフライン再生をご利用ください）");
+          }
+          if (!resp.ok) {
+            throw new Error("TTS API Error: " + resp.status);
+          }
+
+          const data = await resp.json();
+          const part = data && data.candidates && data.candidates[0] &&
+                       data.candidates[0].content && data.candidates[0].content.parts &&
+                       data.candidates[0].content.parts[0];
+          const inlineData = part && part.inlineData;
+          if (!inlineData || !inlineData.data) {
+            throw new Error("音声データを受け取れませんでした");
+          }
+
+          let sampleRate = 24000;
+          if (inlineData.mimeType && inlineData.mimeType.indexOf("rate=") !== -1) {
+            const m = inlineData.mimeType.match(/rate=(\d+)/);
+            if (m) sampleRate = parseInt(m[1], 10);
+          }
+
+          const wavBlob = pcmBase64ToWavBlob(inlineData.data, sampleRate);
+          blobUrl = URL.createObjectURL(wavBlob);
+          ttsBlobUrlCache.set(cacheKey, blobUrl);
+        } catch (err) {
+          if (runId !== state.songRunId) return;
+          stopAllSong();
+          showToast("AIボイスを利用できない環境です。オフライン・リズム再生をお試しください。", "warn");
+          document.getElementById("karaokeMain").textContent = "オフライン環境のためAIボイスは待機中";
+          document.getElementById("karaokeSub").textContent = "左の「▶ リズム再生（オフライン）」ならいつでも再生できます！";
+          return;
+        } finally {
+          clearTimeout(timeoutId);
+          if (state.aiSongAbortController === controller) {
+            state.aiSongAbortController = null;
+          }
+        }
+      }
+
+      if (!state.isSinging || runId !== state.songRunId) return;
+
+      const audio = new Audio(blobUrl);
+      state.activeAudioEl = audio;
+      let highlightsScheduled = false;
+
+      function scheduleHighlights() {
+        if (highlightsScheduled || !state.isSinging || runId !== state.songRunId) return;
+        highlightsScheduled = true;
+        const durMs = (audio.duration && isFinite(audio.duration) ? audio.duration : (phrases.length * 1.6)) * 1000;
+        const perPhrase = durMs / phrases.length;
+        phrases.forEach(function(p, pIdx) {
+          const tid = setTimeout(function() {
+            if (!state.isSinging || runId !== state.songRunId) return;
+            document.getElementById("karaokeMain").textContent = "✨ ♪ " + p.text;
+            document.getElementById("karaokeSub").textContent = p.hint;
+            state.singingNums = p.nums;
+            document.querySelectorAll(".lyric-chip").forEach(function(c, cIdx) {
+              if (cIdx === pIdx) c.classList.add("active");
+              else c.classList.remove("active");
+            });
+            renderPeriodicTable();
+          }, Math.floor(pIdx * perPhrase));
+          state.songTimerIds.push(tid);
+        });
+      }
+
+      // 再生時間に合わせて周期表を順番にライトアップ（キャッシュ即時読み込みにも対応）
+      if (audio.readyState >= 1) {
+        scheduleHighlights();
+      } else {
+        audio.addEventListener("loadedmetadata", scheduleHighlights, { once: true });
+      }
+
+      audio.addEventListener("ended", function() {
+        if (runId !== state.songRunId) return;
+        document.getElementById("karaokeMain").textContent = "🎉 AIボイスの演奏が完了しました！";
+        stopAllSong();
+      });
+
+      audio.play().catch(function() {
+        if (runId !== state.songRunId) return;
+        stopAllSong();
+        showToast("音声の再生がブロックされました。もう一度押してください。", "warn");
+      });
+    }
+
+    /* =====================================================================
+     * 13. AI博士への質問（フォールバック＆60秒タイムアウト付き）
+     * ===================================================================== */
+    async function askAiDoctor(questionText) {
+      state.aiRequestId++;
+      const reqId = state.aiRequestId;
+      if (state.aiAbortController) {
+        state.aiAbortController.abort();
+        state.aiAbortController = null;
+      }
+
+      const el = ELEMENT_MAP[state.selectedNum];
+      const box = document.getElementById("aiAnswerBox");
+      box.textContent = "🤖 AI博士が " + el.jp + " (" + el.sym + ") の資料を調べています…";
+
+      const systemInstruction =
+        "あなたは小中学生や高校生に化学の面白さを伝える親切な『元素博士』です。" +
+        "対象元素は 原子番号" + el.num + "番 " + el.jp + " (" + el.sym + " / " + el.en + "、電子殻: " + el.shells.join("-") + ") です。" +
+        "正確でわかりやすい日本語で、身近な例えや発見の歴史を交えつつ250〜350文字程度で答えてください。";
+
+      for (let i = 0; i < TEXT_MODELS.length; i++) {
+        if (reqId !== state.aiRequestId) return;
+        const model = TEXT_MODELS[i];
+        const controller = new AbortController();
+        state.aiAbortController = controller;
+        const timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+
+        try {
+          const url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + encodeURIComponent(runtimeApiKey);
+          const resp = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: systemInstruction + "\n\n質問: " + questionText }] }]
+            })
+          });
+
+          if (reqId !== state.aiRequestId) return;
+
+          if (resp.status === 400 || resp.status === 403) {
+            openApiKeyModal();
+            throw new Error("AUTH_REQUIRED");
+          }
+          if (!resp.ok) {
+            throw new Error("HTTP " + resp.status);
+          }
+
+          const data = await resp.json();
+          if (reqId !== state.aiRequestId) return;
+          const text = data && data.candidates && data.candidates[0] &&
+                       data.candidates[0].content && data.candidates[0].content.parts &&
+                       data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+          if (text) {
+            box.textContent = text;
+            return;
+          }
+          throw new Error("EMPTY_RESPONSE");
+        } catch (err) {
+          if (reqId !== state.aiRequestId) return;
+          if (err && err.message === "AUTH_REQUIRED") break;
+        } finally {
+          clearTimeout(timeoutId);
+          if (state.aiAbortController === controller) {
+            state.aiAbortController = null;
+          }
+        }
+      }
+
+      if (reqId !== state.aiRequestId) return;
+      box.textContent =
+        "現在オフラインまたはAPI未接続のため、AI博士に接続できませんでした。\n" +
+        "※生徒用端末では「✨ 身近なもの・実験」「⚛️ 電子配置図」「📜 発見の歴史」の内蔵データをお楽しみください！";
+      showToast("AI博士への接続に失敗しました（オフラインまたは認証未設定）", "warn");
+    }
+
+    /* =====================================================================
+     * 14. データ自動連動「サクッと4択クイズ」
+     * ===================================================================== */
+    function shuffleArray(arr) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = tmp;
+      }
+      return copy;
+    }
+
+    const QUIZ_EXTRA_ALIASES = {
+      13: ["アルミ"],
+      14: ["シリコン"],
+      40: ["ジルコニア", "ジルコン"],
+      102: ["ノーベル"],
+      111: ["レントゲン"],
+      112: ["コペルニクス"],
+      113: ["Nihon", "日本"]
+    };
+
+    function maskQuizPrompt(text, el) {
+      let masked = String(text);
+      const terms = [];
+      el.jp.replace(/[（）()]/g, "|").split("|").forEach(function(part) {
+        const t = part.trim();
+        if (t) terms.push(t);
+      });
+      if (el.en) terms.push(el.en);
+      if (QUIZ_EXTRA_ALIASES[el.num]) {
+        QUIZ_EXTRA_ALIASES[el.num].forEach(function(a) { terms.push(a); });
+      }
+      terms.sort(function(a, b) { return b.length - a.length; });
+      terms.forEach(function(term) {
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        masked = masked.replace(new RegExp(escaped, "gi"), "〇〇");
+      });
+
+      // 化学式内の元素記号ネタバレ防止（LED/GPS等の一般英単語は壊さない範囲で置換）
+      if (el.sym.length === 2) {
+        const symEsc = el.sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        masked = masked.replace(new RegExp("(^|[^A-Za-z])" + symEsc + "(?![a-z])", "g"), "$1〇〇");
+      } else if (el.sym.length === 1) {
+        const symEsc = el.sym.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        masked = masked.replace(new RegExp("(^|[^A-Za-z])" + symEsc + "(?=[₂₃₄])", "g"), "$1〇〇");
+      }
+      return masked;
+    }
+
+    function generateQuizQuestions() {
+      const maxNum = parseInt(state.quiz.range, 10) || 20;
+      const detailedNums = Object.keys(ELEMENT_DETAILS)
+        .map(function(k) { return parseInt(k, 10); })
+        .filter(function(n) { return n <= maxNum; });
+      const pool = [];
+
+      detailedNums.forEach(function(num) {
+        const el = ELEMENT_MAP[num];
+        const d = ELEMENT_DETAILS[num];
+
+        // 1. 元素記号クイズ
+        pool.push({
+          type: "symbol",
+          answerNum: num,
+          prompt: "元素記号「 " + el.sym + " 」（原子番号 " + el.num + "）の日本語名はどれ？",
+          hint: "キャッチコピー：" + d.tagline
+        });
+
+        // 2. 身近なものクイズ（答えの元素名は自動で〇〇に伏せ字化）
+        if (d.everyday && d.everyday.length > 0) {
+          const item = d.everyday[0];
+          const maskedTitle = maskQuizPrompt(item.title, el);
+          pool.push({
+            type: "everyday",
+            answerNum: num,
+            prompt: "「" + maskedTitle + "」に深く関係している元素はどれ？",
+            hint: item.desc
+          });
+        }
+
+        // 3. 炎色反応クイズ
+        if (d.flame) {
+          pool.push({
+            type: "flame",
+            answerNum: num,
+            prompt: "炎に入れると「" + d.flame.name + "」の炎色反応を示す元素はどれ？",
+            hint: d.flame.desc
+          });
+        }
+      });
+
+      const selected = shuffleArray(pool).slice(0, 8);
+      return selected.map(function(q) {
+        const distractors = shuffleArray(detailedNums.filter(function(n) { return n !== q.answerNum; })).slice(0, 3);
+        const choices = shuffleArray([q.answerNum].concat(distractors));
+        return {
+          type: q.type,
+          answerNum: q.answerNum,
+          prompt: q.prompt,
+          hint: q.hint,
+          choices: choices
+        };
+      });
+    }
+
+    function startQuiz() {
+      const rangeSel = document.getElementById("quizRangeSelect");
+      if (rangeSel) state.quiz.range = rangeSel.value;
+      state.quiz.questions = generateQuizQuestions();
+      state.quiz.index = 0;
+      state.quiz.score = 0;
+      state.quiz.answered = false;
+      document.getElementById("detailPanel").classList.add("hidden");
+      stopBohrLoop();
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      const stage = document.getElementById("quizStage");
+      document.getElementById("quizScoreBadge").textContent = "スコア: " + state.quiz.score + " / " + state.quiz.questions.length;
+      document.getElementById("quizBestBadge").textContent = "最高記録: " + state.quiz.best;
+
+      if (state.quiz.index >= state.quiz.questions.length) {
+        if (state.quiz.score > state.quiz.best) {
+          state.quiz.best = state.quiz.score;
+          try { localStorage.setItem("pt_explorer_quiz_best", String(state.quiz.best)); } catch (e) {}
+          document.getElementById("quizBestBadge").textContent = "最高記録: " + state.quiz.best;
+        }
+        stage.innerHTML =
+          '<div style="text-align:center; padding:24px 10px; background:#f8fafc; border-radius:18px;">' +
+            '<div style="font-size:38px; margin-bottom:8px;">🏆</div>' +
+            '<h3 style="margin:0 0 6px; font-size:20px;">クイズ終了！ ' + state.quiz.score + ' / ' + state.quiz.questions.length + ' 問正解</h3>' +
+            '<p style="color:#64748b; font-size:13px; margin-bottom:16px;">おつかれさま！もういちど挑戦して全問正解をめざそう。</p>' +
+            '<button id="btnRetryQuiz" class="play-btn" type="button">もう1回チャレンジ！</button>' +
+          '</div>';
+        document.getElementById("btnRetryQuiz").addEventListener("click", startQuiz);
+        return;
+      }
+
+      const q = state.quiz.questions[state.quiz.index];
+      let html =
+        '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:18px; padding:18px;">' +
+          '<div style="font-size:12px; font-weight:800; color:#2563eb; margin-bottom:6px;">第 ' + (state.quiz.index + 1) + ' 問 / 全 ' + state.quiz.questions.length + ' 問</div>' +
+          '<div style="font-size:17px; font-weight:800; color:#0f172a;">' + escapeHtml(q.prompt) + '</div>' +
+          '<div class="quiz-options" id="quizOptionsWrap"></div>' +
+          '<div id="quizFeedback" style="margin-top:14px;"></div>' +
+        '</div>';
+      stage.innerHTML = html;
+
+      const optWrap = document.getElementById("quizOptionsWrap");
+      q.choices.forEach(function(cNum) {
+        const el = ELEMENT_MAP[cNum];
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "quiz-opt-btn";
+        btn.textContent = q.type === "symbol" ? el.jp : (el.jp + "（" + el.sym + "）");
+        btn.addEventListener("click", function() {
+          if (state.quiz.answered) return;
+          state.quiz.answered = true;
+          const isCorrect = cNum === q.answerNum;
+          if (isCorrect) state.quiz.score++;
+
+          const allBtns = optWrap.querySelectorAll("button");
+          allBtns.forEach(function(b, bIdx) {
+            b.disabled = true;
+            if (q.choices[bIdx] === q.answerNum) b.classList.add("correct");
+            else if (q.choices[bIdx] === cNum && !isCorrect) b.classList.add("wrong");
+          });
+
+          const ansEl = ELEMENT_MAP[q.answerNum];
+          const fb = document.getElementById("quizFeedback");
+          fb.innerHTML =
+            '<div style="padding:12px 14px; border-radius:12px; background:' + (isCorrect ? '#dcfce7' : '#fee2e2') + '; color:#0f172a; font-size:13px; margin-bottom:10px;">' +
+              '<strong>' + (isCorrect ? '⭕ せいかい！' : '❌ おしい！正解は ' + ansEl.jp + ' (' + ansEl.sym + ')') + '</strong><br>' +
+              escapeHtml(q.hint) +
+            '</div>' +
+            '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
+              '<button id="btnNextQ" class="pill-btn active" type="button">次の問題へ →</button>' +
+              '<button id="btnInspectAns" class="pill-btn" type="button">この元素を図鑑で見る</button>' +
+            '</div>';
+
+          document.getElementById("btnNextQ").addEventListener("click", function() {
+            state.quiz.index++;
+            state.quiz.answered = false;
+            document.getElementById("detailPanel").classList.add("hidden");
+            stopBohrLoop();
+            renderQuiz();
+          });
+          document.getElementById("btnInspectAns").addEventListener("click", function() {
+            const panel = document.getElementById("detailPanel");
+            panel.classList.remove("hidden");
+            selectElement(q.answerNum);
+            if (state.detailTab === "diagrams" && state.orbitRunning) startBohrLoop();
+            panel.scrollIntoView({ behavior: "smooth" });
+          });
+          document.getElementById("quizScoreBadge").textContent = "スコア: " + state.quiz.score + " / " + state.quiz.questions.length;
+        });
+        optWrap.appendChild(btn);
+      });
+    }
+
+    /* =====================================================================
+     * 15. 学習カード印刷（別ウィンドウクローン方式）＆データ救済コピー
+     * ===================================================================== */
+    function printCurrentElementCard() {
+      const el = ELEMENT_MAP[state.selectedNum];
+      const d = ELEMENT_DETAILS[el.num];
+      const catInfo = CATEGORIES[el.cat] || CATEGORIES.nonmetal;
+      const win = window.open("", "_blank", "width=760,height=900");
+      if (!win) {
+        showToast("ポップアップがブロックされました。印刷許可をお願いします。", "warn");
+        return;
+      }
+
+      let evHtml = "";
+      if (d && d.everyday) {
+        d.everyday.forEach(function(item) {
+          evHtml += '<li><strong>' + escapeHtml(item.title) + '</strong>：' + escapeHtml(item.desc) + '</li>';
+        });
+      } else {
+        evHtml = '<li>基本データ（詳細ストーリー追加予定）</li>';
+      }
+
+      const histText = d ? d.history : "発見の歴史データ準備中";
+      const elecText = d ? d.electronStory : buildAutoElectronGuide(el);
+      const lewisHtml = document.getElementById("lewisSvgWrap").innerHTML;
+
+      const docHtml =
+        '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>' + escapeHtml(el.jp) + ' 学習カード</title>' +
+        '<style>body{font-family:sans-serif;padding:24px;color:#0f172a;line-height:1.65;}' +
+        '.card{border:2px solid #cbd5e1;border-radius:18px;padding:22px;max-width:680px;margin:0 auto;}' +
+        '.head{display:flex;align-items:center;gap:16px;border-bottom:2px solid #e2e8f0;padding-bottom:14px;margin-bottom:16px;}' +
+        '.sym{width:76px;height:76px;border-radius:16px;background:' + catInfo.color + ';color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;}' +
+        'h2{margin:16px 0 6px;font-size:15px;color:#1d4ed8;border-left:4px solid #3b82f6;padding-left:8px;}' +
+        '</style></head><body><div class="card">' +
+        '<div class="head"><div class="sym"><span style="font-size:13px;">' + el.num + '</span><span style="font-size:32px;">' + el.sym + '</span></div>' +
+        '<div><div style="font-size:24px;font-weight:900;">' + escapeHtml(el.jp) + ' <span style="font-size:15px;color:#475569;">(' + escapeHtml(el.en) + ')</span></div>' +
+        '<div style="font-size:13px;color:#475569;">原子量: ' + el.mass + ' ／ 分類: ' + catInfo.label + ' ／ 電子殻: ' + el.shells.join("-") + '</div></div></div>' +
+        '<h2>身近なもの</h2><ul>' + evHtml + '</ul>' +
+        '<h2>発見の歴史</h2><p>' + escapeHtml(histText) + '</p>' +
+        '<h2>電子配置のひみつ</h2><p>' + escapeHtml(elecText) + '</p>' +
+        '<h2>電子式</h2><div style="width:160px;">' + lewisHtml + '</div>' +
+        '</div></body></html>';
+
+      win.document.open();
+      win.document.write(docHtml);
+      win.document.close();
+      setTimeout(function() { win.print(); }, 250);
+    }
+
+    function copyTextSafe(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {
+        ok = false;
+      }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    function openApiKeyModal() {
+      document.getElementById("rescueApiKeyInput").value = runtimeApiKey;
+      document.getElementById("apiKeyModal").classList.add("open");
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById("apiKeyModal").classList.remove("open");
+    }
+
+    /* =====================================================================
+     * 16. モード切替＆イベント結線
+     * ===================================================================== */
+    function switchMode(newMode) {
+      if (state.mode === "song" && newMode !== "song") {
+        stopAllSong();
+      }
+      state.mode = newMode;
+
+      document.querySelectorAll("#mainModeNav .pill-btn").forEach(function(b) {
+        if (b.getAttribute("data-mode") === newMode) b.classList.add("active");
+        else b.classList.remove("active");
+      });
+
+      const songPanel = document.getElementById("songPanel");
+      const filterStrip = document.getElementById("filterStrip");
+      const tableWrap = document.getElementById("tableViewWrap");
+      const listWrap = document.getElementById("listViewWrap");
+      const quizWrap = document.getElementById("quizViewWrap");
+      const guideWrap = document.getElementById("guideViewWrap");
+      const quickBanner = document.getElementById("quickBanner");
+      const detailPanel = document.getElementById("detailPanel");
+
+      songPanel.classList.add("hidden");
+      filterStrip.classList.add("hidden");
+      tableWrap.classList.add("hidden");
+      listWrap.classList.add("hidden");
+      quizWrap.classList.add("hidden");
+      guideWrap.classList.add("hidden");
+      quickBanner.classList.remove("hidden");
+      detailPanel.classList.remove("hidden");
+
+      if (newMode === "full" || newMode === "basic") {
+        filterStrip.classList.remove("hidden");
+        tableWrap.classList.remove("hidden");
+        renderPeriodicTable();
+      } else if (newMode === "song") {
+        songPanel.classList.remove("hidden");
+        tableWrap.classList.remove("hidden");
+        renderLyricChips();
+        renderPeriodicTable();
+      } else if (newMode === "list") {
+        filterStrip.classList.remove("hidden");
+        listWrap.classList.remove("hidden");
+        renderListView();
+      } else if (newMode === "quiz") {
+        quizWrap.classList.remove("hidden");
+        quickBanner.classList.add("hidden");
+        detailPanel.classList.add("hidden");
+        stopBohrLoop();
+        if (state.quiz.questions.length === 0) startQuiz();
+        else renderQuiz();
+      } else if (newMode === "guide") {
+        guideWrap.classList.remove("hidden");
+      }
+
+      if (newMode !== "quiz" && state.detailTab === "diagrams") {
+        renderBohrOnce();
+        if (state.orbitRunning) startBohrLoop();
+      }
+    }
+
+    function switchDetailTab(tabName) {
+      state.detailTab = tabName;
+      document.querySelectorAll("#detailTabs .tab-btn").forEach(function(b) {
+        if (b.getAttribute("data-dtab") === tabName) b.classList.add("active");
+        else b.classList.remove("active");
+      });
+      ["everyday", "diagrams", "trivia", "ai"].forEach(function(t) {
+        const sec = document.getElementById("dtab-" + t);
+        if (t === tabName) sec.classList.remove("hidden");
+        else sec.classList.add("hidden");
+      });
+      if (tabName === "diagrams") {
+        renderBohrOnce();
+        if (state.orbitRunning) startBohrLoop();
+      } else {
+        stopBohrLoop();
+      }
+    }
+
+    function initApp() {
+      document.getElementById("detailCountBadge").textContent = String(Object.keys(ELEMENT_DETAILS).length);
+      renderLegend();
+
+      // メインナビ
+      document.querySelectorAll("#mainModeNav .pill-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          switchMode(btn.getAttribute("data-mode"));
+        });
+      });
+
+      // 逆引きフィルター
+      document.querySelectorAll("#filterStrip .chip-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          state.filter = btn.getAttribute("data-filter");
+          document.querySelectorAll("#filterStrip .chip-btn").forEach(function(b) {
+            b.classList.toggle("active", b === btn);
+          });
+          if (state.mode === "list") renderListView();
+          else renderPeriodicTable();
+        });
+      });
+
+      // 検索
+      document.getElementById("searchInput").addEventListener("input", function(e) {
+        state.search = e.target.value.trim();
+        if (state.mode === "list") renderListView();
+        else renderPeriodicTable();
+      });
+
+      // 詳細タブ
+      document.querySelectorAll("#detailTabs .tab-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          switchDetailTab(btn.getAttribute("data-dtab"));
+        });
+      });
+
+      // クイックアクション
+      document.getElementById("btnScrollDetail").addEventListener("click", function() {
+        document.getElementById("detailPanel").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("btnPrintCard").addEventListener("click", printCurrentElementCard);
+
+      // 前後元素移動
+      document.getElementById("btnPrevEl").addEventListener("click", function() {
+        const nextNum = state.selectedNum > 1 ? state.selectedNum - 1 : 118;
+        selectElement(nextNum);
+      });
+      document.getElementById("btnNextEl").addEventListener("click", function() {
+        const nextNum = state.selectedNum < 118 ? state.selectedNum + 1 : 1;
+        selectElement(nextNum);
+      });
+
+      // ボーア模型 回転オンオフ
+      document.getElementById("btnToggleOrbit").addEventListener("click", function(e) {
+        state.orbitRunning = !state.orbitRunning;
+        e.target.textContent = state.orbitRunning ? "⏸ 回転を止める" : "▶ 回転させる";
+        if (state.orbitRunning) startBohrLoop();
+        else stopBohrLoop();
+      });
+
+      // すいへーりーべー操作
+      document.getElementById("songRangeSelect").addEventListener("change", function() {
+        stopAllSong();
+        renderLyricChips();
+      });
+      document.getElementById("btnPlayOfflineSong").addEventListener("click", function() {
+        startOfflineSong(0);
+      });
+      document.getElementById("btnPlayAiSong").addEventListener("click", playAiSong);
+      document.getElementById("btnStopSong").addEventListener("click", stopAllSong);
+
+      // クイズ開始・範囲切替
+      document.getElementById("btnStartQuiz").addEventListener("click", startQuiz);
+      document.getElementById("quizRangeSelect").addEventListener("change", startQuiz);
+
+      // AI博士プリセット
+      const promptTemplates = {
+        history: "この元素が昔の人にどうやって発見されたのか、面白いエピソードや裏話を教えてください。",
+        electron: "この元素の電子配置がどうしてこうなっていて、そのせいでどんな面白い性質や反応が起きるのですか？",
+        vanish: "もし地球からこの元素が一瞬で消えてしまったら、私たちの生活や地球はどうなりますか？",
+        kids: "この元素の性格や役割を、小中学生でもイメージしやすい『たとえ話』で紹介してください！"
+      };
+      document.querySelectorAll("#aiPresets .chip-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          const key = btn.getAttribute("data-prompt");
+          askAiDoctor(promptTemplates[key] || btn.textContent);
+        });
+      });
+      document.getElementById("btnAskAi").addEventListener("click", function() {
+        const txt = document.getElementById("aiCustomInput").value.trim();
+        if (!txt) {
+          showToast("質問を入力するか、上のプリセットボタンを押してください。", "warn");
+          return;
+        }
+        askAiDoctor(txt);
+      });
+      document.getElementById("aiCustomInput").addEventListener("keydown", function(e) {
+        if (e.key === "Enter" && !e.isComposing) {
+          e.preventDefault();
+          document.getElementById("btnAskAi").click();
+        }
+      });
+
+      // データ救済コピー（iFrame互換フォールバック対応）
+      document.getElementById("btnCopyJson").addEventListener("click", function() {
+        const jsonStr = JSON.stringify(ELEMENT_DETAILS, null, 2);
+        if (copyTextSafe(jsonStr)) {
+          showToast("収録済み詳細データ（JSON）をクリップボードにコピーしました！", "ok");
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(jsonStr).then(function() {
+            showToast("収録済み詳細データ（JSON）をクリップボードにコピーしました！", "ok");
+          }).catch(function() {
+            showToast("クリップボードへのコピーが許可されていません。", "warn");
+          });
+        } else {
+          showToast("お使いのブラウザは自動コピー非対応です。", "warn");
+        }
+      });
+
+      // 救済APIキーモーダル
+      document.getElementById("btnOpenKeyModal").addEventListener("click", openApiKeyModal);
+      document.getElementById("btnCancelKeyModal").addEventListener("click", closeApiKeyModal);
+      document.getElementById("btnSaveKeyModal").addEventListener("click", function() {
+        runtimeApiKey = document.getElementById("rescueApiKeyInput").value.trim();
+        closeApiKeyModal();
+        showToast(runtimeApiKey ? "一時APIキーを適用しました。" : "APIキーをクリアしました。", "ok");
+      });
+
+      // 音声リスト事前ロード
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.getVoices();
+      }
+
+      // 終了時のBlob URL解放（メモリリーク防止）
+      window.addEventListener("beforeunload", function() {
+        ttsBlobUrlCache.forEach(function(url) {
+          URL.revokeObjectURL(url);
+        });
+        ttsBlobUrlCache.clear();
+      });
+
+      // 初期起動
+      selectElement(6);
+      switchMode("full");
+      renderBohrOnce();
+    }
+
+    document.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>
