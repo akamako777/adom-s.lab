@@ -296,16 +296,39 @@
                 return;
             }
 
+            const commonFallbackCSS =
+                '.grid { display: grid; gap: 8px; }' +
+                '.flex { display: flex; gap: 12px; }' +
+                '.flex-col { flex-direction: column; }' +
+                '.items-center { align-items: center; }' +
+                '.justify-center { justify-content: center; }' +
+                '.text-center { text-align: center; }' +
+                '.font-bold { font-weight: bold; }' +
+                '.border { border: 1px solid #cbd5e1; }' +
+                '.border-2 { border: 2px solid #cbd5e1; }' +
+                '.rounded { border-radius: 6px; }' +
+                '.p-1 { padding: 4px; } .p-2 { padding: 8px; } .p-4 { padding: 12px; }' +
+                '.mb-2 { margin-bottom: 8px; } .mb-4 { margin-bottom: 16px; }' +
+                '.text-xl { font-size: 1.25rem; } .text-lg { font-size: 1.125rem; } .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; }' +
+                '.grid > div[draggable] { min-height: 70px; aspect-ratio: 5 / 4; page-break-inside: avoid; break-inside: avoid; }' +
+                '.club-print-wrap { display: flex !important; flex-wrap: wrap !important; gap: 12px !important; overflow: visible !important; }' +
+                '.club-print-col { flex: 1 1 160px; min-width: 150px; border: 1px solid #94a3b8; padding: 10px; border-radius: 6px; page-break-inside: avoid; break-inside: avoid; }' +
+                '.club-print-col input { border: none; border-bottom: 1px solid #94a3b8; width: 100%; font-weight: bold; margin-bottom: 8px; background: transparent; }';
+
             const customCSS = isPhotoPrint
-                ? '.photo-grid { display: grid !important; gap: 10px; grid-template-columns: repeat(' + printCols + ', minmax(0, 1fr)) !important; }' +
-                  '.photo-card { border: 1px solid #ccc; padding: 5px; text-align: center; page-break-inside: avoid; }' +
-                  '.photo-img { width: 100%; height: auto; object-fit: cover; aspect-ratio: 3/4; border: 1px solid #eee; margin-bottom: 5px; }' +
-                  '.photo-empty { width: 100%; aspect-ratio: 3/4; border: 1px dashed #ccc; margin-bottom: 5px; background: #fafafa; }' +
+                ? commonFallbackCSS +
+                  '.photo-grid { display: grid !important; gap: 10px; grid-template-columns: repeat(' + printCols + ', minmax(0, 1fr)) !important; }' +
+                  '.photo-card { border: 1px solid #ccc; padding: 5px; text-align: center; page-break-inside: avoid; break-inside: avoid; display: flex; flex-direction: column; }' +
+                  '.photo-frame { position: relative; width: 100%; aspect-ratio: 3 / 4; padding-top: 0 !important; background: #f3f4f6; overflow: hidden; margin-bottom: 5px; }' +
+                  '.photo-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border: 1px solid #eee; }' +
+                  '.photo-empty { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 1px dashed #ccc; background: #fafafa; display: flex; align-items: center; justify-content: center; color: #cbd5e1; }' +
                   '.photo-name { font-size: 11px; font-weight: bold; }' +
                   '.photo-no { font-size: 10px; color: #666; }'
-                : 'table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #000; padding: 4px; }';
+                : commonFallbackCSS +
+                  'table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #000; padding: 4px; }';
 
             const closeScriptTag = '<' + '/script>';
+
             const htmlDoc =
                 '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>印刷プレビュー</title>' +
                 '<script src="https://cdn.tailwindcss.com">' + closeScriptTag +
@@ -354,9 +377,11 @@
                     img.onerror = reject;
                     img.src = e.target.result;
                 };
+                reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
         };
+
 
         const rotateImage = (dataUrl) => {
             return new Promise((resolve, reject) => {
@@ -713,17 +738,18 @@
             '  for (let r = 4; r < 4 + maxRows; r++) {',
             '    const key = "A" + r;',
             '    formulas.push([',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIF(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$I$2:$I,\\"要確認\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIF(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!I2:I,\\"要確認\\"))",',
             '      "=IF(" + key + "=\\"\\",\\"\\",IF(B" + r + "=0,0,C" + r + "/B" + r + "))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"よい\\")+COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"まあまあよい\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"*よくない*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$K$2:$K,\\"*うれしい*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$L$2:$L,\\"*全部*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$M$2:$M,\\"ある\\"))"',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!J2:J,\\"よい\\")+COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!J2:J,\\"まあまあよい\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!J2:J,\\"*よくない*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!K2:K,\\"*うれしい*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!L2:L,\\"*全部*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:" + colLetter + "," + key + "," + SHEET_LOG + "!M2:M,\\"ある\\"))"',
             '    ]);',
             '  }',
             '  sh.getRange(4, 2, maxRows, 8).setFormulas(formulas);',
+
             '  sh.getRange(4, 4, maxRows, 1).setNumberFormat("0.0%");',
             '  sh.setFrozenRows(3);',
             '}',
@@ -1176,11 +1202,18 @@
                         .map(s => ({
                             ...s,
                             avoid: Array.isArray(s.avoid) ? s.avoid.map(aid => aid === deleteId ? '' : aid) : ['', '', '']
-                        }))
+                        })),
+                    dutyConfig: {
+                        ...prev.dutyConfig,
+                        jobs: Array.isArray(prev.dutyConfig?.jobs)
+                            ? prev.dutyConfig.jobs.map(j => j.fixedStudentId === deleteId ? { ...j, fixedStudentId: null } : j)
+                            : []
+                    }
                 }));
                 setDeleteId(null);
                 showToast('生徒を削除しました', 'success');
             };
+
 
             const bulkImport = (text) => {
                 if (isLocked) return;
@@ -1744,6 +1777,7 @@
             };
             const onDragOver = (e) => e.preventDefault();
             const onDrop = (e, to) => {
+                e.preventDefault();
                 if (running) return;
                 const from = e.dataTransfer.getData('idx');
                 const fromIdx = parseInt(from, 10);
@@ -1752,6 +1786,7 @@
                 [next[fromIdx], next[to]] = [next[to], next[fromIdx]];
                 setLayout(next);
             };
+
 
             const doPrint = () => handlePrint('print-target', showToast);
             const doExcel = () => {
@@ -1915,17 +1950,24 @@
             };
 
             const updateGender = (index, val) => {
-                const nd = [...duties];
-                nd[index].genderReq = val;
-                if (val === 'fixed' || val === 'exempt') nd[index].count = 1;
+                const nd = duties.map((d, idx) => {
+                    if (idx !== index) return d;
+                    const isSpecial = val === 'fixed' || val === 'exempt';
+                    return {
+                        ...d,
+                        genderReq: val,
+                        count: isSpecial ? 1 : d.count,
+                        fixedStudentId: isSpecial ? d.fixedStudentId : null
+                    };
+                });
                 setDuties(nd);
             };
 
             const updateFixedStudent = (index, sId) => {
-                const nd = [...duties];
-                nd[index].fixedStudentId = sId;
+                const nd = duties.map((d, idx) => (idx === index ? { ...d, fixedStudentId: sId } : d));
                 setDuties(nd);
             };
+
 
             const addJob = () => {
                 if (remainingSlots <= 0) return;
@@ -2735,14 +2777,15 @@
                             </div>
                         </div>
 
-                        <div id="print-target" className="flex gap-4 overflow-x-auto pb-4 min-h-[400px]">
+                        <div id="print-target" className="club-print-wrap flex gap-4 overflow-x-auto pb-4 min-h-[400px]">
                             <div className="min-w-[180px] bg-gray-100 p-4 rounded border-2 border-dashed no-print" onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, 'un')}>
                                 <div className="font-bold text-gray-500 mb-2">未所属 ({unassigned.length})</div>
                                 {unassigned.map(s => renderStudent(s, 'un', false))}
                             </div>
                             {groups.map(g => (
-                                <div key={g.id} className="min-w-[180px] bg-white border p-4 rounded shadow-sm flex flex-col" onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, g.id)}>
+                                <div key={g.id} className="club-print-col min-w-[180px] bg-white border p-4 rounded shadow-sm flex flex-col" onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, g.id)}>
                                     <input className="font-bold border-b mb-2 w-full focus:outline-none focus:border-blue-500" value={g.name} onChange={e => setGroups(groups.map(gx => gx.id === g.id ? { ...gx, name: e.target.value } : gx))} />
+
                                     <div className="flex-grow min-h-[50px]">{g.members.map(s => renderStudent(s, g.id, true))}</div>
                                     <div className="text-right mt-2 text-xs text-gray-400">{g.members.length}名</div>
                                     <button onClick={() => setDelGId(g.id)} className="text-red-300 text-right mt-1 no-print hover:text-red-500 cursor-pointer"><Icons.Trash size={16} /></button>
@@ -2859,14 +2902,17 @@
             const removePhoto = (id) => {
                 const oldPhoto = photos[id];
                 if (!oldPhoto) return;
+                if (stockPhotos.length >= MAX_STOCK) {
+                    showToast('写真ストックが上限(' + MAX_STOCK + '枚)のため外せません。不要な写真を減らしてください。', 'warning');
+                    return;
+                }
                 const newPhotos = { ...photos };
                 delete newPhotos[id];
                 setPhotos(newPhotos);
-                if (stockPhotos.length < MAX_STOCK) {
-                    setStockPhotos(prev => [...prev, oldPhoto]);
-                    showToast('写真を外しました', 'info');
-                }
+                setStockPhotos(prev => [...prev, oldPhoto]);
+                showToast('写真を外しました', 'info');
             };
+
 
             const rotatePhoto = async (id) => {
                 if (!photos[id]) return;
@@ -2973,17 +3019,21 @@
             const downloadZip = async () => {
                 if (isExportDisabled) return;
                 showToast('ZIPファイルを作成中です...', 'info');
-                try {
+               try {
                     const zip = new JSZip();
+                    const sanitizeFilePart = (str) => String(str || '').replace(/[\\/:*?"<>|]/g, '_').trim();
                     data.students.forEach((s, idx) => {
                         if (photos[s.id]) {
                             const blob = dataURLtoBlob(photos[s.id]);
                             const noStr = String(idx + 1).padStart(2, '0');
-                            const prefix = data.settings.gradeClass ? (data.settings.gradeClass + '_') : '';
-                            zip.file(prefix + noStr + '_' + s.name + '.jpg', blob);
+                            const safeClass = sanitizeFilePart(data.settings.gradeClass);
+                            const safeName = sanitizeFilePart(s.name) || '未設定';
+                            const prefix = safeClass ? (safeClass + '_') : '';
+                            zip.file(prefix + noStr + '_' + safeName + '.jpg', blob);
                         }
                     });
                     const content = await zip.generateAsync({ type: 'blob' });
+
                     const url = URL.createObjectURL(content);
                     const a = document.createElement('a');
                     a.href = url;
@@ -3068,15 +3118,16 @@
                                             onDrop={e => handleDropOnStudent(e, s.id)}
                                             onClick={() => { if (selectedStockIndex !== null) assignPhotoToStudent(selectedStockIndex, s.id); }}
                                         >
-                                            <div className="relative w-full pt-[133%] bg-gray-100 flex-shrink-0">
+                                            <div className="photo-frame relative w-full pt-[133%] bg-gray-100 flex-shrink-0">
                                                 {hasPhoto ? (
-                                                    <img src={photos[s.id]} alt={s.name} className="absolute top-0 left-0 w-full h-full object-cover" />
+                                                    <img src={photos[s.id]} alt={s.name} className="photo-img absolute top-0 left-0 w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                                    <div className="photo-empty absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-gray-300">
                                                         <Icons.Image size={32} />
                                                     </div>
                                                 )}
                                                 <div className="no-print absolute top-0 left-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+
                                                     {!hasPhoto ? (
                                                         <button onClick={(e) => { e.stopPropagation(); openCamera(s.id); }} className="bg-white p-2 rounded-full text-blue-600 cursor-pointer"><Icons.Camera size={20} /></button>
                                                     ) : (
@@ -4625,3 +4676,4 @@
     </script>
 </body>
 </html>
+
