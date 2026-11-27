@@ -714,13 +714,13 @@
             '    const key = "A" + r;',
             '    formulas.push([',
             '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIF(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!I2:I,\\"要確認\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$I$2:$I,\\"要確認\\"))",',
             '      "=IF(" + key + "=\\"\\",\\"\\",IF(B" + r + "=0,0,C" + r + "/B" + r + "))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!J2:J,\\"よい\\")+COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!J2:J,\\"まあまあよい\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!J2:J,\\"*よくない*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!K2:K,\\"*うれしい*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!L2:L,\\"*全部*\\"))",',
-            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "2:"+colLetter+","+key+","+SHEETLOG+"!M2:M,\\"ある\\"))"',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"よい\\")+COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"まあまあよい\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$J$2:$J,\\"*よくない*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$K$2:$K,\\"*うれしい*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$L$2:$L,\\"*全部*\\"))",',
+            '      "=IF(" + key + "=\\"\\",\\"\\",COUNTIFS(" + SHEET_LOG + "!" + colLetter + "$2:" + colLetter + "," + key + "," + SHEET_LOG + "!$M$2:$M,\\"ある\\"))"',
             '    ]);',
             '  }',
             '  sh.getRange(4, 2, maxRows, 8).setFormulas(formulas);',
@@ -1904,7 +1904,8 @@
 
             const updateCount = (index, newCount) => {
                 if (isNaN(newCount) || newCount < 1) return;
-                if (newCount > duties[index].count && remainingSlots <= 0) {
+                const diff = newCount - duties[index].count;
+                if (diff > remainingSlots) {
                     showToast('生徒数が不足しています', 'error');
                     return;
                 }
@@ -1953,117 +1954,312 @@
 
                 const slotsInfo = [];
                 let slotIndex = 0;
-                duties.forEach(d => {
+                duties.forEach((d, dIdx) => {
+                    const jobKey = (d.name && d.name.trim()) ? d.name.trim() : ('job_' + dIdx);
                     if (d.genderReq === 'fixed') {
-                        slotsInfo.push({ id: 'slot_' + (slotIndex++), name: d.name, genderReq: 'fixed', fixedStudentId: d.fixedStudentId });
+                        slotsInfo.push({ id: 'slot_' + (slotIndex++), name: d.name, jobKey, genderReq: 'fixed', fixedStudentId: d.fixedStudentId });
                     } else if (d.genderReq !== 'exempt') {
                         for (let i = 0; i < d.count; i++) {
-                            slotsInfo.push({ id: 'slot_' + (slotIndex++), name: d.count > 1 ? (d.name + (i + 1)) : d.name, genderReq: d.genderReq });
+                            slotsInfo.push({
+                                id: 'slot_' + (slotIndex++),
+                                name: d.count > 1 ? (d.name + (i + 1)) : d.name,
+                                jobKey,
+                                genderReq: d.genderReq
+                            });
                         }
                     }
                 });
 
-                const weeks = data.dutyConfig.duration || 10;
-                const newSchedule = [];
-                let cursorBoy = 0, assignCountBoy = 0, offsetBoy = 0;
-                let cursorGirl = 0, assignCountGirl = 0, offsetGirl = 0;
-                let cursorGlobal = 0, assignCountGlobal = 0, offsetGlobal = 0;
+                // 最小重み二部マッチング（ハンガリアン法：R <= C の最適割り当てを厳密に算出）
+                const solveMinCostAssignment = (costMatrix) => {
+                    const R = costMatrix.length;
+                    if (R === 0) return [];
+                    const C = costMatrix[0].length;
+                    if (C === 0) return Array(R).fill(-1);
+                    const rows = Math.min(R, C);
+                    const u = new Float64Array(rows + 1);
+                    const v = new Float64Array(C + 1);
+                    const p = new Int32Array(C + 1);
+                    const way = new Int32Array(C + 1);
+
+                    for (let i = 1; i <= rows; i++) {
+                        p[0] = i;
+                        let j0 = 0;
+                        const minv = new Float64Array(C + 1).fill(Infinity);
+                        const used = new Uint8Array(C + 1);
+
+                        do {
+                            used[j0] = 1;
+                            const i0 = p[j0];
+                            let delta = Infinity;
+                            let j1 = 0;
+                            for (let j = 1; j <= C; j++) {
+                                if (!used[j]) {
+                                    const cur = costMatrix[i0 - 1][j - 1] - u[i0] - v[j];
+                                    if (cur < minv[j]) {
+                                        minv[j] = cur;
+                                        way[j] = j0;
+                                    }
+                                    if (minv[j] < delta) {
+                                        delta = minv[j];
+                                        j1 = j;
+                                    }
+                                }
+                            }
+                            for (let j = 0; j <= C; j++) {
+                                if (used[j]) {
+                                    u[p[j]] += delta;
+                                    v[j] -= delta;
+                                } else {
+                                    minv[j] -= delta;
+                                }
+                            }
+                            j0 = j1;
+                        } while (p[j0] !== 0);
+
+                        do {
+                            const j1 = way[j0];
+                            p[j0] = p[j1];
+                            j0 = j1;
+                        } while (j0 !== 0);
+                    }
+
+                    const assignment = new Array(R).fill(-1);
+                    for (let j = 1; j <= C; j++) {
+                        if (p[j] > 0) {
+                            assignment[p[j] - 1] = j - 1;
+                        }
+                    }
+                    return assignment;
+                };
 
                 const getSafeIndex = (index, length) => (length <= 0 ? 0 : ((index % length) + length) % length);
 
+                const boyRankMap = new Map(boysList.map((s, idx) => [s.id, idx]));
+                const girlRankMap = new Map(girlsList.map((s, idx) => [s.id, idx]));
+                const allRankMap = new Map(allList.map((s, idx) => [s.id, idx]));
+
+                const boySlots = slotsInfo.filter(s => s.genderReq === 'boy');
+                const girlSlots = slotsInfo.filter(s => s.genderReq === 'girl');
+                const noneSlots = slotsInfo.filter(s => s.genderReq === 'none');
+                const fixedSlots = slotsInfo.filter(s => s.genderReq === 'fixed');
+
+                // 全生徒の担当履歴（連続回避・回数均等化用）
+                const totalCount = {};
+                const jobCount = {};
+                const slotCount = {};
+                const lastWeek = {};
+                const lastJob = {};
+                const prevJobKey = {};
+                const lastJobWeek = {};
+                const lastSlot = {};
+                const jobStreak = {};
+
+                allList.forEach(s => {
+                    totalCount[s.id] = 0;
+                    jobCount[s.id] = {};
+                    slotCount[s.id] = {};
+                    lastWeek[s.id] = -999;
+                    lastJob[s.id] = null;
+                    prevJobKey[s.id] = null;
+                    lastJobWeek[s.id] = {};
+                    lastSlot[s.id] = null;
+                    jobStreak[s.id] = 0;
+                });
+
+                const weeks = data.dutyConfig.duration || 10;
+                const newSchedule = [];
+                let consecutiveSameJobCount = 0;
+
                 for (let w = 1; w <= weeks; w++) {
+                    const wIdx = w - 1;
                     const weekAssignments = {};
                     const usedInThisWeek = new Set();
+                    const assignedSlotByStudent = {};
 
-                    const startBoyLaps = boysList.length > 0 ? Math.floor(assignCountBoy / boysList.length) : 0;
-                    const startGirlLaps = girlsList.length > 0 ? Math.floor(assignCountGirl / girlsList.length) : 0;
-                    const startGlobalLaps = allList.length > 0 ? Math.floor(assignCountGlobal / allList.length) : 0;
-
-                    slotsInfo.forEach(slot => {
-                        if (slot.genderReq === 'fixed') {
-                            const student = data.students.find(s => s.id === slot.fixedStudentId);
-                            weekAssignments[slot.id] = student ? student.name : '(未設定)';
-                            if (student) usedInThisWeek.add(student.id);
-                        }
+                    // 1. ★固定枠
+                    fixedSlots.forEach(slot => {
+                        const student = data.students.find(s => s.id === slot.fixedStudentId);
+                        weekAssignments[slot.id] = student ? student.name : '(未設定)';
+                        if (student) usedInThisWeek.add(student.id);
                     });
 
-                    slotsInfo.forEach(slot => {
-                        if (slot.genderReq !== 'boy') return;
-                        let found = false;
-                        for (let k = 0; k < boysList.length; k++) {
-                            const student = boysList[getSafeIndex(cursorBoy + offsetBoy + k, boysList.length)];
-                            if (!usedInThisWeek.has(student.id)) {
+                    // 2. 男子のみ枠 / 3. 女子のみ枠（最適マッチング＋プラス方向ずらし）
+                    const assignGenderSlots = (targetSlots, sourceList, rankMap) => {
+                        if (targetSlots.length === 0) return;
+                        const candidates = sourceList.filter(s => !usedInThisWeek.has(s.id));
+                        const N = sourceList.length;
+                        const K = targetSlots.length;
+                        const baseStart = N > 0
+                            ? (wIdx * K + Math.floor((wIdx * K) / N) * shiftVal)
+                            : 0;
+
+                        const costMatrix = targetSlots.map((slot, sIdx) => {
+                            const expectedIdx = getSafeIndex(baseStart + sIdx, N);
+                            return candidates.map(student => {
+                                const sid = student.id;
+                                const rIdx = rankMap.get(sid) || 0;
+                                const dist = getSafeIndex(rIdx - expectedIdx, N);
+                                const jCnt = jobCount[sid][slot.jobKey] || 0;
+                                const sCnt = slotCount[sid][slot.id] || 0;
+                                const isConsecutiveSameJob = lastJob[sid] === slot.jobKey;
+                                const isOtherJobLongStreak = !!(lastJob[sid] && lastJob[sid] !== slot.jobKey && jobStreak[sid] >= 2);
+
+                                let cost = 0;
+                                if (isConsecutiveSameJob) cost += 100000000 * (1 + jobStreak[sid]); // 同一係の連続を絶対回避
+                                cost += jCnt * 1000000;                                             // 係ごとの回数均等
+                                if (!isOtherJobLongStreak) cost += 200000;                          // 他係で2週以上連続中の生徒を優先救済
+                                cost += totalCount[sid] * 50000;                                    // 総当番回数の均等
+                                if (lastWeek[sid] === w - 1) cost += 10000;                         // 休みがある場合の連続当番回避
+                                if (lastJob[sid] === null && prevJobKey[sid] === slot.jobKey) cost += 5000;
+                                if (lastSlot[sid] === slot.id) cost += 2000;                        // 同一番号枠の連続回避
+                                cost += sCnt * 500;
+                                cost += dist;                                                       // 名簿順＋ずらし回転
+                                return cost;
+                            });
+                        });
+
+                        const matched = solveMinCostAssignment(costMatrix);
+                        targetSlots.forEach((slot, sIdx) => {
+                            const cIdx = matched[sIdx];
+                            if (cIdx >= 0 && candidates[cIdx]) {
+                                const student = candidates[cIdx];
                                 weekAssignments[slot.id] = student.name;
                                 usedInThisWeek.add(student.id);
-                                cursorBoy += (k + 1);
-                                assignCountBoy++;
-                                found = true;
-                                break;
+                                assignedSlotByStudent[student.id] = slot;
+                            } else {
+                                weekAssignments[slot.id] = '(不足)';
                             }
-                        }
-                        if (!found) weekAssignments[slot.id] = '(不足)';
-                    });
+                        });
+                    };
 
-                    slotsInfo.forEach(slot => {
-                        if (slot.genderReq !== 'girl') return;
-                        let found = false;
-                        for (let k = 0; k < girlsList.length; k++) {
-                            const student = girlsList[getSafeIndex(cursorGirl + offsetGirl + k, girlsList.length)];
-                            if (!usedInThisWeek.has(student.id)) {
+                    assignGenderSlots(boySlots, boysList, boyRankMap);
+                    assignGenderSlots(girlSlots, girlsList, girlRankMap);
+
+                    // 4. 指定なし枠（残り全員から最適マッチングで連続回避＆回数均等化）
+                    if (noneSlots.length > 0) {
+                        const candidates = allList.filter(s => !usedInThisWeek.has(s.id));
+                        const N = allList.length;
+                        const K = noneSlots.length;
+                        const baseStart = N > 0
+                            ? (K === N
+                                ? wIdx * (shiftVal !== 0 ? shiftVal : 1)
+                                : (wIdx * K + Math.floor((wIdx * K) / N) * shiftVal))
+                            : 0;
+
+                        const costMatrix = noneSlots.map((slot, sIdx) => {
+                            const expectedIdx = getSafeIndex(baseStart + sIdx, N);
+                            return candidates.map(student => {
+                                const sid = student.id;
+                                const rIdx = allRankMap.get(sid) || 0;
+                                const dist = getSafeIndex(rIdx - expectedIdx, N);
+                                const jCnt = jobCount[sid][slot.jobKey] || 0;
+                                const sCnt = slotCount[sid][slot.id] || 0;
+                                const isConsecutiveSameJob = lastJob[sid] === slot.jobKey;
+                                const lastWForJob = lastJobWeek[sid][slot.jobKey] || 0;
+
+                                let cost = 0;
+                                if (isConsecutiveSameJob) cost += 100000000 * (1 + jobStreak[sid]); // 同一係の連続を絶対回避（3連続はさらに重く回避）
+                                cost += totalCount[sid] * 2000000;                                  // 休みがある場合に総当番回数を均等化
+                                cost += jCnt * 1000000;                                             // 各係の担当回数を全員均等化
+                                if (lastJob[sid] === null && prevJobKey[sid] === slot.jobKey) cost += 200000;
+                                if (lastWeek[sid] === w - 1) cost += 100000;                        // 休みがある場合の連続当番回避
+                                if (lastWForJob > 0) cost += Math.max(0, 50 - (w - lastWForJob)) * 200; // 前回から間隔を空ける
+                                if (lastSlot[sid] === slot.id) cost += 5000;                        // 同一番号枠の連続回避
+                                cost += sCnt * 500;
+                                cost += dist;                                                       // 名簿順＋ずらし回転
+                                return cost;
+                            });
+                        });
+
+                        const matched = solveMinCostAssignment(costMatrix);
+                        noneSlots.forEach((slot, sIdx) => {
+                            const cIdx = matched[sIdx];
+                            if (cIdx >= 0 && candidates[cIdx]) {
+                                const student = candidates[cIdx];
                                 weekAssignments[slot.id] = student.name;
                                 usedInThisWeek.add(student.id);
-                                cursorGirl += (k + 1);
-                                assignCountGirl++;
-                                found = true;
-                                break;
+                                assignedSlotByStudent[student.id] = slot;
+                            } else {
+                                weekAssignments[slot.id] = '-';
                             }
-                        }
-                        if (!found) weekAssignments[slot.id] = '(不足)';
-                    });
+                        });
+                    }
 
-                    slotsInfo.forEach(slot => {
-                        if (slot.genderReq !== 'none') return;
-                        let found = false;
-                        for (let k = 0; k < allList.length; k++) {
-                            const student = allList[getSafeIndex(cursorGlobal + offsetGlobal + k, allList.length)];
-                            if (!usedInThisWeek.has(student.id)) {
-                                weekAssignments[slot.id] = student.name;
-                                usedInThisWeek.add(student.id);
-                                cursorGlobal += (k + 1);
-                                assignCountGlobal++;
-                                found = true;
-                                break;
+                    // 5. 今週の結果を履歴へ反映
+                    allList.forEach(student => {
+                        const sid = student.id;
+                        const slot = assignedSlotByStudent[sid];
+                        if (slot) {
+                            if (lastJob[sid] === slot.jobKey) {
+                                jobStreak[sid] += 1;
+                                consecutiveSameJobCount++;
+                            } else {
+                                jobStreak[sid] = 1;
                             }
+                            totalCount[sid] += 1;
+                            jobCount[sid][slot.jobKey] = (jobCount[sid][slot.jobKey] || 0) + 1;
+                            slotCount[sid][slot.id] = (slotCount[sid][slot.id] || 0) + 1;
+                            lastWeek[sid] = w;
+                            lastJob[sid] = slot.jobKey;
+                            prevJobKey[sid] = slot.jobKey;
+                            lastJobWeek[sid][slot.jobKey] = w;
+                            lastSlot[sid] = slot.id;
+                        } else {
+                            // 今週休みの生徒
+                            lastJob[sid] = null;
+                            lastSlot[sid] = null;
+                            jobStreak[sid] = 0;
                         }
-                        if (!found) weekAssignments[slot.id] = '-';
                     });
-
-                    if (boysList.length > 0) {
-                        const endLaps = Math.floor(assignCountBoy / boysList.length);
-                        if (endLaps > startBoyLaps) offsetBoy += -shiftVal * (endLaps - startBoyLaps);
-                    }
-                    if (girlsList.length > 0) {
-                        const endLaps = Math.floor(assignCountGirl / girlsList.length);
-                        if (endLaps > startGirlLaps) offsetGirl += -shiftVal * (endLaps - startGirlLaps);
-                    }
-                    if (allList.length > 0) {
-                        const endLaps = Math.floor(assignCountGlobal / allList.length);
-                        if (endLaps > startGlobalLaps) offsetGlobal += -shiftVal * (endLaps - startGlobalLaps);
-                    }
 
                     newSchedule.push({ id: w, mapping: weekAssignments });
                 }
 
                 setSchedule({ slots: slotsInfo, weeks: newSchedule });
-                showToast('当番表を作成しました', 'success');
+                if (consecutiveSameJobCount === 0) {
+                    showToast('当番表を作成しました（同じ係の連続なし・回数均等）', 'success');
+                } else {
+                    showToast('当番表を作成しました（※枠数の都合上、最小限の連続のみ許容しました）', 'info');
+                }
             };
 
-            const doPrint = () => handlePrint('print-target', showToast);
+            const importJobs = (text) => {
+                const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim());
+                if (lines.length === 0) return;
+                const parsed = lines.map(l => {
+                    const parts = l.split('\t');
+                    const name = parts[0].trim();
+                    const cnt = parseInt(parts[1], 10);
+                    return {
+                        name,
+                        count: (!isNaN(cnt) && cnt >= 1) ? cnt : 1,
+                        genderReq: 'none',
+                        fixedStudentId: null
+                    };
+                });
+                setDuties(prev => [...prev, ...parsed]);
+                showToast(parsed.length + '件の係りを取り込みました', 'success');
+            };
+
+            const unitLabels = { week: '週目', day: '日目', month: '月目', turn: '回目' };
+            const currentUnit = unitLabels[data.dutyConfig.type] || '週目';
+            const hasSchedule = !!(schedule && Array.isArray(schedule.slots) && Array.isArray(schedule.weeks) && schedule.weeks.length > 0);
+
+            const doPrint = () => {
+                if (!hasSchedule) return showToast('先に当番表を作成してください', 'error');
+                handlePrint('print-target', showToast, { orientation: 'landscape' });
+            };
+
             const doExcel = () => {
-                if (!schedule.slots) return;
-                const rows = [['係名', ...schedule.weeks.map(w => w.id + (data.dutyConfig.type === 'week' ? '週' : '月'))]];
+                if (!hasSchedule) return showToast('先に当番表を作成してください', 'error');
+                const header = ['係り・当番', ...schedule.weeks.map(w => w.id + currentUnit)];
+                const rows = [header];
                 schedule.slots.forEach(slot => {
-                    rows.push([slot.name, ...schedule.weeks.map(w => w.mapping[slot.id] || '')]);
+                    rows.push([
+                        slot.name || '(名称なし)',
+                        ...schedule.weeks.map(w => w.mapping[slot.id] || '')
+                    ]);
                 });
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
@@ -2072,45 +2268,66 @@
                 showToast('Excelファイルをダウンロードしました', 'success');
             };
 
+            const isBoyShort = rosterCounts.boy < dutyCounts.boy;
+            const isGirlShort = rosterCounts.girl < dutyCounts.girl;
+            const isTotalShort = remainingStudents < requiredSlots;
+
             return (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     <PasteModal
                         isOpen={importOpen}
                         onClose={() => setImportOpen(false)}
-                        title="係リスト取込"
-                        placeholder={'係名\n係名\t人数'}
-                        onImport={(txt) => {
-                            const ls = txt.split(/\r\n|\n/).filter(l => l.trim());
-                            const nd = ls.map(l => {
-                                const p = l.split('\t');
-                                return { name: p[0].trim(), count: parseInt(p[1], 10) || 1, genderReq: 'none', fixedStudentId: null };
-                            });
-                            setDuties([...duties, ...nd]);
-                        }}
+                        onImport={importJobs}
+                        title="係り・当番をExcelから一括取込"
+                        placeholder={'係り名\n係り名\t人数\n...'}
                     />
 
-                    <Card title="係り・当番設定">
-                        <div className="space-y-4">
-                            <div className="no-print">
-                                <div className="flex justify-between mb-2">
-                                    <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                                        係りの構成
-                                        <span className={'text-sm ml-2 ' + (remainingSlots < 0 ? 'text-red-500' : 'text-blue-600')}>
-                                            (残り生徒: {remainingSlots}名)
-                                        </span>
-                                    </h3>
-                                    <Button variant="secondary" onClick={() => setImportOpen(true)} className="text-xs py-1"><Icons.ClipboardList /> 取込</Button>
-                                </div>
-                                <div className="bg-orange-50 p-2 mb-2 rounded text-xs text-orange-800 border border-orange-200">
-                                    <span className="font-bold">現在の対象人数 (固定・免除除く):</span> 男子 {rosterCounts.boy}名 / 女子 {rosterCounts.girl}名
-                                </div>
+                    <Card
+                        title="係り・当番設定"
+                        action={
+                            <div className="flex flex-wrap gap-2">
+                                <Button variant="secondary" onClick={() => setImportOpen(true)}><Icons.ClipboardList /> Excel取込</Button>
+                                <Button variant="secondary" onClick={doPrint} disabled={!hasSchedule}><Icons.Printer /> 印刷</Button>
+                                <Button variant="secondary" onClick={doExcel} disabled={!hasSchedule}><Icons.Download /> Excel</Button>
+                            </div>
+                        }
+                    >
+                        <div className="mb-4 p-3 rounded-lg bg-gray-50 border flex flex-wrap gap-4 items-center text-sm font-bold no-print">
+                            <span className="text-gray-700">対象生徒: {remainingStudents}名</span>
+                            <span className={isBoyShort ? 'text-red-600' : 'text-blue-600'}>
+                                男: {dutyCounts.boy} / {rosterCounts.boy}名
+                            </span>
+                            <span className={isGirlShort ? 'text-red-600' : 'text-red-500'}>
+                                女: {dutyCounts.girl} / {rosterCounts.girl}名
+                            </span>
+                            <span className="text-gray-600">指定なし枠: {dutyCounts.none}枠</span>
+                            <span className={'ml-auto px-3 py-1 rounded-full border ' + (isTotalShort || isBoyShort || isGirlShort ? 'bg-red-50 border-red-200 text-red-600' : 'bg-green-50 border-green-200 text-green-700')}>
+                                {isTotalShort ? ('生徒不足 (' + remainingSlots + '名)') : ('残り生徒: ' + remainingSlots + '名')}
+                            </span>
+                        </div>
 
-                                {duties.map((d, i) => (
-                                    <div key={i} className={'flex gap-2 mb-2 items-center p-2 rounded ' + (d.genderReq === 'exempt' ? 'bg-gray-100 border border-gray-300' : '')}>
+                        <div className="space-y-2 mb-4 no-print">
+                            {duties.map((d, i) => {
+                                const isSpecial = d.genderReq === 'fixed' || d.genderReq === 'exempt';
+                                const otherUsedIds = new Set(
+                                    duties
+                                        .filter((other, idx) => idx !== i && (other.genderReq === 'fixed' || other.genderReq === 'exempt') && other.fixedStudentId)
+                                        .map(other => other.fixedStudentId)
+                                );
+                                const selectColor =
+                                    d.genderReq === 'boy' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                    d.genderReq === 'girl' ? 'bg-red-50 text-red-700 border-red-200' :
+                                    d.genderReq === 'fixed' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                    d.genderReq === 'exempt' ? 'bg-gray-100 text-gray-600 border-gray-300' :
+                                    'bg-white text-gray-700 border-gray-300';
+
+                                return (
+                                    <div key={i} className="flex flex-wrap items-center gap-2 p-2 bg-white border rounded-lg">
                                         <input
-                                            className="border rounded p-2 flex-grow"
+                                            type="text"
+                                            className="flex-1 min-w-[160px] border rounded p-2 text-sm font-bold"
+                                            placeholder="係り・当番名（例: 黒板、男トイレ）"
                                             value={d.name}
-                                            placeholder={d.genderReq === 'exempt' ? '理由 (例: 入院中)' : '係名'}
                                             onChange={e => {
                                                 const nd = [...duties];
                                                 nd[i].name = e.target.value;
@@ -2118,11 +2335,7 @@
                                             }}
                                         />
                                         <select
-                                            className={'border rounded p-2 w-24 text-sm font-bold ' +
-                                                (d.genderReq === 'boy' ? 'bg-blue-50 text-blue-800' :
-                                                    d.genderReq === 'girl' ? 'bg-red-50 text-red-800' :
-                                                        d.genderReq === 'fixed' ? 'bg-purple-100 text-purple-800' :
-                                                            d.genderReq === 'exempt' ? 'bg-gray-200 text-gray-600' : '')}
+                                            className={'border rounded p-2 text-sm font-bold ' + selectColor}
                                             value={d.genderReq}
                                             onChange={e => updateGender(i, e.target.value)}
                                         >
@@ -2132,326 +2345,336 @@
                                             <option value="fixed">★固定</option>
                                             <option value="exempt">免除</option>
                                         </select>
-                                        {d.genderReq === 'fixed' || d.genderReq === 'exempt' ? (
+                                        {isSpecial ? (
                                             <select
-                                                className={'border rounded p-2 w-40 text-sm ' + (d.genderReq === 'fixed' ? 'bg-purple-50' : 'bg-gray-50')}
+                                                className="border rounded p-2 text-sm min-w-[150px]"
                                                 value={d.fixedStudentId || ''}
-                                                onChange={e => updateFixedStudent(i, e.target.value)}
+                                                onChange={e => updateFixedStudent(i, e.target.value || null)}
                                             >
                                                 <option value="">生徒を選択...</option>
-                                                {data.students.map(s => (
-                                                    (s.id === d.fixedStudentId || !usedStudentIds.has(s.id)) ? <option key={s.id} value={s.id}>{s.name}</option> : null
-                                                ))}
+                                                {data.students
+                                                    .filter(s => !otherUsedIds.has(s.id))
+                                                    .map((s, sIdx) => (
+                                                        <option key={s.id} value={s.id}>{sIdx + 1}. {s.name || '未設定'}</option>
+                                                    ))}
                                             </select>
                                         ) : (
-                                            <input type="number" className="border rounded p-2 w-16" value={d.count} min="1" onChange={e => updateCount(i, parseInt(e.target.value, 10))} />
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="w-20 border rounded p-2 text-sm text-center font-bold"
+                                                value={d.count}
+                                                onChange={e => updateCount(i, parseInt(e.target.value, 10))}
+                                            />
                                         )}
-                                        <Button variant="danger" onClick={() => setDuties(duties.filter((_, x) => x !== i))}><Icons.Trash /></Button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDuties(duties.filter((_, idx) => idx !== i))}
+                                            className="p-2 rounded bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+                                            title="削除"
+                                        >
+                                            <Icons.Trash size={16} />
+                                        </button>
                                     </div>
-                                ))}
-                                <Button variant="secondary" onClick={addJob} disabled={remainingSlots <= 0}><Icons.Plus /> 追加</Button>
-                            </div>
+                                );
+                            })}
 
-                            <div className="bg-gray-50 p-4 rounded-lg border no-print">
-                                <div className="flex flex-wrap gap-4 items-center mb-4">
-                                    <label className="font-bold text-sm">期間:
-                                        <select className="ml-2 border rounded p-1" value={data.dutyConfig.type} onChange={e => setData({ ...data, dutyConfig: { ...data.dutyConfig, type: e.target.value } })}>
-                                            <option value="week">週交代</option><option value="month">月交代</option>
-                                        </select>
-                                    </label>
-                                    <label className="font-bold text-sm">回数:
-                                        <input type="number" className="ml-2 w-16 border rounded p-1" value={data.dutyConfig.duration} onChange={e => setData({ ...data, dutyConfig: { ...data.dutyConfig, duration: parseInt(e.target.value, 10) || 1 } })} />
-                                    </label>
-                                    <label className="font-bold text-sm">ずらす数:
-                                        <input type="number" className="ml-2 w-16 border rounded p-1" value={shiftVal} onChange={e => { const v = parseInt(e.target.value, 10); setShiftVal(isNaN(v) ? 0 : v); }} />
-                                    </label>
-                                </div>
-                                <div className="flex gap-2 flex-wrap">
-                                    <Button onClick={() => generate('asc')} variant="secondary"><Icons.ArrowDown /> 名簿順（昇順）</Button>
-                                    <Button onClick={() => generate('desc')} variant="secondary"><Icons.ArrowUp /> 逆順（降順）</Button>
-                                    <Button onClick={() => generate('random')} variant="secondary"><Icons.Shuffle /> ランダム</Button>
-                                </div>
+                            <div className="pt-1">
+                                <Button
+                                    variant="secondary"
+                                    onClick={addJob}
+                                    disabled={remainingSlots <= 0}
+                                    title={remainingSlots <= 0 ? '残り生徒が0名のため追加できません' : '係り・当番を追加'}
+                                >
+                                    <Icons.Plus size={16} /> 係り・当番を追加
+                                </Button>
                             </div>
                         </div>
 
-                        {schedule.slots && (
-                            <div className="mt-6">
-                                <div className="flex justify-end gap-2 mb-2 no-print">
-                                    <Button variant="secondary" onClick={doPrint}><Icons.Printer /> 印刷</Button>
-                                    <Button variant="secondary" onClick={doExcel}><Icons.Download /> Excel</Button>
-                                </div>
-                                <div id="print-target" className="overflow-x-auto border rounded">
-                                    <table className="w-full text-sm text-center border-collapse">
-                                        <thead>
-                                            <tr className="bg-gray-100">
-                                                <th className="border p-2 min-w-[100px] bg-gray-200">係 \ 回</th>
+                        <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl flex flex-wrap items-center gap-4 mb-6 no-print">
+                            <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                期間
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="50"
+                                    className="w-16 border rounded p-1.5 text-center bg-white"
+                                    value={data.dutyConfig.duration || 15}
+                                    onChange={e => {
+                                        const val = Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1));
+                                        setData(prev => ({ ...prev, dutyConfig: { ...prev.dutyConfig, duration: val } }));
+                                    }}
+                                />
+                            </label>
+                            <select
+                                className="border rounded p-1.5 text-sm font-bold bg-white"
+                                value={data.dutyConfig.type || 'week'}
+                                onChange={e => setData(prev => ({ ...prev, dutyConfig: { ...prev.dutyConfig, type: e.target.value } }))}
+                            >
+                                <option value="week">週ごと</option>
+                                <option value="day">日ごと</option>
+                                <option value="month">月ごと</option>
+                                <option value="turn">回ごと</option>
+                            </select>
+                            <label className="text-sm font-bold text-gray-700 flex items-center gap-2" title="1周するごとに名簿順をずらす人数">
+                                ずらし
+                                <input
+                                    type="number"
+                                    min="-10"
+                                    max="10"
+                                    className="w-16 border rounded p-1.5 text-center bg-white"
+                                    value={shiftVal}
+                                    onChange={e => {
+                                        const v = parseInt(e.target.value, 10);
+                                        setShiftVal(isNaN(v) ? 0 : v);
+                                    }}
+                                />
+                            </label>
+                            <div className="flex flex-wrap gap-2 ml-auto">
+                                <Button variant="secondary" onClick={() => generate('asc')}>名簿順で作成</Button>
+                                <Button variant="secondary" onClick={() => generate('desc')}>逆順で作成</Button>
+                                <Button variant="primary" onClick={() => generate('random')}><Icons.Shuffle size={16} /> ランダム作成</Button>
+                            </div>
+                        </div>
+
+                        <div id="print-target" className="overflow-x-auto">
+                            {hasSchedule ? (
+                                <table className="min-w-full border-collapse text-sm text-center bg-white">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="border p-2.5 font-bold text-gray-800 whitespace-nowrap sticky left-0 bg-gray-100 z-10 min-w-[110px]">係り・当番</th>
+                                            {schedule.weeks.map(w => (
+                                                <th key={w.id} className="border p-2 font-bold text-gray-700 whitespace-nowrap min-w-[80px]">
+                                                    {w.id}{currentUnit}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {schedule.slots.map(slot => (
+                                            <tr key={slot.id} className="hover:bg-blue-50/30">
+                                                <td className="border p-2.5 font-bold text-gray-800 whitespace-nowrap sticky left-0 bg-white z-10">
+                                                    {slot.genderReq === 'fixed' ? ('★' + (slot.name || '固定')) : (slot.name || '(名称なし)')}
+                                                </td>
                                                 {schedule.weeks.map(w => (
-                                                    <th key={w.id} className="border p-2 min-w-[60px]">{w.id}{data.dutyConfig.type === 'week' ? '週' : '月'}</th>
+                                                    <td key={w.id} className="border p-2 text-gray-800">
+                                                        {w.mapping[slot.id] || ''}
+                                                    </td>
                                                 ))}
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {schedule.slots.map((slot, i) => (
-                                                <tr key={i}>
-                                                    <td className="border p-2 font-bold bg-gray-50 text-left px-4">{slot.name}</td>
-                                                    {schedule.weeks.map(w => (
-                                                        <td key={w.id} className="border p-2">{w.mapping[slot.id]}</td>
-                                                    ))}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed">
+                                    上のボタンから当番表を作成してください
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </Card>
                 </div>
             );
         };
 
         // ==========================================
-        // 9. グループ分けツール（修正②：名簿変更時の班メンバー最新化＆削除済み幽霊メンバー自動除外）
+        // 9. グループ分けツール（修正②：名簿変更・削除時のメンバー自動同期）
         // ==========================================
         const ClubTool = ({ data, setData, showToast }) => {
-            const syncGroupsWithStudents = (rawGroups, students) => {
-                const studentMap = new Map(students.map(s => [s.id, s]));
-                return rawGroups.map(g => {
-                    const seen = new Set();
-                    const syncedMembers = [];
-                    (g.members || []).forEach(m => {
-                        const latest = studentMap.get(m.id);
-                        if (latest && !seen.has(latest.id)) {
-                            seen.add(latest.id);
-                            syncedMembers.push(latest);
-                        }
-                    });
-                    return { ...g, members: syncedMembers };
-                });
-            };
-
-            const [groups, setGroups] = useState(() => {
-                const base = data.clubConfig.clubs && data.clubConfig.clubs.length
-                    ? data.clubConfig.clubs
-                    : [{ id: 'g1', name: '班1', members: [] }];
-                return syncGroupsWithStudents(base, data.students);
-            });
-            const [unassigned, setUnassigned] = useState([]);
+            const [groups, setGroups] = useState(() => (
+                Array.isArray(data.clubConfig?.clubs) ? data.clubConfig.clubs : []
+            ));
+            const [lockedIds, setLockedIds] = useState(() => (
+                new Set(Array.isArray(data.clubConfig?.lockedStudentIds) ? data.clubConfig.lockedStudentIds : [])
+            ));
             const [delGId, setDelGId] = useState(null);
             const [resetConfirm, setResetConfirm] = useState(false);
-            const [lockedIds, setLockedIds] = useState(() => {
-                const validIds = new Set(data.students.map(s => s.id));
-                return new Set((data.clubConfig.lockedStudentIds || []).filter(id => validIds.has(id)));
-            });
 
-            // ★修正②：名簿(data.students)が追加・編集・削除された際に班メンバーとロックIDを自動同期
+            // 名簿の氏名変更・性別変更・NG変更・生徒削除を班メンバーへ即時同期
             useEffect(() => {
                 const studentMap = new Map(data.students.map(s => [s.id, s]));
-                setGroups(prevGroups => {
+                setGroups(prev => {
                     let changed = false;
-                    const nextGroups = prevGroups.map(g => {
-                        const seen = new Set();
-                        const syncedMembers = [];
-                        for (let i = 0; i < g.members.length; i++) {
-                            const m = g.members[i];
-                            const latest = studentMap.get(m.id);
-                            if (!latest || seen.has(m.id)) {
-                                changed = true;
-                                continue;
-                            }
-                            seen.add(m.id);
-                            if (
-                                m.name !== latest.name ||
-                                m.gender !== latest.gender ||
-                                m.needsSupport !== latest.needsSupport ||
-                                m.fixedSeat !== latest.fixedSeat ||
-                                JSON.stringify(m.avoid || []) !== JSON.stringify(latest.avoid || [])
-                            ) {
+                    const seen = new Set();
+                    const next = prev.map(g => {
+                        const nextMembers = [];
+                        (g.members || []).forEach(m => {
+                            const latest = m && studentMap.get(m.id);
+                            if (latest && !seen.has(latest.id)) {
+                                seen.add(latest.id);
+                                if (latest !== m) changed = true;
+                                nextMembers.push(latest);
+                            } else {
                                 changed = true;
                             }
-                            syncedMembers.push(latest);
-                        }
-                        return { ...g, members: syncedMembers };
+                        });
+                        if (nextMembers.length !== (g.members || []).length) changed = true;
+                        return { ...g, members: nextMembers };
                     });
-                    return changed ? nextGroups : prevGroups;
+                    return changed ? next : prev;
                 });
-
-                setLockedIds(prevLocked => {
-                    let changed = false;
-                    const nextLocked = new Set();
-                    prevLocked.forEach(id => {
-                        if (studentMap.has(id)) nextLocked.add(id);
-                        else changed = true;
-                    });
-                    return changed ? nextLocked : prevLocked;
+                setLockedIds(prev => {
+                    const filtered = new Set([...prev].filter(id => studentMap.has(id)));
+                    return filtered.size === prev.size ? prev : filtered;
                 });
             }, [data.students]);
 
+            // 班と固定設定を自動保存
             useEffect(() => {
-                const assigned = new Set();
-                groups.forEach(g => g.members.forEach(m => assigned.add(m.id)));
-                setUnassigned(data.students.filter(s => !assigned.has(s.id)));
-            }, [data.students, groups]);
-
-            useEffect(() => {
-                setData(p => ({ ...p, clubConfig: { ...p.clubConfig, clubs: groups, lockedStudentIds: Array.from(lockedIds) } }));
+                setData(prev => ({
+                    ...prev,
+                    clubConfig: {
+                        clubs: groups,
+                        lockedStudentIds: Array.from(lockedIds)
+                    }
+                }));
             }, [groups, lockedIds]);
 
-            const toggleLock = (e, sid) => {
-                e.stopPropagation();
-                const newLocked = new Set(lockedIds);
-                if (newLocked.has(sid)) newLocked.delete(sid);
-                else newLocked.add(sid);
-                setLockedIds(newLocked);
+            const assignedIds = new Set();
+            groups.forEach(g => (g.members || []).forEach(m => assignedIds.add(m.id)));
+            const unassigned = data.students.filter(s => !assignedIds.has(s.id));
+            const canAddGroup = groups.length < Math.max(1, data.students.length);
+
+            const addGroup = () => {
+                if (!canAddGroup) return;
+                const nextNum = groups.length + 1;
+                setGroups(prev => [
+                    ...prev,
+                    { id: 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: nextNum + '班', members: [] }
+                ]);
             };
 
             const deleteGroup = () => {
-                setGroups(groups.filter(x => x.id !== delGId));
+                const target = groups.find(g => g.id === delGId);
+                if (target) {
+                    const targetMemberIds = new Set((target.members || []).map(m => m.id));
+                    setLockedIds(prev => new Set([...prev].filter(id => !targetMemberIds.has(id))));
+                }
+                setGroups(prev => prev.filter(g => g.id !== delGId));
                 setDelGId(null);
-                showToast('班を削除しました', 'success');
+                showToast('班を削除しました', 'info');
             };
 
             const resetAll = () => {
                 setGroups([]);
                 setLockedIds(new Set());
                 setResetConfirm(false);
-                showToast('全ての班をリセットしました', 'success');
+                showToast('全ての班とロック設定をリセットしました', 'info');
             };
 
-            const canAddGroup = unassigned.length > 0;
-            const addGroup = () => {
-                if (!canAddGroup) return;
-                const newId = 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-                setGroups([...groups, { id: newId, name: '班' + (groups.length + 1), members: [] }]);
-            };
-
-            const onDrag = (e, sid, gid) => {
-                e.dataTransfer.setData('sid', sid);
-                e.dataTransfer.setData('src', gid);
-            };
-            const onDrop = (e, dest) => {
-                const sid = e.dataTransfer.getData('sid');
-                const src = e.dataTransfer.getData('src');
-                if (!sid) return;
-                if (dest !== 'un') {
-                    const destGroup = groups.find(g => g.id === dest);
-                    if (destGroup && destGroup.members.some(m => m.id === sid)) return;
-                }
-                const student = data.students.find(s => s.id === sid);
-                const newGroups = groups.map(g => ({ ...g, members: [...g.members] }));
-                if (src !== 'un') {
-                    const srcG = newGroups.find(g => g.id === src);
-                    if (srcG) srcG.members = srcG.members.filter(m => m.id !== sid);
-                }
-                // ★修正②防御：万が一削除済みIDがドロップされた場合も元班からは確実に外す
-                if (!student) {
-                    setGroups(newGroups);
+            const toggleLock = (e, sid) => {
+                e.stopPropagation();
+                if (!assignedIds.has(sid) && !lockedIds.has(sid)) {
+                    showToast('班に入れてから固定（ロック）してください', 'info');
                     return;
                 }
-                if (dest !== 'un') {
-                    const destG = newGroups.find(g => g.id === dest);
-                    if (destG) destG.members.push(student);
-                }
-                setGroups(newGroups);
+                setLockedIds(prev => {
+                    const next = new Set(prev);
+                    if (next.has(sid)) next.delete(sid);
+                    else next.add(sid);
+                    return next;
+                });
+            };
+
+            const onDrag = (e, sid, fromGroupId) => {
+                if (lockedIds.has(sid)) return;
+                e.dataTransfer.setData('sid', sid);
+                e.dataTransfer.setData('from', fromGroupId);
+            };
+
+            const onDrop = (e, toGroupId) => {
+                e.preventDefault();
+                const sid = e.dataTransfer.getData('sid');
+                const fromGroupId = e.dataTransfer.getData('from');
+                if (!sid || fromGroupId === toGroupId || lockedIds.has(sid)) return;
+                const student = data.students.find(s => s.id === sid);
+                if (!student) return;
+
+                setGroups(prev => prev.map(g => {
+                    let members = (g.members || []).filter(m => m.id !== sid);
+                    if (g.id === toGroupId) {
+                        members = [...members, student];
+                    }
+                    return { ...g, members };
+                }));
             };
 
             const autoAssign = (mode) => {
-                if (groups.length === 0) return showToast('班を作ってください', 'error');
-                const targets = unassigned.filter(s => !lockedIds.has(s.id));
-                const baseGroups = groups.map(g => {
-                    const locked = g.members.filter(m => lockedIds.has(m.id));
-                    const unlocked = g.members.filter(m => !lockedIds.has(m.id));
-                    targets.push(...unlocked);
-                    return { ...g, members: locked };
-                });
-                if (targets.length === 0) return showToast('振り分ける対象の生徒がいません（全員固定されています）', 'warning');
+                if (groups.length === 0) return showToast('先に「班追加」で班を作成してください', 'error');
+                if (data.students.length === 0) return showToast('生徒が登録されていません', 'error');
 
-                if (mode === 'random') {
-                    let bestGroups = null;
-                    let minConflicts = Infinity;
-                    let bestScore = Infinity;
-                    const shuffleArr = (arr) => {
-                        const res = [...arr];
-                        for (let i = res.length - 1; i > 0; i--) {
-                            const j = Math.floor(Math.random() * (i + 1));
-                            [res[i], res[j]] = [res[j], res[i]];
+                const fixedByGroup = groups.map(g => (g.members || []).filter(m => lockedIds.has(m.id)));
+                const fixedSet = new Set();
+                fixedByGroup.forEach(arr => arr.forEach(m => fixedSet.add(m.id)));
+                const pool = data.students.filter(s => !fixedSet.has(s.id));
+
+                if (pool.length === 0) return showToast('振り分け対象の生徒がいません', 'info');
+
+                const distributeOrder = (orderedList) => {
+                    const buckets = fixedByGroup.map(arr => [...arr]);
+                    orderedList.forEach(student => {
+                        let minIdx = 0;
+                        for (let i = 1; i < buckets.length; i++) {
+                            if (buckets[i].length < buckets[minIdx].length) minIdx = i;
                         }
-                        return res;
-                    };
+                        buckets[minIdx].push(student);
+                    });
+                    return buckets;
+                };
 
-                    for (let k = 0; k < 500; k++) {
-                        const boys = targets.filter(s => s.gender === 'boy');
-                        const girls = targets.filter(s => s.gender === 'girl');
-                        const mixed = targets.filter(s => s.gender !== 'boy' && s.gender !== 'girl');
-                        const tempGroups = baseGroups.map(g => ({ ...g, members: [...g.members] }));
-                        let currentConflicts = 0;
+                if (mode === 'asc' || mode === 'desc') {
+                    const ordered = mode === 'desc' ? [...pool].reverse() : [...pool];
+                    const buckets = distributeOrder(ordered);
+                    setGroups(prev => prev.map((g, idx) => ({ ...g, members: buckets[idx] })));
+                    showToast((mode === 'asc' ? '名簿順' : '逆順') + 'で振り分けました', 'success');
+                    return;
+                }
 
-                        const assignToGroups = (students) => {
-                            students.forEach(s => {
-                                const minLen = Math.min(...tempGroups.map(g => g.members.length));
-                                const candidates = tempGroups.filter(g => g.members.length === minLen);
-                                const validCandidates = candidates.filter(g => !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id)));
-                                let targetGroup;
-                                if (validCandidates.length > 0) {
-                                    targetGroup = validCandidates[Math.floor(Math.random() * validCandidates.length)];
-                                } else {
-                                    const allValid = tempGroups.filter(g => !g.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id)));
-                                    if (allValid.length > 0) {
-                                        const minV = Math.min(...allValid.map(g => g.members.length));
-                                        const bestV = allValid.filter(g => g.members.length === minV);
-                                        targetGroup = bestV[Math.floor(Math.random() * bestV.length)];
-                                    } else {
-                                        targetGroup = candidates[Math.floor(Math.random() * candidates.length)];
-                                        currentConflicts++;
-                                    }
-                                }
-                                targetGroup.members.push(s);
-                            });
-                        };
+                // ランダム（NG回避・男女均等・人数均等を最適化）
+                const totalBoys = data.students.filter(s => s.gender === 'boy').length;
+                const totalGirls = data.students.filter(s => s.gender === 'girl').length;
+                const idealBoys = totalBoys / groups.length;
+                const idealGirls = totalGirls / groups.length;
 
-                        assignToGroups(shuffleArr(boys));
-                        assignToGroups(shuffleArr(girls));
-                        assignToGroups(shuffleArr(mixed));
+                let bestBuckets = null;
+                let minScore = Infinity;
+                const TRIALS = 400;
 
-                        const lengths = tempGroups.map(g => g.members.length);
-                        const balancePenalty = Math.max(...lengths) - Math.min(...lengths);
-                        const score = (currentConflicts * 1000) + balancePenalty;
-                        if (score < bestScore) {
-                            bestScore = score;
-                            bestGroups = tempGroups;
-                            minConflicts = currentConflicts;
-                        }
-                        if (currentConflicts === 0 && balancePenalty <= 1) break;
+                for (let t = 0; t < TRIALS; t++) {
+                    const shuffled = [...pool];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                     }
-                    setGroups(bestGroups);
-                    showToast(minConflicts === 0 ? '男女均等で最適な班分けができました！' : ('班分け完了（※NG条件を' + minConflicts + '件 解消できませんでした）'), minConflicts === 0 ? 'success' : 'warning');
-                } else {
-                    if (mode === 'desc') targets.reverse();
-                    const newGroups = baseGroups.map(g => ({ ...g, members: [...g.members] }));
-                    let gIdx = 0;
-                    targets.forEach(s => {
-                        let assigned = false;
-                        const startIdx = gIdx;
-                        for (let i = 0; i < newGroups.length; i++) {
-                            const currentGIdx = (startIdx + i) % newGroups.length;
-                            const group = newGroups[currentGIdx];
-                            const hasConflict = group.members.some(m => s.avoid.includes(m.id) || m.avoid.includes(s.id));
-                            const minMembers = Math.min(...newGroups.map(g => g.members.length));
-                            if (!hasConflict && group.members.length <= minMembers + 1) {
-                                group.members.push(s);
-                                gIdx = (currentGIdx + 1) % newGroups.length;
-                                assigned = true;
-                                break;
+                    const buckets = distributeOrder(shuffled);
+
+                    let score = 0;
+                    buckets.forEach(members => {
+                        let bCnt = 0;
+                        let gCnt = 0;
+                        for (let i = 0; i < members.length; i++) {
+                            const s1 = members[i];
+                            if (s1.gender === 'boy') bCnt++;
+                            else if (s1.gender === 'girl') gCnt++;
+                            for (let j = i + 1; j < members.length; j++) {
+                                const s2 = members[j];
+                                const avoid1 = Array.isArray(s1.avoid) && s1.avoid.includes(s2.id);
+                                const avoid2 = Array.isArray(s2.avoid) && s2.avoid.includes(s1.id);
+                                if (avoid1 || avoid2) score += 1000;
                             }
                         }
-                        if (!assigned) {
-                            let minLen = Infinity, targetGIdx = 0;
-                            newGroups.forEach((g, i) => { if (g.members.length < minLen) { minLen = g.members.length; targetGIdx = i; } });
-                            newGroups[targetGIdx].members.push(s);
-                        }
+                        score += Math.abs(bCnt - idealBoys) * 10 + Math.abs(gCnt - idealGirls) * 10;
                     });
-                    setGroups(newGroups);
-                    showToast('順序通りに振り分けました', 'success');
+
+                    if (score < minScore) {
+                        minScore = score;
+                        bestBuckets = buckets;
+                    }
+                    if (score === 0) break;
                 }
+
+                setGroups(prev => prev.map((g, idx) => ({ ...g, members: bestBuckets[idx] })));
+                if (minScore < 1000) showToast('ランダム振り分けが完了しました！', 'success');
+                else showToast('振り分け完了（※NG条件を完全に回避できませんでした）', 'warning');
             };
 
             const doPrint = () => handlePrint('print-target', showToast);
@@ -4402,4 +4625,3 @@
     </script>
 </body>
 </html>
-
